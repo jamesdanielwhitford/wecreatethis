@@ -5,6 +5,7 @@
     justify-content: center;
     align-items: center;
     position: relative;
+    cursor: pointer;
   }
   
   .imageWrapper {
@@ -16,6 +17,27 @@
   .memeImage {
     width: 100%;
     height: 100%;
+    object-fit: contain;
+    cursor: pointer;
+  }
+  
+  .fullscreenOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    cursor: pointer;
+  }
+  
+  .fullscreenImage {
+    max-width: 100vw;
+    max-height: 100vh;
     object-fit: contain;
   }
   
