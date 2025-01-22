@@ -1,21 +1,96 @@
-"use client"
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { collection, query, orderBy, getDocs, startAfter, limit } from 'firebase/firestore';
+import { db } from '@/firebase/config';
+import { Post } from '@/types/firebase';
 import styles from './page.module.css';
-import Image from 'next/image';
-import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function AIMemeOfTheDay() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [currentPostIndex, setCurrentPostIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const lastPostRef = useRef<any>(null);
+  const observer = useRef<IntersectionObserver>();
 
-  const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
-  const toggleModal = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowModal(!showModal);
+  const fetchInitialPosts = async () => {
+    setLoading(true);
+    const q = query(collection(db, "posts"), orderBy("date", "desc"), limit(5));
+    const querySnapshot = await getDocs(q);
+    const fetchedPosts = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Post[];
+    setPosts(fetchedPosts);
+    lastPostRef.current = querySnapshot.docs[querySnapshot.docs.length - 1];
+    setLoading(false);
   };
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-GB', {
+  const fetchMorePosts = async () => {
+    if (!lastPostRef.current || loading) return;
+    
+    setLoading(true);
+    const q = query(
+      collection(db, "posts"),
+      orderBy("date", "desc"),
+      startAfter(lastPostRef.current),
+      limit(5)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      const newPosts = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Post[];
+      setPosts(prev => [...prev, ...newPosts]);
+      lastPostRef.current = querySnapshot.docs[querySnapshot.docs.length - 1];
+    }
+    setLoading(false);
+  };
+
+  const loadMoreRef = useCallback(
+    (node: any) => {
+      if (loading) return;
+      if (observer.current) observer.current.disconnect();
+      
+      observer.current = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+          fetchMorePosts();
+        }
+      });
+      
+      if (node) observer.current.observe(node);
+    },
+    [loading]
+  );
+
+  const handleDateClick = () => {
+    setShowDatePicker(true);
+  };
+
+  const handleDateSelect = (date: string) => {
+    const postIndex = posts.findIndex(post => post.date === date);
+    if (postIndex !== -1) {
+      setCurrentPostIndex(postIndex);
+    }
+    setShowDatePicker(false);
+  };
+
+  useEffect(() => {
+    fetchInitialPosts();
+  }, []);
+
+  if (!posts.length) return null;
+
+  const currentPost = posts[currentPostIndex];
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
@@ -23,54 +98,79 @@ export default function AIMemeOfTheDay() {
   };
 
   return (
-    <div className={styles.container} onClick={toggleFullscreen}>
-      <div className={styles.date}>{formatDate(new Date())}</div>
-      <div className={styles.imageWrapper}>
+    <div className={styles.container} onClick={() => setIsFullscreen(!isFullscreen)}>
+      <div className={styles.date} onClick={(e) => {
+        e.stopPropagation();
+        handleDateClick();
+      }}>
+        {formatDate(currentPost.date)}
+      </div>
+      <div className={styles.memeContainer}>
         <Image
-          src="/your-meme-file.jpg"
+          src={currentPost.imageUrl}
           alt="AI Generated Meme"
           width={1200}
           height={1200}
           className={styles.memeImage}
           priority
         />
+        {currentPost.caption && (
+          <div className={styles.captionText}>{currentPost.caption}</div>
+        )}
       </div>
       <button 
         className={styles.helpButton} 
         aria-label="Help"
-        onClick={toggleModal}
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowModal(true);
+        }}
       >
         ?
       </button>
-      {isFullscreen && (
-        <div className={styles.fullscreenOverlay} onClick={toggleFullscreen}>
-          <Image
-            src="/your-meme-file.jpg"
-            alt="AI Generated Meme"
-            width={1200}
-            height={1200}
-            className={styles.fullscreenImage}
-            priority
-          />
-        </div>
+
+      {showDatePicker && (
+        <>
+          <div className={styles.overlay} onClick={() => setShowDatePicker(false)} />
+          <div className={styles.datePicker}>
+            <div className={styles.dateList}>
+              {posts.map((post, index) => (
+                <div
+                  key={post.id}
+                  className={styles.dateOption}
+                  onClick={() => handleDateSelect(post.date)}
+                >
+                  {formatDate(post.date)}
+                </div>
+              ))}
+              <div ref={loadMoreRef} style={{ height: '20px' }} />
+            </div>
+          </div>
+        </>
       )}
+
       {showModal && (
-        <div className={styles.modal} onClick={toggleModal}>
+        <div className={styles.modal} onClick={() => setShowModal(false)}>
           <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <button className={styles.closeButton} onClick={toggleModal}>×</button>
+            <button className={styles.closeButton} onClick={() => setShowModal(false)}>×</button>
             <h2>Get it?</h2>
             <p>This meme was generated by:</p>
             <div style={{ margin: '1rem 0' }}>
-              <Image
-                src="/gpt4-logo.png"
-                alt="ChatGPT 4.0 Logo"
-                width={100}
-                height={100}
-              />
+              {currentPost.companyLogoUrl ? (
+                <Image
+                  src={currentPost.companyLogoUrl}
+                  alt={currentPost.companyName}
+                  width={100}
+                  height={100}
+                  style={{ objectFit: 'contain' }}
+                />
+              ) : (
+                <p>{currentPost.companyName}</p>
+              )}
             </div>
             <p>using this prompt:</p>
             <blockquote style={{ margin: '1rem 0', fontStyle: 'italic' }}>
-              "your prompt here"
+              "{currentPost.prompt}"
             </blockquote>
             <Link href="/contribute" style={{ color: 'blue', textDecoration: 'underline' }}>
               Contribute your own prompt
@@ -78,13 +178,22 @@ export default function AIMemeOfTheDay() {
             <p>and join a community of people interested in the hilarious complexity of humanity.</p>
             <p style={{ marginTop: '1rem' }}>Made you laugh? Made you think?<br />Share your thoughts with the world!</p>
             <div className={styles.socialLinks}>
-              <Image src="/x-logo.png" alt="X" width={24} height={24} className={styles.socialIcon} />
-              <Image src="/instagram-logo.png" alt="Instagram" width={24} height={24} className={styles.socialIcon} />
-              <Image src="/facebook-logo.png" alt="Facebook" width={24} height={24} className={styles.socialIcon} />
-              <Image src="/whatsapp-logo.png" alt="WhatsApp" width={24} height={24} className={styles.socialIcon} />
-              <Image src="/email-icon.png" alt="Email" width={24} height={24} className={styles.socialIcon} />
+              {/* Add your social media links here */}
             </div>
           </div>
+        </div>
+      )}
+
+      {isFullscreen && (
+        <div className={styles.fullscreenOverlay} onClick={() => setIsFullscreen(false)}>
+          <Image
+            src={currentPost.imageUrl}
+            alt="AI Generated Meme"
+            width={1200}
+            height={1200}
+            className={styles.fullscreenImage}
+            priority
+          />
         </div>
       )}
     </div>
