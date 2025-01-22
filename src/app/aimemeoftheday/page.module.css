@@ -21,6 +21,28 @@
     cursor: pointer;
   }
   
+  .date {
+    position: absolute;
+    font-size: 1.2rem;
+    color: #1a1a1a;
+  }
+  
+  @media (min-width: 769px) {
+    .date {
+      left: calc(50% - (min(90vw, 90vh) / 2) - ((100vw - min(90vw, 90vh)) / 4));
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .date {
+      top: calc(50% - (min(90vh, 90vw) / 2) - ((100vh - min(90vh, 90vw)) / 4));
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+  
   .fullscreenOverlay {
     position: fixed;
     top: 0;

@@ -10,8 +10,18 @@ export default function AIMemeOfTheDay() {
     setIsFullscreen(!isFullscreen);
   };
 
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
   return (
     <div className={styles.container} onClick={toggleFullscreen}>
+      <div className={styles.date}>{formatDate(new Date())}</div>
       <div className={styles.imageWrapper}>
         <Image
           src="/image.jpeg"
