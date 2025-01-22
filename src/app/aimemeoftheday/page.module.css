@@ -1,0 +1,48 @@
+.container {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+  
+  .imageWrapper {
+    width: min(90vw, 90vh);
+    height: min(90vh, 90vw);
+    position: relative;
+  }
+  
+  .memeImage {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  
+  .helpButton {
+    position: absolute;
+    background: #1a1a1a;
+    color: #ffffff;
+    border: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.5rem;
+  }
+  
+  @media (min-width: 769px) {
+    .helpButton {
+      left: calc(50% + (min(90vw, 90vh) / 2) + ((100vw - min(90vw, 90vh)) / 4));
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .helpButton {
+      top: calc(50% + (min(90vh, 90vw) / 2) + ((100vh - min(90vh, 90vw)) / 4));
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
