@@ -1,94 +1,73 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { collection, query, orderBy, getDocs, startAfter, limit } from 'firebase/firestore';
+import { useState, useEffect, useRef } from 'react';
+import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { Post } from '@/types/firebase';
 import styles from './page.module.css';
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function AIMemeOfTheDay() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [currentPostIndex, setCurrentPostIndex] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const lastPostRef = useRef<any>(null);
-  const observer = useRef<IntersectionObserver>();
+  const [currentPostIndex, setCurrentPostIndex] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const fetchInitialPosts = async () => {
-    setLoading(true);
-    const q = query(collection(db, "posts"), orderBy("date", "desc"), limit(5));
+  useEffect(() => {
+    fetchPosts();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = parseInt(entry.target.getAttribute('data-index') || '0');
+            setCurrentPostIndex(index);
+          }
+        });
+      },
+      {
+        threshold: 0.5,
+        root: scrollContainerRef.current,
+      }
+    );
+
+    const updateObserver = () => {
+      document.querySelectorAll(`.${styles.memeSection}`).forEach((section) => {
+        observer.observe(section);
+      });
+    };
+
+    updateObserver();
+
+    return () => observer.disconnect();
+  }, [posts]);
+
+  async function fetchPosts() {
+    const q = query(collection(db, "posts"), orderBy("date", "desc"));
     const querySnapshot = await getDocs(q);
     const fetchedPosts = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     })) as Post[];
     setPosts(fetchedPosts);
-    lastPostRef.current = querySnapshot.docs[querySnapshot.docs.length - 1];
-    setLoading(false);
-  };
+  }
 
-  const fetchMorePosts = async () => {
-    if (!lastPostRef.current || loading) return;
-    
-    setLoading(true);
-    const q = query(
-      collection(db, "posts"),
-      orderBy("date", "desc"),
-      startAfter(lastPostRef.current),
-      limit(5)
-    );
-    
-    const querySnapshot = await getDocs(q);
-    if (!querySnapshot.empty) {
-      const newPosts = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Post[];
-      setPosts(prev => [...prev, ...newPosts]);
-      lastPostRef.current = querySnapshot.docs[querySnapshot.docs.length - 1];
-    }
-    setLoading(false);
-  };
-
-  const loadMoreRef = useCallback(
-    (node: any) => {
-      if (loading) return;
-      if (observer.current) observer.current.disconnect();
-      
-      observer.current = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting) {
-          fetchMorePosts();
-        }
-      });
-      
-      if (node) observer.current.observe(node);
-    },
-    [loading]
-  );
-
-  const handleDateClick = () => {
-    setShowDatePicker(true);
-  };
-
-  const handleDateSelect = (date: string) => {
-    const postIndex = posts.findIndex(post => post.date === date);
-    if (postIndex !== -1) {
-      setCurrentPostIndex(postIndex);
-    }
+  const scrollToPost = (index: number) => {
+    const sections = document.querySelectorAll(`.${styles.memeSection}`);
+    sections[index]?.scrollIntoView({ behavior: 'smooth' });
     setShowDatePicker(false);
   };
 
-  useEffect(() => {
-    fetchInitialPosts();
-  }, []);
+  const handleDateSelect = (date: string) => {
+    const index = posts.findIndex(post => post.date === date);
+    if (index !== -1) {
+      scrollToPost(index);
+    }
+  };
 
-  if (!posts.length) return null;
-
-  const currentPost = posts[currentPostIndex];
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-GB', {
       day: 'numeric',
@@ -97,38 +76,50 @@ export default function AIMemeOfTheDay() {
     });
   };
 
+  if (!posts.length) return null;
+
+  const currentPost = posts[currentPostIndex];
+
   return (
-    <div className={styles.container} onClick={() => setIsFullscreen(!isFullscreen)}>
-      <div className={styles.date} onClick={(e) => {
-        e.stopPropagation();
-        handleDateClick();
-      }}>
+    <div className={styles.container}>
+      {/* Fixed UI elements */}
+      <div 
+        className={styles.date} 
+        onClick={() => setShowDatePicker(true)}
+      >
         {formatDate(currentPost.date)}
       </div>
-      <div className={styles.memeContainer}>
-        <Image
-          src={currentPost.imageUrl}
-          alt="AI Generated Meme"
-          width={1200}
-          height={1200}
-          className={styles.memeImage}
-          priority
-        />
-        {currentPost.caption && (
-          <div className={styles.captionText}>{currentPost.caption}</div>
-        )}
-      </div>
+
       <button 
         className={styles.helpButton} 
         aria-label="Help"
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowModal(true);
-        }}
+        onClick={() => setShowModal(true)}
       >
         ?
       </button>
 
+      {/* Scrollable content */}
+      <div className={styles.scrollContainer} ref={scrollContainerRef}>
+        {posts.map((post, index) => (
+          <section key={post.id} className={styles.memeSection} data-index={index} onClick={() => setIsFullscreen(true)}>
+            <div className={styles.memeContainer}>
+              <Image
+                src={post.imageUrl}
+                alt="AI Generated Meme"
+                width={1200}
+                height={1200}
+                className={styles.memeImage}
+                priority={index === 0}
+              />
+              {post.caption && (
+                <div className={styles.captionText}>{post.caption}</div>
+              )}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      {/* Modals and overlays */}
       {showDatePicker && (
         <>
           <div className={styles.overlay} onClick={() => setShowDatePicker(false)} />
@@ -143,7 +134,6 @@ export default function AIMemeOfTheDay() {
                   {formatDate(post.date)}
                 </div>
               ))}
-              <div ref={loadMoreRef} style={{ height: '20px' }} />
             </div>
           </div>
         </>
@@ -178,7 +168,7 @@ export default function AIMemeOfTheDay() {
             <p>and join a community of people interested in the hilarious complexity of humanity.</p>
             <p style={{ marginTop: '1rem' }}>Made you laugh? Made you think?<br />Share your thoughts with the world!</p>
             <div className={styles.socialLinks}>
-              {/* Add your social media links here */}
+              {/* Add your social media links/icons here */}
             </div>
           </div>
         </div>
