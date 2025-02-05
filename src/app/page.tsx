@@ -13,7 +13,7 @@ export default function Home() {
   return (
     <div>
       <header className={styles.header}>
-        <h1 className={styles.title}>We Create This</h1>
+        <h1 className={styles.title}>We create this.</h1>
       </header>
       <main className={styles.appList}>
         <div className={styles.appContainer}>
