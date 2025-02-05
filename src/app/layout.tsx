@@ -16,7 +16,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "We Create This",
+  title: "We create this.",
   description: "Daily AI Memes",
 };
 

@@ -4,7 +4,6 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-// Declare the debug token type
 declare global {
   interface Window {
     FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean | string;
@@ -23,15 +22,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Initialize App Check in browser environment only
 if (typeof window !== 'undefined') {
-  // In development, register the debug token
   if (process.env.NODE_ENV === 'development') {
     window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
 
   initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider('your-recaptcha-site-key'), // Replace with your reCAPTCHA site key
+    provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!),    
     isTokenAutoRefreshEnabled: true
   });
 }
