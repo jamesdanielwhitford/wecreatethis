@@ -181,7 +181,7 @@ export default function AIMemeOfTheDay() {
           <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
             <button className={styles.closeButton} onClick={() => setShowPromptModal(false)}>×</button>
             <h2>Prompt</h2>
-            <blockquote>"{currentPost.prompt}"</blockquote>
+            <blockquote>&ldquo;{currentPost.prompt}&rdquo;</blockquote>
           </div>
         </div>
       )}
