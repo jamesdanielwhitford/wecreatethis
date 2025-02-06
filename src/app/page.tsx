@@ -6,7 +6,10 @@ const apps = [
     name: 'AI Meme of the Day',
     path: '/aimemeoftheday'
   },
-  // Add more apps here as needed
+  {
+    name: 'Hardle',
+    path: '/hardle'
+  }
 ];
 
 export default function Home() {

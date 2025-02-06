@@ -1,0 +1,313 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    max-height: 100vh;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    background-color: white;
+    touch-action: manipulation;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .container {
+      background-color: #0a0a0a;
+      color: #ededed;
+    }
+  }
+  
+  /* Header styles */
+  .headerContainer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 0 10px;
+  }
+  
+  .headerButtons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .headerContainer h1 {
+    margin: 0;
+    font-size: 24px;
+  }
+  
+  /* Game container styles */
+  .gameContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1;
+    justify-content: flex-start;
+    padding-top: 5px;
+  }
+  
+  /* Guess grid styles */
+  .guessGrid {
+    display: grid;
+    grid-template-rows: repeat(8, 1fr);
+    gap: 5px;
+    margin-bottom: 20px;
+    touch-action: manipulation;
+    user-select: none;
+  }
+  
+  .guessRow {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr) 0.5fr;
+    gap: 5px;
+  }
+  
+  .letter {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #d3d6da;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .score {
+    width: 25px;
+    height: 40px;
+    border: 2px solid #d3d6da;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: #f8f9fa;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .score {
+      background-color: #1a1a1a;
+      border-color: #333;
+      color: #ededed;
+    }
+  }
+  
+  /* Guessed letter styles */
+  .guessed {
+    border-color: #787c7e;
+  }
+  
+  .orange {
+    background-color: #fbbc04;
+    color: white;
+  }
+  
+  .red {
+    background-color: #f28b82;
+    color: white;
+  }
+  
+  .green {
+    background-color: #34a853;
+    color: white;
+  }
+  
+  .guessRow.correct > div {
+    background-color: #34a853;
+    border-color: #34a853;
+    color: white;
+  }
+  
+  /* Keyboard styles */
+  .keyboard {
+    display: grid;
+    grid-template-rows: repeat(3, 1fr);
+    gap: 8px;
+    touch-action: manipulation;
+    user-select: none;
+  }
+  
+  .keyboardRow {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+  }
+  
+  .keyboardButton {
+    width: 30px;
+    height: 45px;
+    font-size: 12px;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    background-color: #d3d6da;
+    color: #1a1a1b;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background-color 0.3s, color 0.3s;
+    padding: 0 4px;
+    user-select: none;
+  }
+  
+  .wideButton {
+    width: auto;
+    min-width: 50px;
+    white-space: nowrap;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .keyboardButton {
+      background-color: #818384;
+      color: #ffffff;
+    }
+  }
+  
+  /* Button styles */
+  .navButton, .rulesButton {
+    padding: 8px 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 14px;
+  }
+  
+  .navButton:hover, .rulesButton:hover {
+    background-color: #45a049;
+  }
+  
+  .coffeeButton {
+    text-decoration: none;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background-color: #FFDD00;
+    color: #000;
+    border-radius: 50%;
+  }
+  
+  .coffeeButton:hover {
+    background-color: #FFE97F;
+  }
+  
+  /* Modal styles */
+  .modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .modalContent {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 90vw;
+    width: 500px;
+    position: relative;
+    text-align: left;
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: 2rem;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .modalContent {
+      background-color: #1a1a1a;
+      color: #ededed;
+    }
+  }
+  
+  .modalContent h2 {
+    margin-bottom: 1rem;
+  }
+  
+  .modalContent p {
+    margin-bottom: 0.5rem;
+  }
+  
+  .modalContent ul {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+  }
+  
+  .modalContent li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .closeButton {
+    position: absolute;
+    left: 1rem;
+    top: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: inherit;
+  }
+  
+  .modalButtons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 1.5rem;
+  }
+  
+  /* Responsive styles */
+  @media (min-width: 768px) and (orientation: landscape) {
+    .headerContainer {
+      padding: 0 10px;
+    }
+  
+    .headerContainer h1 {
+      font-size: 32px;
+    }
+  
+    .gameContainer {
+      flex-direction: row;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 30px;
+    }
+  
+    .guessGrid {
+      margin-bottom: 0;
+    }
+  
+    .letter {
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+    }
+  
+    .score {
+      width: 30px;
+      height: 50px;
+      font-size: 20px;
+    }
+  
+    .keyboardButton {
+      width: 43px;
+      height: 58px;
+      font-size: 14px;
+    }
+  
+    .wideButton {
+      min-width: 65px;
+    }
+  }
