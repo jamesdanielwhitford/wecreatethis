@@ -1,0 +1,12 @@
+{
+    "version": 1.02,
+    "routes": [
+      {
+        "src": "/(.*)",
+        "headers": {
+          "cache-control": "s-maxage=1, stale-while-revalidate=59"
+        },
+        "continue": true
+      }
+    ]
+  }
