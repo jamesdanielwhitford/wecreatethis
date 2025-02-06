@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.0.3';
+export const APP_VERSION = '1.0.0';
 
 export async function checkForNewVersion() {
   try {
@@ -17,7 +17,8 @@ export async function checkForNewVersion() {
           });
         });
       }
-      window.location.reload(true);
+      // Reload without forcing from server
+      window.location.reload();
     }
   } catch (error) {
     console.error('Version check failed:', error);

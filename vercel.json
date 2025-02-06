@@ -1,12 +1,13 @@
 {
-    "version": 1.03,
-    "routes": [
+    "headers": [
       {
-        "src": "/(.*)",
-        "headers": {
-          "cache-control": "s-maxage=1, stale-while-revalidate=59"
-        },
-        "continue": true
+        "source": "/(.*)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "s-maxage=1, stale-while-revalidate=59"
+          }
+        ]
       }
     ]
   }
