@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { WordGame } from '@/components/WordGame';
-import { words, getRandomWord } from '@/utils/words';
+import { words, validGuesses, getRandomWord } from '@/utils/words';
 import styles from './page.module.css';
 
 export default function RandlePage() {
@@ -21,6 +21,7 @@ export default function RandlePage() {
         alternateGamePath="/hardle"
         alternateGameName="Hardle"
         isDaily={false}
+        validGuesses={validGuesses}
       />
     </div>
   );

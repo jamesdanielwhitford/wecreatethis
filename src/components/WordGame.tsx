@@ -9,6 +9,7 @@ interface WordGameProps {
   alternateGamePath: string;
   alternateGameName: string;
   isDaily?: boolean;
+  validGuesses: string[];
 }
 
 interface KeyboardButtonProps {
@@ -38,7 +39,8 @@ export function WordGame({
   gameTitle, 
   alternateGamePath,
   alternateGameName,
-  isDaily 
+  isDaily,
+  validGuesses 
 }: WordGameProps) {
   const [currentGuess, setCurrentGuess] = useState('');
   const [guessesRemaining, setGuessesRemaining] = useState(8);
@@ -51,6 +53,12 @@ export function WordGame({
   const [keyboardColors, setKeyboardColors] = useState<Record<string, GameColor>>({});
 
   const submitGuess = useCallback(() => {
+    // Check if the word exists in valid guesses
+    if (!validGuesses.includes(currentGuess.toLowerCase())) {
+      alert('Not a valid word!');
+      return;
+    }
+
     const correctLetterCount = getCorrectLetterCount(currentGuess, gameWord);
     const newGuessHistory = [...guessHistory, currentGuess];
     setGuessHistory(newGuessHistory);
@@ -86,7 +94,7 @@ export function WordGame({
     }
 
     setCurrentGuess('');
-  }, [currentGuess, gameWord, guessHistory, guessesRemaining]);
+  }, [currentGuess, gameWord, guessHistory, guessesRemaining, validGuesses]);
 
   const handleInput = useCallback((key: string) => {
     if (gameOver) return;

@@ -1,7 +1,7 @@
 'use client';
 
 import { WordGame } from '@/components/WordGame';
-import { words, getDailyWord } from '@/utils/words';
+import { words, validGuesses, getDailyWord } from '@/utils/words';
 import styles from './page.module.css';
 
 export default function HardlePage() {
@@ -15,6 +15,7 @@ export default function HardlePage() {
         alternateGamePath="/randle"
         alternateGameName="Randle"
         isDaily={true}
+        validGuesses={validGuesses}
       />
     </div>
   );
