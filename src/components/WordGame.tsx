@@ -10,6 +10,7 @@ interface WordGameProps {
   alternateGameName: string;
   isDaily?: boolean;
   validGuesses: string[];
+  cacheKey: string;
 }
 
 interface KeyboardButtonProps {
@@ -40,19 +41,103 @@ export function WordGame({
   alternateGamePath,
   alternateGameName,
   isDaily,
-  validGuesses 
+  validGuesses,
+  cacheKey
 }: WordGameProps) {
+  // Initialize with empty state first
+  const [initialized, setInitialized] = useState(false);
   const [currentGuess, setCurrentGuess] = useState('');
   const [guessesRemaining, setGuessesRemaining] = useState(8);
   const [guessHistory, setGuessHistory] = useState<string[]>([]);
   const [gameOver, setGameOver] = useState(false);
-  const [showRules, setShowRules] = useState(false);
-  const [showEndModal, setShowEndModal] = useState(false);
   const [gameWon, setGameWon] = useState(false);
   const [finalAttempts, setFinalAttempts] = useState(0);
   const [keyboardColors, setKeyboardColors] = useState<Record<string, GameColor>>({});
+  const [showRules, setShowRules] = useState(false);
+  const [showEndModal, setShowEndModal] = useState(false);
+
+  // Load cached state after mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const loadCachedState = () => {
+      const cached = localStorage.getItem(cacheKey);
+      if (!cached) return null;
+      
+      try {
+        const state = JSON.parse(cached);
+        if (state.word === gameWord) { // Only restore if the word matches
+          setGuessesRemaining(state.guessesRemaining);
+          setGuessHistory(state.guessHistory);
+          setGameOver(state.gameOver);
+          setGameWon(state.gameWon);
+          setFinalAttempts(state.finalAttempts);
+          setKeyboardColors(state.keyboardColors);
+          if (state.gameOver) {
+            setShowEndModal(true);
+          }
+        } else {
+          localStorage.removeItem(cacheKey);
+        }
+      } catch (e) {
+        console.error('Error parsing cached state:', e);
+        localStorage.removeItem(cacheKey);
+      }
+      setInitialized(true);
+    };
+
+    loadCachedState();
+  }, [cacheKey, gameWord]);
+
+  // Cache state whenever it changes
+  useEffect(() => {
+    if (!initialized || typeof window === 'undefined') return;
+
+    const stateToCache = {
+      guessesRemaining,
+      guessHistory,
+      gameOver,
+      gameWon,
+      finalAttempts,
+      keyboardColors,
+      word: gameWord,
+    };
+
+    localStorage.setItem(cacheKey, JSON.stringify(stateToCache));
+  }, [initialized, guessesRemaining, guessHistory, gameOver, gameWon, finalAttempts, keyboardColors, gameWord, cacheKey]);
+
+  function getCorrectLetterCount(guess: string, answer: string): number {
+    const guessLetters = guess.split('');
+    const answerLetters = Array.from(answer);
+    let count = 0;
+    const usedIndices = new Set<number>();
+
+    for (let i = 0; i < guessLetters.length; i++) {
+      const index = answerLetters.findIndex((letter, idx) => 
+        letter === guessLetters[i] && !usedIndices.has(idx)
+      );
+      if (index !== -1) {
+        count++;
+        usedIndices.add(index);
+      }
+    }
+
+    return count;
+  }
+
+  function updateKeyboardColor(letter: string, newColor: GameColor) {
+    setKeyboardColors(prev => {
+      const currentColor = prev[letter] || '';
+      if (colorHierarchy[newColor] > colorHierarchy[currentColor]) {
+        return { ...prev, [letter]: newColor };
+      }
+      return prev;
+    });
+  }
 
   const submitGuess = useCallback(() => {
+    if (gameOver) return;
+    
     // Check if the word exists in valid guesses
     if (!validGuesses.includes(currentGuess.toLowerCase())) {
       alert('Not a valid word!');
@@ -94,7 +179,7 @@ export function WordGame({
     }
 
     setCurrentGuess('');
-  }, [currentGuess, gameWord, guessHistory, guessesRemaining, validGuesses]);
+  }, [currentGuess, gameWord, guessHistory, guessesRemaining, validGuesses, gameOver]);
 
   const handleInput = useCallback((key: string) => {
     if (gameOver) return;
@@ -126,35 +211,6 @@ export function WordGame({
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [handleInput]);
-
-  function getCorrectLetterCount(guess: string, answer: string): number {
-    const guessLetters = guess.split('');
-    const answerLetters = Array.from(answer);
-    let count = 0;
-    const usedIndices = new Set<number>();
-
-    for (let i = 0; i < guessLetters.length; i++) {
-      const index = answerLetters.findIndex((letter, idx) => 
-        letter === guessLetters[i] && !usedIndices.has(idx)
-      );
-      if (index !== -1) {
-        count++;
-        usedIndices.add(index);
-      }
-    }
-
-    return count;
-  }
-
-  function updateKeyboardColor(letter: string, newColor: GameColor) {
-    setKeyboardColors(prev => {
-      const currentColor = prev[letter] || '';
-      if (colorHierarchy[newColor] > colorHierarchy[currentColor]) {
-        return { ...prev, [letter]: newColor };
-      }
-      return prev;
-    });
-  }
 
   function getLetterColor(guess: string, index: number, correctLetterCount: number): GameColor {
     if (!guess) return '';
@@ -255,6 +311,20 @@ export function WordGame({
     }
   }
 
+  const handlePlayAgain = () => {
+    if (onNewGame) {
+      localStorage.removeItem(cacheKey);
+      onNewGame();
+      setGameOver(false);
+      setGameWon(false);
+      setGuessesRemaining(8);
+      setGuessHistory([]);
+      setKeyboardColors({});
+      setShowEndModal(false);
+      setCurrentGuess('');
+    }
+  };
+
   return (
     <div className={styles.container}>
       <header className={styles.headerContainer}>
@@ -312,7 +382,7 @@ export function WordGame({
         </div>
       )}
 
-      {showEndModal && (
+{showEndModal && (
         <div className={styles.modal} onClick={() => setShowEndModal(false)}>
           <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
             <button className={styles.closeButton} onClick={() => setShowEndModal(false)}>×</button>
@@ -325,15 +395,7 @@ export function WordGame({
             <div className={styles.modalButtons}>
               {!isDaily && onNewGame && (
                 <button 
-                  onClick={() => {
-                    onNewGame();
-                    setShowEndModal(false);
-                    setGameOver(false);
-                    setGameWon(false);
-                    setGuessesRemaining(8);
-                    setGuessHistory([]);
-                    setKeyboardColors({});
-                  }}
+                  onClick={handlePlayAgain}
                   className={styles.navButton}
                 >
                   Play Again
