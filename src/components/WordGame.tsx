@@ -61,12 +61,23 @@ export function WordGame({
     if (typeof window === 'undefined') return;
 
     const loadCachedState = () => {
+      console.log('Loading cached state for key:', cacheKey);
       const cached = localStorage.getItem(cacheKey);
-      if (!cached) return null;
+      console.log('Found cached data:', cached);
+      
+      if (!cached) {
+        console.log('No cached data found, initializing fresh state');
+        setInitialized(true);
+        return null;
+      }
       
       try {
         const state = JSON.parse(cached);
-        if (state.word === gameWord) { // Only restore if the word matches
+        console.log('Parsed state:', state);
+        console.log('Current gameWord:', gameWord);
+        
+        if (state.word === gameWord) {
+          console.log('Words match, restoring state');
           setGuessesRemaining(state.guessesRemaining);
           setGuessHistory(state.guessHistory);
           setGameOver(state.gameOver);
@@ -77,6 +88,7 @@ export function WordGame({
             setShowEndModal(true);
           }
         } else {
+          console.log('Words do not match, clearing cache');
           localStorage.removeItem(cacheKey);
         }
       } catch (e) {
@@ -103,6 +115,7 @@ export function WordGame({
       word: gameWord,
     };
 
+    console.log('Caching state:', { cacheKey, state: stateToCache });
     localStorage.setItem(cacheKey, JSON.stringify(stateToCache));
   }, [initialized, guessesRemaining, guessHistory, gameOver, gameWon, finalAttempts, keyboardColors, gameWord, cacheKey]);
 
@@ -144,6 +157,7 @@ export function WordGame({
       return;
     }
 
+    console.log('Submitting guess:', currentGuess);
     const correctLetterCount = getCorrectLetterCount(currentGuess, gameWord);
     const newGuessHistory = [...guessHistory, currentGuess];
     setGuessHistory(newGuessHistory);
@@ -382,46 +396,46 @@ export function WordGame({
         </div>
       )}
 
-{showEndModal && (
-        <div className={styles.modal} onClick={() => setShowEndModal(false)}>
-          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <button className={styles.closeButton} onClick={() => setShowEndModal(false)}>×</button>
-            <h2>{gameWon ? 'Congratulations!' : 'Game Over'}</h2>
-            <p>
-              {gameWon 
-                ? `You guessed the word in ${finalAttempts} tries!` 
-                : `The word was ${gameWord}`}
-            </p>
-            <div className={styles.modalButtons}>
-              {!isDaily && onNewGame && (
-                <button 
-                  onClick={handlePlayAgain}
-                  className={styles.navButton}
-                >
-                  Play Again
-                </button>
-              )}
-              <Link href={alternateGamePath} className={styles.navButton}>
-                Play {alternateGameName}
-              </Link>
-              <a
-                href="https://www.buymeacoffee.com/jameswhitford"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.navButton}
-              >
-                ☕️ Buy Me a Coffee
-              </a>
-              <button onClick={shareScore} className={styles.navButton}>
-                Share Score
-              </button>
-              <button onClick={() => setShowEndModal(false)} className={styles.navButton}>
-                Close
-              </button>
-            </div>
+      {showEndModal && (
+              <div className={styles.modal} onClick={() => setShowEndModal(false)}>
+                <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+                  <button className={styles.closeButton} onClick={() => setShowEndModal(false)}>×</button>
+                  <h2>{gameWon ? 'Congratulations!' : 'Game Over'}</h2>
+                  <p>
+                    {gameWon 
+                      ? `You guessed the word in ${finalAttempts} tries!` 
+                      : `The word was ${gameWord}`}
+                  </p>
+                  <div className={styles.modalButtons}>
+                    {!isDaily && onNewGame && (
+                      <button 
+                        onClick={handlePlayAgain}
+                        className={styles.navButton}
+                      >
+                        Play Again
+                      </button>
+                    )}
+                    <Link href={alternateGamePath} className={styles.navButton}>
+                      Play {alternateGameName}
+                    </Link>
+                    <a
+                      href="https://www.buymeacoffee.com/jameswhitford"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.navButton}
+                    >
+                      ☕️ Buy Me a Coffee
+                    </a>
+                    <button onClick={shareScore} className={styles.navButton}>
+                      Share Score
+                    </button>
+                    <button onClick={() => setShowEndModal(false)} className={styles.navButton}>
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
+        );
+      }
