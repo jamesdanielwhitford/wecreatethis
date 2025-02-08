@@ -6,47 +6,63 @@ import { WordGame } from '@/components/WordGame';
 import { words, validGuesses, getRandomWord } from '@/utils/words';
 import styles from './page.module.css';
 
+const CURRENT_GAME_KEY = 'current-randle-game';
+
 export default function RandlePage() {
   const [randomWord, setRandomWord] = useState('');
   const [cacheKey, setCacheKey] = useState('');
 
   useEffect(() => {
-    // Initialize the game with a random word and cache key
     const initializeGame = () => {
-      const word = getRandomWord(words);
-      const newCacheKey = `randle-${word}`;
-      setRandomWord(word);
-      setCacheKey(newCacheKey);
+      try {
+        // First, try to get an existing game from localStorage
+        const savedGame = localStorage.getItem(CURRENT_GAME_KEY);
+        
+        if (savedGame) {
+          // If there's a saved game, use that word
+          const { word } = JSON.parse(savedGame);
+          console.log('Restoring saved game with word:', word);
+          setRandomWord(word);
+          setCacheKey(`randle-${word}`);
+        } else {
+          // If no saved game, create a new one
+          const newWord = getRandomWord(words);
+          console.log('Starting new game with word:', newWord);
+          setRandomWord(newWord);
+          setCacheKey(`randle-${newWord}`);
+          // Save the new game
+          localStorage.setItem(CURRENT_GAME_KEY, JSON.stringify({ word: newWord }));
+        }
+      } catch (error) {
+        // If there's any error, start a fresh game
+        console.error('Error initializing game:', error);
+        const newWord = getRandomWord(words);
+        setRandomWord(newWord);
+        setCacheKey(`randle-${newWord}`);
+        localStorage.setItem(CURRENT_GAME_KEY, JSON.stringify({ word: newWord }));
+      }
     };
 
-    // Only initialize if there's no game in progress
-    const existingGame = localStorage.getItem('current-randle-game');
-    if (existingGame) {
-      const { word } = JSON.parse(existingGame);
-      setRandomWord(word);
-      setCacheKey(`randle-${word}`);
-    } else {
-      initializeGame();
-    }
-  }, []);
+    initializeGame();
+  }, []); // Empty dependency array means this only runs once on mount
   
   const handleNewGame = () => {
     const newWord = getRandomWord(words);
     const newCacheKey = `randle-${newWord}`;
     
-    // Clear the old game's cache
-    localStorage.removeItem('current-randle-game');
+    // Clear both the game cache and the current game storage
     localStorage.removeItem(cacheKey);
+    localStorage.removeItem(CURRENT_GAME_KEY);
     
     // Set up the new game
     setRandomWord(newWord);
     setCacheKey(newCacheKey);
     
     // Store the new game's word
-    localStorage.setItem('current-randle-game', JSON.stringify({ word: newWord }));
+    localStorage.setItem(CURRENT_GAME_KEY, JSON.stringify({ word: newWord }));
   };
 
-  if (!randomWord || !cacheKey) return null; // Wait for initialization
+  if (!randomWord || !cacheKey) return null;
 
   return (
     <div className={styles.container}>
