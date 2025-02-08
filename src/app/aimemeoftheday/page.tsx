@@ -64,9 +64,8 @@ export default function AIMemeOfTheDay() {
     setShowDatePicker(false);
   };
 
-  const handleDateSelect = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
-    const index = posts.findIndex(post => post.date === dateString);
+  const handleDateSelect = (date: string) => {
+    const index = posts.findIndex(post => post.date === date);
     if (index !== -1) {
       scrollToPost(index);
     }
@@ -199,7 +198,11 @@ export default function AIMemeOfTheDay() {
             </button>
             <DatePicker
               selected={new Date(currentPost.date)}
-              onChange={(date: Date) => handleDateSelect(date)}
+              onChange={(date) => {
+                if (date) {
+                  handleDateSelect(date.toISOString().split('T')[0]);
+                }
+              }}
               inline
               minDate={new Date(posts[posts.length - 1]?.date)}
               maxDate={new Date(posts[0]?.date)}
@@ -208,7 +211,7 @@ export default function AIMemeOfTheDay() {
             <button 
               className={styles.todayButton}
               onClick={() => {
-                const today = new Date();
+                const today = new Date().toISOString().split('T')[0];
                 handleDateSelect(today);
               }}
             >
