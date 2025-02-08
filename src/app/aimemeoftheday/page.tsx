@@ -1,4 +1,3 @@
-// src/app/aimemeoftheday/page.tsx
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -65,8 +64,9 @@ export default function AIMemeOfTheDay() {
     setShowDatePicker(false);
   };
 
-  const handleDateSelect = (date: string) => {
-    const index = posts.findIndex(post => post.date === date);
+  const handleDateSelect = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    const index = posts.findIndex(post => post.date === dateString);
     if (index !== -1) {
       scrollToPost(index);
     }
@@ -86,51 +86,120 @@ export default function AIMemeOfTheDay() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.date} onClick={() => setShowDatePicker(true)}>
-        {formatDate(currentPost.date)}
+      {/* Desktop Layout */}
+      <div className={styles.desktopLayout}>
+        {/* Left Section */}
+        <div className={styles.leftSection}>
+          <div 
+            className={styles.date}
+            onClick={() => setShowDatePicker(true)}
+            role="button"
+            tabIndex={0}
+          >
+            {formatDate(currentPost.date)}
+          </div>
+        </div>
+
+        {/* Center Section */}
+        <div className={styles.scrollContainer} ref={scrollContainerRef}>
+          {posts.map((post, index) => (
+            <section key={post.id} className={styles.memeSection} data-index={index}>
+              <div className={styles.memeContainer}>
+                <div className={styles.imageContainer}>
+                  <Image
+                    src={post.imageUrl}
+                    alt="AI Generated Meme"
+                    width={1200}
+                    height={1200}
+                    className={styles.memeImage}
+                    priority={index === 0}
+                    onClick={() => setIsFullscreen(true)}
+                  />
+                </div>
+                {post.caption && (
+                  <div className={styles.captionText}>{post.caption}</div>
+                )}
+              </div>
+            </section>
+          ))}
+        </div>
+
+        {/* Right Section */}
+        <div className={styles.rightSection}>
+          <button 
+            className={styles.helpButton}
+            aria-label="Help"
+            onClick={() => setShowModal(true)}
+          >
+            ?
+          </button>
+        </div>
       </div>
 
-      <button 
-        className={styles.helpButton} 
-        aria-label="Help"
-        onClick={() => setShowModal(true)}
-      >
-        ?
-      </button>
+      {/* Mobile Layout */}
+      <div className={styles.mobileLayout}>
+        {/* Top Section */}
+        <div className={styles.topSection}>
+          <div 
+            className={styles.date}
+            onClick={() => setShowDatePicker(true)}
+            role="button"
+            tabIndex={0}
+          >
+            {formatDate(currentPost.date)}
+          </div>
+        </div>
 
-      <div className={styles.scrollContainer} ref={scrollContainerRef}>
-        {posts.map((post, index) => (
-          <section key={post.id} className={styles.memeSection} data-index={index}>
-            <div className={styles.memeContainer}>
-              <Image
-                src={post.imageUrl}
-                alt="AI Generated Meme"
-                width={1200}
-                height={1200}
-                className={styles.memeImage}
-                priority={index === 0}
-                onClick={() => setIsFullscreen(true)}
-              />
-              {post.caption && (
-                <div className={styles.captionText}>{post.caption}</div>
-              )}
-            </div>
-          </section>
-        ))}
+        {/* Center Section */}
+        <div className={styles.scrollContainer} ref={scrollContainerRef}>
+          {posts.map((post, index) => (
+            <section key={post.id} className={styles.memeSection} data-index={index}>
+              <div className={styles.memeContainer}>
+                <div className={styles.imageContainer}>
+                  <Image
+                    src={post.imageUrl}
+                    alt="AI Generated Meme"
+                    width={1200}
+                    height={1200}
+                    className={styles.memeImage}
+                    priority={index === 0}
+                    onClick={() => setIsFullscreen(true)}
+                  />
+                </div>
+                {post.caption && (
+                  <div className={styles.captionText}>{post.caption}</div>
+                )}
+              </div>
+            </section>
+          ))}
+        </div>
+
+        {/* Bottom Section */}
+        <div className={styles.bottomSection}>
+          <button 
+            className={styles.helpButton}
+            aria-label="Help"
+            onClick={() => setShowModal(true)}
+          >
+            ?
+          </button>
+        </div>
       </div>
 
       {showDatePicker && (
         <>
           <div className={styles.overlay} onClick={() => setShowDatePicker(false)} />
           <div className={styles.datePicker}>
-            <button className={styles.datePickerClose} onClick={() => setShowDatePicker(false)}>×</button>
+            <button 
+              className={styles.datePickerClose} 
+              onClick={() => setShowDatePicker(false)}
+              aria-label="Close date picker"
+            >
+              ×
+            </button>
             <DatePicker
               selected={new Date(currentPost.date)}
-              onChange={(date) => {
-                if (date) {
-                  handleDateSelect(date.toISOString().split('T')[0]);
-                }
-              }}
+              onChange={(date: Date) => handleDateSelect(date)}
               inline
               minDate={new Date(posts[posts.length - 1]?.date)}
               maxDate={new Date(posts[0]?.date)}
@@ -139,7 +208,7 @@ export default function AIMemeOfTheDay() {
             <button 
               className={styles.todayButton}
               onClick={() => {
-                const today = new Date().toISOString().split('T')[0];
+                const today = new Date();
                 handleDateSelect(today);
               }}
             >
@@ -152,7 +221,13 @@ export default function AIMemeOfTheDay() {
       {showModal && (
         <div className={styles.modal} onClick={() => setShowModal(false)}>
           <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <button className={styles.closeButton} onClick={() => setShowModal(false)}>×</button>
+            <button 
+              className={styles.closeButton} 
+              onClick={() => setShowModal(false)}
+              aria-label="Close modal"
+            >
+              ×
+            </button>
             <h2>Get it?</h2>
             <p>That image was generated by {currentPost.imageCompanyUrl ? (
               <a href={currentPost.imageCompanyUrl} target="_blank" rel="noopener noreferrer">
@@ -160,7 +235,16 @@ export default function AIMemeOfTheDay() {
               </a>
             ) : currentPost.imageCompanyName}.</p>
             <p>
-              Using this prompt <button onClick={() => setShowPromptModal(true)} className={styles.promptButton}>view prompt</button>
+              Using this prompt{" "}
+              <button 
+                onClick={() => {
+                  setShowModal(false);
+                  setShowPromptModal(true);
+                }} 
+                className={styles.promptButton}
+              >
+                view prompt
+              </button>
               {" "}{currentPost.promptIsContribution ? "contributed" : "generated"} by {currentPost.promptCompanyUrl ? (
                 <a href={currentPost.promptCompanyUrl} target="_blank" rel="noopener noreferrer">
                   {currentPost.promptCompanyName}
@@ -179,7 +263,13 @@ export default function AIMemeOfTheDay() {
       {showPromptModal && (
         <div className={styles.modal} onClick={() => setShowPromptModal(false)}>
           <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <button className={styles.closeButton} onClick={() => setShowPromptModal(false)}>×</button>
+            <button 
+              className={styles.closeButton} 
+              onClick={() => setShowPromptModal(false)}
+              aria-label="Close prompt modal"
+            >
+              ×
+            </button>
             <h2>Prompt</h2>
             <blockquote>&ldquo;{currentPost.prompt}&rdquo;</blockquote>
           </div>
@@ -187,7 +277,10 @@ export default function AIMemeOfTheDay() {
       )}
 
       {isFullscreen && (
-        <div className={styles.fullscreenOverlay} onClick={() => setIsFullscreen(false)}>
+        <div 
+          className={styles.fullscreenOverlay} 
+          onClick={() => setIsFullscreen(false)}
+        >
           <Image
             src={currentPost.imageUrl}
             alt="AI Generated Meme"
