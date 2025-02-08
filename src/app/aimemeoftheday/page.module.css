@@ -59,7 +59,7 @@
 }
 
 .topSection {
-  height: 80px;
+  height: 120px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -67,7 +67,7 @@
 }
 
 .bottomSection {
-  height: 80px;
+  height: 120px;
   display: flex;
   justify-content: center;
   align-items: center;
