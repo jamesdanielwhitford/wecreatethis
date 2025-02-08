@@ -1,27 +1,27 @@
-'use client';
-
-import { useEffect } from 'react';
-import { checkForNewVersion } from '@/utils/version';
+import { Metadata } from 'next';
 import "./globals.css";
+
+// This is where you define your metadata
+export const metadata: Metadata = {
+  title: 'wecreatethis.com',
+  description: 'we create this',
+  icons: {
+    icon: '/your-logo.svg', // Add your logo file to public directory
+  },
+};
+
+// Move the version checking to a client component
+import { VersionChecker } from '@/components/VersionChecker';
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  useEffect(() => {
-    // Check for new version on initial load
-    checkForNewVersion();
-
-    // Set up periodic version checks
-    const versionCheckInterval = setInterval(checkForNewVersion, 60000); // Check every minute
-
-    return () => clearInterval(versionCheckInterval);
-  }, []);
-
   return (
     <html lang="en">
       <body>
+        <VersionChecker />
         {children}
       </body>
     </html>
