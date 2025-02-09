@@ -6,7 +6,6 @@
   background-color: white;
   overflow: hidden;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  touch-action: none; /* Prevents pull-to-refresh and other browser gestures */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -51,10 +50,9 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  position: fixed;  /* This ensures it stays within viewport */
+  position: fixed;
   top: 0;
   left: 0;
-  overflow: hidden; /* Prevents scrolling in the layout container */
 }
 
 @media (min-width: 768px) {
@@ -69,8 +67,6 @@
   justify-content: center;
   align-items: center;
   position: relative;
-  overflow: hidden; /* Prevents scrolling in top section */
-  touch-action: none; /* Prevents touch gestures */
 }
 
 .bottomSection {
@@ -79,21 +75,18 @@
   justify-content: center;
   align-items: center;
   position: relative;
-  overflow: hidden; /* Prevents scrolling in bottom section */
-  touch-action: none; /* Prevents touch gestures */
 }
 
 /* Shared Styles */
 .scrollContainer {
   flex: 1;
-  height: 0;  /* This allows the element to shrink */
-  min-height: 0;  /* This is crucial for Firefox */
+  height: 100%;
+  min-height: 0;
   overflow-y: auto;
-  overflow-x: hidden; /* Prevents horizontal scrolling */
   scroll-snap-type: y mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  touch-action: pan-y; /* Only allows vertical touch scrolling */
+  position: relative;
 }
 
 .scrollContainer::-webkit-scrollbar {
@@ -113,6 +106,7 @@
 
 .memeContainer {
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
