@@ -48,8 +48,11 @@
 .mobileLayout {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
+  position: fixed;  /* This ensures it stays within viewport */
+  top: 0;
+  left: 0;
 }
 
 @media (min-width: 768px) {
@@ -76,8 +79,9 @@
 
 /* Shared Styles */
 .scrollContainer {
-  flex: 3;
-  height: 100%;
+  flex: 1;  /* Changed from flex: 3 to flex: 1 */
+  height: 0;  /* This allows the element to shrink */
+  min-height: 0;  /* This is crucial for Firefox */
   overflow-y: auto;
   scroll-snap-type: y mandatory;
   -webkit-overflow-scrolling: touch;
