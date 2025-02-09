@@ -6,6 +6,7 @@
   background-color: white;
   overflow: hidden;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  touch-action: none; /* Prevents pull-to-refresh and other browser gestures */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -53,6 +54,7 @@
   position: fixed;  /* This ensures it stays within viewport */
   top: 0;
   left: 0;
+  overflow: hidden; /* Prevents scrolling in the layout container */
 }
 
 @media (min-width: 768px) {
@@ -67,6 +69,8 @@
   justify-content: center;
   align-items: center;
   position: relative;
+  overflow: hidden; /* Prevents scrolling in top section */
+  touch-action: none; /* Prevents touch gestures */
 }
 
 .bottomSection {
@@ -75,17 +79,21 @@
   justify-content: center;
   align-items: center;
   position: relative;
+  overflow: hidden; /* Prevents scrolling in bottom section */
+  touch-action: none; /* Prevents touch gestures */
 }
 
 /* Shared Styles */
 .scrollContainer {
-  flex: 1;  /* Changed from flex: 3 to flex: 1 */
+  flex: 1;
   height: 0;  /* This allows the element to shrink */
   min-height: 0;  /* This is crucial for Firefox */
   overflow-y: auto;
+  overflow-x: hidden; /* Prevents horizontal scrolling */
   scroll-snap-type: y mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  touch-action: pan-y; /* Only allows vertical touch scrolling */
 }
 
 .scrollContainer::-webkit-scrollbar {
