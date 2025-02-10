@@ -21,6 +21,7 @@ interface KeyboardButtonProps {
 }
 
 type GameColor = '' | 'orange' | 'red' | 'green';
+type TileMark = 'none' | 'red-mark' | 'green-mark';
 
 const colorHierarchy: Record<GameColor, number> = { 'green': 3, 'orange': 2, 'red': 1, '': 0 };
 
@@ -53,6 +54,7 @@ export function WordGame({
   const [gameWon, setGameWon] = useState(false);
   const [finalAttempts, setFinalAttempts] = useState(0);
   const [keyboardColors, setKeyboardColors] = useState<Record<string, GameColor>>({});
+  const [tileMarks, setTileMarks] = useState<Record<string, TileMark>>({});
   const [showRules, setShowRules] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
 
@@ -84,6 +86,7 @@ export function WordGame({
           setGameWon(state.gameWon);
           setFinalAttempts(state.finalAttempts);
           setKeyboardColors(state.keyboardColors);
+          setTileMarks(state.tileMarks || {});
           if (state.gameOver) {
             setShowEndModal(true);
           }
@@ -112,12 +115,13 @@ export function WordGame({
       gameWon,
       finalAttempts,
       keyboardColors,
+      tileMarks,
       word: gameWord,
     };
 
     console.log('Caching state:', { cacheKey, state: stateToCache });
     localStorage.setItem(cacheKey, JSON.stringify(stateToCache));
-  }, [initialized, guessesRemaining, guessHistory, gameOver, gameWon, finalAttempts, keyboardColors, gameWord, cacheKey]);
+  }, [initialized, guessesRemaining, guessHistory, gameOver, gameWon, finalAttempts, keyboardColors, tileMarks, gameWord, cacheKey]);
 
   function getCorrectLetterCount(guess: string, answer: string): number {
     const guessLetters = guess.split('');
@@ -142,6 +146,26 @@ export function WordGame({
     setKeyboardColors(prev => {
       const currentColor = prev[letter] || '';
       if (colorHierarchy[newColor] > colorHierarchy[currentColor]) {
+        // If changing to red or green, remove any marks on tiles with this letter
+        if (newColor === 'red' || newColor === 'green') {
+          const rowColsToUpdate: string[] = [];
+          guessHistory.forEach((guess, rowIndex) => {
+            guess.split('').forEach((guessLetter, colIndex) => {
+              if (guessLetter === letter) {
+                rowColsToUpdate.push(`${rowIndex}-${colIndex}`);
+              }
+            });
+          });
+          
+          // Clear marks for these tiles
+          setTileMarks(prev => {
+            const newMarks = { ...prev };
+            rowColsToUpdate.forEach(key => {
+              delete newMarks[key];
+            });
+            return newMarks;
+          });
+        }
         return { ...prev, [letter]: newColor };
       }
       return prev;
@@ -151,17 +175,35 @@ export function WordGame({
   const submitGuess = useCallback(() => {
     if (gameOver) return;
     
-    // Check if the word exists in valid guesses
     if (!validGuesses.includes(currentGuess.toLowerCase())) {
       alert('Not a valid word!');
       return;
     }
-
-    console.log('Submitting guess:', currentGuess);
+  
     const correctLetterCount = getCorrectLetterCount(currentGuess, gameWord);
     const newGuessHistory = [...guessHistory, currentGuess];
     setGuessHistory(newGuessHistory);
     setGuessesRemaining(prev => prev - 1);
+    
+    // Track tiles that need marks cleared
+    const tilesToClearMarks: string[] = [];
+    
+    // Handle zero score guess - clear marks for all letters in this guess
+    if (correctLetterCount === 0) {
+      // Clear marks for current guess letters
+      currentGuess.split('').forEach((letter, index) => {
+        tilesToClearMarks.push(`${guessHistory.length}-${index}`);
+        
+        // Also clear marks for same letters in previous guesses
+        guessHistory.forEach((guess, rowIndex) => {
+          guess.split('').forEach((guessLetter, colIndex) => {
+            if (guessLetter === letter) {
+              tilesToClearMarks.push(`${rowIndex}-${colIndex}`);
+            }
+          });
+        });
+      });
+    }
     
     // Update keyboard colors
     currentGuess.split('').forEach((letter) => {
@@ -179,7 +221,18 @@ export function WordGame({
       }
       updateKeyboardColor(letter, color);
     });
-
+  
+    // Clear marks for any tiles that need it
+    if (tilesToClearMarks.length > 0) {
+      setTileMarks(prev => {
+        const newMarks = { ...prev };
+        tilesToClearMarks.forEach(key => {
+          delete newMarks[key];
+        });
+        return newMarks;
+      });
+    }
+  
     if (currentGuess === gameWord) {
       setGameOver(true);
       setGameWon(true);
@@ -191,7 +244,7 @@ export function WordGame({
       setFinalAttempts(8);
       setTimeout(() => setShowEndModal(true), 300);
     }
-
+  
     setCurrentGuess('');
   }, [currentGuess, gameWord, guessHistory, guessesRemaining, validGuesses, gameOver]);
 
@@ -210,6 +263,25 @@ export function WordGame({
       setCurrentGuess(prev => prev + key);
     }
   }, [currentGuess, gameOver, submitGuess]);
+
+  const handleTileMark = (rowIndex: number, colIndex: number, letterColor: GameColor) => {
+    // Only allow marking orange tiles
+    if (letterColor !== 'orange') return;
+    
+    const tileKey = `${rowIndex}-${colIndex}`;
+    setTileMarks(prev => {
+      const currentMark = prev[tileKey] || 'none';
+      const nextMark: TileMark = 
+        currentMark === 'none' ? 'red-mark' :
+        currentMark === 'red-mark' ? 'green-mark' :
+        'none';
+      
+      return {
+        ...prev,
+        [tileKey]: nextMark === 'none' ? undefined : nextMark
+      };
+    });
+  };
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -253,16 +325,27 @@ export function WordGame({
               key={rowIndex} 
               className={`${styles.guessRow} ${guess === gameWord ? styles.correct : ''}`}
             >
-              {Array(4).fill(null).map((_, colIndex) => (
-                <div 
-                  key={colIndex}
-                  className={`${styles.letter} ${guess ? styles.guessed : ''} ${
-                    guess ? styles[getLetterColor(guess, colIndex, correctLetterCount as number)] : ''
-                  }`}
-                >
-                  {isCurrentRow ? currentGuess[colIndex] : guess[colIndex]}
-                </div>
-              ))}
+              {Array(4).fill(null).map((_, colIndex) => {
+                const letterColor = getLetterColor(guess, colIndex, correctLetterCount as number);
+                const tileKey = `${rowIndex}-${colIndex}`;
+                const mark = tileMarks[tileKey];
+                
+                return (
+                  <div 
+                    key={colIndex}
+                    className={`
+                      ${styles.letter} 
+                      ${guess ? styles.guessed : ''} 
+                      ${guess ? styles[letterColor] : ''}
+                      ${mark ? styles[mark] : ''}
+                      ${letterColor === 'orange' ? styles.markable : ''}
+                    `}
+                    onClick={() => letterColor === 'orange' && handleTileMark(rowIndex, colIndex, letterColor)}
+                  >
+                    {isCurrentRow ? currentGuess[colIndex] : guess[colIndex]}
+                  </div>
+                );
+              })}
               <div className={styles.score}>{correctLetterCount}</div>
             </div>
           );
@@ -335,6 +418,7 @@ export function WordGame({
       setGuessesRemaining(8);
       setGuessHistory([]);
       setKeyboardColors({});
+      setTileMarks({});
       setShowEndModal(false);
       setCurrentGuess('');
     }
@@ -380,7 +464,13 @@ export function WordGame({
               After each guess, a score (0-4) will be displayed, indicating how many letters
               from your guess are in the target word, regardless of position.
             </p>
-            <p>You can click on the letters to mark them as:</p>
+            <p>You can click on orange tiles to mark them:</p>
+            <ul>
+              <li>Click once for a red border (if you think the letter is not in the word)</li>
+              <li>Click twice for a green border (if you think the letter is in the word)</li>
+              <li>Click again to remove the marking</li>
+            </ul>
+            <p>The game automatically shows:</p>
             <ul>
               <li>Orange: Letter could potentially be in the word</li>
               <li>Green: Letter is definitely in the word (not necessarily in that position)</li>
@@ -398,45 +488,45 @@ export function WordGame({
       )}
 
       {showEndModal && (
-              <div className={styles.modal} onClick={() => setShowEndModal(false)}>
-                <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-                  <button className={styles.closeButton} onClick={() => setShowEndModal(false)}>×</button>
-                  <h2>{gameWon ? 'Congratulations!' : 'Game Over'}</h2>
-                  <p>
-                    {gameWon 
-                      ? `You guessed the word in ${finalAttempts} tries!` 
-                      : `The word was ${gameWord}`}
-                  </p>
-                  <div className={styles.modalButtons}>
-                    {!isDaily && onNewGame && (
-                      <button 
-                        onClick={handlePlayAgain}
-                        className={styles.navButton}
-                      >
-                        Play Again
-                      </button>
-                    )}
-                    <Link href={alternateGamePath} className={styles.navButton}>
-                      Play {alternateGameName}
-                    </Link>
-                    <a
-                      href="https://www.buymeacoffee.com/jameswhitford"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.navButton}
-                    >
-                      ☕️ Buy Me a Coffee
-                    </a>
-                    <button onClick={shareScore} className={styles.navButton}>
-                      Share Score
-                    </button>
-                    <button onClick={() => setShowEndModal(false)} className={styles.navButton}>
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+        <div className={styles.modal} onClick={() => setShowEndModal(false)}>
+          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <button className={styles.closeButton} onClick={() => setShowEndModal(false)}>×</button>
+            <h2>{gameWon ? 'Congratulations!' : 'Game Over'}</h2>
+            <p>
+              {gameWon 
+                ? `You guessed the word in ${finalAttempts} tries!` 
+                : `The word was ${gameWord}`}
+            </p>
+            <div className={styles.modalButtons}>
+              {!isDaily && onNewGame && (
+                <button 
+                  onClick={handlePlayAgain}
+                  className={styles.navButton}
+                >
+                  Play Again
+                </button>
+              )}
+              <Link href={alternateGamePath} className={styles.navButton}>
+                Play {alternateGameName}
+              </Link>
+              <a
+                href="https://www.buymeacoffee.com/jameswhitford"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.navButton}
+              >
+                ☕️ Buy Me a Coffee
+              </a>
+              <button onClick={shareScore} className={styles.navButton}>
+                Share Score
+              </button>
+              <button onClick={() => setShowEndModal(false)} className={styles.navButton}>
+                Close
+              </button>
+            </div>
           </div>
-        );
-      }
+        </div>
+      )}
+    </div>
+  );
+}
