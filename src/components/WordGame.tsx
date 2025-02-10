@@ -140,42 +140,17 @@ export function WordGame({
     return count;
   }
 
-  function getLetterColor(guess: string, index: number, correctLetterCount: number): GameColor {
+  function getLetterColor(guess: string, correctLetterCount: number): GameColor {
     if (!guess) return '';
     if (correctLetterCount === 0) return 'red';
     if (guess === gameWord) return 'green';
-    
-    const letter = guess[index];
-    const wasInZeroScoreGuess = guessHistory.some(g => 
-      g.includes(letter) && 
-      getCorrectLetterCount(g, gameWord) === 0
-    );
-    
-    return wasInZeroScoreGuess ? 'red' : 'orange';
+    return 'orange';
   }
 
   function updateKeyboardColor(letter: string, newColor: GameColor) {
     setKeyboardColors(prev => {
       const currentColor = prev[letter] || '';
       if (colorHierarchy[newColor] > colorHierarchy[currentColor]) {
-        if (newColor === 'red' || newColor === 'green') {
-          const rowColsToUpdate: string[] = [];
-          guessHistory.forEach((guess, rowIndex) => {
-            guess.split('').forEach((guessLetter, colIndex) => {
-              if (guessLetter === letter) {
-                rowColsToUpdate.push(`${rowIndex}-${colIndex}`);
-              }
-            });
-          });
-          
-          setTileMarks(prev => {
-            const newMarks = { ...prev };
-            rowColsToUpdate.forEach(key => {
-              delete newMarks[key];
-            });
-            return newMarks;
-          });
-        }
         return { ...prev, [letter]: newColor };
       }
       return prev;
@@ -215,51 +190,16 @@ export function WordGame({
     const newGuessHistory = [...guessHistory, currentGuess];
     setGuessHistory(newGuessHistory);
     setGuessesRemaining(prev => prev - 1);
+
+    // Determine the color for all letters in this guess
+    const color: GameColor = correctLetterCount === 0 ? 'red' : 
+                            currentGuess === gameWord ? 'green' : 
+                            'orange';
     
-    const tilesToClearMarks: string[] = [];
-    
-    currentGuess.split('').forEach((letter, index) => {
-      let color: GameColor;
-      if (correctLetterCount === 0) {
-        color = 'red';
-        guessHistory.forEach((guess, rowIndex) => {
-          guess.split('').forEach((guessLetter, colIndex) => {
-            if (guessLetter === letter) {
-              tilesToClearMarks.push(`${rowIndex}-${colIndex}`);
-            }
-          });
-        });
-      } else if (currentGuess === gameWord) {
-        color = 'green';
-        tilesToClearMarks.push(`${guessHistory.length}-${index}`);
-      } else {
-        const wasInZeroScoreGuess = guessHistory.some(guess => 
-          guess.includes(letter) && 
-          getCorrectLetterCount(guess, gameWord) === 0
-        );
-        color = wasInZeroScoreGuess ? 'red' : 'orange';
-        if (wasInZeroScoreGuess) {
-          guessHistory.forEach((guess, rowIndex) => {
-            guess.split('').forEach((guessLetter, colIndex) => {
-              if (guessLetter === letter) {
-                tilesToClearMarks.push(`${rowIndex}-${colIndex}`);
-              }
-            });
-          });
-        }
-      }
+    // Update keyboard colors for all letters in the guess
+    currentGuess.split('').forEach(letter => {
       updateKeyboardColor(letter, color);
     });
-    
-    if (tilesToClearMarks.length > 0) {
-      setTileMarks(prev => {
-        const newMarks = { ...prev };
-        tilesToClearMarks.forEach(key => {
-          delete newMarks[key];
-        });
-        return newMarks;
-      });
-    }
 
     if (currentGuess === gameWord) {
       setGameOver(true);
@@ -314,6 +254,7 @@ export function WordGame({
           const isCurrentRow = 8 - guessesRemaining === rowIndex;
           const guess = guessHistory[rowIndex] || '';
           const correctLetterCount = guess ? getCorrectLetterCount(guess, gameWord) : '';
+          const letterColor = guess ? getLetterColor(guess, correctLetterCount as number) : '';
           
           return (
             <div 
@@ -321,7 +262,6 @@ export function WordGame({
               className={`${styles.guessRow} ${guess === gameWord ? styles.correct : ''}`}
             >
               {Array(4).fill(null).map((_, colIndex) => {
-                const letterColor = getLetterColor(guess, colIndex, correctLetterCount as number);
                 const tileKey = `${rowIndex}-${colIndex}`;
                 const mark = tileMarks[tileKey];
                 
@@ -331,7 +271,7 @@ export function WordGame({
                     className={`
                       ${styles.letter} 
                       ${guess ? styles.guessed : ''} 
-                      ${guess ? styles[letterColor] : ''}
+                      ${letterColor ? styles[letterColor] : ''}
                       ${mark ? styles[mark] : ''}
                       ${letterColor === 'orange' ? styles.markable : ''}
                     `}
