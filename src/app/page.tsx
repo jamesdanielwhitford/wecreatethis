@@ -3,10 +3,6 @@ import Link from 'next/link';
 
 const apps = [
   {
-    name: 'AI Meme of the Day',
-    path: '/aimemeoftheday'
-  },
-  {
     name: 'Hardle',
     path: '/hardle'
   }
