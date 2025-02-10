@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Hardle',
-  description: 'Daily word puzzle game',
+  description: 'Harder Wordle',
   icons: {
     icon: [
       {
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     ],
     shortcut: [
       {
-        url: '/hardle.ico',
+        url: '/hardle-icon.ico',
         sizes: 'any',
       },
     ],

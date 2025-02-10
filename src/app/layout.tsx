@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     ],
     shortcut: [
       {
-        url: '/favicon.ico',
+        url: '/your-logo.ico',
         sizes: 'any',
       },
     ],
