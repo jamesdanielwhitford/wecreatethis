@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Randle!',
-  description: 'Infinite Hardle!',
+  title: 'Randle',
+  description: 'Random word puzzle game',
   icons: {
     icon: [
       {
@@ -12,12 +12,30 @@ export const metadata: Metadata = {
       {
         url: '/randle-icon.png',
         type: 'image/png',
+        sizes: '192x192',
       },
+    ],
+    apple: [
+      {
+        url: '/randle-icon.png',
+        sizes: '180x180',
+      },
+    ],
+    shortcut: [
       {
         url: '/randle.ico',
         sizes: 'any',
-      }
+      },
     ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Randle',
+  },
+  other: {
+    'msapplication-TileColor': '#000000',
+    'msapplication-TileImage': '/randle-icon.png',
   },
 };
 

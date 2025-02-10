@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Hardle!',
-  description: 'Harder Wordle',
+  title: 'Hardle',
+  description: 'Daily word puzzle game',
   icons: {
     icon: [
       {
@@ -12,12 +12,30 @@ export const metadata: Metadata = {
       {
         url: '/hardle-icon.png',
         type: 'image/png',
+        sizes: '192x192',
       },
+    ],
+    apple: [
+      {
+        url: '/hardle-icon.png',
+        sizes: '180x180',
+      },
+    ],
+    shortcut: [
       {
         url: '/hardle.ico',
         sizes: 'any',
-      }
+      },
     ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Hardle',
+  },
+  other: {
+    'msapplication-TileColor': '#000000',
+    'msapplication-TileImage': '/hardle-icon.png',
   },
 };
 

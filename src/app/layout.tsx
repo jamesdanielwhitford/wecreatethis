@@ -10,14 +10,36 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/your-icon.svg',
+        url: '/your-logo.svg',
         type: 'image/svg+xml',
       },
       {
-        url: '/your-icon.png',
+        url: '/your-logo.png',
         type: 'image/png',
-      }
+        sizes: '192x192',
+      },
     ],
+    apple: [
+      {
+        url: '/your-logo.png',
+        sizes: '180x180',
+      },
+    ],
+    shortcut: [
+      {
+        url: '/favicon.ico',
+        sizes: 'any',
+      },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'wecreatethis.com',
+  },
+  other: {
+    'msapplication-TileColor': '#000000',
+    'msapplication-TileImage': '/your-logo.png',
   },
 };
 
