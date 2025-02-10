@@ -1,16 +1,26 @@
 import { Metadata } from 'next';
 import "./globals.css";
 
-// This is where you define your metadata
 export const metadata: Metadata = {
-  title: 'wecreatethis.com',
+  title: {
+    template: '%s | wecreatethis.com',
+    default: 'wecreatethis.com',
+  },
   description: 'we create this',
   icons: {
-    icon: '/your-logo.svg', // Add your logo file to public directory
+    icon: [
+      {
+        url: '/your-logo.svg',
+        type: 'image/svg+xml',
+      },
+      {
+        url: '/your-logo.png',
+        type: 'image/png',
+      }
+    ],
   },
 };
 
-// Move the version checking to a client component
 import { VersionChecker } from '@/components/VersionChecker';
 
 export default function RootLayout({
