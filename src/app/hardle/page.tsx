@@ -1,25 +1,28 @@
-'use client';
+import { Metadata } from 'next';
 
-import { WordGame } from '@/components/WordGame';
-import { words, validGuesses, getDailyWord } from '@/utils/words';
-import styles from './page.module.css';
+export const metadata: Metadata = {
+  title: 'Hardle!',
+  description: 'Harder Wordle',
+  icons: {
+    icon: [
+      {
+        url: '/hardle-icon.svg',
+        type: 'image/svg+xml',
+      },
+      {
+        url: '/hardle-icon.png',
+        type: 'image/png',
+      },
+      {
+        url: '/hardle.ico',
+        sizes: 'any',
+      }
+    ],
+  },
+};
+
+import HardleGame from './game';
 
 export default function HardlePage() {
-  const dailyWord = getDailyWord(words);
-  const today = new Date().toISOString().split('T')[0];
-  const cacheKey = `hardle-${today}`;
-  
-  return (
-    <div className={styles.container}>
-      <WordGame
-        gameWord={dailyWord}
-        gameTitle="Hardle!"
-        alternateGamePath="/randle"
-        alternateGameName="Randle"
-        isDaily={true}
-        validGuesses={validGuesses}
-        cacheKey={cacheKey}
-      />
-    </div>
-  );
+  return <HardleGame />;
 }
