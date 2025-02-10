@@ -320,6 +320,7 @@ export function WordGame({
         await navigator.clipboard.writeText(shareText);
         alert('Score copied to clipboard!');
       } catch (error) {
+        console.error('Failed to copy score:', error);
         alert('Failed to copy score');
       }
     }
