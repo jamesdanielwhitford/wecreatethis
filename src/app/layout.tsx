@@ -10,24 +10,24 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/your-logo.svg',
+        url: '/your-icon.svg',
         type: 'image/svg+xml',
       },
       {
-        url: '/your-logo.png',
+        url: '/your-icon.png',
         type: 'image/png',
         sizes: '192x192',
       },
     ],
     apple: [
       {
-        url: '/your-logo.png',
+        url: '/your-icon.png',
         sizes: '180x180',
       },
     ],
     shortcut: [
       {
-        url: '/your-logo.ico',
+        url: '/your-icon.ico',
         sizes: 'any',
       },
     ],
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   },
   other: {
     'msapplication-TileColor': '#000000',
-    'msapplication-TileImage': '/your-logo.png',
+    'msapplication-TileImage': '/your-icon.png',
   },
 };
 
