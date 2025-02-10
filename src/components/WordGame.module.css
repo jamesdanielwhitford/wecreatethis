@@ -73,9 +73,32 @@
   text-transform: uppercase;
   transition: all 0.2s ease;
   user-select: none;
+  position: relative;
 }
 
-/* New marking styles */
+/* New dot indicator styles */
+.letter::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: none;
+}
+
+.red-dot::after {
+  display: block;
+  background-color: #ff4444;
+}
+
+.green-dot::after {
+  display: block;
+  background-color: #44ff44;
+}
+
+/* Marking styles */
 .markable {
   cursor: pointer;
 }
@@ -117,6 +140,14 @@
 
   .green-mark {
     border-color: #66ff66 !important;
+  }
+
+  .red-dot::after {
+    background-color: #ff6666;
+  }
+
+  .green-dot::after {
+    background-color: #66ff66;
   }
 }
 
@@ -290,6 +321,54 @@
   flex-direction: column;
   gap: 10px;
   margin-top: 1.5rem;
+}
+
+/* Game mode toggle styles */
+.modeButton {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.hardMode {
+  background-color: #ff4444;
+  color: white;
+}
+
+.easyMode {
+  background-color: #44ff44;
+  color: black;
+}
+
+/* Game modes section in rules modal */
+.gameModes {
+  margin: 1rem 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.gameMode {
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .gameMode {
+    background-color: #1d1d1d;
+  }
+}
+
+.gameMode h4 {
+  margin: 0 0 0.5rem 0;
+}
+
+.gameMode p {
+  margin: 0;
+  line-height: 1.4;
 }
 
 /* Responsive styles */
