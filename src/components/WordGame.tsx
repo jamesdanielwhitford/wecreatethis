@@ -282,9 +282,23 @@ export function WordGame({
   function updateKeyboardColor(letter: string, newColor: GameColor) {
     setKeyboardColors(prev => {
       const currentColor = prev[letter] || '';
-      if (colorHierarchy[newColor] > colorHierarchy[currentColor]) {
+      
+      // If the key is already red or green, don't change it
+      if (currentColor === 'red' || currentColor === 'green') {
+        return prev;
+      }
+      
+      // If the key is currently orange/blank and new color is red/green, update it
+      if ((currentColor === 'orange' || currentColor === '') && 
+          (newColor === 'red' || newColor === 'green')) {
         return { ...prev, [letter]: newColor };
       }
+      
+      // If the key is blank and new color is orange, update it
+      if (currentColor === '' && newColor === 'orange') {
+        return { ...prev, [letter]: newColor };
+      }
+      
       return prev;
     });
   }
