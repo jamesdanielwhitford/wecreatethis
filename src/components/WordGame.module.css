@@ -108,7 +108,7 @@
 }
 
 .red-mark {
-  border: 3px solid rgb(201, 180, 88) !important;
+  border: 3px solid rgb(220, 95, 95) !important;
 }
 
 .green-mark {
@@ -135,11 +135,11 @@
   }
 
   .red-mark {
-    border-color: rgb(181, 159, 59) !important;
+    border: 3px solid rgb(180, 75, 75) !important;
   }
 
   .green-mark {
-    border-color: rgb(83, 141, 78) !important;
+    border: 3px solid rgb(83, 141, 78) !important;
   }
 
   .red-dot::after {
