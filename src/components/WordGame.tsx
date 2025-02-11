@@ -153,6 +153,33 @@ export function WordGame({
     return 'orange';
   }
 
+  function updateKeyboardColor(letter: string, newColor: GameColor, force: boolean = false) {
+    setKeyboardColors(prev => {
+      const currentColor = prev[letter] || '';
+      
+      // If force is true, always update the color
+      if (force) {
+        return { ...prev, [letter]: newColor };
+      }
+      
+      // Otherwise, follow the existing color hierarchy logic
+      if (currentColor === 'red' || currentColor === 'green') {
+        return prev;
+      }
+      
+      if ((currentColor === 'orange' || currentColor === '') && 
+          (newColor === 'red' || newColor === 'green')) {
+        return { ...prev, [letter]: newColor };
+      }
+      
+      if (currentColor === '' && newColor === 'orange') {
+        return { ...prev, [letter]: newColor };
+      }
+      
+      return prev;
+    });
+  }
+
   function updateTileStates(newGuess: string, rowIndex: number, correctLetterCount: number) {
     if (isHardMode) {
       // Simple update for hard mode
@@ -182,10 +209,12 @@ export function WordGame({
       
       const score = i === rowIndex ? correctLetterCount : getCorrectLetterCount(guess, gameWord);
       
-      // If score is 0, all letters are definitely not in word
       if (score === 0) {
-        guess.split('').forEach(letter => definitivelyNotInWord.add(letter));
-        // Update the tiles to red (no need for red dots since the color already indicates this)
+        guess.split('').forEach(letter => {
+          definitivelyNotInWord.add(letter);
+          // Update keyboard color to red for zero-score guesses
+          updateKeyboardColor(letter, 'red', true);
+        });
         updatedStates[i] = guess.split('').map(letter => ({
           color: 'red',
           letter,
@@ -193,7 +222,6 @@ export function WordGame({
           dot: undefined
         }));
       } else {
-        // Set initial color for non-zero score guesses
         const color = getLetterColor(guess, score);
         updatedStates[i] = guess.split('').map(letter => ({
           color,
@@ -213,54 +241,55 @@ export function WordGame({
         if (!guess) continue;
 
         const score = i === rowIndex ? correctLetterCount : getCorrectLetterCount(guess, gameWord);
-        if (score === 0) continue; // Skip zero-score guesses as they're already fully processed
+        if (score === 0) continue;
 
         const guessLetters = guess.split('');
         let knownCorrectCount = 0;
         let knownIncorrectCount = 0;
 
-        // Count known correct and incorrect letters
         guessLetters.forEach((letter, index) => {
           if (definitivelyInWord.has(letter)) {
             knownCorrectCount++;
-            // Only add green dot if the tile isn't already green
-            if (!updatedStates[i][index].dot && updatedStates[i][index].color !== 'green') {
+            if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
               updatedStates[i][index].dot = 'green-dot';
+              // Update keyboard color to green
+              updateKeyboardColor(letter, 'green', true);
               madeChanges = true;
             }
           } else if (definitivelyNotInWord.has(letter)) {
             knownIncorrectCount++;
-            // Only add red dot if the tile isn't already red
-            if (!updatedStates[i][index].dot && updatedStates[i][index].color !== 'red') {
+            if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'red-dot') {
               updatedStates[i][index].dot = 'red-dot';
+              // Update keyboard color to red
+              updateKeyboardColor(letter, 'red', true);
               madeChanges = true;
             }
           }
         });
 
-        // If we know all incorrect letters, remaining unknown letters must be correct
         const remainingUnknown = 4 - (knownCorrectCount + knownIncorrectCount);
         if (remainingUnknown > 0 && remainingUnknown === score - knownCorrectCount) {
           guessLetters.forEach((letter, index) => {
             if (!definitivelyInWord.has(letter) && !definitivelyNotInWord.has(letter)) {
               definitivelyInWord.add(letter);
-              // Only add green dot if the tile isn't already green
-              if (updatedStates[i][index].color !== 'green') {
+              if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
                 updatedStates[i][index].dot = 'green-dot';
+                // Update keyboard color to green
+                updateKeyboardColor(letter, 'green', true);
                 madeChanges = true;
               }
             }
           });
         }
 
-        // If we know all correct letters, remaining unknown letters must be incorrect
         if (knownCorrectCount === score && remainingUnknown > 0) {
           guessLetters.forEach((letter, index) => {
             if (!definitivelyInWord.has(letter) && !definitivelyNotInWord.has(letter)) {
               definitivelyNotInWord.add(letter);
-              // Only add red dot if the tile isn't already red
-              if (updatedStates[i][index].color !== 'red') {
+              if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'red-dot') {
                 updatedStates[i][index].dot = 'red-dot';
+                // Update keyboard color to red
+                updateKeyboardColor(letter, 'red', true);
                 madeChanges = true;
               }
             }
@@ -268,39 +297,13 @@ export function WordGame({
         }
       }
 
-      // If we made any changes, run the update again
       if (madeChanges) {
         updateBoard();
       }
     };
 
-    // Run the initial board update
     updateBoard();
     setTileStates(updatedStates);
-  }
-
-  function updateKeyboardColor(letter: string, newColor: GameColor) {
-    setKeyboardColors(prev => {
-      const currentColor = prev[letter] || '';
-      
-      // If the key is already red or green, don't change it
-      if (currentColor === 'red' || currentColor === 'green') {
-        return prev;
-      }
-      
-      // If the key is currently orange/blank and new color is red/green, update it
-      if ((currentColor === 'orange' || currentColor === '') && 
-          (newColor === 'red' || newColor === 'green')) {
-        return { ...prev, [letter]: newColor };
-      }
-      
-      // If the key is blank and new color is orange, update it
-      if (currentColor === '' && newColor === 'orange') {
-        return { ...prev, [letter]: newColor };
-      }
-      
-      return prev;
-    });
   }
 
   const handleTileMark = (rowIndex: number, colIndex: number) => {
@@ -358,7 +361,7 @@ export function WordGame({
     }
 
     setCurrentGuess('');
-  }, [currentGuess, gameWord, guessHistory, guessesRemaining, validGuesses, gameOver, isHardMode, getLetterColor, updateTileStates]);
+  }, [currentGuess, gameWord, guessHistory, guessesRemaining, validGuesses, gameOver, isHardMode]);
 
   const handleInput = useCallback((key: string) => {
     if (gameOver) return;
