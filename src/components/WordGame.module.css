@@ -5,14 +5,14 @@
   width: 100%;
   box-sizing: border-box;
   padding: 10px;
-  background-color: white;
+  background-color: rgb(255, 255, 255);
   touch-action: manipulation;
 }
 
 @media (prefers-color-scheme: dark) {
   .container {
-    background-color: #0a0a0a;
-    color: #ededed;
+    background-color: rgb(0, 0, 0);
+    color: rgb(248, 248, 248);
   }
 }
 
@@ -64,7 +64,7 @@
 .letter {
   width: 40px;
   height: 40px;
-  border: 2px solid #d3d6da;
+  border: 2px solid rgb(211, 214, 218);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -90,12 +90,12 @@
 
 .red-dot::after {
   display: block;
-  background-color: #ff4444;
+  background-color: rgb(220, 95, 95);
 }
 
 .green-dot::after {
   display: block;
-  background-color: #44ff44;
+  background-color: rgb(106, 170, 100);
 }
 
 /* Marking styles */
@@ -108,73 +108,77 @@
 }
 
 .red-mark {
-  border: 3px solid #ff4444 !important;
+  border: 3px solid rgb(201, 180, 88) !important;
 }
 
 .green-mark {
-  border: 3px solid #44ff44 !important;
+  border: 3px solid rgb(106, 170, 100) !important;
 }
 
 .score {
   width: 25px;
   height: 40px;
-  border: 2px solid #d3d6da;
+  border: 2px solid rgb(211, 214, 218);
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 16px;
   font-weight: bold;
-  background-color: #f8f9fa;
+  background-color: rgb(255, 255, 255);
 }
 
 @media (prefers-color-scheme: dark) {
   .score {
-    background-color: #1a1a1a;
-    border-color: #333;
-    color: #ededed;
+    background-color: rgb(0, 0, 0);
+    border-color: rgb(129, 131, 132);
+    color: rgb(248, 248, 248);
   }
 
   .red-mark {
-    border-color: #ff6666 !important;
+    border-color: rgb(181, 159, 59) !important;
   }
 
   .green-mark {
-    border-color: #66ff66 !important;
+    border-color: rgb(83, 141, 78) !important;
   }
 
   .red-dot::after {
-    background-color: #ff6666;
+    background-color: rgb(180, 75, 75);
   }
 
   .green-dot::after {
-    background-color: #66ff66;
+    background-color: rgb(83, 141, 78);
+  }
+
+  .letter {
+    border-color: rgb(129, 131, 132);
   }
 }
 
 /* Guessed letter styles */
 .guessed {
-  border-color: #787c7e;
+  border-color: rgb(211, 214, 218);
 }
 
 .orange {
-  background-color: #fbbc04;
-  color: white;
+  background-color: rgb(201, 180, 88);
+  color: rgb(255, 255, 255);
 }
 
 .red {
-  background-color: #f28b82;
-  color: white;
+  background-color: rgb(220, 95, 95);
+  color: rgb(255, 255, 255);
 }
 
 .green {
-  background-color: #34a853;
-  color: white;
+  background-color: rgb(106, 170, 100);
+  color: rgb(255, 255, 255);
 }
 
 .guessRow.correct > div {
-  background-color: #34a853;
-  border-color: #34a853;
-  color: white;
+  background-color: rgb(106, 170, 100);
+  border-color: rgb(106, 170, 100);
+  color: rgb(255, 255, 255);
 }
 
 /* Keyboard styles */
@@ -199,8 +203,8 @@
   font-weight: bold;
   border: none;
   border-radius: 4px;
-  background-color: #d3d6da;
-  color: #1a1a1b;
+  background-color: rgb(211, 214, 218);
+  color: rgb(0, 0, 0);
   cursor: pointer;
   text-transform: uppercase;
   transition: background-color 0.3s, color 0.3s;
@@ -216,16 +220,37 @@
 
 @media (prefers-color-scheme: dark) {
   .keyboardButton {
-    background-color: #818384;
-    color: #ffffff;
+    background-color: rgb(129, 131, 132);
+    color: rgb(248, 248, 248);
+  }
+
+  .orange {
+    background-color: rgb(181, 159, 59);
+    color: rgb(248, 248, 248);
+  }
+
+  .red {
+    background-color: rgb(180, 75, 75);
+    color: rgb(248, 248, 248);
+  }
+
+  .green {
+    background-color: rgb(83, 141, 78);
+    color: rgb(248, 248, 248);
+  }
+
+  .guessRow.correct > div {
+    background-color: rgb(83, 141, 78);
+    border-color: rgb(83, 141, 78);
+    color: rgb(248, 248, 248);
   }
 }
 
 /* Button styles */
 .navButton, .rulesButton {
   padding: 8px 12px;
-  background-color: #4CAF50;
-  color: white;
+  background-color: rgb(106, 170, 100);
+  color: rgb(0, 0, 0);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -234,7 +259,7 @@
 }
 
 .navButton:hover, .rulesButton:hover {
-  background-color: #45a049;
+  background-color: rgb(83, 141, 78);
 }
 
 .coffeeButton {
@@ -245,13 +270,13 @@
   justify-content: center;
   width: 30px;
   height: 30px;
-  background-color: #FFDD00;
-  color: #000;
+  background-color: rgb(201, 180, 88);
+  color: rgb(0, 0, 0);
   border-radius: 50%;
 }
 
 .coffeeButton:hover {
-  background-color: #FFE97F;
+  background-color: rgb(181, 159, 59);
 }
 
 /* Modal styles */
@@ -269,7 +294,7 @@
 }
 
 .modalContent {
-  background-color: white;
+  background-color: rgb(255, 255, 255);
   padding: 2rem;
   border-radius: 12px;
   max-width: 90vw;
@@ -283,8 +308,8 @@
 
 @media (prefers-color-scheme: dark) {
   .modalContent {
-    background-color: #1a1a1a;
-    color: #ededed;
+    background-color: rgb(0, 0, 0);
+    color: rgb(248, 248, 248);
   }
 }
 
@@ -334,13 +359,25 @@
 }
 
 .hardMode {
-  background-color: #ff4444;
-  color: white;
+  background-color: rgb(201, 180, 88);
+  color: rgb(0, 0, 0);
 }
 
 .easyMode {
-  background-color: #44ff44;
-  color: black;
+  background-color: rgb(106, 170, 100);
+  color: rgb(0, 0, 0);
+}
+
+@media (prefers-color-scheme: dark) {
+  .hardMode {
+    background-color: rgb(181, 159, 59);
+    color: rgb(248, 248, 248);
+  }
+
+  .easyMode {
+    background-color: rgb(83, 141, 78);
+    color: rgb(248, 248, 248);
+  }
 }
 
 /* Game modes section in rules modal */
@@ -352,13 +389,13 @@
 
 .gameMode {
   padding: 1rem;
-  background-color: #f8f9fa;
+  background-color: rgb(211, 214, 218);
   border-radius: 8px;
 }
 
 @media (prefers-color-scheme: dark) {
   .gameMode {
-    background-color: #1d1d1d;
+    background-color: rgb(129, 131, 132);
   }
 }
 
