@@ -1,4 +1,5 @@
 // src/components/Header/index.tsx
+'use client'
 import React from 'react';
 import Link from 'next/link';
 import { Coffee, HelpCircle, Sun, Infinity } from 'lucide-react';
@@ -34,16 +35,18 @@ export function Header({
           onClick={() => setShowRules(true)} 
           className={styles.iconButton}
           aria-label="Rules"
+          type="button"
         >
-          <HelpCircle size={20} />
+          <HelpCircle size={24} />
         </button>
         
         <Link 
           href={alternateGamePath} 
           className={styles.iconButton}
           aria-label={`Play ${alternateGameName}`}
+          role="button"
         >
-          {alternateGameName === 'Randle' ? <Infinity size={20} /> : <Sun size={20} />}
+          {alternateGameName === 'Randle' ? <Infinity size={24} /> : <Sun size={24} />}
         </Link>
         
         <a 
@@ -52,8 +55,9 @@ export function Header({
           rel="noopener noreferrer"
           className={styles.iconButton}
           aria-label="Buy me a coffee"
+          role="button"
         >
-          <Coffee size={20} />
+          <Coffee size={24} />
         </a>
         
         <SettingsButton 
