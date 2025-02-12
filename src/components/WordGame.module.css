@@ -28,7 +28,7 @@
   width: 100%;
   max-width: 100%;
   justify-content: center;
-  padding: 10px;
+  padding: 0px 10px 20px 10px;
   box-sizing: border-box;
   gap: 15px;
   overflow-y: auto;
