@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { WordGame } from '@/components/WordGame';
 import { words, validGuesses, getRandomWord } from '@/utils/words';
-import styles from './page.module.css';
 
 const CURRENT_GAME_KEY = 'current-randle-game';
 

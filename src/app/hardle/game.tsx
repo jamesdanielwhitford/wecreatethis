@@ -2,7 +2,6 @@
 
 import { WordGame } from '@/components/WordGame';
 import { words, validGuesses, getDailyWord } from '@/utils/words';
-import styles from './page.module.css';
 
 export default function HardleGame() {
   const dailyWord = getDailyWord(words);
