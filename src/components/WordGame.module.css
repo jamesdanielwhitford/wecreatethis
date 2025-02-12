@@ -68,7 +68,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: clamp(16px, min(4vw, 28px), 28px);
+  font-size: 26px;
   font-weight: bold;
   text-transform: uppercase;
   transition: all 0.2s ease;
@@ -127,7 +127,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: clamp(14px, min(3.5vw, 24px), 24px);
+  font-size: 26px;
   font-weight: bold;
   background-color: rgb(255, 255, 255);
 }
@@ -209,7 +209,7 @@
 .keyboardButton {
   width: 30px;
   height: 45px;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: bold;
   border: none;
   border-radius: 4px;
@@ -402,7 +402,7 @@
 }
 
 /* Responsive styles */
-@media (min-width: 768px) and (orientation: landscape) {
+@media (min-width: 768px) {
   .gameContainer {
     max-width: 100%;
     margin: 0 auto;
@@ -420,9 +420,9 @@
   }
 
   .keyboardButton {
-    width: 43px;
+    width: 58px;
     height: 58px;
-    font-size: 14px;
+    font-size: 18px;
   }
 
   .wideButton {
@@ -443,7 +443,7 @@
   }
 
   .letter {
-    font-size: clamp(15px, 3.5vw, 20px);
+    font-size: 16px;
   }
 
   .score {
