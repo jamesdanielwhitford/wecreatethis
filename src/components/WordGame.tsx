@@ -506,12 +506,6 @@ export function WordGame({
       <header className={styles.headerContainer}>
         <h1>{gameTitle}</h1>
         <div className={styles.headerButtons}>
-          <SettingsButton 
-            isHardMode={isHardMode}
-            setIsHardMode={setIsHardMode}
-            hasStartedGame={guessHistory.length > 0}
-            onModeChange={toggleGameMode}
-          />
           <button onClick={() => setShowRules(true)} className={styles.rulesButton}>
             Rules
           </button>
@@ -526,6 +520,12 @@ export function WordGame({
           >
             ☕️
           </a>
+          <SettingsButton 
+            isHardMode={isHardMode}
+            setIsHardMode={setIsHardMode}
+            hasStartedGame={guessHistory.length > 0}
+            onModeChange={toggleGameMode}
+          />
         </div>
       </header>
 
