@@ -1,89 +1,93 @@
 .headerContainer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    padding: 0 10px;
-    width: 100%;
-    touch-action: manipulation;
-  }
-  
-  .headerButtons {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-  
-  .headerContainer h1 {
-    margin: 0;
-    font-size: 24px;
-  }
-  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;  /* Remove margin since we're using fixed heights */
+  padding: 10px;  /* Consistent padding all around */
+  width: 100%;
+  touch-action: manipulation;
+  flex-shrink: 0;  /* Prevent header from shrinking */
+  box-sizing: border-box;  /* Include padding in height calculation */
+  height: 68px;  /* Fixed height to match our gameContainer calc */
+}
+
+.headerButtons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.headerContainer h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  position: relative;
+}
+
+.iconButton:hover {
+  background-color: rgba(128, 128, 128, 0.1);
+}
+
+.iconButton:active {
+  background-color: rgba(128, 128, 128, 0.2);
+}
+
+/* Add touch feedback for mobile */
+@media (hover: none) {
   .iconButton {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 48px;
-    min-height: 48px;
-    padding: 12px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    color: inherit;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    border-radius: 8px;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-    position: relative;
-  }
-  
-  .iconButton:hover {
-    background-color: rgba(128, 128, 128, 0.1);
+    transition: background-color 0.2s ease;
   }
   
   .iconButton:active {
-    background-color: rgba(128, 128, 128, 0.2);
+    background-color: rgba(128, 128, 128, 0.3);
   }
   
-  /* Add touch feedback for mobile */
-  @media (hover: none) {
-    .iconButton {
-      transition: background-color 0.2s ease;
-    }
-    
-    .iconButton:active {
-      background-color: rgba(128, 128, 128, 0.3);
-    }
-  
-    .iconButton::after {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      background-color: transparent;
-      border-radius: 8px;
-      transition: background-color 0.2s ease;
-    }
-  
-    .iconButton:active::after {
-      background-color: rgba(128, 128, 128, 0.1);
-    }
+  .iconButton::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-color: transparent;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
   }
   
-  /* Responsive styles */
-  @media (min-width: 768px) and (orientation: landscape) {
-    .headerContainer {
-      padding: 0 10px;
-    }
-  
-    .headerContainer h1 {
-      font-size: 32px;
-    }
-  
-    .headerButtons {
-      gap: 16px;
-    }
+  .iconButton:active::after {
+    background-color: rgba(128, 128, 128, 0.1);
   }
+}
+
+/* Responsive styles */
+@media (min-width: 768px) and (orientation: landscape) {
+  .headerContainer {
+    height: 84px;  /* Increased height for landscape */
+    padding: 10px;
+  }
+  
+  .headerContainer h1 {
+    font-size: 32px;
+  }
+  
+  .headerButtons {
+    gap: 16px;
+  }
+}
