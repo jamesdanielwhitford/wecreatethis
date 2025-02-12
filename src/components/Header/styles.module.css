@@ -2,13 +2,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0;  /* Remove margin since we're using fixed heights */
-  padding: 10px;  /* Consistent padding all around */
   width: 100%;
+  padding: 10px;
+  background-color: rgb(255, 255, 255);
   touch-action: manipulation;
-  flex-shrink: 0;  /* Prevent header from shrinking */
-  box-sizing: border-box;  /* Include padding in height calculation */
-  height: 68px;  /* Fixed height to match our gameContainer calc */
+  box-sizing: border-box;
+  height: 68px;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .headerContainer {
+  background-color: rgb(0, 0, 0);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
 .headerButtons {
@@ -20,6 +29,9 @@
 .headerContainer h1 {
   margin: 0;
   font-size: 24px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .iconButton {
@@ -79,8 +91,11 @@
 /* Responsive styles */
 @media (min-width: 768px) and (orientation: landscape) {
   .headerContainer {
-    height: 84px;  /* Increased height for landscape */
-    padding: 10px;
+    height: 84px;
+    padding: 10px 20px;
+    max-width: 768px;
+    margin: 0 auto;
+    border-bottom: none;
   }
   
   .headerContainer h1 {
