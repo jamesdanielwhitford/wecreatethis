@@ -5,7 +5,7 @@ import styles from './WordGame.module.css';
 import { Header } from './Header';
 
 // Cache version - update this when making breaking changes to state structure
-const CACHE_VERSION = '2024-02-12';
+const CACHE_VERSION = '2024-02-11';
 
 interface WordGameProps {
   gameWord: string;
