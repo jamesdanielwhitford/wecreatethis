@@ -58,7 +58,7 @@ export function WordGame({
   const [isHardMode, setIsHardMode] = useState(true);
   const [tileStates, setTileStates] = useState<TileState[][]>(
     Array(8).fill(null).map(() => 
-      Array(4).fill(null).map(() => ({ color: '', letter: '' }))
+      Array(4).fill(null).map(() => ({ color: '' as GameColor, letter: '' }))
     )
   );
   const [guessesRemaining, setGuessesRemaining] = useState(8);
@@ -70,63 +70,7 @@ export function WordGame({
   const [showRules, setShowRules] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const loadCachedState = () => {
-      const cached = localStorage.getItem(cacheKey);
-      
-      if (!cached) {
-        setInitialized(true);
-        return;
-      }
-      
-      try {
-        const state = JSON.parse(cached);
-        if (state.word === gameWord) {
-          setGuessesRemaining(state.guessesRemaining);
-          setGuessHistory(state.guessHistory);
-          setGameOver(state.gameOver);
-          setGameWon(state.gameWon);
-          setFinalAttempts(state.finalAttempts);
-          setKeyboardColors(state.keyboardColors);
-          setTileStates(state.tileStates);
-          setIsHardMode(state.isHardMode ?? true);
-          if (state.gameOver) {
-            setShowEndModal(true);
-          }
-        } else {
-          localStorage.removeItem(cacheKey);
-        }
-      } catch (e) {
-        console.error('Error parsing cached state:', e);
-        localStorage.removeItem(cacheKey);
-      }
-      setInitialized(true);
-    };
-
-    loadCachedState();
-  }, [cacheKey, gameWord]);
-
-  useEffect(() => {
-    if (!initialized || typeof window === 'undefined') return;
-
-    const stateToCache = {
-      guessesRemaining,
-      guessHistory,
-      gameOver,
-      gameWon,
-      finalAttempts,
-      keyboardColors,
-      tileStates,
-      isHardMode,
-      word: gameWord,
-    };
-
-    localStorage.setItem(cacheKey, JSON.stringify(stateToCache));
-  }, [initialized, guessesRemaining, guessHistory, gameOver, gameWon, finalAttempts, keyboardColors, tileStates, gameWord, cacheKey, isHardMode]);
-
-  function getCorrectLetterCount(guess: string, answer: string): number {
+  const getCorrectLetterCount = useCallback((guess: string, answer: string): number => {
     const guessLetters = guess.split('');
     const answerLetters = Array.from(answer);
     let count = 0;
@@ -143,16 +87,16 @@ export function WordGame({
     }
 
     return count;
-  }
+  }, []);
 
-  function getLetterColor(guess: string, correctLetterCount: number): GameColor {
+  const getLetterColor = useCallback((guess: string, correctLetterCount: number): GameColor => {
     if (!guess) return '';
     if (correctLetterCount === 0) return 'red';
     if (guess === gameWord) return 'green';
     return 'orange';
-  }
+  }, [gameWord]);
 
-  function updateKeyboardColor(letter: string, newColor: GameColor, force: boolean = false) {
+  const updateKeyboardColor = useCallback((letter: string, newColor: GameColor, force: boolean = false) => {
     setKeyboardColors(prev => {
       const currentColor = prev[letter] || '';
       
@@ -175,9 +119,97 @@ export function WordGame({
       
       return prev;
     });
-  }
+  }, []);
 
-  function updateTileStates(newGuess: string, rowIndex: number, correctLetterCount: number) {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const loadCachedState = () => {
+      const cached = localStorage.getItem(cacheKey);
+      
+      if (!cached) {
+        setInitialized(true);
+        return;
+      }
+      
+      try {
+        const state = JSON.parse(cached);
+        if (state.word === gameWord) {
+          setGuessesRemaining(state.guessesRemaining);
+          setGuessHistory(state.guessHistory);
+          setGameOver(state.gameOver);
+          setGameWon(state.gameWon);
+          setFinalAttempts(state.finalAttempts);
+          setKeyboardColors(state.keyboardColors);
+          
+          // Handle migration from old format to new format
+          if (!Array.isArray(state.tileStates)) {
+            // Initialize new tile states array with proper typing
+            const newTileStates: TileState[][] = Array(8).fill(null).map(() => 
+              Array(4).fill(null).map(() => ({ 
+                color: '' as GameColor, 
+                letter: '', 
+                mark: undefined, 
+                dot: undefined 
+              }))
+            );
+            
+            // Fill in the states based on guess history
+            state.guessHistory.forEach((guess: string, rowIndex: number) => {
+              const correctLetterCount = getCorrectLetterCount(guess, gameWord);
+              const color = getLetterColor(guess, correctLetterCount);
+              
+              guess.split('').forEach((letter, colIndex) => {
+                newTileStates[rowIndex][colIndex] = {
+                  color,
+                  letter,
+                  mark: state.tileMarks?.[`${rowIndex}-${colIndex}`],
+                  dot: undefined
+                };
+              });
+            });
+            
+            setTileStates(newTileStates);
+          } else {
+            setTileStates(state.tileStates);
+          }
+          
+          setIsHardMode(state.isHardMode ?? true);
+          if (state.gameOver) {
+            setShowEndModal(true);
+          }
+        } else {
+          localStorage.removeItem(cacheKey);
+        }
+      } catch (e) {
+        console.error('Error parsing cached state:', e);
+        localStorage.removeItem(cacheKey);
+      }
+      setInitialized(true);
+    };
+
+    loadCachedState();
+  }, [cacheKey, gameWord, getCorrectLetterCount, getLetterColor]);
+
+  useEffect(() => {
+    if (!initialized || typeof window === 'undefined') return;
+
+    const stateToCache = {
+      guessesRemaining,
+      guessHistory,
+      gameOver,
+      gameWon,
+      finalAttempts,
+      keyboardColors,
+      tileStates,
+      isHardMode,
+      word: gameWord,
+    };
+
+    localStorage.setItem(cacheKey, JSON.stringify(stateToCache));
+  }, [initialized, guessesRemaining, guessHistory, gameOver, gameWon, finalAttempts, keyboardColors, tileStates, gameWord, cacheKey, isHardMode]);
+
+  const updateTileStates = useCallback((newGuess: string, rowIndex: number, correctLetterCount: number) => {
     if (isHardMode) {
       const color = getLetterColor(newGuess, correctLetterCount);
       setTileStates(prev => {
@@ -292,9 +324,9 @@ export function WordGame({
 
     updateBoard();
     setTileStates(updatedStates);
-  }
+  }, [isHardMode, getLetterColor, gameWord, getCorrectLetterCount, tileStates, guessHistory, updateKeyboardColor]);
 
-  const handleTileMark = (rowIndex: number, colIndex: number) => {
+  const handleTileMark = useCallback((rowIndex: number, colIndex: number) => {
     if (isHardMode && tileStates[rowIndex][colIndex].color !== 'orange') return;
     
     setTileStates(prev => {
@@ -311,7 +343,7 @@ export function WordGame({
       
       return newStates;
     });
-  };
+  }, [isHardMode, tileStates]);
 
   const submitGuess = useCallback(() => {
     if (gameOver) return;
@@ -355,7 +387,9 @@ export function WordGame({
     validGuesses,
     gameOver,
     getLetterColor,
-    updateTileStates
+    updateTileStates,
+    getCorrectLetterCount,
+    updateKeyboardColor
   ]);
 
   const handleInput = useCallback((key: string) => {
@@ -389,7 +423,7 @@ export function WordGame({
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [handleInput]);
 
-  const toggleGameMode = () => {
+  const toggleGameMode = useCallback(() => {
     if (!gameOver && guessHistory.length > 0) {
       if (!confirm('Changing game mode will restart your current game. Continue?')) {
         return;
@@ -397,7 +431,7 @@ export function WordGame({
       handlePlayAgain();
     }
     setIsHardMode(!isHardMode);
-  };
+  }, [gameOver, guessHistory.length, isHardMode]);
 
   function renderGuessGrid() {
     return (
@@ -465,7 +499,7 @@ export function WordGame({
     );
   }
 
-  async function shareScore() {
+  const shareScore = useCallback(async () => {
     const shareText = gameWon
       ? `I solved ${isDaily ? "today's" : ''} ${gameTitle} in ${finalAttempts} attempts! Can you beat that?`
       : `I couldn't solve ${isDaily ? "today's" : 'this'} ${gameTitle}. Can you do better?`;
@@ -489,9 +523,9 @@ export function WordGame({
         alert('Failed to copy score');
       }
     }
-  }
+  }, [gameWon, isDaily, gameTitle, finalAttempts]);
 
-  const handlePlayAgain = () => {
+  const handlePlayAgain = useCallback(() => {
     if (onNewGame) {
       localStorage.removeItem(cacheKey);
       onNewGame();
@@ -501,12 +535,12 @@ export function WordGame({
       setGuessHistory([]);
       setKeyboardColors({});
       setTileStates(Array(8).fill(null).map(() => 
-        Array(4).fill(null).map(() => ({ color: '', letter: '', mark: undefined, dot: undefined }))
+        Array(4).fill(null).map(() => ({ color: '' as GameColor, letter: '', mark: undefined, dot: undefined }))
       ));
       setShowEndModal(false);
       setCurrentGuess('');
     }
-  };
+  }, [cacheKey, onNewGame]);
 
   return (
     <div className={styles.container}>
