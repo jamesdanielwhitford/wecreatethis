@@ -1,7 +1,7 @@
 // src/components/Header/index.tsx
 import React from 'react';
 import Link from 'next/link';
-import { Settings, Coffee, HelpCircle, Sun, Infinity } from 'lucide-react';
+import { Coffee, HelpCircle, Sun, Infinity } from 'lucide-react';
 import { SettingsButton } from '../Settings';
 import styles from './styles.module.css';
 
