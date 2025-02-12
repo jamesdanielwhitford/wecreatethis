@@ -33,8 +33,6 @@ interface TileState {
   letter: string;
 }
 
-const colorHierarchy: Record<GameColor, number> = { 'green': 3, 'orange': 2, 'red': 1, '': 0 };
-
 const KeyboardButton: React.FC<KeyboardButtonProps> = ({ dataKey, onClick, className, children }) => (
   <button
     data-key={dataKey}
@@ -349,7 +347,16 @@ export function WordGame({
     }
 
     setCurrentGuess('');
-  }, [currentGuess, gameWord, guessHistory, guessesRemaining, validGuesses, gameOver, isHardMode]);
+  }, [
+    currentGuess,
+    gameWord,
+    guessHistory,
+    guessesRemaining,
+    validGuesses,
+    gameOver,
+    getLetterColor,
+    updateTileStates
+  ]);
 
   const handleInput = useCallback((key: string) => {
     if (gameOver) return;
