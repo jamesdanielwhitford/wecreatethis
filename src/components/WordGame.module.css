@@ -68,7 +68,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: bold;
   text-transform: uppercase;
   transition: all 0.2s ease;
@@ -127,7 +127,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: bold;
   background-color: rgb(255, 255, 255);
 }
@@ -209,7 +209,7 @@
 .keyboardButton {
   width: 30px;
   height: 45px;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: bold;
   border: none;
   border-radius: 4px;
@@ -443,7 +443,7 @@
   }
 
   .letter {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .score {
