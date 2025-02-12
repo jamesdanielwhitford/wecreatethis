@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.2.5.7';
+export const APP_VERSION = '1.2.5.8';
 
 export async function checkForNewVersion() {
   try {
