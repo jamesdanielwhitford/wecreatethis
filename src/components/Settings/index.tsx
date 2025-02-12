@@ -32,8 +32,8 @@ export function SettingsButton(props: SettingsButtonProps) {
         <Settings size={20} />
       </button>
       {isOpen && (
-        <SettingsModal 
-          isOpen={isOpen} 
+        <SettingsModal
+          isOpen={isOpen}
           onClose={() => setIsOpen(false)}
           isHardMode={props.isHardMode}
           setIsHardMode={props.setIsHardMode}
@@ -45,9 +45,9 @@ export function SettingsButton(props: SettingsButtonProps) {
   );
 }
 
-export function SettingsModal({ 
-  isOpen, 
-  onClose, 
+export function SettingsModal({
+  isOpen,
+  onClose,
   isHardMode,
   setIsHardMode,
   hasStartedGame,
@@ -56,7 +56,8 @@ export function SettingsModal({
   const { theme, setTheme } = useTheme();
 
   const handleModeChange = () => {
-      setIsHardMode(!isHardMode);
+    setIsHardMode(!isHardMode);
+    onModeChange();
   };
 
   if (!isOpen) return null;
@@ -66,7 +67,6 @@ export function SettingsModal({
       <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
         <button className={styles.closeButton} onClick={onClose}>×</button>
         <h2>Settings</h2>
-        
         <div className={styles.settingsSection}>
           <h3>Theme</h3>
           <div className={styles.themeButtons}>
@@ -90,7 +90,6 @@ export function SettingsModal({
             </button>
           </div>
         </div>
-
         <div className={styles.settingsSection}>
           <h3>Game Mode</h3>
           <div className={styles.modeToggle}>
