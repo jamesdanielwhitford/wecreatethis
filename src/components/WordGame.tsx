@@ -266,9 +266,9 @@ export function WordGame({
       const currentMark = newStates[rowIndex][colIndex].mark;
       
       if (!currentMark) {
-        newStates[rowIndex][colIndex].mark = 'green-mark';
-      } else if (currentMark === 'green-mark') {
         newStates[rowIndex][colIndex].mark = 'red-mark';
+      } else if (currentMark === 'red-mark') {
+        newStates[rowIndex][colIndex].mark = 'green-mark';
       } else {
         newStates[rowIndex][colIndex].mark = undefined;
       }
