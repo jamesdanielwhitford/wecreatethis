@@ -5,7 +5,7 @@ import styles from './WordGame.module.css';
 import { Header } from './Header';
 
 // Cache version - update this when making breaking changes to state structure
-const CACHE_VERSION = '2024-02-11';
+const CACHE_VERSION = '2024-02-12';
 
 interface WordGameProps {
   gameWord: string;
@@ -365,6 +365,23 @@ export function WordGame({
     setIsHardMode(!isHardMode);
   }, [gameOver, guessHistory.length, isHardMode, handlePlayAgain]);
 
+  // Early cache cleanup before any state initialization
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const state = JSON.parse(cached);
+        if (!state.version || state.version < CACHE_VERSION) {
+          localStorage.removeItem(cacheKey);
+        }
+      }
+    } catch {
+      localStorage.removeItem(cacheKey);
+    }
+  }, [cacheKey]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -378,14 +395,6 @@ export function WordGame({
       
       try {
         const state = JSON.parse(cached);
-        
-        // Clear cache if it's from before the version cutoff
-        if (!state.version || state.version < CACHE_VERSION) {
-          console.log('Clearing outdated cache from before:', CACHE_VERSION);
-          localStorage.removeItem(cacheKey);
-          setInitialized(true);
-          return;
-        }
 
         // Only restore state if it's for the current word
         if (state.word === gameWord) {
