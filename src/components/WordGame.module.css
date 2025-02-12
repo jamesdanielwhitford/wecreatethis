@@ -1,3 +1,4 @@
+/* Container styles */
 .container {
   display: flex;
   flex-direction: column;
@@ -6,14 +7,13 @@
   box-sizing: border-box;
   padding: 10px;
   background-color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
   touch-action: manipulation;
 }
 
-@media (prefers-color-scheme: dark) {
-  .container {
-    background-color: rgb(0, 0, 0);
-    color: rgb(248, 248, 248);
-  }
+[data-theme="dark"] .container {
+  background-color: rgb(0, 0, 0);
+  color: rgb(248, 248, 248);
 }
 
 /* Header styles */
@@ -79,6 +79,10 @@
   position: relative;
 }
 
+[data-theme="dark"] .letter {
+  border-color: rgb(129, 131, 132);
+}
+
 /* New dot indicator styles */
 .letter::after {
   content: '';
@@ -130,32 +134,26 @@
   background-color: rgb(255, 255, 255);
 }
 
-@media (prefers-color-scheme: dark) {
-  .score {
-    background-color: rgb(0, 0, 0);
-    border-color: rgb(129, 131, 132);
-    color: rgb(248, 248, 248);
-  }
+[data-theme="dark"] .score {
+  background-color: rgb(0, 0, 0);
+  border-color: rgb(129, 131, 132);
+  color: rgb(248, 248, 248);
+}
 
-  .red-mark {
-    border: 3px solid rgb(180, 75, 75) !important;
-  }
+[data-theme="dark"] .red-mark {
+  border: 3px solid rgb(180, 75, 75) !important;
+}
 
-  .green-mark {
-    border: 3px solid rgb(83, 141, 78) !important;
-  }
+[data-theme="dark"] .green-mark {
+  border: 3px solid rgb(83, 141, 78) !important;
+}
 
-  .red-dot::after {
-    background-color: rgb(180, 75, 75);
-  }
+[data-theme="dark"] .red-dot::after {
+  background-color: rgb(180, 75, 75);
+}
 
-  .green-dot::after {
-    background-color: rgb(83, 141, 78);
-  }
-
-  .letter {
-    border-color: rgb(129, 131, 132);
-  }
+[data-theme="dark"] .green-dot::after {
+  background-color: rgb(83, 141, 78);
 }
 
 /* Guessed letter styles */
@@ -236,47 +234,45 @@
   white-space: nowrap;
 }
 
-@media (prefers-color-scheme: dark) {
-  .keyboardButton {
-    background-color: rgb(129, 131, 132);
-    color: rgb(248, 248, 248);
-  }
+[data-theme="dark"] .keyboardButton {
+  background-color: rgb(129, 131, 132);
+  color: rgb(248, 248, 248);
+}
 
-  .keyboardButton.orange {
-    background-color: rgb(181, 159, 59);
-    color: rgb(248, 248, 248);
-  }
+[data-theme="dark"] .keyboardButton.orange {
+  background-color: rgb(181, 159, 59);
+  color: rgb(248, 248, 248);
+}
 
-  .keyboardButton.red {
-    background-color: rgb(180, 75, 75);
-    color: rgb(248, 248, 248);
-  }
+[data-theme="dark"] .keyboardButton.red {
+  background-color: rgb(180, 75, 75);
+  color: rgb(248, 248, 248);
+}
 
-  .keyboardButton.green {
-    background-color: rgb(83, 141, 78);
-    color: rgb(248, 248, 248);
-  }
+[data-theme="dark"] .keyboardButton.green {
+  background-color: rgb(83, 141, 78);
+  color: rgb(248, 248, 248);
+}
 
-  .letter.orange {
-    background-color: rgb(181, 159, 59);
-    color: rgb(248, 248, 248);
-  }
+[data-theme="dark"] .letter.orange {
+  background-color: rgb(181, 159, 59);
+  color: rgb(248, 248, 248);
+}
 
-  .letter.red {
-    background-color: rgb(180, 75, 75);
-    color: rgb(248, 248, 248);
-  }
+[data-theme="dark"] .letter.red {
+  background-color: rgb(180, 75, 75);
+  color: rgb(248, 248, 248);
+}
 
-  .letter.green {
-    background-color: rgb(83, 141, 78);
-    color: rgb(248, 248, 248);
-  }
+[data-theme="dark"] .letter.green {
+  background-color: rgb(83, 141, 78);
+  color: rgb(248, 248, 248);
+}
 
-  .guessRow.correct > div {
-    background-color: rgb(83, 141, 78);
-    border-color: rgb(83, 141, 78);
-    color: rgb(248, 248, 248);
-  }
+[data-theme="dark"] .guessRow.correct > div {
+  background-color: rgb(83, 141, 78);
+  border-color: rgb(83, 141, 78);
+  color: rgb(248, 248, 248);
 }
 
 /* Button styles */
@@ -289,10 +285,18 @@
   cursor: pointer;
   text-decoration: none;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .navButton:hover, .rulesButton:hover {
   background-color: rgb(83, 141, 78);
+}
+
+[data-theme="dark"] .navButton, 
+[data-theme="dark"] .rulesButton {
+  color: rgb(248, 248, 248);
 }
 
 .coffeeButton {
@@ -310,6 +314,10 @@
 
 .coffeeButton:hover {
   background-color: rgb(181, 159, 59);
+}
+
+[data-theme="dark"] .coffeeButton {
+  color: rgb(248, 248, 248);
 }
 
 /* Modal styles */
@@ -339,11 +347,9 @@
   margin: 2rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  .modalContent {
-    background-color: rgb(0, 0, 0);
-    color: rgb(248, 248, 248);
-  }
+[data-theme="dark"] .modalContent {
+  background-color: rgb(0, 0, 0);
+  color: rgb(248, 248, 248);
 }
 
 .modalContent h2 {
@@ -389,6 +395,12 @@
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.3s;
+  width: 100%;
+}
+
+.modeButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .hardMode {
@@ -401,16 +413,14 @@
   color: rgb(0, 0, 0);
 }
 
-@media (prefers-color-scheme: dark) {
-  .hardMode {
-    background-color: rgb(181, 159, 59);
-    color: rgb(248, 248, 248);
-  }
+[data-theme="dark"] .hardMode {
+  background-color: rgb(181, 159, 59);
+  color: rgb(248, 248, 248);
+}
 
-  .easyMode {
-    background-color: rgb(83, 141, 78);
-    color: rgb(248, 248, 248);
-  }
+[data-theme="dark"] .easyMode {
+  background-color: rgb(83, 141, 78);
+  color: rgb(248, 248, 248);
 }
 
 /* Game modes section in rules modal */
@@ -426,10 +436,8 @@
   border-radius: 8px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .gameMode {
-    background-color: rgb(129, 131, 132);
-  }
+[data-theme="dark"] .gameMode {
+  background-color: rgb(129, 131, 132);
 }
 
 .gameMode h4 {
@@ -439,6 +447,79 @@
 .gameMode p {
   margin: 0;
   line-height: 1.4;
+}
+
+/* Settings styles */
+.settingsSection {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background-color: rgba(211, 214, 218, 0.2);
+  border-radius: 8px;
+}
+
+.settingsSection h3 {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.themeButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.themeButton {
+  padding: 0.5rem 1rem;
+  border: 2px solid rgb(211, 214, 218);
+  border-radius: 0.5rem;
+  background: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.themeButton:hover {
+  background-color: rgba(211, 214, 218, 0.2);
+}
+
+.activeTheme {
+  background-color: rgb(106, 170, 100);
+  border-color: rgb(106, 170, 100);
+  color: white;
+}
+
+[data-theme="dark"] .themeButton {
+  border-color: rgb(129, 131, 132);
+  color: rgb(248, 248, 248);
+}
+
+[data-theme="dark"] .themeButton:hover {
+  background-color: rgba(129, 131, 132, 0.2);
+}
+
+[data-theme="dark"] .activeTheme {
+  background-color: rgb(83, 141, 78);
+  border-color: rgb(83, 141, 78);
+}
+
+.modeToggle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.modeDisabledText {
+  font-size: 0.85rem;
+  color: rgb(129, 131, 132);
+  font-style: italic;
+  margin: 0;
+}
+
+[data-theme="dark"] .modeDisabledText {
+  color: rgb(180, 180, 180);
+}
+
+[data-theme="dark"] .settingsSection {
+  background-color: rgba(129, 131, 132, 0.1);
 }
 
 /* Responsive styles */
@@ -489,5 +570,36 @@
 
   .wideButton {
     min-width: 65px;
+  }
+
+  .modalContent {
+    padding: 2.5rem;
+    max-width: 600px;
+  }
+
+  .settingsSection {
+    padding: 1.5rem;
+  }
+
+  .modeToggle {
+    gap: 1rem;
+  }
+
+  .modeButton {
+    padding: 10px 16px;
+    font-size: 16px;
+  }
+
+  .modeDisabledText {
+    font-size: 0.9rem;
+  }
+
+  .themeButtons {
+    gap: 1rem;
+  }
+
+  .themeButton {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
   }
 }

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import styles from './WordGame.module.css';
+import { SettingsButton } from './Settings';
 
 interface WordGameProps {
   gameWord: string;
@@ -157,12 +158,10 @@ export function WordGame({
     setKeyboardColors(prev => {
       const currentColor = prev[letter] || '';
       
-      // If force is true, always update the color
       if (force) {
         return { ...prev, [letter]: newColor };
       }
       
-      // Otherwise, follow the existing color hierarchy logic
       if (currentColor === 'red' || currentColor === 'green') {
         return prev;
       }
@@ -182,7 +181,6 @@ export function WordGame({
 
   function updateTileStates(newGuess: string, rowIndex: number, correctLetterCount: number) {
     if (isHardMode) {
-      // Simple update for hard mode
       const color = getLetterColor(newGuess, correctLetterCount);
       setTileStates(prev => {
         const newStates = [...prev];
@@ -197,12 +195,10 @@ export function WordGame({
       return;
     }
 
-    // Complex update for easy mode
     const updatedStates = [...tileStates];
     const definitivelyNotInWord = new Set<string>();
     const definitivelyInWord = new Set<string>();
 
-    // First step: Process all previous guesses to gather initial information
     for (let i = 0; i <= rowIndex; i++) {
       const guess = i === rowIndex ? newGuess : guessHistory[i];
       if (!guess) continue;
@@ -212,7 +208,6 @@ export function WordGame({
       if (score === 0) {
         guess.split('').forEach(letter => {
           definitivelyNotInWord.add(letter);
-          // Update keyboard color to red for zero-score guesses
           updateKeyboardColor(letter, 'red', true);
         });
         updatedStates[i] = guess.split('').map(letter => ({
@@ -232,7 +227,6 @@ export function WordGame({
       }
     }
 
-    // Recursive function to update the board based on known information
     const updateBoard = () => {
       let madeChanges = false;
 
@@ -252,7 +246,6 @@ export function WordGame({
             knownCorrectCount++;
             if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
               updatedStates[i][index].dot = 'green-dot';
-              // Update keyboard color to green
               updateKeyboardColor(letter, 'green', true);
               madeChanges = true;
             }
@@ -260,7 +253,6 @@ export function WordGame({
             knownIncorrectCount++;
             if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'red-dot') {
               updatedStates[i][index].dot = 'red-dot';
-              // Update keyboard color to red
               updateKeyboardColor(letter, 'red', true);
               madeChanges = true;
             }
@@ -274,7 +266,6 @@ export function WordGame({
               definitivelyInWord.add(letter);
               if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
                 updatedStates[i][index].dot = 'green-dot';
-                // Update keyboard color to green
                 updateKeyboardColor(letter, 'green', true);
                 madeChanges = true;
               }
@@ -288,7 +279,6 @@ export function WordGame({
               definitivelyNotInWord.add(letter);
               if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'red-dot') {
                 updatedStates[i][index].dot = 'red-dot';
-                // Update keyboard color to red
                 updateKeyboardColor(letter, 'red', true);
                 madeChanges = true;
               }
@@ -338,11 +328,9 @@ export function WordGame({
     setGuessHistory(newGuessHistory);
     setGuessesRemaining(prev => prev - 1);
 
-    // Update tile states
     const currentRowIndex = 8 - guessesRemaining;
     updateTileStates(currentGuess, currentRowIndex, correctLetterCount);
 
-    // Update keyboard colors
     const color = getLetterColor(currentGuess, correctLetterCount);
     currentGuess.split('').forEach(letter => {
       updateKeyboardColor(letter, color);
@@ -393,6 +381,16 @@ export function WordGame({
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [handleInput]);
+
+  const toggleGameMode = () => {
+    if (!gameOver && guessHistory.length > 0) {
+      if (!confirm('Changing game mode will restart your current game. Continue?')) {
+        return;
+      }
+      handlePlayAgain();
+    }
+    setIsHardMode(!isHardMode);
+  };
 
   function renderGuessGrid() {
     return (
@@ -503,27 +501,17 @@ export function WordGame({
     }
   };
 
-  const toggleGameMode = () => {
-    if (!gameOver && guessHistory.length > 0) {
-      if (!confirm('Changing game mode will restart your current game. Continue?')) {
-        return;
-      }
-      handlePlayAgain();
-    }
-    setIsHardMode(!isHardMode);
-  };
-
   return (
     <div className={styles.container}>
       <header className={styles.headerContainer}>
         <h1>{gameTitle}</h1>
         <div className={styles.headerButtons}>
-          <button 
-            onClick={toggleGameMode} 
-            className={`${styles.modeButton} ${isHardMode ? styles.hardMode : styles.easyMode}`}
-          >
-            {isHardMode ? 'Hard Mode' : 'Easy Mode'}
-          </button>
+          <SettingsButton 
+            isHardMode={isHardMode}
+            setIsHardMode={setIsHardMode}
+            hasStartedGame={guessHistory.length > 0}
+            onModeChange={toggleGameMode}
+          />
           <button onClick={() => setShowRules(true)} className={styles.rulesButton}>
             Rules
           </button>

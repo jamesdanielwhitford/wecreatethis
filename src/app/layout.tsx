@@ -43,6 +43,7 @@ export const metadata: Metadata = {
   },
 };
 
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { VersionChecker } from '@/components/VersionChecker';
 
 export default function RootLayout({
@@ -53,8 +54,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <VersionChecker />
-        {children}
+        <ThemeProvider>
+          <VersionChecker />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
