@@ -277,7 +277,7 @@
 
 /* Button styles */
 .navButton, .rulesButton {
-  padding: 8px 12px;
+  padding: 4px 6px;
   background-color: rgb(106, 170, 100);
   color: rgb(0, 0, 0);
   border: none;
