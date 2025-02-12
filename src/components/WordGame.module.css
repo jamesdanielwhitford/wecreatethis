@@ -121,7 +121,7 @@
 
 .score {
   width: 100%;
-  height: auto;
+  height: 100%;
   aspect-ratio: 0.667;
   border: 2px solid rgb(211, 214, 218);
   display: flex;
