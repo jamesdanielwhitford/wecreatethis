@@ -16,25 +16,6 @@
   color: rgb(248, 248, 248);
 }
 
-/* Header styles */
-.headerContainer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  padding: 0 10px;
-}
-
-.headerButtons {
-  display: flex;
-  gap: 10px;
-}
-
-.headerContainer h1 {
-  margin: 0;
-  font-size: 24px;
-}
-
 /* Game container styles */
 .gameContainer {
   display: flex;
@@ -275,51 +256,6 @@
   color: rgb(248, 248, 248);
 }
 
-/* Button styles */
-.navButton, .rulesButton {
-  padding: 4px 6px;
-  background-color: rgb(106, 170, 100);
-  color: rgb(0, 0, 0);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  text-decoration: none;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.navButton:hover, .rulesButton:hover {
-  background-color: rgb(83, 141, 78);
-}
-
-[data-theme="dark"] .navButton, 
-[data-theme="dark"] .rulesButton {
-  color: rgb(248, 248, 248);
-}
-
-.coffeeButton {
-  text-decoration: none;
-  font-size: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  background-color: rgb(201, 180, 88);
-  color: rgb(0, 0, 0);
-  border-radius: 50%;
-}
-
-.coffeeButton:hover {
-  background-color: rgb(181, 159, 59);
-}
-
-[data-theme="dark"] .coffeeButton {
-  color: rgb(248, 248, 248);
-}
-
 /* Modal styles */
 .modal {
   position: fixed;
@@ -387,42 +323,6 @@
   margin-top: 1.5rem;
 }
 
-/* Game mode toggle styles */
-.modeButton {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s;
-  width: 100%;
-}
-
-.modeButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.hardMode {
-  background-color: rgb(201, 180, 88);
-  color: rgb(0, 0, 0);
-}
-
-.easyMode {
-  background-color: rgb(106, 170, 100);
-  color: rgb(0, 0, 0);
-}
-
-[data-theme="dark"] .hardMode {
-  background-color: rgb(181, 159, 59);
-  color: rgb(248, 248, 248);
-}
-
-[data-theme="dark"] .easyMode {
-  background-color: rgb(83, 141, 78);
-  color: rgb(248, 248, 248);
-}
-
 /* Game modes section in rules modal */
 .gameModes {
   margin: 1rem 0;
@@ -449,89 +349,8 @@
   line-height: 1.4;
 }
 
-/* Settings styles */
-.settingsSection {
-  margin: 1.5rem 0;
-  padding: 1rem;
-  background-color: rgba(211, 214, 218, 0.2);
-  border-radius: 8px;
-}
-
-.settingsSection h3 {
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-}
-
-.themeButtons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.themeButton {
-  padding: 0.5rem 1rem;
-  border: 2px solid rgb(211, 214, 218);
-  border-radius: 0.5rem;
-  background: none;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-}
-
-.themeButton:hover {
-  background-color: rgba(211, 214, 218, 0.2);
-}
-
-.activeTheme {
-  background-color: rgb(106, 170, 100);
-  border-color: rgb(106, 170, 100);
-  color: white;
-}
-
-[data-theme="dark"] .themeButton {
-  border-color: rgb(129, 131, 132);
-  color: rgb(248, 248, 248);
-}
-
-[data-theme="dark"] .themeButton:hover {
-  background-color: rgba(129, 131, 132, 0.2);
-}
-
-[data-theme="dark"] .activeTheme {
-  background-color: rgb(83, 141, 78);
-  border-color: rgb(83, 141, 78);
-}
-
-.modeToggle {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.modeDisabledText {
-  font-size: 0.85rem;
-  color: rgb(129, 131, 132);
-  font-style: italic;
-  margin: 0;
-}
-
-[data-theme="dark"] .modeDisabledText {
-  color: rgb(180, 180, 180);
-}
-
-[data-theme="dark"] .settingsSection {
-  background-color: rgba(129, 131, 132, 0.1);
-}
-
 /* Responsive styles */
 @media (min-width: 768px) and (orientation: landscape) {
-  .headerContainer {
-    padding: 0 10px;
-  }
-
-  .headerContainer h1 {
-    font-size: 32px;
-  }
-
   .gameContainer {
     flex-direction: column;
     justify-content: flex-start;
@@ -575,31 +394,5 @@
   .modalContent {
     padding: 2.5rem;
     max-width: 600px;
-  }
-
-  .settingsSection {
-    padding: 1.5rem;
-  }
-
-  .modeToggle {
-    gap: 1rem;
-  }
-
-  .modeButton {
-    padding: 10px 16px;
-    font-size: 16px;
-  }
-
-  .modeDisabledText {
-    font-size: 0.9rem;
-  }
-
-  .themeButtons {
-    gap: 1rem;
-  }
-
-  .themeButton {
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
   }
 }

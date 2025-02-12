@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import styles from './WordGame.module.css';
-import { SettingsButton } from './Settings';
+import { Header } from './Header';
 
 // Cache version - update this when making breaking changes to state structure
 const CACHE_VERSION = '2024-02-12';
@@ -526,31 +526,16 @@ export function WordGame({
 
   return (
     <div className={styles.container}>
-      <header className={styles.headerContainer}>
-        <h1>{gameTitle}</h1>
-        <div className={styles.headerButtons}>
-          <button onClick={() => setShowRules(true)} className={styles.rulesButton}>
-            Rules
-          </button>
-          <Link href={alternateGamePath} className={styles.navButton}>
-            Play {alternateGameName}
-          </Link>
-          <a 
-            href="https://www.buymeacoffee.com/jameswhitford" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className={styles.coffeeButton}
-          >
-            ☕️
-          </a>
-          <SettingsButton 
-            isHardMode={isHardMode}
-            setIsHardMode={setIsHardMode}
-            hasStartedGame={guessHistory.length > 0}
-            onModeChange={toggleGameMode}
-          />
-        </div>
-      </header>
+      <Header
+        gameTitle={gameTitle}
+        alternateGamePath={alternateGamePath}
+        alternateGameName={alternateGameName}
+        isHardMode={isHardMode}
+        setIsHardMode={setIsHardMode}
+        hasStartedGame={guessHistory.length > 0}
+        onModeChange={toggleGameMode}
+        setShowRules={setShowRules}
+      />
 
       <div className={styles.gameContainer}>
         {renderGuessGrid()}

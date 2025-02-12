@@ -1,8 +1,9 @@
+// src/components/Settings/index.tsx
 'use client';
 import React from 'react';
 import { Settings } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import styles from '@/components/WordGame.module.css';
+import styles from './styles.module.css';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -20,32 +21,7 @@ interface SettingsButtonProps {
   onModeChange: () => void;
 }
 
-export function SettingsButton(props: SettingsButtonProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
-  return (
-    <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className={styles.navButton}
-        aria-label="Settings"
-      >
-        <Settings size={20} />
-      </button>
-      {isOpen && (
-        <SettingsModal
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          isHardMode={props.isHardMode}
-          setIsHardMode={props.setIsHardMode}
-          hasStartedGame={props.hasStartedGame}
-          onModeChange={props.onModeChange}
-        />
-      )}
-    </>
-  );
-}
-
-export function SettingsModal({
+function SettingsModal({
   isOpen,
   onClose,
   isHardMode,
@@ -110,5 +86,30 @@ export function SettingsModal({
         </div>
       </div>
     </div>
+  );
+}
+
+export function SettingsButton(props: SettingsButtonProps) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setIsOpen(true)}
+        className={styles.iconButton}
+        aria-label="Settings"
+      >
+        <Settings size={20} />
+      </button>
+      {isOpen && (
+        <SettingsModal
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          isHardMode={props.isHardMode}
+          setIsHardMode={props.setIsHardMode}
+          hasStartedGame={props.hasStartedGame}
+          onModeChange={props.onModeChange}
+        />
+      )}
+    </>
   );
 }
