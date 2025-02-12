@@ -49,7 +49,6 @@ export default function RandleGame() {
   if (!randomWord || !cacheKey) return null;
 
   return (
-    <div className={styles.container}>
       <WordGame
         gameWord={randomWord}
         onNewGame={handleNewGame}
@@ -60,6 +59,5 @@ export default function RandleGame() {
         validGuesses={validGuesses}
         cacheKey={cacheKey}
       />
-    </div>
   );
 }

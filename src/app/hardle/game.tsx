@@ -10,7 +10,6 @@ export default function HardleGame() {
   const cacheKey = `hardle-${today}`;
   
   return (
-    <div className={styles.container}>
       <WordGame
         gameWord={dailyWord}
         gameTitle="Hardle!"
@@ -20,6 +19,5 @@ export default function HardleGame() {
         validGuesses={validGuesses}
         cacheKey={cacheKey}
       />
-    </div>
   );
 }
