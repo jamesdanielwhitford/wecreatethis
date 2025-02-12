@@ -90,7 +90,39 @@ export function WordGame({
           setGameWon(state.gameWon);
           setFinalAttempts(state.finalAttempts);
           setKeyboardColors(state.keyboardColors);
-          setTileStates(state.tileStates);
+          
+          // Handle migration from old format to new format
+          if (!Array.isArray(state.tileStates)) {
+            // Initialize new tile states array
+            const newTileStates = Array(8).fill(null).map(() => 
+              Array(4).fill(null).map(() => ({ 
+                color: '', 
+                letter: '', 
+                mark: undefined, 
+                dot: undefined 
+              }))
+            );
+            
+            // Fill in the states based on guess history
+            state.guessHistory.forEach((guess: string, rowIndex: number) => {
+              const correctLetterCount = getCorrectLetterCount(guess, gameWord);
+              const color = getLetterColor(guess, correctLetterCount);
+              
+              guess.split('').forEach((letter, colIndex) => {
+                newTileStates[rowIndex][colIndex] = {
+                  color,
+                  letter,
+                  mark: state.tileMarks?.[`${rowIndex}-${colIndex}`],
+                  dot: undefined
+                };
+              });
+            });
+            
+            setTileStates(newTileStates);
+          } else {
+            setTileStates(state.tileStates);
+          }
+          
           setIsHardMode(state.isHardMode ?? true);
           if (state.gameOver) {
             setShowEndModal(true);
