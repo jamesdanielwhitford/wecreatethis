@@ -12,12 +12,12 @@
   top: 0;
   left: 0;
   z-index: 20;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  /* border-bottom: 1px solid rgba(0, 0, 0, 0.1); */
 }
 
 [data-theme="dark"] .headerContainer {
   background-color: rgb(0, 0, 0);
-  border-bottom-color: rgba(255, 255, 255, 0.1);
+  /* border-bottom-color: rgba(255, 255, 255, 0.1); */
 }
 
 .headerButtons {

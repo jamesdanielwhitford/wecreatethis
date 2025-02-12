@@ -183,7 +183,7 @@
 /* Keyboard styles */
 .keyboard {
   width: 100%;
-  padding: 8px 8px 4px 8px;
+  padding: 8px 8px 8px 8px;
   background-color: rgb(255, 255, 255);
   position: relative;
   bottom: 0;
