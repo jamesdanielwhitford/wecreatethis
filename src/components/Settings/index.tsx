@@ -1,4 +1,4 @@
-// src/components/Settings/index.tsx
+// Settings/index.tsx
 'use client';
 import React from 'react';
 import { Settings } from 'lucide-react';
@@ -31,9 +31,11 @@ function SettingsModal({
 }: SettingsModalProps) {
   const { theme, setTheme } = useTheme();
 
-  const handleModeChange = () => {
-    setIsHardMode(!isHardMode);
-    onModeChange();
+  const handleModeChange = (mode: boolean) => {
+    if (!hasStartedGame) {
+      setIsHardMode(mode);
+      onModeChange();
+    }
   };
 
   if (!isOpen) return null;
@@ -43,6 +45,7 @@ function SettingsModal({
       <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
         <button className={styles.closeButton} onClick={onClose}>×</button>
         <h2>Settings</h2>
+
         <div className={styles.settingsSection}>
           <h3>Theme</h3>
           <div className={styles.themeButtons}>
@@ -66,17 +69,29 @@ function SettingsModal({
             </button>
           </div>
         </div>
+
         <div className={styles.settingsSection}>
           <h3>Game Mode</h3>
           <div className={styles.modeToggle}>
-            <button
-              onClick={handleModeChange}
-              className={`${styles.modeButton} ${isHardMode ? styles.hardMode : styles.easyMode}`}
-              disabled={hasStartedGame}
-              title={hasStartedGame ? "Cannot change mode after starting game" : ""}
-            >
-              {isHardMode ? 'Hard Mode' : 'Easy Mode (Beta)'}
-            </button>
+            <div className={styles.modeButtons}>
+              <button
+                onClick={() => handleModeChange(true)}
+                className={`${styles.modeToggleButton} ${isHardMode ? styles.activeMode : ''}`}
+                disabled={hasStartedGame}
+              >
+                Hard Mode
+              </button>
+              <button
+                onClick={() => handleModeChange(false)}
+                className={`${styles.modeToggleButton} ${!isHardMode ? styles.activeMode : ''}`}
+                disabled={hasStartedGame}
+              >
+                Easy Mode (Beta)
+              </button>
+            </div>
+            <p className={styles.modeDescription}>
+              {isHardMode ? 'Manual deduction mode' : 'Automatic hint mode'}
+            </p>
             {hasStartedGame && (
               <p className={styles.modeDisabledText}>
                 Game mode cannot be changed after starting a game
@@ -91,6 +106,7 @@ function SettingsModal({
 
 export function SettingsButton(props: SettingsButtonProps) {
   const [isOpen, setIsOpen] = React.useState(false);
+
   return (
     <>
       <button

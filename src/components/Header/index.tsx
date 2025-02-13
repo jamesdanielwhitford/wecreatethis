@@ -2,8 +2,9 @@
 'use client'
 import React from 'react';
 import Link from 'next/link';
-import { Coffee, HelpCircle, Sun, Infinity } from 'lucide-react';
+import { Coffee, Sun, Infinity } from 'lucide-react';
 import { SettingsButton } from '../Settings';
+import { RulesButton } from '../Rules';
 import styles from './styles.module.css';
 
 interface HeaderProps {
@@ -14,7 +15,7 @@ interface HeaderProps {
   setIsHardMode: (value: boolean) => void;
   hasStartedGame: boolean;
   onModeChange: () => void;
-  setShowRules: (show: boolean) => void;
+  isDaily?: boolean;
 }
 
 export function Header({
@@ -25,33 +26,24 @@ export function Header({
   setIsHardMode,
   hasStartedGame,
   onModeChange,
-  setShowRules
+  isDaily
 }: HeaderProps) {
   return (
     <header className={styles.headerContainer}>
       <h1>{gameTitle}</h1>
       <div className={styles.headerButtons}>
-        <button 
-          onClick={() => setShowRules(true)} 
-          className={styles.iconButton}
-          aria-label="Rules"
-          type="button"
-        >
-          <HelpCircle size={24} />
-        </button>
-        
-        <Link 
-          href={alternateGamePath} 
+        <RulesButton isDaily={isDaily} />
+        <Link
+          href={alternateGamePath}
           className={styles.iconButton}
           aria-label={`Play ${alternateGameName}`}
           role="button"
         >
           {alternateGameName === 'Randle' ? <Infinity size={24} /> : <Sun size={24} />}
         </Link>
-        
-        <a 
-          href="https://www.buymeacoffee.com/jameswhitford" 
-          target="_blank" 
+        <a
+          href="https://www.buymeacoffee.com/jameswhitford"
+          target="_blank"
           rel="noopener noreferrer"
           className={styles.iconButton}
           aria-label="Buy me a coffee"
@@ -59,8 +51,7 @@ export function Header({
         >
           <Coffee size={24} />
         </a>
-        
-        <SettingsButton 
+        <SettingsButton
           isHardMode={isHardMode}
           setIsHardMode={setIsHardMode}
           hasStartedGame={hasStartedGame}
