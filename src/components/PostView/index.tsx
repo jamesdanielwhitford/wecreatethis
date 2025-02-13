@@ -26,20 +26,22 @@ export default function PostView({ post }: PostViewProps) {
     <div className={styles.container} ref={containerRef}>
       {post.type === 'image' && (
         <div className={styles.imageContainer}>
-          <img
+          <Image
             src={post.content}
             alt={post.alt || ''}
             className={styles.image}
+            fill
+            sizes="(max-width: 768px) 100vw, 1200px"
+            priority
+            style={{ objectFit: 'contain' }}
           />
         </div>
       )}
-
       {post.type === 'video' && (
         <div className={styles.videoContainer}>
           <YouTubePlayer videoUrl={post.content} />
         </div>
       )}
-
       {post.type === 'text' && (
         <div className={styles.textContainer} ref={textRef}>
           {post.content}

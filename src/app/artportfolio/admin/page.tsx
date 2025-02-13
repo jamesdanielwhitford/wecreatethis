@@ -24,7 +24,7 @@ export default function AdminPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       setIsLoggedIn(true);
-    } catch (err) {
+    } catch {
       setError('Login failed. Please check your credentials.');
     }
   };
