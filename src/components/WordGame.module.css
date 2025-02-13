@@ -29,6 +29,7 @@
   width: 100%;
   height: calc(100vh - 68px);
   box-sizing: border-box;
+  overflow: hidden;
   position: relative;
   padding: 0;
 }
@@ -45,9 +46,10 @@
   touch-action: manipulation;
   user-select: none;
   flex: 1;
-  padding: 16px 0;
-  overflow-y: auto;
   min-height: 0;
+  overflow: hidden;
+  justify-content: center;
+  padding: 8px 0;
 }
 
 .guessRow {
@@ -181,7 +183,7 @@
 /* Keyboard styles */
 .keyboard {
   width: 100%;
-  padding: 8px;
+  padding: 8px 8px 8px 8px;
   background-color: rgb(255, 255, 255);
   position: relative;
   bottom: 0;
@@ -400,36 +402,6 @@
 }
 
 /* Responsive styles */
-/* Base mobile styles (360px and below) */
-@media (max-width: 360px) {
-  .guessRow {
-    grid-template-columns: repeat(4, minmax(32px, 38px)) minmax(22px, 25px);
-    gap: 2px;
-  }
-
-  .letter {
-    font-size: 15px;
-  }
-
-  .score {
-    font-size: clamp(13px, 3vw, 16px);
-  }
-
-  .keyboardButton {
-    height: 40px;
-    font-size: 11px;
-  }
-}
-
-/* Medium phones (361px to 767px) */
-@media (min-width: 361px) and (max-width: 767px) {
-  .guessRow {
-    grid-template-columns: repeat(4, minmax(min(10vw, 55px), min(12vw, 60px))) minmax(min(7vw, 30px), min(8vw, 35px));
-    gap: 3px;
-  }
-}
-
-/* Tablets and larger phones (768px and above) */
 @media (min-width: 768px) {
   .gameContainer {
     max-width: 100%;
@@ -438,21 +410,13 @@
   }
 
   .guessGrid {
-    gap: 6px;
-    padding: 16px 0;
+    gap: 4px;
+    padding: 10px 0;
   }
 
   .guessRow {
-    grid-template-columns: repeat(4, minmax(60px, 70px)) minmax(35px, 40px);
-    gap: 4px;
-  }
-
-  .letter {
-    font-size: 30px;
-  }
-
-  .score {
-    font-size: 28px;
+    grid-template-columns: repeat(4, minmax(45px, 60px)) minmax(28px, 35px);
+    gap: 3px;
   }
 
   .keyboardButton {
@@ -465,38 +429,24 @@
     min-width: 75px;
   }
 
-  .keyboard {
-    padding: 12px;
-    gap: 8px;
-  }
-
-  .keyboardRow {
-    gap: 6px;
-  }
-
   .modalContent {
     padding: 2.5rem;
     max-width: 600px;
   }
 }
 
-/* Large tablets and desktop (1024px and above) */
-@media (min-width: 1024px) {
-  .guessGrid {
-    gap: 4px;
-    padding: 14px 0;
-  }
-
+/* Small phone screens */
+@media (max-width: 360px) {
   .guessRow {
-    grid-template-columns: repeat(4, minmax(48px, 56px)) minmax(28px, 32px);
+    grid-template-columns: repeat(4, minmax(32px, 38px)) minmax(22px, 25px);
     gap: 3px;
   }
 
   .letter {
-    font-size: 26px;
+    font-size: 15px;
   }
 
   .score {
-    font-size: 22px;
+    font-size: clamp(13px, 3vw, 16px);
   }
 }
