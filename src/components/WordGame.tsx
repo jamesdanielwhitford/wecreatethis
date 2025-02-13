@@ -123,23 +123,6 @@ export function WordGame({
     });
   }, []);
 
-  const handlePlayAgain = useCallback(() => {
-    if (onNewGame) {
-      localStorage.removeItem(cacheKey);
-      onNewGame();
-      setGameOver(false);
-      setGameWon(false);
-      setGuessesRemaining(8);
-      setGuessHistory([]);
-      setKeyboardColors({});
-      setTileStates(Array(8).fill(null).map(() => 
-        Array(4).fill(null).map(() => ({ color: '' as GameColor, letter: '', mark: undefined, dot: undefined }))
-      ));
-      setShowEndModal(false);
-      setCurrentGuess('');
-    }
-  }, [cacheKey, onNewGame]);
-
   const updateTileStates = useCallback((newGuess: string, rowIndex: number, correctLetterCount: number) => {
     if (isHardMode) {
       const color = getLetterColor(newGuess, correctLetterCount);
@@ -158,8 +141,21 @@ export function WordGame({
 
     const updatedStates = [...tileStates];
     const definitivelyNotInWord = new Set<string>();
-    const definitivelyInWord = new Set<string>();
+    const definitivelyInWord = new Map<string, number>();
+    
+    // Helper function to count letter frequencies
+    const getLetterFrequency = (word: string) => {
+      const freq = new Map<string, number>();
+      word.split('').forEach(letter => {
+        freq.set(letter, (freq.get(letter) || 0) + 1);
+      });
+      return freq;
+    };
 
+    // Get target word letter frequencies
+    const targetFrequencies = getLetterFrequency(gameWord);
+
+    // First pass: process guesses with score 0 and mark letters
     for (let i = 0; i <= rowIndex; i++) {
       const guess = i === rowIndex ? newGuess : guessHistory[i];
       if (!guess) continue;
@@ -202,13 +198,54 @@ export function WordGame({
         let knownCorrectCount = 0;
         let knownIncorrectCount = 0;
 
+        // Track letter frequencies for this guess
+        const guessFrequencies = getLetterFrequency(guess);
+        const positionsMarkedForLetter = new Map<string, number>();
+
+        // Count definitely wrong letters in this guess
+        const wrongLettersInGuess = guessLetters.filter(letter => 
+          definitivelyNotInWord.has(letter)
+        ).length;
+
+        // If score + wrong letters = word length, all unaccounted letters must be correct
+        if (score + wrongLettersInGuess === guessLetters.length) {
+          const letterFreqInGuess = getLetterFrequency(guess);
+          
+          // Mark all instances of unaccounted letters as definitely in word
+          guessLetters.forEach((letter, index) => {
+            if (!definitivelyNotInWord.has(letter)) {
+              const targetFreq = targetFrequencies.get(letter) || 0;
+              const currentKnownFreq = definitivelyInWord.get(letter) || 0;
+              
+              if (currentKnownFreq < targetFreq) {
+                definitivelyInWord.set(letter, targetFreq); // Set to full target frequency
+                if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
+                  updatedStates[i][index].dot = 'green-dot';
+                  updateKeyboardColor(letter, 'green', true);
+                  madeChanges = true;
+                }
+              }
+            }
+          });
+        }
+
+        // First pass: handle definitely correct/incorrect letters
         guessLetters.forEach((letter, index) => {
           if (definitivelyInWord.has(letter)) {
-            knownCorrectCount++;
-            if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
-              updatedStates[i][index].dot = 'green-dot';
-              updateKeyboardColor(letter, 'green', true);
-              madeChanges = true;
+            const currentMarked = positionsMarkedForLetter.get(letter) || 0;
+            const maxAllowed = Math.min(
+              targetFrequencies.get(letter) || 0,
+              definitivelyInWord.get(letter) || 0
+            );
+
+            if (currentMarked < maxAllowed) {
+              knownCorrectCount++;
+              positionsMarkedForLetter.set(letter, currentMarked + 1);
+              if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
+                updatedStates[i][index].dot = 'green-dot';
+                updateKeyboardColor(letter, 'green', true);
+                madeChanges = true;
+              }
             }
           } else if (definitivelyNotInWord.has(letter)) {
             knownIncorrectCount++;
@@ -221,19 +258,31 @@ export function WordGame({
         });
 
         const remainingUnknown = 4 - (knownCorrectCount + knownIncorrectCount);
+        
+        // Handle case where remaining unknown letters must be correct
         if (remainingUnknown > 0 && remainingUnknown === score - knownCorrectCount) {
           guessLetters.forEach((letter, index) => {
             if (!definitivelyInWord.has(letter) && !definitivelyNotInWord.has(letter)) {
-              definitivelyInWord.add(letter);
-              if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
-                updatedStates[i][index].dot = 'green-dot';
-                updateKeyboardColor(letter, 'green', true);
-                madeChanges = true;
+              const targetFreq = targetFrequencies.get(letter) || 0;
+              const currentKnownFreq = definitivelyInWord.get(letter) || 0;
+              const currentMarkedInGuess = positionsMarkedForLetter.get(letter) || 0;
+
+              if (currentKnownFreq < targetFreq && currentMarkedInGuess < targetFreq) {
+                const newFreq = currentKnownFreq + 1;
+                definitivelyInWord.set(letter, newFreq);
+                positionsMarkedForLetter.set(letter, currentMarkedInGuess + 1);
+                
+                if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
+                  updatedStates[i][index].dot = 'green-dot';
+                  updateKeyboardColor(letter, 'green', true);
+                  madeChanges = true;
+                }
               }
             }
           });
         }
 
+        // Handle case where remaining unknown letters must be incorrect
         if (knownCorrectCount === score && remainingUnknown > 0) {
           guessLetters.forEach((letter, index) => {
             if (!definitivelyInWord.has(letter) && !definitivelyNotInWord.has(letter)) {
@@ -275,6 +324,33 @@ export function WordGame({
       return newStates;
     });
   }, [isHardMode, tileStates]);
+
+  const handlePlayAgain = useCallback(() => {
+    if (onNewGame) {
+      localStorage.removeItem(cacheKey);
+      onNewGame();
+      setGameOver(false);
+      setGameWon(false);
+      setGuessesRemaining(8);
+      setGuessHistory([]);
+      setKeyboardColors({});
+      setTileStates(Array(8).fill(null).map(() => 
+        Array(4).fill(null).map(() => ({ color: '' as GameColor, letter: '', mark: undefined, dot: undefined }))
+      ));
+      setShowEndModal(false);
+      setCurrentGuess('');
+    }
+  }, [cacheKey, onNewGame]);
+
+  const toggleGameMode = useCallback(() => {
+    if (!gameOver && guessHistory.length > 0) {
+      if (!confirm('Changing game mode will restart your current game. Continue?')) {
+        return;
+      }
+      handlePlayAgain();
+    }
+    setIsHardMode(!isHardMode);
+  }, [gameOver, guessHistory.length, isHardMode, handlePlayAgain]);
 
   const submitGuess = useCallback(() => {
     if (gameOver) return;
@@ -353,16 +429,6 @@ export function WordGame({
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [handleInput]);
-
-  const toggleGameMode = useCallback(() => {
-    if (!gameOver && guessHistory.length > 0) {
-      if (!confirm('Changing game mode will restart your current game. Continue?')) {
-        return;
-      }
-      handlePlayAgain();
-    }
-    setIsHardMode(!isHardMode);
-  }, [gameOver, guessHistory.length, isHardMode, handlePlayAgain]);
 
   // Early cache cleanup before any state initialization
   useEffect(() => {
@@ -548,7 +614,6 @@ export function WordGame({
         {renderGuessGrid()}
         {renderKeyboard()}
       </div>
-
 
       {showEndModal && (
         <div className={styles.modal} onClick={() => setShowEndModal(false)}>
