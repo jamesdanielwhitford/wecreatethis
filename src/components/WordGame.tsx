@@ -70,7 +70,6 @@ export function WordGame({
   const [gameWon, setGameWon] = useState(false);
   const [finalAttempts, setFinalAttempts] = useState(0);
   const [keyboardColors, setKeyboardColors] = useState<Record<string, GameColor>>({});
-  const [showRules, setShowRules] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
 
   const getCorrectLetterCount = useCallback((guess: string, answer: string): number => {
@@ -543,7 +542,6 @@ export function WordGame({
         setIsHardMode={setIsHardMode}
         hasStartedGame={guessHistory.length > 0}
         onModeChange={toggleGameMode}
-        setShowRules={setShowRules}
       />
 
       <div className={styles.gameContainer}>
@@ -551,56 +549,6 @@ export function WordGame({
         {renderKeyboard()}
       </div>
 
-      {showRules && (
-        <div className={styles.modal} onClick={() => setShowRules(false)}>
-          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <button className={styles.closeButton} onClick={() => setShowRules(false)}>×</button>
-            <h2>{gameTitle} Rules</h2>
-            <p>
-              {isDaily ? "Guess the daily" : "Guess a randomly selected"} 4-letter word in 8 tries.
-              Each guess must be a valid 4-letter word.
-            </p>
-            <p>
-              After each guess, a score (0-4) will be displayed, indicating how many letters
-              from your guess are in the target word, regardless of position.
-            </p>
-            <h3>Game Modes</h3>
-            <div className={styles.gameModes}>
-              <div className={styles.gameMode}>
-                <h4>Hard Mode</h4>
-                <p>
-                  - Tiles turn red for incorrect guesses (score 0)<br />
-                  - Tiles turn orange for partially correct guesses<br />
-                  - Tiles turn green for correct guesses<br />
-                  - You can mark orange tiles to track your deductions
-                </p>
-              </div>
-              <div className={styles.gameMode}>
-                <h4>Easy Mode</h4>
-                <p>
-                  - The game automatically marks tiles based on deduced information<br />
-                  - Green dots show letters definitely in the word<br />
-                  - Red dots show letters definitely not in the word<br />
-                  - Updates continuously as new information is revealed
-                </p>
-              </div>
-            </div>
-            <p>The game automatically shows:</p>
-            <ul>
-              <li>Orange: Letter could potentially be in the word</li>
-              <li>Green: Letter is definitely in the word (not necessarily in that position)</li>
-              <li>Red: Automatically applied to all letters in a guess that scores 0</li>
-            </ul>
-            <p>
-              Important: The game does not automatically indicate if a letter is in the correct position.
-              Use the score and your deduction skills to solve the puzzle!
-            </p>
-            {!isDaily && (
-              <p>A new random word is selected for each game, so you can play as many times as you like!</p>
-            )}
-          </div>
-        </div>
-      )}
 
       {showEndModal && (
         <div className={styles.modal} onClick={() => setShowEndModal(false)}>

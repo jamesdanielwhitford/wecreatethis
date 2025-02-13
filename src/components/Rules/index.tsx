@@ -1,5 +1,4 @@
 'use client';
-
 import React from 'react';
 import { HelpCircle } from 'lucide-react';
 import styles from './styles.module.css';
@@ -23,8 +22,8 @@ function Example({ word, score, description, type = 'orange', marks }: ExamplePr
     <div className={styles.example}>
       <div className={styles.exampleRow}>
         {word.split('').map((letter, index) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className={`
               ${styles.exampleTile}
               ${type === 'red' ? styles.red : ''}
@@ -46,53 +45,44 @@ function Example({ word, score, description, type = 'orange', marks }: ExamplePr
 
 function RulesModal({ isOpen, onClose, isDaily = false }: RulesModalProps) {
   if (!isOpen) return null;
-
   return (
     <div className={styles.modal} onClick={onClose}>
       <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
         <button className={styles.closeButton} onClick={onClose}>×</button>
-        
         <h2>How To Play</h2>
-        
         <p className={styles.mainInstruction}>
-          Guess the 4-letter word in 8 tries.
+          {isDaily ? "Guess today's 4-letter word in 8 tries." : "Guess the 4-letter word in 8 tries."}
         </p>
-
         <div className={styles.subInstruction}>
           After each guess, see:
         </div>
-
         <div className={styles.examples}>
-          <Example 
-            word="WORD" 
+          <Example
+            word="WORD"
             score={2}
             description="Orange means your letters might be in the target word. Your score showing how many letters are in the target word."
             type="orange"
           />
-          
-          <Example 
+          <Example
             word="WOLF"
             score={0}
             description="Red means 0 letters match - great for eliminating letters!"
             type="red"
           />
-
-          <Example 
-            word="RUDE" 
+          <Example
+            word="RUDE"
             score={2}
             description="Tap orange tiles to mark them red or green to track your thinking."
             type="orange"
             marks={['green', 'red', 'green', 'red']}
           />
-          
-          <Example 
-            word="DRIP" 
+          <Example
+            word="DRIP"
             score={4}
             description="Green means you win!"
             type="green"
           />
         </div>
-
         <div className={styles.tips}>
           <h3>Pro Tips</h3>
           <ul>
@@ -108,7 +98,6 @@ function RulesModal({ isOpen, onClose, isDaily = false }: RulesModalProps) {
 
 export function RulesButton({ isDaily }: { isDaily?: boolean }) {
   const [isOpen, setIsOpen] = React.useState(false);
-
   return (
     <>
       <button
