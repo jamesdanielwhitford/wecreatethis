@@ -3,6 +3,10 @@ const nextConfig = {
   generateBuildId: async () => {
     return `build-${Date.now()}`;
   },
+  // Add images configuration for Firebase Storage
+  images: {
+    domains: ['firebasestorage.googleapis.com'],
+  },
   // Updated headers configuration to include both CORS and cache headers
   async headers() {
     return [

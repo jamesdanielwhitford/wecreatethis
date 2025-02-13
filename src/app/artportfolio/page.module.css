@@ -1,0 +1,17 @@
+.container {
+    height: 100vh;
+    height: -webkit-fill-available;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .loading {
+    height: 100vh;
+    height: -webkit-fill-available;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--foreground);
+    font-size: 1.5rem;
+  }
