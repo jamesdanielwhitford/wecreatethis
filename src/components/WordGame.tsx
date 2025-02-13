@@ -199,7 +199,6 @@ export function WordGame({
         let knownIncorrectCount = 0;
 
         // Track letter frequencies for this guess
-        const guessFrequencies = getLetterFrequency(guess);
         const positionsMarkedForLetter = new Map<string, number>();
 
         // Count definitely wrong letters in this guess
@@ -209,8 +208,7 @@ export function WordGame({
 
         // If score + wrong letters = word length, all unaccounted letters must be correct
         if (score + wrongLettersInGuess === guessLetters.length) {
-          const letterFreqInGuess = getLetterFrequency(guess);
-          
+                    
           // Mark all instances of unaccounted letters as definitely in word
           guessLetters.forEach((letter, index) => {
             if (!definitivelyNotInWord.has(letter)) {
