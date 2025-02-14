@@ -142,18 +142,6 @@ export function WordGame({
       const updatedStates = [...prev];
       const definitivelyNotInWord = new Set<string>();
       const definitivelyInWord = new Map<string, number>();
-      
-      // Helper function to count letter frequencies
-      const getLetterFrequency = (word: string) => {
-        const freq = new Map<string, number>();
-        word.split('').forEach(letter => {
-          freq.set(letter, (freq.get(letter) || 0) + 1);
-        });
-        return freq;
-      };
-
-      // Get target word letter frequencies
-      const targetFrequencies = getLetterFrequency(gameWord);
 
       // First pass: process guesses with score 0 and mark letters
       for (let i = 0; i <= rowIndex; i++) {
@@ -184,67 +172,26 @@ export function WordGame({
 
       const updateBoard = () => {
         let madeChanges = false;
-
+      
         for (let i = 0; i <= rowIndex; i++) {
           const guess = i === rowIndex ? newGuess : guessHistory[i];
           if (!guess) continue;
-
+      
           const score = i === rowIndex ? correctLetterCount : getCorrectLetterCount(guess, gameWord);
           if (score === 0) continue;
-
+      
           const guessLetters = guess.split('');
           let knownCorrectCount = 0;
-          let knownIncorrectCount = 0;
 
-          const positionsMarkedForLetter = new Map<string, number>();
-
-          const wrongLettersInGuess = guessLetters.filter(letter => 
-            definitivelyNotInWord.has(letter)
-          ).length;
-
-          if (score + wrongLettersInGuess === guessLetters.length) {
-            guessLetters.forEach((letter, index) => {
-              if (!definitivelyNotInWord.has(letter)) {
-                const targetFreq = targetFrequencies.get(letter) || 0;
-                const currentKnownFreq = definitivelyInWord.get(letter) || 0;
-                
-                if (currentKnownFreq < targetFreq) {
-                  definitivelyInWord.set(letter, targetFreq);
-                  if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
-                    updatedStates[i][index] = {
-                      ...updatedStates[i][index],
-                      dot: 'green-dot'
-                    };
-                    updateKeyboardColor(letter, 'green', true);
-                    madeChanges = true;
-                  }
-                }
-              }
-            });
-          }
-
+          // Track how many times each letter has been used in current guess
+          const letterUsageCount = new Map<string, number>();
+          
+          // Track letters that are unknown but possible, grouped by letter
+          const unknownLetterGroups = new Map<string, number[]>();  // letter -> array of indices
+          
+          // First pass: mark definitely wrong letters and track letter usage
           guessLetters.forEach((letter, index) => {
-            if (definitivelyInWord.has(letter)) {
-              const currentMarked = positionsMarkedForLetter.get(letter) || 0;
-              const maxAllowed = Math.min(
-                targetFrequencies.get(letter) || 0,
-                definitivelyInWord.get(letter) || 0
-              );
-
-              if (currentMarked < maxAllowed) {
-                knownCorrectCount++;
-                positionsMarkedForLetter.set(letter, currentMarked + 1);
-                if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
-                  updatedStates[i][index] = {
-                    ...updatedStates[i][index],
-                    dot: 'green-dot'
-                  };
-                  updateKeyboardColor(letter, 'green', true);
-                  madeChanges = true;
-                }
-              }
-            } else if (definitivelyNotInWord.has(letter)) {
-              knownIncorrectCount++;
+            if (definitivelyNotInWord.has(letter)) {
               if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'red-dot') {
                 updatedStates[i][index] = {
                   ...updatedStates[i][index],
@@ -253,39 +200,103 @@ export function WordGame({
                 updateKeyboardColor(letter, 'red', true);
                 madeChanges = true;
               }
-            }
-          });
-
-          const remainingUnknown = 4 - (knownCorrectCount + knownIncorrectCount);
-          
-          if (remainingUnknown > 0 && remainingUnknown === score - knownCorrectCount) {
-            guessLetters.forEach((letter, index) => {
-              if (!definitivelyInWord.has(letter) && !definitivelyNotInWord.has(letter)) {
-                const targetFreq = targetFrequencies.get(letter) || 0;
-                const currentKnownFreq = definitivelyInWord.get(letter) || 0;
-                const currentMarkedInGuess = positionsMarkedForLetter.get(letter) || 0;
-
-                if (currentKnownFreq < targetFreq && currentMarkedInGuess < targetFreq) {
-                  const newFreq = currentKnownFreq + 1;
-                  definitivelyInWord.set(letter, newFreq);
-                  positionsMarkedForLetter.set(letter, currentMarkedInGuess + 1);
-                  
-                  if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
-                    updatedStates[i][index] = {
-                      ...updatedStates[i][index],
-                      dot: 'green-dot'
-                    };
-                    updateKeyboardColor(letter, 'green', true);
-                    madeChanges = true;
-                  }
+            } else if (definitivelyInWord.has(letter)) {
+              const currentUsage = letterUsageCount.get(letter) || 0;
+              const maxAllowed = definitivelyInWord.get(letter) || 0;
+              letterUsageCount.set(letter, currentUsage + 1);
+      
+              if (currentUsage < maxAllowed) {
+                knownCorrectCount++;
+                if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
+                  updatedStates[i][index] = {
+                    ...updatedStates[i][index],
+                    dot: 'green-dot'
+                  };
+                  updateKeyboardColor(letter, 'green', true);
+                  madeChanges = true;
+                }
+              } else {
+                if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'red-dot') {
+                  updatedStates[i][index] = {
+                    ...updatedStates[i][index],
+                    dot: 'red-dot'
+                  };
+                  madeChanges = true;
                 }
               }
+            } else {
+              // Group unknown letters by the actual letter
+              const indices = unknownLetterGroups.get(letter) || [];
+              indices.push(index);
+              unknownLetterGroups.set(letter, indices);
+            }
+          });
+      
+          // Calculate remaining score needed
+          const remainingScore = score - knownCorrectCount;
+      
+          // Process groups of identical unknown letters
+          Array.from(unknownLetterGroups.entries()).forEach(([letter, indices]) => {
+            if (indices.length > 1) {
+              // If we have multiple instances of the same letter and know exactly how many must be correct
+              if (remainingScore < indices.length && remainingScore > 0) {
+                // We know exactly remainingScore instances must be correct, and the rest must be wrong
+                indices.forEach((index, position) => {
+                  if (position < remainingScore) {
+                    // Must be correct
+                    definitivelyInWord.set(letter, (definitivelyInWord.get(letter) || 0) + 1);
+                    if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
+                      updatedStates[i][index] = {
+                        ...updatedStates[i][index],
+                        dot: 'green-dot'
+                      };
+                      updateKeyboardColor(letter, 'green', true);
+                      madeChanges = true;
+                    }
+                  } else {
+                    // Must be wrong
+                    definitivelyNotInWord.add(letter);
+                    if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'red-dot') {
+                      updatedStates[i][index] = {
+                        ...updatedStates[i][index],
+                        dot: 'red-dot'
+                      };
+                      updateKeyboardColor(letter, 'red', true);
+                      madeChanges = true;
+                    }
+                  }
+                });
+              }
+            }
+          });
+      
+          // Handle single unknown letters
+          const totalUnknownLetters = Array.from(unknownLetterGroups.values())
+            .reduce((sum, indices) => sum + indices.length, 0);
+      
+          // If all remaining unknown letters must be correct
+          if (totalUnknownLetters === remainingScore && remainingScore > 0) {
+            Array.from(unknownLetterGroups.entries()).forEach(([letter, indices]) => {
+              indices.forEach(index => {
+                if (!definitivelyInWord.has(letter)) {
+                  definitivelyInWord.set(letter, 1);
+                }
+                if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
+                  updatedStates[i][index] = {
+                    ...updatedStates[i][index],
+                    dot: 'green-dot'
+                  };
+                  updateKeyboardColor(letter, 'green', true);
+                  madeChanges = true;
+                }
+              });
             });
           }
-
-          if (knownCorrectCount === score && remainingUnknown > 0) {
-            guessLetters.forEach((letter, index) => {
-              if (!definitivelyInWord.has(letter) && !definitivelyNotInWord.has(letter)) {
+      
+          // If we've found all correct letters, remaining unknown must be wrong
+          if (knownCorrectCount === score && totalUnknownLetters > 0) {
+            Array.from(unknownLetterGroups.entries()).forEach(([letter, indices]) => {
+              indices.forEach(index => {
                 definitivelyNotInWord.add(letter);
                 if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'red-dot') {
                   updatedStates[i][index] = {
@@ -295,11 +306,12 @@ export function WordGame({
                   updateKeyboardColor(letter, 'red', true);
                   madeChanges = true;
                 }
-              }
+              });
             });
           }
         }
-
+      
+        // Recursively call if changes were made
         if (madeChanges) {
           updateBoard();
         }
