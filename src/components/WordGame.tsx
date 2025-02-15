@@ -36,6 +36,11 @@ interface TileState {
   letter: string;
 }
 
+interface WordState {
+  knownCorrectLetters: Map<string, number>;  // letter -> frequency
+  knownIncorrectLetters: Set<string>;        // just the letters
+}
+
 const KeyboardButton: React.FC<KeyboardButtonProps> = ({ dataKey, onClick, className, children }) => (
   <button
     data-key={dataKey}
@@ -129,7 +134,7 @@ export function WordGame({
       setTileStates(prev => {
         const newStates = [...prev];
         newStates[rowIndex] = newGuess.split('').map((letter, index) => ({
-          ...prev[rowIndex][index], // Preserve existing marks and dots
+          ...prev[rowIndex][index],
           color,
           letter,
         }));
@@ -137,13 +142,15 @@ export function WordGame({
       });
       return;
     }
-
+  
     setTileStates(prev => {
       const updatedStates = [...prev];
-      const definitivelyNotInWord = new Set<string>();
-      const definitivelyInWord = new Map<string, number>();
-
-      // First pass: process guesses with score 0 and mark letters
+      const wordState: WordState = {
+        knownCorrectLetters: new Map<string, number>(),
+        knownIncorrectLetters: new Set<string>()
+      };
+  
+      // Process all zero-score guesses first to build initial knowledge
       for (let i = 0; i <= rowIndex; i++) {
         const guess = i === rowIndex ? newGuess : guessHistory[i];
         if (!guess) continue;
@@ -152,171 +159,162 @@ export function WordGame({
         
         if (score === 0) {
           guess.split('').forEach(letter => {
-            definitivelyNotInWord.add(letter);
+            wordState.knownIncorrectLetters.add(letter);
             updateKeyboardColor(letter, 'red', true);
           });
-          updatedStates[i] = guess.split('').map((letter, colIndex) => ({
-            ...prev[i][colIndex],
-            color: 'red',
-            letter,
-          }));
-        } else {
           const color = getLetterColor(guess, score);
           updatedStates[i] = guess.split('').map((letter, colIndex) => ({
             ...prev[i][colIndex],
-            color,
+            color: color,
             letter,
+            dot: 'red-dot'
           }));
         }
       }
-
-      const updateBoard = () => {
-        let madeChanges = false;
-      
+  
+      const markLetter = (letter: string, index: number, rowIdx: number, isCorrect: boolean) => {
+        const color = getLetterColor(updatedStates[rowIdx].map(t => t.letter).join(''), 
+          getCorrectLetterCount(updatedStates[rowIdx].map(t => t.letter).join(''), gameWord));
+        
+        updatedStates[rowIdx][index] = {
+          ...updatedStates[rowIdx][index],
+          letter,
+          color: color,
+          dot: isCorrect ? 'green-dot' : 'red-dot'
+        };
+        updateKeyboardColor(letter, isCorrect ? 'green' : 'red', true);
+      };
+  
+      const processGuess = (
+        guess: string, 
+        rowIdx: number, 
+        score: number, 
+        localWordState: WordState,
+        originalFrequencies: Map<string, number>
+      ): boolean => {
+        if (score === 0) return true;
+  
+        const letterCounts = new Map<string, number>();
+        const unprocessedIndices: number[] = [];
+        let knownCorrectInGuess = 0;
+        
+        // First pass: Process known letters
+        guess.split('').forEach((letter, index) => {
+          if (localWordState.knownIncorrectLetters.has(letter)) {
+            markLetter(letter, index, rowIdx, false);
+          } else if (localWordState.knownCorrectLetters.has(letter)) {
+            const frequency = localWordState.knownCorrectLetters.get(letter)!;
+            const currentCount = letterCounts.get(letter) || 0;
+            
+            if (currentCount < frequency) {
+              markLetter(letter, index, rowIdx, true);
+              letterCounts.set(letter, currentCount + 1);
+              knownCorrectInGuess++;
+            } else {
+              markLetter(letter, index, rowIdx, false);
+            }
+          } else {
+            unprocessedIndices.push(index);
+          }
+        });
+  
+        // Restore original frequencies
+        originalFrequencies.forEach((freq, letter) => {
+          if (localWordState.knownCorrectLetters.has(letter)) {
+            localWordState.knownCorrectLetters.set(letter, freq);
+          }
+        });
+  
+        // If all letters are marked, we're done with this guess
+        if (unprocessedIndices.length === 0) return true;
+  
+        // If sum of known correct letters equals score, remaining must be incorrect
+        if (knownCorrectInGuess === score) {
+          unprocessedIndices.forEach(index => {
+            const letter = guess[index];
+            markLetter(letter, index, rowIdx, false);
+            if (!localWordState.knownCorrectLetters.has(letter)) {
+              localWordState.knownIncorrectLetters.add(letter);
+            }
+          });
+          return true;
+        }
+  
+        // If number of known incorrect + score equals word length, remaining must be correct
+        if (unprocessedIndices.length + knownCorrectInGuess === score) {
+          unprocessedIndices.forEach(index => {
+            const letter = guess[index];
+            markLetter(letter, index, rowIdx, true);
+            
+            const currentFreq = localWordState.knownCorrectLetters.get(letter) || 0;
+            const occurrencesInGuess = guess.split('').filter(l => l === letter).length;
+            
+            if (occurrencesInGuess > currentFreq) {
+              localWordState.knownCorrectLetters.set(letter, occurrencesInGuess);
+            }
+          });
+          return true;
+        }
+  
+        // Handle remaining duplicate letters
+        const remainingLetters = unprocessedIndices.map(index => guess[index]);
+        const uniqueRemaining = new Set(remainingLetters);
+        
+        if (uniqueRemaining.size === 1) {
+          const letter = remainingLetters[0];
+          const remainingCorrect = score - knownCorrectInGuess;
+          
+          // Mark correct letters
+          for (let i = 0; i < remainingCorrect; i++) {
+            markLetter(letter, unprocessedIndices[i], rowIdx, true);
+          }
+          
+          // Update known correct frequency if necessary
+          const currentFreq = localWordState.knownCorrectLetters.get(letter) || 0;
+          if (remainingCorrect > currentFreq) {
+            localWordState.knownCorrectLetters.set(letter, remainingCorrect);
+          }
+          
+          // Mark remaining as incorrect
+          for (let i = remainingCorrect; i < unprocessedIndices.length; i++) {
+            markLetter(letter, unprocessedIndices[i], rowIdx, false);
+          }
+          
+          return true;
+        }
+  
+        return false;
+      };
+  
+      const updateBoard = (maxIterations = 10) => {
+        if (maxIterations <= 0) return; // Prevent infinite recursion
+        
+        let madeProgress = false;
+        const originalFrequencies = new Map(wordState.knownCorrectLetters);
+        const processedGuesses = new Set<string>(); // Track which guesses we've processed by row
+  
         for (let i = 0; i <= rowIndex; i++) {
           const guess = i === rowIndex ? newGuess : guessHistory[i];
           if (!guess) continue;
-      
+          
+          // Create a unique key for each guess-row combination
+          const guessKey = `${guess}-${i}`;
+          if (processedGuesses.has(guessKey)) continue;
+          
           const score = i === rowIndex ? correctLetterCount : getCorrectLetterCount(guess, gameWord);
           if (score === 0) continue;
-      
-          const guessLetters = guess.split('');
-          let knownCorrectCount = 0;
-
-          // Track how many times each letter has been used in current guess
-          const letterUsageCount = new Map<string, number>();
-          
-          // Track letters that are unknown but possible, grouped by letter
-          const unknownLetterGroups = new Map<string, number[]>();  // letter -> array of indices
-          
-          // First pass: mark definitely wrong letters and track letter usage
-          guessLetters.forEach((letter, index) => {
-            if (definitivelyNotInWord.has(letter)) {
-              if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'red-dot') {
-                updatedStates[i][index] = {
-                  ...updatedStates[i][index],
-                  dot: 'red-dot'
-                };
-                updateKeyboardColor(letter, 'red', true);
-                madeChanges = true;
-              }
-            } else if (definitivelyInWord.has(letter)) {
-              const currentUsage = letterUsageCount.get(letter) || 0;
-              const maxAllowed = definitivelyInWord.get(letter) || 0;
-              letterUsageCount.set(letter, currentUsage + 1);
-      
-              if (currentUsage < maxAllowed) {
-                knownCorrectCount++;
-                if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
-                  updatedStates[i][index] = {
-                    ...updatedStates[i][index],
-                    dot: 'green-dot'
-                  };
-                  updateKeyboardColor(letter, 'green', true);
-                  madeChanges = true;
-                }
-              } else {
-                if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'red-dot') {
-                  updatedStates[i][index] = {
-                    ...updatedStates[i][index],
-                    dot: 'red-dot'
-                  };
-                  madeChanges = true;
-                }
-              }
-            } else {
-              // Group unknown letters by the actual letter
-              const indices = unknownLetterGroups.get(letter) || [];
-              indices.push(index);
-              unknownLetterGroups.set(letter, indices);
-            }
-          });
-      
-          // Calculate remaining score needed
-          const remainingScore = score - knownCorrectCount;
-      
-          // Process groups of identical unknown letters
-          Array.from(unknownLetterGroups.entries()).forEach(([letter, indices]) => {
-            if (indices.length > 1) {
-              // If we have multiple instances of the same letter and know exactly how many must be correct
-              if (remainingScore < indices.length && remainingScore > 0) {
-                // We know exactly remainingScore instances must be correct, and the rest must be wrong
-                indices.forEach((index, position) => {
-                  if (position < remainingScore) {
-                    // Must be correct
-                    definitivelyInWord.set(letter, (definitivelyInWord.get(letter) || 0) + 1);
-                    if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
-                      updatedStates[i][index] = {
-                        ...updatedStates[i][index],
-                        dot: 'green-dot'
-                      };
-                      updateKeyboardColor(letter, 'green', true);
-                      madeChanges = true;
-                    }
-                  } else {
-                    // Must be wrong
-                    definitivelyNotInWord.add(letter);
-                    if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'red-dot') {
-                      updatedStates[i][index] = {
-                        ...updatedStates[i][index],
-                        dot: 'red-dot'
-                      };
-                      updateKeyboardColor(letter, 'red', true);
-                      madeChanges = true;
-                    }
-                  }
-                });
-              }
-            }
-          });
-      
-          // Handle single unknown letters
-          const totalUnknownLetters = Array.from(unknownLetterGroups.values())
-            .reduce((sum, indices) => sum + indices.length, 0);
-      
-          // If all remaining unknown letters must be correct
-          if (totalUnknownLetters === remainingScore && remainingScore > 0) {
-            Array.from(unknownLetterGroups.entries()).forEach(([letter, indices]) => {
-              indices.forEach(index => {
-                if (!definitivelyInWord.has(letter)) {
-                  definitivelyInWord.set(letter, 1);
-                }
-                if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'green-dot') {
-                  updatedStates[i][index] = {
-                    ...updatedStates[i][index],
-                    dot: 'green-dot'
-                  };
-                  updateKeyboardColor(letter, 'green', true);
-                  madeChanges = true;
-                }
-              });
-            });
-          }
-      
-          // If we've found all correct letters, remaining unknown must be wrong
-          if (knownCorrectCount === score && totalUnknownLetters > 0) {
-            Array.from(unknownLetterGroups.entries()).forEach(([letter, indices]) => {
-              indices.forEach(index => {
-                definitivelyNotInWord.add(letter);
-                if (!updatedStates[i][index].dot || updatedStates[i][index].dot !== 'red-dot') {
-                  updatedStates[i][index] = {
-                    ...updatedStates[i][index],
-                    dot: 'red-dot'
-                  };
-                  updateKeyboardColor(letter, 'red', true);
-                  madeChanges = true;
-                }
-              });
-            });
+  
+          processedGuesses.add(guessKey);
+          if (processGuess(guess, i, score, wordState, originalFrequencies)) {
+            madeProgress = true;
           }
         }
-      
-        // Recursively call if changes were made
-        if (madeChanges) {
-          updateBoard();
+  
+        if (madeProgress) {
+          updateBoard(maxIterations - 1);
         }
       };
-
+  
       updateBoard();
       return updatedStates;
     });
@@ -384,11 +382,6 @@ export function WordGame({
     const currentRowIndex = 8 - guessesRemaining;
     updateTileStates(currentGuess, currentRowIndex, correctLetterCount);
 
-    const color = getLetterColor(currentGuess, correctLetterCount);
-    currentGuess.split('').forEach(letter => {
-      updateKeyboardColor(letter, color);
-    });
-
     if (currentGuess === gameWord) {
       setGameOver(true);
       setGameWon(true);
@@ -409,10 +402,8 @@ export function WordGame({
     guessesRemaining,
     validGuesses,
     gameOver,
-    getLetterColor,
     updateTileStates,
-    getCorrectLetterCount,
-    updateKeyboardColor
+    getCorrectLetterCount
   ]);
 
   const handleInput = useCallback((key: string) => {
@@ -521,6 +512,32 @@ export function WordGame({
     localStorage.setItem(cacheKey, JSON.stringify(stateToCache));
   }, [initialized, guessesRemaining, guessHistory, gameOver, gameWon, finalAttempts, keyboardColors, tileStates, gameWord, cacheKey, isHardMode]);
 
+  const shareScore = useCallback(async () => {
+    const shareText = gameWon
+      ? `I solved ${isDaily ? "today's" : ''} ${gameTitle} in ${finalAttempts} attempts! Can you beat that?`
+      : `I couldn't solve ${isDaily ? "today's" : 'this'} ${gameTitle}. Can you do better?`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `My ${gameTitle} Score`,
+          text: shareText,
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        alert('Score copied to clipboard!');
+      } catch (error) {
+        console.error('Failed to copy score:', error);
+        alert('Failed to copy score');
+      }
+    }
+  }, [gameWon, isDaily, gameTitle, finalAttempts]);
+
   function renderGuessGrid() {
     return (
       <div className={styles.guessGrid}>
@@ -586,32 +603,6 @@ export function WordGame({
       </div>
     );
   }
-
-  const shareScore = useCallback(async () => {
-    const shareText = gameWon
-      ? `I solved ${isDaily ? "today's" : ''} ${gameTitle} in ${finalAttempts} attempts! Can you beat that?`
-      : `I couldn't solve ${isDaily ? "today's" : 'this'} ${gameTitle}. Can you do better?`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `My ${gameTitle} Score`,
-          text: shareText,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(shareText);
-        alert('Score copied to clipboard!');
-      } catch (error) {
-        console.error('Failed to copy score:', error);
-        alert('Failed to copy score');
-      }
-    }
-  }, [gameWon, isDaily, gameTitle, finalAttempts]);
 
   return (
     <div className={styles.container}>
