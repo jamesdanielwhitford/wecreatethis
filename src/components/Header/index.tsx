@@ -1,8 +1,6 @@
-// src/components/Header/index.tsx
-'use client'
 import React from 'react';
 import Link from 'next/link';
-import { Coffee, Sun, Infinity } from 'lucide-react';
+import { Coffee, Sun, Infinity, Brain, Sparkles } from 'lucide-react';
 import { SettingsButton } from '../Settings';
 import { RulesButton } from '../Rules';
 import styles from './styles.module.css';
@@ -28,11 +26,25 @@ export function Header({
   onModeChange,
   isDaily
 }: HeaderProps) {
+  const handleModeToggle = () => {
+    if (!hasStartedGame || confirm('Changing game mode will restart your current game. Continue?')) {
+      onModeChange();
+    }
+  };
+
   return (
     <header className={styles.headerContainer}>
       <h1>{gameTitle}</h1>
       <div className={styles.headerButtons}>
         <RulesButton isDaily={isDaily} />
+        <button
+          onClick={handleModeToggle}
+          className={`${styles.iconButton} ${styles.modeToggle}`}
+          aria-label={`Switch to ${isHardMode ? 'easy' : 'hard'} mode`}
+          title={`${isHardMode ? 'Hard Mode (Manual)' : 'Easy Mode (Automatic)'}`}
+        >
+          {isHardMode ? <Brain size={24} /> : <Sparkles size={24} />}
+        </button>
         <Link
           href={alternateGamePath}
           className={styles.iconButton}
