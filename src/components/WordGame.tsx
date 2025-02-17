@@ -111,19 +111,29 @@ export function WordGame({
 
 
   const updateTileStates = useCallback((newGuess: string, rowIndex: number, correctLetterCount: number) => {
+    // First, always set the basic tile state with letters and color, regardless of mode
+    const color = getLetterColor(newGuess, correctLetterCount);
+    const initialState = [...tileStates];
+    initialState[rowIndex] = newGuess.split('').map((letter, index) => ({
+      ...initialState[rowIndex][index],
+      color,
+      letter,
+    }));
+    
+    // If in hard mode, just update the state and return
     if (isHardMode) {
-      const color = getLetterColor(newGuess, correctLetterCount);
-      setTileStates(prev => {
-        const newStates = [...prev];
-        newStates[rowIndex] = newGuess.split('').map((letter, index) => ({
-          ...prev[rowIndex][index],
-          color,
-          letter,
-        }));
-        return newStates;
-      });
+      setTileStates(initialState);
       return;
     }
+    
+    // For easy mode, use this as our starting state
+    let currentState: GuessState = {
+      knownCorrectLetters,
+      knownIncorrectLetters,
+      knownMaxFrequency,
+      tileStates: initialState,
+      keyboardColors
+    };
   
     const checkGuess = (
       guess: string, 
@@ -131,25 +141,46 @@ export function WordGame({
       guessRowIndex: number,
       currentState: GuessState
     ): [boolean, GuessState] => {
-      // Create working copy of state
+      console.log('\n=== Starting checkGuess ===');
+      console.log('Guess:', guess, 'Score:', score, 'Row:', guessRowIndex);
+    
+      // Create working copy of state, preserving the initial letters and colors
       const newState: GuessState = {
         knownCorrectLetters: new Map(currentState.knownCorrectLetters),
         knownIncorrectLetters: new Set(currentState.knownIncorrectLetters),
         knownMaxFrequency: new Map(currentState.knownMaxFrequency),
-        tileStates: [...currentState.tileStates.map(row => [...row.map(tile => ({...tile}))])],
+        tileStates: currentState.tileStates.map((row, rowIdx) => 
+          row.map((tile, colIdx) => {
+            // Preserve the initial state for the current guess row
+            if (rowIdx === guessRowIndex) {
+              return {
+                ...tile,
+                letter: guess[colIdx] || tile.letter,
+                color: tile.color || getLetterColor(guess, score)
+              };
+            }
+            return {...tile};
+          })
+        ),
         keyboardColors: {...currentState.keyboardColors}
       };
-  
+    
+      console.log('Initial state setup complete');
+      console.log('Known correct letters:', Array.from(newState.knownCorrectLetters.entries()));
+      console.log('Known incorrect letters:', Array.from(newState.knownIncorrectLetters));
+      console.log('Known max frequencies:', Array.from(newState.knownMaxFrequency.entries()));
+    
       let madeChanges = false;
       const unmarkedIndices: number[] = [];
       let markedCorrectCount = 0;
       let markedIncorrectCount = 0;
-  
+    
       // Get current state of tiles for this guess
       const currentTiles = newState.tileStates[guessRowIndex];
-  
+    
       // Helper to mark a letter
       const markLetter = (index: number, isCorrect: boolean) => {
+        console.log(`Marking letter ${guess[index]} at index ${index} as ${isCorrect ? 'correct' : 'incorrect'}`);
         const color = getLetterColor(guess, score);
         newState.tileStates[guessRowIndex][index] = {
           ...newState.tileStates[guessRowIndex][index],
@@ -160,42 +191,35 @@ export function WordGame({
         newState.keyboardColors[guess[index]] = isCorrect ? 'green' : 'red';
         madeChanges = true;
       };
-  
+    
       // Helper to add to known incorrect
       const addToKnownIncorrect = (letter: string) => {
+        console.log('Adding to known incorrect:', letter);
         newState.knownIncorrectLetters.add(letter);
       };
-  
+    
       // Helper to add to known correct
       const addToKnownCorrect = (letter: string) => {
+        console.log('Adding to known correct:', letter);
         newState.knownCorrectLetters.set(letter, (newState.knownCorrectLetters.get(letter) || 0) + 1);
       };
-  
+    
       // Helper to add to max frequency
       const addToKnownMaxFrequency = (letter: string, maxFreq: number) => {
+        console.log('Adding to known max frequency:', letter, maxFreq);
         if (!newState.knownMaxFrequency.has(letter) || newState.knownMaxFrequency.get(letter)! > maxFreq) {
           newState.knownMaxFrequency.set(letter, maxFreq);
         }
       };
-  
-      // Set initial letters if not already set
-      guess.split('').forEach((letter, index) => {
-        if (!currentTiles[index].letter) {
-          const color = getLetterColor(guess, score);
-          newState.tileStates[guessRowIndex][index] = {
-            ...newState.tileStates[guessRowIndex][index],
-            letter,
-            color
-          };
-        }
-      });
-  
+    
       // Check if all letters are already marked
       const isFullyMarked = currentTiles.every(tile => tile.dot);
+      console.log('Is fully marked:', isFullyMarked);
       if (isFullyMarked) {
+        console.log('Returning early - all letters already marked');
         return [false, currentState];
       }
-  
+    
       // Count marked letters and collect unmarked indices
       currentTiles.forEach((tile, index) => {
         if (tile.dot === 'green-dot') {
@@ -208,9 +232,16 @@ export function WordGame({
           unmarkedIndices.push(index);
         }
       });
-  
+    
+      console.log('Initial counts:', {
+        markedCorrectCount,
+        markedIncorrectCount,
+        unmarkedIndices
+      });
+    
       // If score is 0, mark all unmarked letters as incorrect
       if (score === 0) {
+        console.log('Score is 0, marking all unmarked letters as incorrect');
         unmarkedIndices.forEach(index => {
           const letter = guess[index];
           markLetter(index, false);
@@ -218,23 +249,27 @@ export function WordGame({
         });
         return [true, newState];
       }
-
-      // Recalculate unmarked indices after applying known information
+    
+      // Initialize remainingUnmarked
       let remainingUnmarked = unmarkedIndices.filter(index => 
         !newState.tileStates[guessRowIndex][index].dot
       );
-
+    
       // Handle letters with known max frequencies
       const letterCounts = new Map<string, number>();
       remainingUnmarked.forEach(index => {
         const letter = guess[index];
         letterCounts.set(letter, (letterCounts.get(letter) || 0) + 1);
       });
-  
+    
+      console.log('Initial letter counts:', Array.from(letterCounts.entries()));
+    
       // First check known max frequencies
       letterCounts.forEach((count, letter) => {
+        console.log('Checking known max frequency for letter:', letter, 'count:', count);
         if (newState.knownMaxFrequency.has(letter)) {
           const maxFreq = newState.knownMaxFrequency.get(letter)!;
+          console.log('Found known max frequency:', maxFreq);
           if (count > maxFreq) {
             // Mark excess occurrences as incorrect
             const excessCount = count - maxFreq;
@@ -251,30 +286,49 @@ export function WordGame({
           }
         }
       });
-
+    
+      // Update remainingUnmarked after known frequencies
       remainingUnmarked = unmarkedIndices.filter(index => 
         !newState.tileStates[guessRowIndex][index].dot
       );
-
+    
       // Check unmarked letters against known lists
       remainingUnmarked.forEach(index => {
         const letter = guess[index];
+        console.log('Checking letter against known lists:', letter);
         if (newState.knownCorrectLetters.has(letter)) {
+          console.log('Letter is in known correct list');
           markLetter(index, true);
           markedCorrectCount++;
         } else if (newState.knownIncorrectLetters.has(letter)) {
+          console.log('Letter is in known incorrect list');
           markLetter(index, false);
           markedIncorrectCount++;
         }
       });
-  
-      // Recalculate unmarked indices after applying known information
+    
+      // Update remainingUnmarked after known lists
       remainingUnmarked = unmarkedIndices.filter(index => 
         !newState.tileStates[guessRowIndex][index].dot
       );
-  
+    
+      // Update markedCorrectCount and markedIncorrectCount
+      markedCorrectCount = 0;
+      markedIncorrectCount = 0;
+      currentTiles.forEach(tile => {
+        if (tile.dot === 'green-dot') markedCorrectCount++;
+        else if (tile.dot === 'red-dot') markedIncorrectCount++;
+      });
+    
+      console.log('After known lists check:', {
+        markedCorrectCount,
+        markedIncorrectCount,
+        remainingUnmarked: remainingUnmarked.length
+      });
+    
       // If marked correct count equals score, remaining must be incorrect
       if (markedCorrectCount === score && remainingUnmarked.length > 0) {
+        console.log('Marked correct count equals score, marking remaining as incorrect');
         remainingUnmarked.forEach(index => {
           const letter = guess[index];
           markLetter(index, false);
@@ -282,9 +336,10 @@ export function WordGame({
         });
         return [true, newState];
       }
-  
+    
       // If marked incorrect count plus score equals word length, remaining must be correct
       if (markedIncorrectCount + score === 4 && remainingUnmarked.length > 0) {
+        console.log('Marked incorrect + score equals word length, marking remaining as correct');
         remainingUnmarked.forEach(index => {
           const letter = guess[index];
           markLetter(index, true);
@@ -292,15 +347,30 @@ export function WordGame({
         });
         return [true, newState];
       }
-  
+    
+      // Update letterCounts based on current remainingUnmarked
+      letterCounts.clear();
+      remainingUnmarked.forEach(index => {
+        const letter = guess[index];
+        letterCounts.set(letter, (letterCounts.get(letter) || 0) + 1);
+      });
+    
       // Then handle new duplicates to discover max frequencies
       const duplicates = Array.from(letterCounts.entries())
         .filter(([, count]) => count > 1)
         .map(([letter]) => letter);
-  
-      duplicates.forEach(letter => {
+    
+      console.log('Found duplicates:', duplicates);
+    
+      // Process each duplicate letter one at a time
+      for (const letter of duplicates) {
         const remainingCorrect = score - markedCorrectCount;
         const letterFrequency = letterCounts.get(letter) || 0;
+        
+        console.log('Processing duplicate:', letter, {
+          remainingCorrect,
+          letterFrequency
+        });
         
         if (letterFrequency > remainingCorrect) {
           // We've discovered a max frequency
@@ -310,6 +380,11 @@ export function WordGame({
           const excessCount = letterFrequency - remainingCorrect;
           let marked = 0;
           
+          console.log('Marking excess occurrences:', {
+            excessCount,
+            remainingUnmarked
+          });
+          
           // Start from the end to mark later occurrences
           for (let i = remainingUnmarked.length - 1; i >= 0 && marked < excessCount; i--) {
             const index = remainingUnmarked[i];
@@ -318,18 +393,32 @@ export function WordGame({
               marked++;
             }
           }
+    
+          // Update remainingUnmarked after processing this letter
+          remainingUnmarked = unmarkedIndices.filter(index => 
+            !newState.tileStates[guessRowIndex][index].dot
+          );
+    
+          // Update counts
+          markedCorrectCount = 0;
+          markedIncorrectCount = 0;
+          currentTiles.forEach(tile => {
+            if (tile.dot === 'green-dot') markedCorrectCount++;
+            else if (tile.dot === 'red-dot') markedIncorrectCount++;
+          });
+    
+          // Update letterCounts for remaining unmarked letters
+          letterCounts.clear();
+          remainingUnmarked.forEach(index => {
+            const l = guess[index];
+            letterCounts.set(l, (letterCounts.get(l) || 0) + 1);
+          });
         }
-      });
-  
+      }
+    
+      console.log('=== Ending checkGuess ===');
+      console.log('Made changes:', madeChanges);
       return [madeChanges, newState];
-    };
-  
-    let currentState: GuessState = {
-      knownCorrectLetters,
-      knownIncorrectLetters,
-      knownMaxFrequency,
-      tileStates,
-      keyboardColors
     };
   
     let shouldRecheck = true;
