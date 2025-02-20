@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GameState, TileState, GameColor, GuessState, UseGameStateProps } from '../types/game.types';
-import { GAME_VERSION } from '../utils/version';
+import { GAME_VERSION } from '../utils';
 
 interface UseGameStateReturn extends GameState {
   handlePlayAgain: () => void;
