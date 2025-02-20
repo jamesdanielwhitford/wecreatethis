@@ -1,0 +1,95 @@
+.modal {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modalContent {
+  background-color: rgb(255, 255, 255);
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 90vw;
+  width: 500px;
+  position: relative;
+  text-align: left;
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: 2rem;
+}
+
+[data-theme="dark"] .modalContent {
+  background-color: rgb(0, 0, 0);
+  color: rgb(248, 248, 248);
+}
+
+.modalContent h2 {
+  margin-bottom: 1rem;
+}
+
+.modalContent p {
+  margin-bottom: 0.5rem;
+}
+
+.modalContent ul {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.modalContent li {
+  margin-bottom: 0.5rem;
+}
+
+.closeButton {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.modalButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 1.5rem;
+}
+
+.navButton {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background-color: rgb(211, 214, 218);
+  color: rgb(0, 0, 0);
+  text-decoration: none;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  text-align: center;
+  transition: background-color 0.3s;
+}
+
+[data-theme="dark"] .navButton {
+  background-color: rgb(129, 131, 132);
+  color: rgb(248, 248, 248);
+}
+
+.navButton:hover {
+  opacity: 0.9;
+}
+
+@media (min-width: 768px) {
+  .modalContent {
+    padding: 2.5rem;
+    max-width: 600px;
+  }
+}

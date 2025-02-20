@@ -1,0 +1,93 @@
+.keyboard {
+  width: 100%;
+  padding: 8px 8px 8px 8px;
+  background-color: rgb(255, 255, 255);
+  position: relative;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  grid-template-rows: repeat(3, 1fr);
+  gap: 6px;
+  touch-action: manipulation;
+  user-select: none;
+  z-index: 10;
+}
+
+[data-theme="dark"] .keyboard {
+  background-color: rgb(0, 0, 0);
+}
+
+.keyboardRow {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.keyboardButton {
+  width: 30px;
+  height: 45px;
+  font-size: 13px;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  background-color: rgb(211, 214, 218);
+  color: rgb(0, 0, 0);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background-color 0.3s, color 0.3s;
+  padding: 0 4px;
+  user-select: none;
+}
+
+.keyboardButton.orange {
+  background-color: rgb(201, 180, 88);
+  color: rgb(255, 255, 255);
+}
+
+.keyboardButton.red {
+  background-color: rgb(220, 95, 95);
+  color: rgb(255, 255, 255);
+}
+
+.keyboardButton.green {
+  background-color: rgb(106, 170, 100);
+  color: rgb(255, 255, 255);
+}
+
+.wideButton {
+  width: auto;
+  min-width: 50px;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .keyboardButton {
+  background-color: rgb(129, 131, 132);
+  color: rgb(248, 248, 248);
+}
+
+[data-theme="dark"] .keyboardButton.orange {
+  background-color: rgb(181, 159, 59);
+  color: rgb(248, 248, 248);
+}
+
+[data-theme="dark"] .keyboardButton.red {
+  background-color: rgb(180, 75, 75);
+  color: rgb(248, 248, 248);
+}
+
+[data-theme="dark"] .keyboardButton.green {
+  background-color: rgb(83, 141, 78);
+  color: rgb(248, 248, 248);
+}
+
+@media (min-width: 768px) {
+  .keyboardButton {
+    width: 58px;
+    height: 58px;
+    font-size: 18px;
+  }
+
+  .wideButton {
+    min-width: 75px;
+  }
+}
