@@ -14,7 +14,7 @@ export default function useGoalData({ initialDate = new Date() }: UseGoalDataPro
     preferences,
     addIncomeToDay,
     updateGoals,
-    isLoading,
+    isLoading: globalIsLoading,
     setIsLoading
   } = useData();
 
@@ -28,15 +28,18 @@ export default function useGoalData({ initialDate = new Date() }: UseGoalDataPro
     progress: number;
     segments: IncomeSource[];
   }>({ progress: 0, segments: [] });
+  
+  const [isLocalLoading, setIsLocalLoading] = useState(false);
+  const isLoading = globalIsLoading || isLocalLoading;
+  const [isDataReady, setIsDataReady] = useState(false);
 
   // Load daily and monthly data for the selected date
   const loadData = useCallback(async () => {
     if (!goals) return;
     
-    setIsLoading(true);
+    setIsLocalLoading(true);
     try {
       // Get selected day's data
-      const dailyEntryKey = getEntryKey(selectedDate);
       const dataService = await import('../services/data/dataService').then(mod => mod.dataService);
       const dailyEntry = await dataService.getDailyEntry(selectedDate);
       
@@ -62,12 +65,14 @@ export default function useGoalData({ initialDate = new Date() }: UseGoalDataPro
       } else {
         setMonthlyData({ progress: 0, segments: [] });
       }
+      
+      setIsDataReady(true);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
-      setIsLoading(false);
+      setIsLocalLoading(false);
     }
-  }, [selectedDate, goals, setIsLoading]);
+  }, [selectedDate, goals]);
 
   // Load data when dependencies change
   useEffect(() => {
@@ -76,16 +81,16 @@ export default function useGoalData({ initialDate = new Date() }: UseGoalDataPro
 
   // Add income to the current day
   const addIncome = useCallback(async (amount: number, source: IncomeSource) => {
-    setIsLoading(true);
+    setIsLocalLoading(true);
     try {
       await addIncomeToDay(selectedDate, amount, source);
       await loadData(); // Reload data after adding income
     } catch (error) {
       console.error('Error adding income:', error);
     } finally {
-      setIsLoading(false);
+      setIsLocalLoading(false);
     }
-  }, [selectedDate, addIncomeToDay, loadData, setIsLoading]);
+  }, [selectedDate, addIncomeToDay, loadData]);
 
   // Update goals
   const updateGoalSettings = useCallback(async ({
@@ -97,7 +102,7 @@ export default function useGoalData({ initialDate = new Date() }: UseGoalDataPro
     monthlyGoal?: number;
     activeDays?: boolean[];
   }) => {
-    setIsLoading(true);
+    setIsLocalLoading(true);
     try {
       const updates: any = {};
       
@@ -117,9 +122,9 @@ export default function useGoalData({ initialDate = new Date() }: UseGoalDataPro
     } catch (error) {
       console.error('Error updating goals:', error);
     } finally {
-      setIsLoading(false);
+      setIsLocalLoading(false);
     }
-  }, [updateGoals, setIsLoading]);
+  }, [updateGoals]);
 
   return {
     selectedDate,
@@ -135,6 +140,7 @@ export default function useGoalData({ initialDate = new Date() }: UseGoalDataPro
     addIncome,
     updateGoalSettings,
     isLoading,
+    isDataReady,
     reload: loadData
   };
 }

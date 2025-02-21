@@ -13,6 +13,7 @@ import BottomNav from '@/apps/bossbitch/components/Navigation/BottomNav';
 import SettingsPage from '@/apps/bossbitch/components/Settings/SettingsPage';
 import { DataProvider } from '@/apps/bossbitch/contexts/DataContext';
 import useGoalData from '@/apps/bossbitch/hooks/useGoalData';
+import { IncomeSource } from '@/apps/bossbitch/types/goal.types';
 import styles from './page.module.css';
 
 type ThemeOption = 'light' | 'dark' | 'system';
@@ -38,7 +39,8 @@ function BossBitchContent() {
     monthlyRingColor,
     addIncome,
     updateGoalSettings,
-    isLoading
+    isLoading,
+    isDataReady
   } = useGoalData();
 
   // Initialize theme based on saved preference and device setting
@@ -135,6 +137,41 @@ function BossBitchContent() {
     setShowAddModal(false);
   };
 
+  // Conditionally render skeleton loading state or actual content
+  const renderGoalCard = (
+    title: string, 
+    data: { progress: number; segments: IncomeSource[] }, 
+    goal: number, 
+    color: string, 
+    onClick: () => void
+  ) => {
+    return (
+      <div className={styles.goalSection}>
+        <h2 className={styles.goalCardTitle}>{title}</h2>
+        <button 
+          className={styles.goalCard} 
+          onClick={onClick}
+        >
+          <div className={styles.ringContainer}>
+            <ProgressRing
+              progress={data.progress}
+              maxValue={goal}
+              color={color}
+              size={240}
+              strokeWidth={24}
+              segments={data.segments}
+              // Only animate after data is ready
+              animate={isDataReady}
+            />
+          </div>
+          <div className={styles.goalValue}>
+            {formatZAR(data.progress)} / {formatZAR(goal)}
+          </div>
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className={styles.container}>
       <main className={styles.mainContent}>
@@ -154,62 +191,36 @@ function BossBitchContent() {
 
             <div className={styles.goalCardContainer}>
               {/* Daily Goal Section */}
-              <div className={styles.goalSection}>
-                <h2 className={styles.goalCardTitle}>Daily Goal</h2>
-                <button 
-                  className={styles.goalCard} 
-                  onClick={() => setActiveView('daily')}
-                >
-                  <div className={styles.ringContainer}>
-                    <ProgressRing
-                      progress={dailyData.progress}
-                      maxValue={dailyGoal}
-                      color={dailyRingColor}
-                      size={240}
-                      strokeWidth={24}
-                      segments={dailyData.segments}
-                    />
-                  </div>
-                  <div className={styles.goalValue}>
-                    {formatZAR(dailyData.progress)} / {formatZAR(dailyGoal)}
-                  </div>
-                </button>
-              </div>
+              {renderGoalCard(
+                "Daily Goal", 
+                dailyData, 
+                dailyGoal, 
+                dailyRingColor, 
+                () => setActiveView('daily')
+              )}
 
               {/* Monthly Goal Section */}
-              <div className={styles.goalSection}>
-                <h2 className={styles.goalCardTitle}>Monthly Goal</h2>
-                <button 
-                  className={styles.goalCard}
-                  onClick={() => setActiveView('monthly')}
-                >
-                  <div className={styles.ringContainer}>
-                    <ProgressRing
-                      progress={monthlyData.progress}
-                      maxValue={monthlyGoal}
-                      color={monthlyRingColor}
-                      size={240}
-                      strokeWidth={24}
-                      segments={monthlyData.segments}
-                    />
-                  </div>
-                  <div className={styles.goalValue}>
-                    {formatZAR(monthlyData.progress)} / {formatZAR(monthlyGoal)}
-                  </div>
-                </button>
-              </div>
+              {renderGoalCard(
+                "Monthly Goal", 
+                monthlyData, 
+                monthlyGoal, 
+                monthlyRingColor, 
+                () => setActiveView('monthly')
+              )}
 
               {/* Action Buttons */}
               <div className={styles.actionsContainer}>
                 <button 
                   onClick={() => setShowAddModal(true)}
                   className={styles.addButton}
+                  disabled={isLoading}
                 >
                   Add to Goal
                 </button>
                 <button 
                   onClick={() => setShowEditModal(true)}
                   className={styles.editButton}
+                  disabled={isLoading}
                 >
                   Edit Goals
                 </button>

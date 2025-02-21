@@ -1,7 +1,7 @@
+// src/apps/bossbitch/components/ProgressRing/index.tsx
 'use client';
 
-// src/apps/bossbitch/components/ProgressRing/index.tsx
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { IncomeSource } from '../../types/goal.types';
 import styles from './styles.module.css';
 
@@ -27,6 +27,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
   className = '',
 }) => {
   const circleRef = useRef<SVGCircleElement>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   
@@ -39,18 +40,28 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
   };
 
   useEffect(() => {
-    if (animate && circleRef.current) {
+    // Set initialization flag on mount
+    setIsInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (animate && circleRef.current && isInitialized) {
       const circle = circleRef.current;
-      // Start from 0
-      circle.style.strokeDashoffset = `${getStrokeDashoffset(0)}`;
       
-      // Animate to actual value
-      requestAnimationFrame(() => {
+      // Apply the initial position (start at 12 o'clock)
+      circle.style.transform = 'rotate(-90deg)';
+      circle.style.transformOrigin = 'center';
+      
+      if (percentage > 0) {
+        // Animate stroke dashoffset
         circle.style.transition = 'stroke-dashoffset 0.8s ease-in-out';
         circle.style.strokeDashoffset = `${getStrokeDashoffset(percentage)}`;
-      });
+      } else {
+        // Don't animate if percentage is 0
+        circle.style.strokeDashoffset = `${circumference}`;
+      }
     }
-  }, [percentage, animate, circumference]);
+  }, [percentage, animate, circumference, isInitialized]);
 
   const renderSegments = () => {
     if (!segments || segments.length === 0) return null;
@@ -90,6 +101,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
           strokeDashoffset={dashOffset}
           strokeLinecap="butt"
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          style={{ transition: isInitialized ? 'stroke-dashoffset 0.8s ease-in-out' : 'none' }}
         />
       );
     });
@@ -100,7 +112,8 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
       <svg 
         width={size} 
         height={size} 
-        className={animate ? styles.animate : ''}
+        className={animate && isInitialized ? styles.animate : ''}
+        style={{ overflow: 'visible' }}
       >
         {/* Background circle */}
         <circle
@@ -127,9 +140,14 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
             stroke={color}
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
-            strokeDashoffset={animate ? circumference : getStrokeDashoffset(percentage)}
+            strokeDashoffset={!isInitialized ? circumference : getStrokeDashoffset(percentage)}
             className={styles.progress}
             strokeLinecap="round"
+            style={{ 
+              transform: 'rotate(-90deg)',
+              transformOrigin: 'center',
+              transition: isInitialized && animate ? 'stroke-dashoffset 0.8s ease-in-out' : 'none'
+            }}
           />
         )}
       </svg>
