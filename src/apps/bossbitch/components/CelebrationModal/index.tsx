@@ -21,50 +21,107 @@ interface CelebrationContent {
 const CelebrationModal: React.FC<CelebrationModalProps> = ({ onClose }) => {
   const [content, setContent] = useState<CelebrationContent | null>(null);
 
-  // Quotes and songs organized by day of week (0 = Sunday, 6 = Saturday)
+  // Updated quotes and songs organized by day of week (0 = Sunday, 6 = Saturday)
   const celebrationContent: CelebrationContent[][] = [
-    // Sunday content
+    // Sunday: Self-Worth & Celebrating Success
     [
       {
-        quote: "Sunday success feels different! Start your week knowing you're already winning! 💪",
+        quote: "I see it, I like it, I want it, I got it. 💎",
         song: {
-          title: "Good as Hell",
-          artist: "Lizzo",
-          url: "https://www.youtube.com/watch?v=vuq-VAiW9kw"
+          title: "7 Rings",
+          artist: "Ariana Grande",
+          url: "https://www.youtube.com/watch?v=QYh6mYIJG2Y"
         }
       },
       {
-        quote: "A Sunday win sets the tone for the entire week. Go off, Boss Bitch! ✨",
+        quote: "Own your crown and never dim your shine. 👑",
         song: {
-          title: "Sunday Morning",
-          artist: "Maroon 5",
-          url: "https://www.youtube.com/watch?v=S2Cti12XBw4"
+          title: "Crown",
+          artist: "Kelly Rowland",
+          url: "https://www.youtube.com/watch?v=_YF5W9Eo7gk"
         }
       }
     ],
-    // Monday content
+    // Monday: Boss Moves & Money Vibes
     [
       {
-        quote: "Crushing Monday goals? You're not a boss bitch, you're THE boss bitch! 👑",
+        quote: "Who run the world? Girls. 💪",
         song: {
-          title: "Motivation",
-          artist: "Normani",
-          url: "https://www.youtube.com/watch?v=FKXSh14svlQ"
+          title: "Run the World (Girls)",
+          artist: "Beyoncé",
+          url: "https://www.youtube.com/watch?v=VBmMU_iwe6U"
         }
       },
       {
-        quote: "Monday hustle pays off! Your bank account? Thriving. You? Unstoppable. 🚀",
+        quote: "Classy, bougie, bossy. All day. 🔥",
         song: {
-          title: "Boss Lady",
-          artist: "Chlöe",
-          url: "https://www.youtube.com/watch?v=qv_bzZeYeUE"
+          title: "Savage Remix (feat. Beyoncé)",
+          artist: "Megan Thee Stallion",
+          url: "https://www.youtube.com/watch?v=6xW2rkh9v4k"
         }
       }
     ],
-    // Tuesday content
+    // Tuesday: Confidence & Hustle Energy
     [
       {
-        quote: "On Tuesdays, we make money moves like a true queen! 💅",
+        quote: "Because confidence is your superpower. ✨",
+        song: {
+          title: "Confident",
+          artist: "Demi Lovato",
+          url: "https://www.youtube.com/watch?v=cwLRQn61oUY"
+        }
+      },
+      {
+        quote: "Every day's a chance to level up. 💯",
+        song: {
+          title: "Level Up",
+          artist: "Ciara",
+          url: "https://www.youtube.com/watch?v=Dh-ULbQmmF8"
+        }
+      }
+    ],
+    // Wednesday: Ambition & Power Moves
+    [
+      {
+        quote: "I see it, I want it, I stunt, yellow bone it. 💸",
+        song: {
+          title: "Formation",
+          artist: "Beyoncé",
+          url: "https://www.youtube.com/watch?v=WDZJPJV__bQ"
+        }
+      },
+      {
+        quote: "You’ve got the power. 💪",
+        song: {
+          title: "Power",
+          artist: "Little Mix",
+          url: "https://www.youtube.com/watch?v=cOQUePka3hE"
+        }
+      }
+    ],
+    // Thursday: Boss Bitch Energy
+    [
+      {
+        quote: "Walking like a boss because you are the boss. 👑",
+        song: {
+          title: "Boss Bitch",
+          artist: "Doja Cat",
+          url: "https://www.youtube.com/watch?v=RpdBXp8YyrE"
+        }
+      },
+      {
+        quote: "Because you’re doing just fine, living your best life. 🌟",
+        song: {
+          title: "Just Fine",
+          artist: "Mary J. Blige",
+          url: "https://www.youtube.com/watch?v=yt5SPJcE6sM"
+        }
+      }
+    ],
+    // Friday: Money & Ambition Vibes
+    [
+      {
+        quote: "Because making money is a vibe and a statement. 💰",
         song: {
           title: "Money",
           artist: "Cardi B",
@@ -72,114 +129,47 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({ onClose }) => {
         }
       },
       {
-        quote: "Tuesday triumph unlocked! You're crushing these goals like it's nothing! 💯",
+        quote: "A timeless anthem about new beginnings and unstoppable energy. ✨",
         song: {
-          title: "Savage",
-          artist: "Megan Thee Stallion",
-          url: "https://www.youtube.com/watch?v=THht6KliJ3Q"
+          title: "Feeling Good",
+          artist: "Nina Simone",
+          url: "https://www.youtube.com/watch?v=D5Y11hwjMNs"
         }
       }
     ],
-    // Wednesday content
+    // Saturday: Ultimate Celebration
     [
       {
-        quote: "Wednesday win secured! They said you couldn't, but you DID! 💪",
+        quote: "Celebrating feeling good, looking good, and doing good for yourself. 💖",
         song: {
-          title: "Run The World (Girls)",
-          artist: "Beyoncé",
-          url: "https://www.youtube.com/watch?v=VBmMU_iwe6U"
+          title: "Good as Hell",
+          artist: "Lizzo",
+          url: "https://www.youtube.com/watch?v=vuq-VAiW9kw"
         }
       },
       {
-        quote: "Winning Wednesdays are your specialty. This is what excellence looks like! ⭐",
+        quote: "A vibe for embracing every part of your powerful self. 🌟",
         song: {
-          title: "Confident",
-          artist: "Demi Lovato",
-          url: "https://www.youtube.com/watch?v=cwLRQn61oUY"
-        }
-      }
-    ],
-    // Thursday content
-    [
-      {
-        quote: "Boss moves only on Thursdays! And you just made a big one! 🔥",
-        song: {
-          title: "Independent Women, Pt. I",
-          artist: "Destiny's Child",
-          url: "https://www.youtube.com/watch?v=0lPQZni7I18"
-        }
-      },
-      {
-        quote: "Thursday hustle pays off! Another goal crushed! What can't you do? 🚀",
-        song: {
-          title: "Work Bitch",
-          artist: "Britney Spears",
-          url: "https://www.youtube.com/watch?v=pt8VYOfr8To"
-        }
-      }
-    ],
-    // Friday content
-    [
-      {
-        quote: "Friday wins hit different! You're not just meeting goals, you're setting new standards! 📈",
-        song: {
-          title: "Survivor",
-          artist: "Destiny's Child",
-          url: "https://www.youtube.com/watch?v=Wmc8bQoL-J0"
-        }
-      },
-      {
-        quote: "Finishing the week strong! This is YOUR empire and you're running it like a BOSS! 👑",
-        song: {
-          title: "Formation",
-          artist: "Beyoncé",
-          url: "https://www.youtube.com/watch?v=WDZJPJV__bQ"
-        }
-      }
-    ],
-    // Saturday content
-    [
-      {
-        quote: "Weekend warrior! Making money while others are resting. That's BOSS energy! 💰",
-        song: {
-          title: "7 rings",
-          artist: "Ariana Grande",
-          url: "https://www.youtube.com/watch?v=QYh6mYIJG2Y"
-        }
-      },
-      {
-        quote: "Saturday success is special. Keep stacking that wealth, queen! 👑",
-        song: {
-          title: "Level Up",
-          artist: "Ciara",
-          url: "https://www.youtube.com/watch?v=Dh-ULbQmmF8"
+          title: "I Am Woman",
+          artist: "Emmy Meli",
+          url: "https://www.youtube.com/watch?v=tjnq5StX68g"
         }
       }
     ]
   ];
 
   useEffect(() => {
-    // Get current day of week (0-6)
     const dayOfWeek = new Date().getDay();
-    
-    // Get content options for this day
     const todaysOptions = celebrationContent[dayOfWeek];
-    
-    // Select random content from today's options
     const randomIndex = Math.floor(Math.random() * todaysOptions.length);
     setContent(todaysOptions[randomIndex]);
-    
-    // Trigger confetti effect
     generateConfetti();
   }, []);
 
-  // Generate confetti effect
   const generateConfetti = () => {
-    // Implementation would go here if using a confetti library
-    // For now, we'll use CSS animations
+    // Confetti effect placeholder
   };
 
-  // If content isn't loaded yet, show loading state
   if (!content) {
     return (
       <div className={styles.modal}>
@@ -200,33 +190,22 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({ onClose }) => {
           return <div key={i} className={styles.confettiPiece} style={style} />;
         })}
       </div>
-      
+
       <div className={styles.container}>
-        {/* Close button */}
         <div className={styles.header}>
           <h2 className={styles.title}>🎉 Goal Achieved! 🎉</h2>
-          <button 
-            onClick={onClose}
-            className={styles.closeButton}
-          >
+          <button onClick={onClose} className={styles.closeButton}>
             <X size={24} />
           </button>
         </div>
 
-        {/* Celebration content */}
         <div className={styles.content}>
-          <p className={styles.quote}>
-            {content.quote}
-          </p>
+          <p className={styles.quote}>{content.quote}</p>
 
           <div className={styles.songContainer}>
             <p className={styles.songLabel}>Celebration Song:</p>
-            <p className={styles.songTitle}>
-              {content.song.title}
-            </p>
-            <p className={styles.songArtist}>
-              by {content.song.artist}
-            </p>
+            <p className={styles.songTitle}>{content.song.title}</p>
+            <p className={styles.songArtist}>by {content.song.artist}</p>
             <a
               href={content.song.url}
               target="_blank"
@@ -238,10 +217,7 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({ onClose }) => {
             </a>
           </div>
 
-          <button
-            onClick={onClose}
-            className={styles.continueButton}
-          >
+          <button onClick={onClose} className={styles.continueButton}>
             Keep Crushing It!
           </button>
         </div>
