@@ -1,202 +1,253 @@
 /* src/apps/bossbitch/components/CelebrationModal/styles.module.css */
 
 .modal {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(4px);
-    z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--spacing-4);
-    overflow: hidden;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.container {
+  max-width: 28rem;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  animation: modalEnter 0.5s cubic-bezier(0.17, 0.67, 0.21, 1.69);
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
   }
-  
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-family: serif;
+  font-style: italic;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.closeButton {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(5px);
+  border: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.content {
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  border-radius: 24px;
+  padding: 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.quote {
+  font-size: 1.5rem;
+  line-height: 1.4;
+  color: #FFFFFF;
+  margin-bottom: 2rem;
+  animation: fadeIn 0.8s ease-out;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  font-weight: 500;
+}
+
+.songContainer {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: fadeIn 1s ease-out 0.3s backwards;
+}
+
+.songLabel {
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.songTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 0.25rem;
+}
+
+.songArtist {
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.playButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #FFFFFF;
+  color: #6D28D9;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.playButton:hover {
+  background-color: #F9FAFB;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.continueButton {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  font-size: 1rem;
+  animation: fadeIn 1s ease-out 0.6s backwards;
+}
+
+.continueButton:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Confetti animation */
+.confetti {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.confettiPiece {
+  position: absolute;
+  width: 10px;
+  height: 20px;
+  background: white;
+  border-radius: 10px;
+  top: -20px;
+  animation: fallConfetti 3s ease-in infinite;
+}
+
+@keyframes fallConfetti {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Loading state */
+.loading {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 500;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Fade in animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Media queries for responsive design */
+@media (max-width: 480px) {
   .container {
-    max-width: 28rem;
-    width: 100%;
-    position: relative;
-    z-index: 2;
-  }
-  
-  .header {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: var(--spacing-4);
-  }
-  
-  .closeButton {
-    color: var(--color-text-tertiary);
-    background: rgba(0, 0, 0, 0.3);
-    border: none;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-  }
-  
-  .closeButton:hover {
-    color: var(--color-text-primary);
-    background: rgba(0, 0, 0, 0.5);
+    width: 90%;
   }
   
   .content {
-    background: linear-gradient(135deg, var(--color-purple-600), var(--color-purple-700), var(--color-purple-800));
-    border-radius: var(--radius-2xl);
-    padding: var(--spacing-8);
-    text-align: center;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    overflow: hidden;
-    position: relative;
-  }
-  
-  .title {
-    font-size: var(--text-3xl);
-    font-weight: var(--font-bold);
-    color: var(--color-white);
-    margin-bottom: var(--spacing-6);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    padding: 1.5rem;
+    border-radius: 16px;
   }
   
   .quote {
-    font-size: var(--text-xl);
-    color: var(--color-white);
-    min-height: 4rem;
-    margin-bottom: var(--spacing-8);
-    transition: opacity 500ms, transform 500ms;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .title {
+    font-size: 1.5rem;
   }
   
   .songContainer {
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-6);
-    margin-bottom: var(--spacing-6);
-    backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
   }
   
-  .songLabel {
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: var(--spacing-2);
-    font-size: var(--text-sm);
+  .playButton, .continueButton {
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
   }
-  
-  .songTitle {
-    font-size: var(--text-lg);
-    font-weight: var(--font-semibold);
-    color: var(--color-white);
-    margin-bottom: var(--spacing-1);
-  }
-  
-  .songArtist {
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: var(--spacing-4);
-    font-size: var(--text-sm);
-  }
-  
-  .playButton {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-2);
-    background-color: var(--color-white);
-    color: var(--color-purple-600);
-    padding: var(--spacing-3) var(--spacing-6);
-    border-radius: var(--radius-xl);
-    font-weight: var(--font-semibold);
-    transition: all var(--transition-fast);
-    text-decoration: none;
-  }
-  
-  .playButton:hover {
-    background-color: var(--color-purple-50);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-  
-  .continueButton {
-    width: 100%;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--color-white);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-3) var(--spacing-6);
-    font-weight: var(--font-medium);
-    transition: all var(--transition-fast);
-    cursor: pointer;
-  }
-  
-  .continueButton:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-  }
-  
-  /* Confetti animation */
-  .confetti {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-    z-index: 1;
-  }
-  
-  .confettiPiece {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background-color: var(--color-purple-500);
-    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-    animation: confettiFall 3s linear infinite;
-  }
-  
-  /* Animations */
-  @keyframes bounceIn {
-    0% {
-      opacity: 0;
-      transform: scale(0.3);
-    }
-    50% {
-      opacity: 0.9;
-      transform: scale(1.1);
-    }
-    80% {
-      opacity: 1;
-      transform: scale(0.9);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  
-  @keyframes confettiFall {
-    0% {
-      transform: translateY(-100%) rotate(0deg);
-    }
-    100% {
-      transform: translateY(100vh) rotate(720deg);
-    }
-  }
-  
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .fadeSlide {
-    animation: slideIn 0.5s ease-out;
-  }
+}

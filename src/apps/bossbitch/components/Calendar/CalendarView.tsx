@@ -2,7 +2,7 @@
 
 // src/apps/bossbitch/components/Calendar/CalendarView.tsx
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Calendar as CalendarIcon } from 'lucide-react';
 import CalendarGrid from './CalendarGrid';
 import ProgressRing from '../ProgressRing';
 import { IncomeSource } from '../../types/goal.types';
@@ -28,6 +28,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [weekDays, setWeekDays] = useState<Date[]>([]);
   const [calendarGoals, setCalendarGoals] = useState<any[]>([]);
   const [isLoadingCalendar, setIsLoadingCalendar] = useState(false);
+  const [showCalendarGrid, setShowCalendarGrid] = useState(false);
 
   // Get goal data from hook
   const { 
@@ -48,7 +49,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   // Generate week days for the selected date
   useEffect(() => {
-    if (selectedDate && type === 'daily') {
+    if (selectedDate) {
       const date = new Date(selectedDate);
       const day = date.getDay();
       const diff = date.getDate() - day;
@@ -65,11 +66,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       
       setWeekDays(days);
     }
-  }, [selectedDate, type]);
+  }, [selectedDate]);
 
   // Load calendar data when month/year changes
   useEffect(() => {
     const loadCalendarData = async () => {
+      if (!showCalendarGrid) return; // Only load data when calendar grid is shown
+      
       setIsLoadingCalendar(true);
       try {
         if (type === 'daily') {
@@ -117,68 +120,93 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     };
     
     loadCalendarData();
-  }, [currentYear, currentMonth, type, dailyGoal, monthlyGoal]);
+  }, [currentYear, currentMonth, type, dailyGoal, monthlyGoal, showCalendarGrid]);
 
   // Navigation handlers
   const goToPrevious = () => {
-    if (type === 'monthly') {
-      setCurrentYear(prev => prev - 1);
-    } else {
-      if (currentMonth === 0) {
-        setCurrentMonth(11);
+    if (showCalendarGrid) {
+      // When in calendar grid mode, navigate months/years
+      if (type === 'monthly') {
         setCurrentYear(prev => prev - 1);
       } else {
-        setCurrentMonth(prev => prev - 1);
+        if (currentMonth === 0) {
+          setCurrentMonth(11);
+          setCurrentYear(prev => prev - 1);
+        } else {
+          setCurrentMonth(prev => prev - 1);
+        }
       }
+    } else {
+      // When in day view mode, navigate days
+      const newDate = new Date(selectedDate);
+      if (type === 'daily') {
+        newDate.setDate(newDate.getDate() - 1);
+      } else {
+        newDate.setMonth(newDate.getMonth() - 1);
+      }
+      setSelectedDate(newDate);
     }
   };
 
   const goToNext = () => {
-    if (type === 'monthly') {
-      setCurrentYear(prev => prev + 1);
-    } else {
-      if (currentMonth === 11) {
-        setCurrentMonth(0);
+    if (showCalendarGrid) {
+      // When in calendar grid mode, navigate months/years
+      if (type === 'monthly') {
         setCurrentYear(prev => prev + 1);
       } else {
-        setCurrentMonth(prev => prev + 1);
+        if (currentMonth === 11) {
+          setCurrentMonth(0);
+          setCurrentYear(prev => prev + 1);
+        } else {
+          setCurrentMonth(prev => prev + 1);
+        }
       }
+    } else {
+      // When in day view mode, navigate days
+      const newDate = new Date(selectedDate);
+      if (type === 'daily') {
+        newDate.setDate(newDate.getDate() + 1);
+      } else {
+        newDate.setMonth(newDate.getMonth() + 1);
+      }
+      setSelectedDate(newDate);
     }
   };
 
-  // Get header text based on view type
+  // Get header text based on view type and mode
   const getHeaderText = () => {
-    if (type === 'monthly') {
-      return currentYear.toString();
-    }
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'long',
-      year: 'numeric'
-    }).format(new Date(currentYear, currentMonth));
-  };
-
-  // Format the selected date
-  const formatSelectedDate = () => {
-    if (!selectedDate) return '';
-    
-    if (type === 'monthly') {
+    if (showCalendarGrid) {
+      if (type === 'monthly') {
+        return currentYear.toString();
+      }
       return new Intl.DateTimeFormat('en-US', { 
-        month: 'long', 
-        year: 'numeric' 
+        month: 'long',
+        year: 'numeric'
+      }).format(new Date(currentYear, currentMonth));
+    } else {
+      if (type === 'monthly') {
+        return new Intl.DateTimeFormat('en-US', { 
+          month: 'long',
+          year: 'numeric' 
+        }).format(selectedDate);
+      }
+      return new Intl.DateTimeFormat('en-US', { 
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
       }).format(selectedDate);
     }
-    
-    return new Intl.DateTimeFormat('en-US', { 
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric'
-    }).format(selectedDate);
   };
 
   // Get goal data for a specific date
   const getGoalData = (date: Date) => {
     const dateString = date.toDateString();
     return calendarGoals.find(goal => goal.date.toDateString() === dateString);
+  };
+
+  // Toggle between date view and calendar grid
+  const toggleCalendarGrid = () => {
+    setShowCalendarGrid(prev => !prev);
   };
 
   // Calculate the percentage for progress bar
@@ -201,7 +229,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         <div className={styles.header}>
           <button
             onClick={onClose}
-            className={styles.closeButton}
+            className={styles.iconButton}
             aria-label="Close"
           >
             <X size={24} />
@@ -210,26 +238,32 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           <div className={styles.navigationContainer}>
             <button
               onClick={goToPrevious}
-              className={styles.navButton}
+              className={styles.iconButton}
               aria-label="Previous"
             >
               <ChevronLeft size={24} />
             </button>
             
-            <h2 className={styles.monthTitle}>
+            <h2 className={styles.headerTitle}>
               {getHeaderText()}
             </h2>
             
             <button
               onClick={goToNext}
-              className={styles.navButton}
+              className={styles.iconButton}
               aria-label="Next"
             >
               <ChevronRight size={24} />
             </button>
           </div>
 
-          <div style={{ width: '40px' }} /> {/* Spacer for alignment */}
+          <button
+            onClick={toggleCalendarGrid}
+            className={styles.iconButton}
+            aria-label={showCalendarGrid ? "Show Day View" : "Show Calendar"}
+          >
+            <CalendarIcon size={24} />
+          </button>
         </div>
 
         {/* Loading Indicator */}
@@ -239,177 +273,208 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             <p>Loading calendar data...</p>
           </div>
         ) : (
-          /* Calendar Grid */
-          <CalendarGrid
-            type={type}
-            month={currentMonth}
-            year={currentYear}
-            goals={calendarGoals}
-            selectedDate={selectedDate}
-            onDateSelect={setSelectedDate}
-          />
-        )}
-
-        {/* Selected Date View */}
-        {selectedDate && displayValue && type === 'daily' && (
-          <div className={styles.selectedDateView}>
-            {/* Week Strip */}
-            <div className={styles.weekStrip}>
-              {weekDays.map((day, index) => {
-                const dayGoal = getGoalData(day);
-                const isActive = day.toDateString() === selectedDate.toDateString();
-                const isCurrentDay = day.toDateString() === today.toDateString();
-                
-                return (
-                  <div 
-                    key={index} 
-                    className={styles.weekDay}
-                    onClick={() => setSelectedDate(day)}
-                  >
-                    <span className={styles.weekDayLabel}>
-                      {['S', 'M', 'T', 'W', 'T', 'F', 'S'][day.getDay()]}
-                    </span>
-                    <div className={`${styles.miniRing} ${isActive ? styles.active : ''}`}>
-                      <ProgressRing
-                        progress={dayGoal?.progress || 0}
-                        maxValue={dayGoal?.maxValue || 1}
-                        color={isCurrentDay ? dailyRingColor : '#888888'}
-                        size={24}
-                        strokeWidth={3}
-                        segments={dayGoal?.segments}
-                        animate={false}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Selected Date Title */}
-            <h3 className={styles.selectedDateTitle}>
-              {formatSelectedDate()}
-            </h3>
-
-            {/* Selected Date Ring */}
-            <div className={styles.selectedRingContainer}>
-              <ProgressRing
-                progress={displayValue.progress}
-                maxValue={maxValue}
-                color={ringColor}
-                size={200}
-                strokeWidth={20}
-                segments={displayValue.segments}
-                animate={true}
+          <>
+            {/* Calendar Grid (shown only when toggled on) */}
+            {showCalendarGrid ? (
+              <CalendarGrid
+                type={type}
+                month={currentMonth}
+                year={currentYear}
+                goals={calendarGoals}
+                selectedDate={selectedDate}
+                onDateSelect={(date) => {
+                  setSelectedDate(date);
+                  setShowCalendarGrid(false);
+                }}
               />
-            </div>
-            
-            {/* Details Section */}
-            <div className={styles.detailsContainer}>
-              <div className={styles.detailsHeader}>
-                <h4 className={styles.detailsTitle}>
-                  {type === 'daily' ? 'Daily Goal' : 'Monthly Goal'}
-                </h4>
-                <span className={styles.detailsValue}>
-                  {formatZAR(displayValue.progress)} / {formatZAR(maxValue)}
-                </span>
-              </div>
-              
-              <div className={styles.progressBar}>
-                <div 
-                  className={styles.progressFill}
-                  style={{ width: `${calculatePercentage()}%` }}
-                />
-              </div>
-              
-              {displayValue.segments && displayValue.segments.length > 0 && (
-                <>
-                  <h5 className={styles.sourcesTitle}>Income Sources:</h5>
-                  <div className={styles.sourcesList}>
-                    {displayValue.segments.map((segment: IncomeSource) => (
-                      <div 
-                        key={segment.id}
-                        className={styles.sourceItem}
-                      >
-                        <div className={styles.sourceInfo}>
+            ) : (
+              /* Day View (default view) */
+              <>
+                {type === 'daily' && (
+                  <div className={styles.selectedDateView}>
+                    {/* Week Strip */}
+                    <div className={styles.weekStrip}>
+                      {weekDays.map((day, index) => {
+                        const dayGoal = getGoalData(day);
+                        const isActive = day.toDateString() === selectedDate.toDateString();
+                        const isCurrentDay = day.toDateString() === today.toDateString();
+                        
+                        return (
                           <div 
-                            className={styles.sourceColor}
-                            style={{ backgroundColor: segment.color }}
-                          />
-                          <span className={styles.sourceName}>{segment.name}</span>
-                        </div>
-                        <span className={styles.sourceValue}>
-                          {formatZAR(segment.value)}
+                            key={index} 
+                            className={`${styles.weekDay} ${isActive ? styles.activeWeekDay : ''}`}
+                            onClick={() => setSelectedDate(day)}
+                          >
+                            <span className={styles.weekDayLabel}>
+                              {['S', 'M', 'T', 'W', 'T', 'F', 'S'][day.getDay()]}
+                            </span>
+                            <div className={isActive ? styles.activeWeekDayHighlight : ''}>
+                              <span className={styles.weekDayNumber}>
+                                {day.getDate()}
+                              </span>
+                            </div>
+                            <div className={styles.miniRing}>
+                              <ProgressRing
+                                progress={dayGoal?.progress || 0}
+                                maxValue={dayGoal?.maxValue || 1}
+                                color={isCurrentDay ? dailyRingColor : '#888888'}
+                                size={30}
+                                strokeWidth={3}
+                                segments={dayGoal?.segments}
+                                animate={false}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Selected Date Ring */}
+                    <div className={styles.selectedRingContainer}>
+                      <ProgressRing
+                        progress={displayValue.progress}
+                        maxValue={maxValue}
+                        color={ringColor}
+                        size={240}
+                        strokeWidth={24}
+                        segments={displayValue.segments}
+                        animate={true}
+                      />
+                      <div className={styles.ringCenterValue}>
+                        {formatZAR(displayValue.progress)}
+                      </div>
+                    </div>
+                    
+                    {/* Details Section */}
+                    <div className={styles.detailsContainer}>
+                      <div className={styles.detailsHeader}>
+                        <h4 className={styles.detailsTitle}>
+                          Daily Goal
+                        </h4>
+                        <span className={styles.detailsValue}>
+                          {formatZAR(maxValue)}
                         </span>
                       </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Selected Month View */}
-        {selectedDate && displayValue && type === 'monthly' && (
-          <div className={styles.detailsContainer}>
-            <div className={styles.detailsHeader}>
-              <h4 className={styles.detailsTitle}>
-                {formatSelectedDate()}
-              </h4>
-              <span className={styles.detailsValue}>
-                {formatZAR(displayValue.progress)} / {formatZAR(maxValue)}
-              </span>
-            </div>
-            
-            <div className={styles.progressBar}>
-              <div 
-                className={styles.progressFill}
-                style={{ width: `${calculatePercentage()}%` }}
-              />
-            </div>
-            
-            {displayValue.segments && displayValue.segments.length > 0 && (
-              <>
-                <h5 className={styles.sourcesTitle}>Income Sources:</h5>
-                <div className={styles.sourcesList}>
-                  {displayValue.segments.map((segment: IncomeSource) => (
-                    <div 
-                      key={segment.id}
-                      className={styles.sourceItem}
-                    >
-                      <div className={styles.sourceInfo}>
+                      
+                      <div className={styles.progressBar}>
                         <div 
-                          className={styles.sourceColor}
-                          style={{ backgroundColor: segment.color }}
+                          className={styles.progressFill}
+                          style={{ width: `${calculatePercentage()}%` }}
                         />
-                        <span className={styles.sourceName}>{segment.name}</span>
                       </div>
-                      <span className={styles.sourceValue}>
-                        {formatZAR(segment.value)}
-                      </span>
+                      
+                      {displayValue.segments && displayValue.segments.length > 0 && (
+                        <>
+                          <h5 className={styles.sourcesTitle}>Income Sources:</h5>
+                          <div className={styles.sourcesList}>
+                            {displayValue.segments.map((segment: IncomeSource) => (
+                              <div 
+                                key={segment.id}
+                                className={styles.sourceItem}
+                              >
+                                <div className={styles.sourceInfo}>
+                                  <div 
+                                    className={styles.sourceColor}
+                                    style={{ backgroundColor: segment.color }}
+                                  />
+                                  <span className={styles.sourceName}>{segment.name}</span>
+                                </div>
+                                <span className={styles.sourceValue}>
+                                  {formatZAR(segment.value)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
+
+                {/* Monthly View */}
+                {type === 'monthly' && (
+                  <div className={styles.selectedDateView}>
+                    {/* Month Ring */}
+                    <div className={styles.selectedRingContainer}>
+                      <ProgressRing
+                        progress={displayValue.progress}
+                        maxValue={maxValue}
+                        color={ringColor}
+                        size={240}
+                        strokeWidth={24}
+                        segments={displayValue.segments}
+                        animate={true}
+                      />
+                      <div className={styles.ringCenterValue}>
+                        {formatZAR(displayValue.progress)}
+                      </div>
+                    </div>
+                    
+                    {/* Details Section */}
+                    <div className={styles.detailsContainer}>
+                      <div className={styles.detailsHeader}>
+                        <h4 className={styles.detailsTitle}>
+                          Monthly Goal
+                        </h4>
+                        <span className={styles.detailsValue}>
+                          {formatZAR(maxValue)}
+                        </span>
+                      </div>
+                      
+                      <div className={styles.progressBar}>
+                        <div 
+                          className={styles.progressFill}
+                          style={{ width: `${calculatePercentage()}%` }}
+                        />
+                      </div>
+                      
+                      {displayValue.segments && displayValue.segments.length > 0 && (
+                        <>
+                          <h5 className={styles.sourcesTitle}>Income Sources:</h5>
+                          <div className={styles.sourcesList}>
+                            {displayValue.segments.map((segment: IncomeSource) => (
+                              <div 
+                                key={segment.id}
+                                className={styles.sourceItem}
+                              >
+                                <div className={styles.sourceInfo}>
+                                  <div 
+                                    className={styles.sourceColor}
+                                    style={{ backgroundColor: segment.color }}
+                                  />
+                                  <span className={styles.sourceName}>{segment.name}</span>
+                                </div>
+                                <span className={styles.sourceValue}>
+                                  {formatZAR(segment.value)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Empty State */}
+                {selectedDate && !displayValue.progress && (
+                  <div className={styles.emptyState}>
+                    <ProgressRing
+                      progress={0}
+                      maxValue={100}
+                      color="#888888"
+                      size={80}
+                      strokeWidth={8}
+                      animate={false}
+                    />
+                    <p className={styles.emptyMessage}>
+                      No data for this {type === 'daily' ? 'day' : 'month'}.
+                    </p>
+                  </div>
+                )}
               </>
             )}
-          </div>
-        )}
-
-        {/* Empty State */}
-        {selectedDate && !displayValue.progress && (
-          <div className={styles.emptyState}>
-            <ProgressRing
-              progress={0}
-              maxValue={100}
-              color="#888888"
-              size={80}
-              strokeWidth={8}
-              animate={false}
-            />
-            <p className={styles.emptyMessage}>
-              No data for this {type === 'daily' ? 'day' : 'month'}.
-            </p>
-          </div>
+          </>
         )}
       </div>
     </div>

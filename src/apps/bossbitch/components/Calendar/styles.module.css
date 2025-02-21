@@ -2,353 +2,621 @@
 
 /* Calendar View */
 .calendarView {
-    position: fixed;
-    inset: 0;
-    background-color: #ffffff;
-    z-index: 50;
-    overflow: auto;
+  position: fixed;
+  inset: 0;
+  background-color: #000000;
+  z-index: 50;
+  overflow: auto;
+}
+
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1rem;
+  padding-top: 1.5rem;
+  padding-bottom: 4rem;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.iconButton {
+  color: #FFFFFF;
+  background: rgba(60, 60, 60, 0.6);
+  border: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.iconButton:hover {
+  background: rgba(80, 80, 80, 0.8);
+}
+
+.navigationContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
+}
+
+.headerTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  text-align: center;
+  min-width: 150px;
+}
+
+/* Week Strip (Apple Fitness style) */
+.weekStrip {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding: 0 0.5rem;
+  overflow-x: auto;
+  gap: 0.5rem;
+}
+
+.weekDay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 36px;
+  cursor: pointer;
+}
+
+.weekDayLabel {
+  color: #888888;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.weekDayNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 0.875rem;
+  color: #FFFFFF;
+  margin-bottom: 0.5rem;
+}
+
+.activeWeekDay .weekDayLabel {
+  color: #FFFFFF;
+}
+
+.activeWeekDayHighlight {
+  background-color: #FF0000;
+  border-radius: 50%;
+  margin-bottom: 0.5rem;
+}
+
+.activeWeekDayHighlight .weekDayNumber {
+  font-weight: 600;
+}
+
+.miniRing {
+  position: relative;
+  margin-top: 0.25rem;
+}
+
+/* Selected Date View */
+.selectedDateView {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.selectedRingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.ringCenterValue {
+  position: absolute;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #FFFFFF;
+  text-align: center;
+}
+
+/* Details Section */
+.detailsContainer {
+  background-color: #1A1A1A;
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 100%;
+  margin-top: 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid #333333;
+}
+
+.detailsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1rem;
+}
+
+.detailsTitle {
+  color: #FFFFFF;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.detailsValue {
+  color: #FFFFFF;
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+
+.progressBar {
+  height: 4px;
+  background-color: #333333;
+  border-radius: 9999px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: #7C3AED;
+}
+
+.sourcesTitle {
+  color: #888888;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.sourcesList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sourceItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: #242424;
+  border-radius: 12px;
+}
+
+.sourceInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sourceColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.sourceName {
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.sourceValue {
+  color: #FFFFFF;
+}
+
+/* Weekday Header */
+.weekdayHeader {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.weekdayLabel {
+  color: #888888;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  padding: 0.5rem;
+}
+
+/* Calendar Grid */
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.monthsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #888888;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.emptyMessage {
+  margin-top: 1rem;
+  font-size: 1.125rem;
+}
+
+/* Loading State */
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: #888888;
+}
+
+.spinner {
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top: 3px solid #7C3AED;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Light mode styles */
+:global(.light-mode) .calendarView {
+  background-color: #F5F5F7;
+}
+
+:global(.light-mode) .iconButton {
+  color: #000000;
+  background: rgba(200, 200, 200, 0.6);
+}
+
+:global(.light-mode) .iconButton:hover {
+  background: rgba(180, 180, 180, 0.8);
+}
+
+:global(.light-mode) .headerTitle {
+  color: #000000;
+}
+
+:global(.light-mode) .weekDayLabel {
+  color: #666666;
+}
+
+:global(.light-mode) .weekDayNumber {
+  color: #000000;
+}
+
+:global(.light-mode) .activeWeekDay .weekDayLabel {
+  color: #000000;
+}
+
+:global(.light-mode) .ringCenterValue {
+  color: #000000;
+}
+
+:global(.light-mode) .detailsContainer {
+  background-color: #FFFFFF;
+  border: 1px solid #DDDDDD;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+:global(.light-mode) .detailsTitle,
+:global(.light-mode) .detailsValue {
+  color: #000000;
+}
+
+:global(.light-mode) .progressBar {
+  background-color: #EEEEEE;
+}
+
+:global(.light-mode) .sourcesTitle {
+  color: #666666;
+}
+
+:global(.light-mode) .sourceItem {
+  background-color: #F5F5F7;
+}
+
+:global(.light-mode) .sourceName,
+:global(.light-mode) .sourceValue {
+  color: #000000;
+}
+
+:global(.light-mode) .weekdayLabel {
+  color: #666666;
+}
+
+:global(.light-mode) .emptyState {
+  color: #666666;
+}
+
+:global(.light-mode) .loadingState {
+  color: #666666;
+}
+
+:global(.light-mode) .spinner {
+  border-color: rgba(0, 0, 0, 0.1);
+  border-top-color: #7C3AED;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .headerTitle {
+    font-size: 1.25rem;
+    min-width: 120px;
   }
   
-  .container {
-    max-width: var(--container-width);
-    margin: 0 auto;
-    padding: var(--spacing-4);
-    padding-top: var(--spacing-6);
-    padding-bottom: var(--spacing-8);
+  .detailsContainer {
+    padding: 1rem;
   }
   
-  /* Header */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--spacing-6);
-  }
-  
-  .closeButton {
-    color: var(--color-text-primary);
-    background: rgba(60, 60, 60, 0.5);
-    border: none;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-  }
-  
-  .closeButton:hover {
-    background: rgba(80, 80, 80, 0.7);
-  }
-  
-  .navigationContainer {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-2);
-  }
-  
-  .monthTitle {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-semibold);
-    color: var(--color-text-primary);
-    text-align: center;
-    min-width: 180px;
-  }
-  
-  .navButton {
-    color: var(--color-text-primary);
-    background: rgba(60, 60, 60, 0.5);
-    border: none;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-  }
-  
-  .navButton:hover {
-    background: rgba(80, 80, 80, 0.7);
-  }
-  
-  /* Weekday Header */
-  .weekdayHeader {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    text-align: center;
-    margin-bottom: var(--spacing-4);
-  }
-  
-  .weekdayLabel {
-    color: var(--color-text-tertiary);
-    font-size: var(--text-xs);
-    font-weight: var(--font-medium);
-    text-transform: uppercase;
-    padding: var(--spacing-2);
-  }
-  
-  /* Calendar Grid */
-  .daysGrid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: var(--spacing-3);
-    margin-bottom: var(--spacing-8);
-  }
-  
-  .monthsGrid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--spacing-4);
-    margin-bottom: var(--spacing-8);
-  }
-  
-  /* Calendar Ring Cell */
-  .ringCell {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    aspect-ratio: 1/1;
-    padding: var(--spacing-1);
-    border-radius: var(--radius-lg);
-    background-color: transparent;
-    position: relative;
-    cursor: pointer;
-  }
-  
-  .ringCell:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-  }
-  
-  .ringCell.selected {
-    background-color: rgba(124, 58, 237, 0.1);
-  }
-  
-  .ringCell.today {
-    position: relative;
-  }
-  
-  .today::after {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background-color: var(--color-red-500);
-  }
-  
-  .dateLabel {
-    color: var(--color-text-primary);
-    font-size: var(--text-xs);
-    margin-top: var(--spacing-1);
-    text-align: center;
-  }
-  
-  /* Selected Date View */
-  .selectedDateView {
-    margin-top: var(--spacing-6);
-  }
-  
-  .weekStrip {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--spacing-6);
-    padding: 0 var(--spacing-2);
+  .iconButton {
+    width: 2rem;
+    height: 2rem;
   }
   
   .weekDay {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-2);
+    min-width: 32px;
   }
   
-  .weekDayLabel {
-    color: var(--color-text-tertiary);
-    font-size: var(--text-xs);
-    font-weight: var(--font-medium);
+  .weekDayNumber {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
   }
-  
-  .miniRing {
-    position: relative;
-  }
-  
-  .miniRing.active {
-    position: relative;
-  }
-  
-  .miniRing.active::after {
-    content: '';
-    position: absolute;
-    top: -1px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background-color: var(--color-red-500);
-  }
-  
-  .selectedDateTitle {
-    color: var(--color-text-primary);
-    font-size: var(--text-2xl);
-    font-weight: var(--font-semibold);
-    margin-bottom: var(--spacing-6);
-    text-align: center;
-  }
-  
-  .selectedRingContainer {
-    display: flex;
-    justify-content: center;
-    margin-bottom: var(--spacing-6);
-  }
-  
-  /* Details Section */
-  .detailsContainer {
-    background-color: var(--color-bg-secondary);
-    border-radius: var(--radius-2xl);
-    padding: var(--spacing-6);
-    margin-top: var(--spacing-6);
-  }
-  
-  .detailsHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: var(--spacing-4);
-  }
-  
-  .detailsTitle {
-    color: var(--color-text-primary);
-    font-size: var(--text-xl);
-    font-weight: var(--font-semibold);
-  }
-  
-  .detailsValue {
-    color: var(--color-text-primary);
-    font-size: var(--text-lg);
-    font-weight: var(--font-medium);
-  }
-  
-  .progressBar {
-    height: 4px;
-    background-color: var(--color-bg-tertiary);
-    border-radius: var(--radius-full);
-    margin-bottom: var(--spacing-6);
-    overflow: hidden;
-  }
-  
-  .progressFill {
-    height: 100%;
-    background-color: var(--color-purple-500);
-  }
-  
-  .sourcesTitle {
-    color: var(--color-text-tertiary);
-    font-size: var(--text-sm);
-    margin-bottom: var(--spacing-3);
-  }
-  
-  .sourcesList {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-3);
-  }
-  
-  .sourceItem {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--spacing-3) var(--spacing-4);
-    background-color: var(--color-bg-tertiary);
-    border-radius: var(--radius-lg);
-  }
-  
-  .sourceInfo {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-3);
-  }
-  
-  .sourceColor {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-  }
-  
-  .sourceName {
-    color: var(--color-text-primary);
-    font-weight: var(--font-medium);
-  }
-  
-  .sourceValue {
-    color: var(--color-text-primary);
-  }
-  
-  /* Empty State */
-  .emptyState {
-    text-align: center;
-    padding: var(--spacing-8) var(--spacing-4);
-    color: var(--color-text-tertiary);
-  }
-  
-  .emptyMessage {
-    margin-top: var(--spacing-4);
-    font-size: var(--text-lg);
-  }
-  
-  /* Loading State */
-  .loadingState {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 200px;
-  }
-  
-  .spinner {
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    border-top: 3px solid var(--color-purple-500);
-    width: 30px;
-    height: 30px;
-    animation: spin 1s linear infinite;
-    margin-bottom: var(--spacing-4);
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  /* Tooltip */
-  .tooltip {
-    position: absolute;
-    bottom: -2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--color-bg-secondary);
-    color: var(--color-text-primary);
-    font-size: var(--text-xs);
-    padding: var(--spacing-2) var(--spacing-4);
-    border-radius: var(--radius-lg);
-    white-space: nowrap;
+}
+
+/* Additional styles to add to src/apps/bossbitch/components/Calendar/styles.module.css */
+
+/* Calendar Grid Container */
+.calendarGridContainer {
+  margin-bottom: 2rem;
+}
+
+/* Month Section */
+.monthSection {
+  margin-bottom: 1.5rem;
+}
+
+.monthHeader {
+  color: #FFFFFF;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem;
+  padding-left: 0.5rem;
+}
+
+/* Empty Cell */
+.emptyCell {
+  aspect-ratio: 1/1;
+}
+
+/* Calendar Ring Cell */
+.ringCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1/1;
+  padding: 0.25rem;
+  position: relative;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.ringCell:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.ringCell.selected {
+  background-color: rgba(124, 58, 237, 0.2);
+}
+
+.ringCell.today .dateDisplay {
+  background-color: #FF0000;
+  color: #FFFFFF;
+  border-radius: 50%;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-bottom: 4px;
+}
+
+.hasData .ring {
+  position: relative;
+}
+
+.hasData .ring::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 6px;
+  background-color: #4CAF50;
+  border-radius: 50%;
+}
+
+.dateDisplay {
+  color: #FFFFFF;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  text-align: center;
+  display: block;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+}
+
+.todayDate {
+  font-weight: 600;
+}
+
+.monthDisplay {
+  color: #FFFFFF;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  text-align: center;
+}
+
+.ring {
+  position: relative;
+}
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  bottom: -70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #1A1A1A;
+  color: #FFFFFF;
+  font-size: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 10;
+  border: 1px solid #333333;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  width: 120px;
+  text-align: center;
+}
+
+.tooltip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid #1A1A1A;
+}
+
+.ringCell:hover .tooltip {
+  opacity: 1;
+}
+
+.tooltipProgress {
+  height: 4px;
+  background-color: #333333;
+  border-radius: 2px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.tooltipProgressBar {
+  height: 100%;
+  background-color: #7C3AED;
+}
+
+/* Week day styling - Apple Fitness style */
+.activeWeekDay {
+  position: relative;
+}
+
+.activeWeekDay::before {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background-color: #FF0000;
+  border-radius: 50%;
+}
+
+/* Light mode overrides */
+:global(.light-mode) .monthHeader {
+  color: #000000;
+}
+
+:global(.light-mode) .ringCell:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+:global(.light-mode) .dateDisplay,
+:global(.light-mode) .monthDisplay {
+  color: #000000;
+}
+
+:global(.light-mode) .tooltip {
+  background-color: #FFFFFF;
+  color: #000000;
+  border: 1px solid #DDDDDD;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+:global(.light-mode) .tooltip::before {
+  border-bottom-color: #FFFFFF;
+}
+
+:global(.light-mode) .tooltipProgress {
+  background-color: #EEEEEE;
+}
+
+:global(.light-mode) .activeWeekDay::before {
+  background-color: #FF0000;
+}
+
+/* Animation for the ring transitions */
+@keyframes ringPop {
+  0% {
+    transform: scale(0.8);
     opacity: 0;
-    transition: opacity var(--transition-fast);
-    pointer-events: none;
-    z-index: 10;
-    border: 1px solid var(--color-border-light);
-    box-shadow: var(--shadow-md);
   }
-  
-  .ringCell:hover .tooltip {
+  70% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
     opacity: 1;
   }
+}
+
+.ring {
+  animation: ringPop 0.3s ease-out;
+}

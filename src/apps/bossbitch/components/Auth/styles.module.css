@@ -1,229 +1,336 @@
 /* src/apps/bossbitch/components/Auth/styles.module.css */
 
-.authModal {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
-    z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--spacing-4);
+/* Modal container */
+.modal {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(5px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.container {
+  background-color: #1A1A1A;
+  border-radius: 24px;
+  max-width: 28rem;
+  width: 100%;
+  padding: 1.5rem;
+  border: 1px solid #333333;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  animation: modalEnter 0.3s ease-out;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
   }
-  
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  font-family: serif;
+  font-style: italic;
+}
+
+.closeButton {
+  color: #888888;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 2rem;
+  height: 2rem;
+}
+
+.closeButton:hover {
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Form */
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.inputGroup {
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  display: block;
+  color: #888888;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.input {
+  width: 100%;
+  background-color: #2A2A2A;
+  color: #FFFFFF;
+  border-radius: 16px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #333333;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #7C3AED;
+  border-color: #7C3AED;
+}
+
+.error {
+  color: #EF4444;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  padding: 0.75rem;
+  border-radius: 12px;
+  border-left: 3px solid #EF4444;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.success {
+  color: #10B981;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+  background-color: rgba(16, 185, 129, 0.1);
+  padding: 0.75rem;
+  border-radius: 12px;
+  border-left: 3px solid #10B981;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Buttons */
+.submitButton {
+  width: 100%;
+  background-color: #7C3AED;
+  color: #FFFFFF;
+  border-radius: 16px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  margin-bottom: 1rem;
+}
+
+.submitButton:hover {
+  background-color: #6D28D9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+}
+
+.submitButton:disabled {
+  background-color: #444444;
+  color: #888888;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.toggleMode {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: #888888;
+}
+
+.toggleButton {
+  background: none;
+  border: none;
+  color: #7C3AED;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.toggleButton:hover {
+  color: #9F7AEA;
+  text-decoration: underline;
+}
+
+.toggleButton:disabled {
+  color: #666666;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.note {
+  font-size: 0.75rem;
+  color: #888888;
+  text-align: center;
+  line-height: 1.4;
+  margin-top: 0.5rem;
+}
+
+/* Auth button */
+.authButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #2A2A2A;
+  color: #FFFFFF;
+  border: 1px solid #333333;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.authButton:hover {
+  background-color: #333333;
+  border-color: #444444;
+}
+
+.userAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  background-color: #7C3AED;
+  color: #FFFFFF;
+  border-radius: 50%;
+}
+
+.userName {
+  max-width: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authIcon {
+  color: #888888;
+}
+
+/* Animation for form elements */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form > * {
+  animation: fadeIn 0.2s ease-out;
+  animation-fill-mode: both;
+}
+
+.form > *:nth-child(1) { animation-delay: 0.05s; }
+.form > *:nth-child(2) { animation-delay: 0.1s; }
+.form > *:nth-child(3) { animation-delay: 0.15s; }
+.form > *:nth-child(4) { animation-delay: 0.2s; }
+.form > *:nth-child(5) { animation-delay: 0.25s; }
+.form > *:nth-child(6) { animation-delay: 0.3s; }
+
+/* Light mode styles */
+:global(.light-mode) .modal {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+:global(.light-mode) .container {
+  background-color: #FFFFFF;
+  border: 1px solid #DDDDDD;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+:global(.light-mode) .title {
+  color: #000000;
+}
+
+:global(.light-mode) .closeButton {
+  color: #666666;
+}
+
+:global(.light-mode) .closeButton:hover {
+  color: #000000;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+:global(.light-mode) .label {
+  color: #666666;
+}
+
+:global(.light-mode) .input {
+  background-color: #F5F5F7;
+  color: #000000;
+  border: 1px solid #DDDDDD;
+}
+
+:global(.light-mode) .note {
+  color: #666666;
+}
+
+:global(.light-mode) .authButton {
+  background-color: #F5F5F7;
+  color: #000000;
+  border: 1px solid #DDDDDD;
+}
+
+:global(.light-mode) .authButton:hover {
+  background-color: #EEEEEE;
+  border-color: #CCCCCC;
+}
+
+:global(.light-mode) .authIcon {
+  color: #666666;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
   .container {
-    background-color: var(--color-bg-secondary);
-    border-radius: var(--radius-2xl);
-    max-width: 28rem;
-    width: 100%;
-    padding: var(--spacing-6);
-    border: 1px solid var(--color-border-light);
-    box-shadow: var(--shadow-lg);
+    padding: 1rem;
+    border-radius: 16px;
   }
   
   .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-6);
+    margin-bottom: 1rem;
   }
   
   .title {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-semibold);
-    color: var(--color-text-primary);
+    font-size: 1.25rem;
   }
   
-  .closeButton {
-    color: var(--color-text-tertiary);
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    padding: var(--spacing-1);
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color var(--transition-fast), background-color var(--transition-fast);
+  .input, .submitButton {
+    border-radius: 12px;
   }
-  
-  .closeButton:hover {
-    color: var(--color-text-primary);
-    background-color: var(--color-bg-tertiary);
-  }
-  
-  .form {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .inputGroup {
-    margin-bottom: var(--spacing-4);
-  }
-  
-  .label {
-    display: block;
-    color: var(--color-text-tertiary);
-    margin-bottom: var(--spacing-2);
-    font-size: var(--text-sm);
-  }
-  
-  .input {
-    width: 100%;
-    background-color: var(--color-bg-tertiary);
-    color: var(--color-text-primary);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-3) var(--spacing-4);
-    border: 1px solid var(--color-border-light);
-    font-size: var(--text-base);
-    transition: all var(--transition-fast);
-  }
-  
-  .input:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--color-purple-500);
-    border-color: var(--color-purple-500);
-  }
-  
-  .error {
-    color: var(--color-red-500);
-    margin-bottom: var(--spacing-4);
-    font-size: var(--text-sm);
-    background-color: rgba(239, 68, 68, 0.1);
-    padding: var(--spacing-3);
-    border-radius: var(--radius-lg);
-    border-left: 3px solid var(--color-red-500);
-  }
-  
-  .submitButton {
-    width: 100%;
-    background-color: var(--color-purple-600);
-    color: var(--color-white);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-3) var(--spacing-6);
-    font-weight: var(--font-medium);
-    border: none;
-    cursor: pointer;
-    transition: background-color var(--transition-fast);
-    font-size: var(--text-base);
-    margin-bottom: var(--spacing-4);
-  }
-  
-  .submitButton:hover {
-    background-color: var(--color-purple-700);
-  }
-  
-  .submitButton:disabled {
-    background-color: var(--color-bg-tertiary);
-    color: var(--color-text-disabled);
-    cursor: not-allowed;
-  }
-  
-  .toggleMode {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: var(--spacing-2);
-    margin-bottom: var(--spacing-4);
-    font-size: var(--text-sm);
-    color: var(--color-text-tertiary);
-  }
-  
-  .toggleButton {
-    background: none;
-    border: none;
-    color: var(--color-purple-400);
-    cursor: pointer;
-    font-size: var(--text-sm);
-    padding: 0;
-    transition: color var(--transition-fast);
-  }
-  
-  .toggleButton:hover {
-    color: var(--color-purple-300);
-    text-decoration: underline;
-  }
-  
-  .note {
-    font-size: var(--text-xs);
-    color: var(--color-text-tertiary);
-    text-align: center;
-    line-height: 1.4;
-  }
-  
-  .success {
-    color: var(--color-green-500);
-    margin-bottom: var(--spacing-4);
-    font-size: var(--text-sm);
-    background-color: rgba(16, 185, 129, 0.1);
-    padding: var(--spacing-3);
-    border-radius: var(--radius-lg);
-    border-left: 3px solid var(--color-green-500);
-  }
-  
-  /* Auth Button Styles */
-  .authButton {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-2);
-    padding: var(--spacing-2) var(--spacing-3);
-    background-color: transparent;
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-xl);
-    font-size: var(--text-sm);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-  }
-  
-  .authButton:hover {
-    background-color: var(--color-bg-tertiary);
-    border-color: var(--color-border-medium);
-  }
-  
-  .userAvatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    background-color: var(--color-purple-600);
-    color: var(--color-white);
-    border-radius: 50%;
-  }
-  
-  .userName {
-    max-width: 8rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  
-  .authIcon {
-    color: var(--color-text-tertiary);
-  }
-  
-  /* Animation for form elements */
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .form > * {
-    animation: fadeIn 0.2s ease-out;
-    animation-fill-mode: both;
-  }
-  
-  .form > *:nth-child(1) { animation-delay: 0.05s; }
-  .form > *:nth-child(2) { animation-delay: 0.1s; }
-  .form > *:nth-child(3) { animation-delay: 0.15s; }
-  .form > *:nth-child(4) { animation-delay: 0.2s; }
-  .form > *:nth-child(5) { animation-delay: 0.25s; }
-  .form > *:nth-child(6) { animation-delay: 0.3s; }
+}

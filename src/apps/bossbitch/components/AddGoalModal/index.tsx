@@ -71,7 +71,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
 
   // Generate a random color for new sources
   const generateColor = () => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFD700', '#FFA500', '#FF8C00'];
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFD700', '#FFA500', '#FF8C00', '#7C3AED', '#10B981'];
     return colors[Math.floor(Math.random() * colors.length)];
   };
 

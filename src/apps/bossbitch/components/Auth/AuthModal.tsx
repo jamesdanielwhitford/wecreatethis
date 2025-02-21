@@ -71,14 +71,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
   };
 
   return (
-    <div className={styles.authModal}>
+    <div className={styles.modal}>
       <div className={styles.container}>
         <div className={styles.header}>
           <h2 className={styles.title}>
             {mode === 'signin' ? 'Sign In' : 'Create Account'}
           </h2>
           <button onClick={onClose} className={styles.closeButton}>
-            <X className="w-6 h-6" />
+            <X size={24} />
           </button>
         </div>
 
@@ -138,6 +138,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
               {mode === 'signin' ? 'Sign Up' : 'Sign In'}
             </button>
           </div>
+
+          {migrationSuccess && (
+            <p className={styles.success}>
+              Your local data has been successfully migrated to your account!
+            </p>
+          )}
 
           {mode === 'signin' && (
             <p className={styles.note}>

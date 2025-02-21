@@ -1,415 +1,443 @@
 /* src/apps/bossbitch/components/Settings/styles.module.css */
 
+/* Container and Layout */
 .container {
-    max-width: 28rem;
-    margin: 0 auto;
-    padding: var(--spacing-4);
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: serif;
+  font-style: italic;
+  color: #FFFFFF;
+  margin-bottom: 1.5rem;
+  padding-top: 1rem;
+}
+
+.settingsCard {
+  background-color: #1A1A1A;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid #333333;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.settingSection {
+  border-bottom: 1px solid #333333;
+  padding: 1.5rem 0;
+  margin: 0 1.5rem;
+}
+
+.settingSection:last-child {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 1rem;
+}
+
+/* Setting Items */
+.settingItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+}
+
+.settingContent {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+}
+
+.settingIcon {
+  color: #7C3AED;
+  margin-top: 0.25rem;
+}
+
+.settingInfo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.settingTitle {
+  color: #FFFFFF;
+  font-weight: 500;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.settingDescription {
+  color: #888888;
+  font-size: 0.875rem;
+}
+
+/* Buttons */
+.actionButton {
+  color: #7C3AED;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.actionButton:hover {
+  color: #9F7AEA;
+  background-color: rgba(124, 58, 237, 0.1);
+}
+
+.actionButton:disabled {
+  color: #666666;
+  cursor: not-allowed;
+}
+
+.dangerButton {
+  color: #EF4444;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.dangerButton:hover {
+  color: #F87171;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.dangerButtonConfirm {
+  color: #FFFFFF;
+  background-color: #EF4444;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.dangerButtonConfirm:hover {
+  background-color: #DC2626;
+}
+
+.confirmMessage {
+  margin: 0.5rem 0 1rem;
+  padding: 0.75rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  color: #FFFFFF;
+  border-left: 3px solid #EF4444;
+}
+
+.cancelButton {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background-color: transparent;
+  border: 1px solid #333333;
+  border-radius: 0.5rem;
+  color: #FFFFFF;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.cancelButton:hover {
+  background-color: #2A2A2A;
+}
+
+/* Theme Selection */
+.themeOptions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.themeButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: #2A2A2A;
+  border: 1px solid #333333;
+  color: #888888;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.75rem;
+}
+
+.themeButton:hover {
+  background-color: #333333;
+  color: #FFFFFF;
+}
+
+.themeButtonActive {
+  background-color: #7C3AED;
+  color: #FFFFFF;
+  border-color: #7C3AED;
+}
+
+.themeButtonActive:hover {
+  background-color: #6D28D9;
+}
+
+/* Import/Export */
+.importContainer {
+  position: relative;
+}
+
+.importLabel {
+  cursor: pointer;
+  display: inline-block;
+}
+
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.importMessage {
+  margin: 0.5rem 0 1rem;
+}
+
+.error {
+  color: #EF4444;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid #EF4444;
+}
+
+.success {
+  color: #10B981;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  background-color: rgba(16, 185, 129, 0.1);
+  border-left: 3px solid #10B981;
+}
+
+/* Color Picker */
+.colorPickerOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.colorSettings {
+  background-color: #1A1A1A;
+  border-radius: 24px;
+  max-width: 28rem;
+  width: 100%;
+  padding: 1.5rem;
+  border: 1px solid #333333;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.colorTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 1rem;
+}
+
+.colorOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.colorOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background-color: #2A2A2A;
+  border-radius: 0.75rem;
+  border: 1px solid #333333;
+}
+
+.colorLabel {
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.colorInput {
+  appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.colorInput::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.colorInput::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.5rem;
+}
+
+.colorInput::-moz-color-swatch {
+  border: none;
+  border-radius: 0.5rem;
+}
+
+.doneButton {
+  width: 100%;
+  background-color: #7C3AED;
+  color: #FFFFFF;
+  border-radius: 1rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.doneButton:hover {
+  background-color: #6D28D9;
+}
+
+/* Version Info */
+.versionInfo {
+  text-align: center;
+  color: #888888;
+  font-size: 0.875rem;
+  margin-top: 2rem;
+  margin-bottom: 4rem;
+}
+
+/* Light Mode Overrides */
+:global(.light-mode) .title {
+  color: #000000;
+}
+
+:global(.light-mode) .settingsCard {
+  background-color: #FFFFFF;
+  border: 1px solid #DDDDDD;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+:global(.light-mode) .settingSection {
+  border-bottom: 1px solid #EEEEEE;
+}
+
+:global(.light-mode) .sectionTitle {
+  color: #000000;
+}
+
+:global(.light-mode) .settingTitle {
+  color: #000000;
+}
+
+:global(.light-mode) .settingDescription {
+  color: #666666;
+}
+
+:global(.light-mode) .confirmMessage {
+  color: #000000;
+}
+
+:global(.light-mode) .cancelButton {
+  border: 1px solid #DDDDDD;
+  color: #000000;
+}
+
+:global(.light-mode) .cancelButton:hover {
+  background-color: #EEEEEE;
+}
+
+:global(.light-mode) .themeButton {
+  background-color: #EEEEEE;
+  border: 1px solid #DDDDDD;
+  color: #666666;
+}
+
+:global(.light-mode) .themeButton:hover {
+  background-color: #E5E5E5;
+  color: #000000;
+}
+
+:global(.light-mode) .colorSettings {
+  background-color: #FFFFFF;
+  border: 1px solid #DDDDDD;
+}
+
+:global(.light-mode) .colorTitle {
+  color: #000000;
+}
+
+:global(.light-mode) .colorOption {
+  background-color: #EEEEEE;
+  border: 1px solid #DDDDDD;
+}
+
+:global(.light-mode) .colorLabel {
+  color: #000000;
+}
+
+/* Media queries for responsive design */
+@media (max-width: 480px) {
+  .settingSection {
+    padding: 1rem 0;
+    margin: 0 1rem;
   }
   
   .title {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-semibold);
-    color: var(--color-text-primary);
-    margin-bottom: var(--spacing-6);
-  }
-  
-  .settingsCard {
-    background-color: var(--color-bg-secondary);
-    border-radius: var(--radius-2xl);
-    overflow: hidden;
-    border: 1px solid var(--color-border-light);
-    margin-bottom: var(--spacing-6);
-  }
-  
-  .settingSection {
-    border-bottom: 1px solid var(--color-border-light);
-    padding-bottom: var(--spacing-4);
-    margin-bottom: var(--spacing-4);
-  }
-  
-  .settingSection:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
+    font-size: 1.5rem;
   }
   
   .sectionTitle {
-    font-size: var(--text-lg);
-    font-weight: var(--font-medium);
-    color: var(--color-text-primary);
-    padding: var(--spacing-4) var(--spacing-4) var(--spacing-2);
+    font-size: 1.125rem;
   }
   
-  .settingItem {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    padding: var(--spacing-3) var(--spacing-4);
-  }
-  
-  .settingContent {
-    display: flex;
-    gap: var(--spacing-4);
-  }
-  
-  .settingIcon {
-    color: var(--color-purple-500);
-    margin-top: var(--spacing-1);
-  }
-  
-  .settingInfo {
-    display: flex;
+  .themeOptions {
     flex-direction: column;
+    align-items: flex-end;
   }
   
-  .settingTitle {
-    color: var(--color-text-primary);
-    font-weight: var(--font-medium);
-  }
-  
-  .settingDescription {
-    color: var(--color-text-tertiary);
-    font-size: var(--text-sm);
-  }
-  
-  .actionButton {
-    color: var(--color-purple-500);
-    transition: color var(--transition-fast);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: var(--spacing-1) var(--spacing-2);
-    border-radius: var(--radius-md);
-  }
-  
-  .actionButton:hover {
-    color: var(--color-purple-400);
-    background-color: rgba(124, 58, 237, 0.1);
-  }
-  
-  .actionButton:disabled {
-    color: var(--color-text-disabled);
-    cursor: not-allowed;
-  }
-  
-  .dangerButton {
-    color: var(--color-red-500);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-1);
-    transition: all var(--transition-fast);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: var(--spacing-1) var(--spacing-2);
-    border-radius: var(--radius-md);
-  }
-  
-  .dangerButton:hover {
-    color: var(--color-red-400);
-    background-color: rgba(239, 68, 68, 0.1);
-  }
-  
-  .dangerButtonConfirm {
-    color: var(--color-white);
-    background-color: var(--color-red-500);
-    padding: var(--spacing-1) var(--spacing-2);
-    border-radius: var(--radius-md);
-    border: none;
-    cursor: pointer;
-    transition: background-color var(--transition-fast);
-  }
-  
-  .dangerButtonConfirm:hover {
-    background-color: var(--color-red-600);
-  }
-  
-  .confirmMessage {
-    margin: 0 var(--spacing-4) var(--spacing-4);
-    padding: var(--spacing-3);
-    background-color: rgba(239, 68, 68, 0.1);
-    border-radius: var(--radius-lg);
-    font-size: var(--text-sm);
-    color: var(--color-text-primary);
-    border-left: 3px solid var(--color-red-500);
-  }
-  
-  .cancelButton {
-    margin-top: var(--spacing-2);
-    padding: var(--spacing-1) var(--spacing-3);
-    background-color: transparent;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-md);
-    color: var(--color-text-primary);
-    cursor: pointer;
-  }
-  
-  .cancelButton:hover {
-    background-color: var(--color-bg-tertiary);
-  }
-  
-  .toggleSwitch {
-    position: relative;
-    display: inline-flex;
-    height: 1.5rem;
-    width: 2.75rem;
-    align-items: center;
-    border-radius: var(--radius-full);
-    background-color: var(--color-bg-tertiary);
-    transition: background-color var(--transition-fast);
-    cursor: pointer;
-    border: none;
-  }
-  
-  .toggleSwitchActive {
-    background-color: var(--color-purple-500);
-  }
-  
-  .toggleKnob {
-    display: inline-block;
-    height: 1rem;
-    width: 1rem;
-    transform: translateX(0.25rem);
-    border-radius: var(--radius-full);
-    background-color: var(--color-white);
-    transition: transform var(--transition-fast);
-  }
-  
-  .toggleKnobActive {
-    transform: translateX(1.5rem);
-  }
-  
-  .importContainer {
-    position: relative;
-  }
-  
-  .importLabel {
-    cursor: pointer;
-    display: inline-block;
-  }
-  
-  .fileInput {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    border: 0;
-  }
-  
-  .importMessage {
-    margin: 0 var(--spacing-4) var(--spacing-4);
-  }
-  
-  .error {
-    color: var(--color-red-500);
-    padding: var(--spacing-3);
-    border-radius: var(--radius-lg);
-    font-size: var(--text-sm);
-    background-color: rgba(239, 68, 68, 0.1);
-    border-left: 3px solid var(--color-red-500);
-  }
-  
-  .success {
-    color: var(--color-green-500);
-    padding: var(--spacing-3);
-    border-radius: var(--radius-lg);
-    font-size: var(--text-sm);
-    background-color: rgba(16, 185, 129, 0.1);
-    border-left: 3px solid var(--color-green-500);
-  }
-  
-  .versionInfo {
-    text-align: center;
-    color: var(--color-text-tertiary);
-    font-size: var(--text-sm);
-    margin-top: var(--spacing-8);
-  }
-  
-  /* Color Picker Styles */
-  .colorPickerOverlay {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
-    z-index: 40;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--spacing-4);
-  }
-  
-  .colorSettings {
-    background-color: var(--color-bg-secondary);
-    border-radius: var(--radius-2xl);
-    max-width: 28rem;
-    width: 100%;
-    padding: var(--spacing-6);
-    border: 1px solid var(--color-border-light);
-    box-shadow: var(--shadow-lg);
-  }
-  
-  .colorTitle {
-    font-size: var(--text-xl);
-    font-weight: var(--font-semibold);
-    color: var(--color-text-primary);
-    margin-bottom: var(--spacing-4);
-  }
-  
-  .colorOptions {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-4);
-    margin-bottom: var(--spacing-6);
-  }
-  
-  .colorOption {
-    display: flex;
-    align-items: center;
+  .themeButton {
+    width: 6rem;
+    flex-direction: row;
     justify-content: space-between;
-    padding: var(--spacing-3) var(--spacing-4);
-    background-color: var(--color-bg-tertiary);
-    border-radius: var(--radius-lg);
   }
-  
-  .colorLabel {
-    color: var(--color-text-primary);
-    font-weight: var(--font-medium);
-  }
-  
-  .colorInput {
-    appearance: none;
-    -moz-appearance: none;
-    -webkit-appearance: none;
-    background: none;
-    border: none;
-    cursor: pointer;
-    width: 2rem;
-    height: 2rem;
-    padding: 0;
-    border-radius: var(--radius-md);
-    overflow: hidden;
-  }
-  
-  .colorInput::-webkit-color-swatch-wrapper {
-    padding: 0;
-  }
-  
-  .colorInput::-webkit-color-swatch {
-    border: none;
-    border-radius: var(--radius-md);
-  }
-  
-  .colorInput::-moz-color-swatch {
-    border: none;
-    border-radius: var(--radius-md);
-  }
-  
-  .doneButton {
-    width: 100%;
-    background-color: var(--color-purple-600);
-    color: var(--color-white);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-3) var(--spacing-6);
-    font-weight: var(--font-medium);
-    border: none;
-    cursor: pointer;
-    transition: background-color var(--transition-fast);
-    font-size: var(--text-base);
-  }
-  
-  .doneButton:hover {
-    background-color: var(--color-purple-700);
-  }
-  
-  /* Color Picker Component Styles */
-  .colorPickerContainer {
-    margin-bottom: var(--spacing-4);
-  }
-  
-  .colorPickerLabel {
-    display: block;
-    color: var(--color-text-tertiary);
-    margin-bottom: var(--spacing-2);
-    font-size: var(--text-sm);
-  }
-  
-  .colorInputWrapper {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-2);
-    margin-bottom: var(--spacing-3);
-  }
-  
-  .colorPickerInput {
-    appearance: none;
-    -moz-appearance: none;
-    -webkit-appearance: none;
-    background: none;
-    border: none;
-    cursor: pointer;
-    width: 2rem;
-    height: 2rem;
-    padding: 0;
-    border-radius: var(--radius-md);
-    overflow: hidden;
-  }
-  
-  .colorPickerInput::-webkit-color-swatch-wrapper {
-    padding: 0;
-  }
-  
-  .colorPickerInput::-webkit-color-swatch {
-    border: none;
-    border-radius: var(--radius-md);
-  }
-  
-  .colorPickerInput::-moz-color-swatch {
-    border: none;
-    border-radius: var(--radius-md);
-  }
-  
-  .colorPreview {
-    width: 2rem;
-    height: 2rem;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-border-light);
-  }
-  
-  .colorOptions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-2);
-  }
-  
-  .colorOption {
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-border-light);
-    cursor: pointer;
-    transition: transform var(--transition-fast);
-    padding: 0;
-  }
-  
-  .colorOption:hover {
-    transform: scale(1.1);
-  }
-  
-  .activeColor {
-    box-shadow: 0 0 0 2px var(--color-purple-500);
-    transform: scale(1.1);
-  }
-  
-  @media (max-width: 480px) {
-    .colorOptions {
-      gap: var(--spacing-1);
-    }
-    
-    .colorOption {
-      width: 1.25rem;
-      height: 1.25rem;
-    }
-  }
+}

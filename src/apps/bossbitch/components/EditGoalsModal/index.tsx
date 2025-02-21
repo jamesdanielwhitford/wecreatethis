@@ -85,7 +85,7 @@ const EditGoalsModal: React.FC<EditGoalsModalProps> = ({
     setActiveDays(newActiveDays);
     
     // Recalculate daily goal if not using custom value
-    if (!isCustomDaily && activeDays.filter(Boolean).length > 0) {
+    if (!isCustomDaily && newActiveDays.filter(Boolean).length > 0) {
       // We'll recalculate in useEffect after state updates
       setTimeout(calculateDailyGoal, 0);
     }
@@ -149,7 +149,7 @@ const EditGoalsModal: React.FC<EditGoalsModalProps> = ({
               <button
                 key={day}
                 onClick={() => toggleDay(index)}
-                className={`${styles.dayButton} ${activeDays[index] ? styles.active : styles.inactive}`}
+                className={`${styles.dayButton} ${activeDays[index] ? styles.active : ''}`}
               >
                 {day}
               </button>

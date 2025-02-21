@@ -45,17 +45,32 @@ const CalendarRing: React.FC<CalendarRingProps> = ({
 
   // Determine if there's goal data
   const hasData = progress > 0;
+  
+  // Calculate completion percentage
+  const completionPercentage = maxValue > 0 ? Math.min((progress / maxValue) * 100, 100) : 0;
+
+  // Determine cell classes based on state
+  const cellClasses = [
+    styles.ringCell,
+    isSelected ? styles.selected : '',
+    isToday ? styles.today : '',
+    hasData ? styles.hasData : '',
+  ].filter(Boolean).join(' ');
 
   return (
     <div 
       onClick={onClick}
-      className={`
-        ${styles.ringCell}
-        ${isSelected ? styles.selected : ''}
-        ${isToday ? styles.today : ''}
-      `}
+      className={cellClasses}
     >
-      <div className={styles.miniRing}>
+      {type === 'daily' && (
+        <div className={styles.dateDisplay}>
+          <span className={isToday ? styles.todayDate : ''}>
+            {getDisplayText()}
+          </span>
+        </div>
+      )}
+      
+      <div className={styles.ring}>
         <ProgressRing
           progress={progress}
           maxValue={maxValue}
@@ -67,13 +82,21 @@ const CalendarRing: React.FC<CalendarRingProps> = ({
         />
       </div>
       
-      <span className={styles.dateLabel}>
-        {getDisplayText()}
-      </span>
-
+      {type === 'monthly' && (
+        <div className={styles.monthDisplay}>
+          {getDisplayText()}
+        </div>
+      )}
+      
       {hasData && (
         <div className={styles.tooltip}>
           {formatZAR(progress)} / {formatZAR(maxValue)}
+          <div className={styles.tooltipProgress}>
+            <div 
+              className={styles.tooltipProgressBar} 
+              style={{width: `${completionPercentage}%`}}
+            ></div>
+          </div>
         </div>
       )}
     </div>

@@ -1,230 +1,358 @@
 /* src/apps/bossbitch/components/AddGoalModal/styles.module.css */
 
 .modal {
-    position: fixed;
-    inset: 0;
-    background-color: #ffffff;
-    backdrop-filter: blur(4px);
-    z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--spacing-4);
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(5px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.container {
+  background-color: #1A1A1A;
+  border-radius: 24px;
+  max-width: 28rem;
+  width: 100%;
+  padding: 1.5rem;
+  border: 1px solid #333333;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  animation: modalEnter 0.3s ease-out;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
   }
-  
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  font-family: serif;
+  font-style: italic;
+}
+
+.closeButton {
+  color: #888888;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 2rem;
+  height: 2rem;
+}
+
+.closeButton:hover {
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.inputGroup {
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  display: block;
+  color: #888888;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.input {
+  width: 100%;
+  background-color: #2A2A2A;
+  color: #FFFFFF;
+  border-radius: 16px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #333333;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #7C3AED;
+  border-color: #7C3AED;
+}
+
+.sourceList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.sourceButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background-color: #2A2A2A;
+  color: #FFFFFF;
+  border: 1px solid #333333;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sourceButton:hover {
+  background-color: #333333;
+  border-color: #444444;
+}
+
+.sourceButton.selected {
+  background-color: #7C3AED;
+  color: #FFFFFF;
+  border-color: #6D28D9;
+}
+
+.sourceInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sourceColor {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.addNewButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.5rem;
+  color: #7C3AED;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.addNewButton:hover {
+  color: #8B5CF6;
+  background-color: rgba(124, 58, 237, 0.1);
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.75rem;
+  color: #7C3AED;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.backButton:hover {
+  color: #8B5CF6;
+  background-color: rgba(124, 58, 237, 0.1);
+}
+
+.error {
+  color: #EF4444;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  padding: 0.75rem;
+  border-radius: 12px;
+  border-left: 3px solid #EF4444;
+}
+
+.preview {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #2A2A2A;
+  border-radius: 16px;
+  border: 1px solid #333333;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.previewLabel {
+  color: #888888;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.previewValue {
+  font-size: 1.25rem;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.goalSuccess {
+  color: #10B981;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.submitButton {
+  width: 100%;
+  background-color: #7C3AED;
+  color: #FFFFFF;
+  border-radius: 16px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.submitButton:hover {
+  background-color: #6D28D9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+}
+
+.submitButton:disabled {
+  background-color: #444444;
+  color: #888888;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Light mode styles */
+:global(.light-mode) .modal {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+:global(.light-mode) .container {
+  background-color: #FFFFFF;
+  border: 1px solid #DDDDDD;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+:global(.light-mode) .title {
+  color: #000000;
+}
+
+:global(.light-mode) .closeButton {
+  color: #666666;
+}
+
+:global(.light-mode) .closeButton:hover {
+  color: #000000;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+:global(.light-mode) .label {
+  color: #666666;
+}
+
+:global(.light-mode) .input {
+  background-color: #F5F5F7;
+  color: #000000;
+  border: 1px solid #DDDDDD;
+}
+
+:global(.light-mode) .sourceButton {
+  background-color: #F5F5F7;
+  color: #000000;
+  border: 1px solid #DDDDDD;
+}
+
+:global(.light-mode) .sourceButton:hover {
+  background-color: #EEEEEE;
+  border-color: #CCCCCC;
+}
+
+:global(.light-mode) .addNewButton {
+  color: #7C3AED;
+}
+
+:global(.light-mode) .addNewButton:hover {
+  background-color: rgba(124, 58, 237, 0.1);
+}
+
+:global(.light-mode) .preview {
+  background-color: #F5F5F7;
+  border: 1px solid #DDDDDD;
+}
+
+:global(.light-mode) .previewLabel {
+  color: #666666;
+}
+
+:global(.light-mode) .previewValue {
+  color: #000000;
+}
+
+/* Animation for all elements */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
   .container {
-    background-color: var(--color-bg-secondary);
-    border-radius: var(--radius-2xl);
-    max-width: 28rem;
-    width: 100%;
-    padding: var(--spacing-6);
-    border: 1px solid var(--color-border-light);
-    box-shadow: var(--shadow-lg);
+    padding: 1rem;
+    border-radius: 16px;
   }
   
   .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-6);
+    margin-bottom: 1rem;
   }
   
   .title {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-semibold);
-    color: var(--color-text-primary);
+    font-size: 1.25rem;
   }
   
-  .closeButton {
-    color: var(--color-text-tertiary);
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    padding: var(--spacing-1);
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color var(--transition-fast), background-color var(--transition-fast);
-  }
-  
-  .closeButton:hover {
-    color: var(--color-text-primary);
-    background-color: var(--color-bg-tertiary);
-  }
-  
-  .inputGroup {
-    margin-bottom: var(--spacing-6);
-  }
-  
-  .label {
-    display: block;
-    color: var(--color-text-tertiary);
-    margin-bottom: var(--spacing-2);
-    font-size: var(--text-sm);
-  }
-  
-  .input {
-    width: 100%;
-    background-color: var(--color-bg-tertiary);
-    color: var(--color-text-primary);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-3) var(--spacing-4);
-    border: 1px solid var(--color-border-light);
-    font-size: var(--text-base);
-    transition: all var(--transition-fast);
-  }
-  
-  .input:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--color-purple-500);
-    border-color: var(--color-purple-500);
+  .input, .sourceButton, .preview, .submitButton {
+    border-radius: 12px;
   }
   
   .sourceList {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-2);
+    max-height: 12rem;
   }
-  
-  .sourceButton {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: var(--spacing-3) var(--spacing-4);
-    border-radius: var(--radius-xl);
-    background-color: var(--color-bg-tertiary);
-    color: var(--color-text-secondary);
-    border: 1px solid transparent;
-    transition: all var(--transition-fast);
-    cursor: pointer;
-    text-align: left;
-  }
-  
-  .sourceButton:hover {
-    background-color: var(--color-bg-primary);
-    border-color: var(--color-border-medium);
-  }
-  
-  .sourceButton.selected {
-    background-color: var(--color-purple-600);
-    color: var(--color-white);
-    border-color: var(--color-purple-500);
-  }
-  
-  .sourceInfo {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-2);
-  }
-  
-  .sourceColor {
-    width: 0.75rem;
-    height: 0.75rem;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  
-  .addNewButton {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-2);
-    width: 100%;
-    margin-top: var(--spacing-4);
-    color: var(--color-purple-400);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: var(--spacing-2);
-    border-radius: var(--radius-lg);
-    font-size: var(--text-base);
-    transition: all var(--transition-fast);
-  }
-  
-  .addNewButton:hover {
-    color: var(--color-purple-300);
-    background-color: var(--color-bg-tertiary);
-  }
-  
-  .backButton {
-    display: inline-block;
-    margin-top: var(--spacing-4);
-    color: var(--color-purple-400);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: var(--spacing-2);
-    border-radius: var(--radius-lg);
-    transition: all var(--transition-fast);
-    font-size: var(--text-sm);
-  }
-  
-  .backButton:hover {
-    color: var(--color-purple-300);
-    background-color: var(--color-bg-tertiary);
-  }
-  
-  .error {
-    color: var(--color-red-500);
-    margin-bottom: var(--spacing-4);
-    font-size: var(--text-sm);
-    background-color: rgba(239, 68, 68, 0.1);
-    padding: var(--spacing-3);
-    border-radius: var(--radius-lg);
-    border-left: 3px solid var(--color-red-500);
-  }
-  
-  .preview {
-    margin-bottom: var(--spacing-6);
-    padding: var(--spacing-4);
-    background-color: var(--color-bg-tertiary);
-    border-radius: var(--radius-xl);
-    border: 1px solid var(--color-border-light);
-  }
-  
-  .previewLabel {
-    color: var(--color-text-tertiary);
-    margin-bottom: var(--spacing-2);
-    font-size: var(--text-sm);
-  }
-  
-  .previewValue {
-    font-size: var(--text-lg);
-    color: var(--color-text-primary);
-    font-weight: var(--font-medium);
-  }
-  
-  .goalSuccess {
-    color: var(--color-green-500);
-    margin-top: var(--spacing-2);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-2);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-  }
-  
-  .submitButton {
-    width: 100%;
-    background-color: var(--color-purple-600);
-    color: var(--color-white);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-3) var(--spacing-6);
-    font-weight: var(--font-medium);
-    border: none;
-    cursor: pointer;
-    transition: background-color var(--transition-fast);
-    font-size: var(--text-base);
-  }
-  
-  .submitButton:hover {
-    background-color: var(--color-purple-700);
-  }
-  
-  .submitButton:disabled {
-    background-color: var(--color-bg-tertiary);
-    color: var(--color-text-disabled);
-    cursor: not-allowed;
-  }
+}

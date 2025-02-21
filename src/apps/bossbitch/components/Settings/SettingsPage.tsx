@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { 
   Moon, 
   Sun, 
+  Computer,
   Trash2, 
   Database, 
   Palette, 
@@ -18,14 +19,20 @@ import { AuthModal, AuthButton } from '../Auth';
 import ColorPicker from './ColorPicker';
 import styles from './styles.module.css';
 
+type ThemeOption = 'light' | 'dark' | 'system';
+
 interface SettingsPageProps {
   isDarkMode: boolean;
   onThemeToggle: () => void;
+  themePreference?: ThemeOption;
+  onThemeChange?: (theme: ThemeOption) => void;
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({
   isDarkMode,
-  onThemeToggle
+  onThemeToggle,
+  themePreference = 'system',
+  onThemeChange = () => {}
 }) => {
   const { 
     isAuthenticated, 
@@ -45,6 +52,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const [exportedData, setExportedData] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<ThemeOption>(themePreference);
 
   // Handle data export
   const handleExportData = async () => {
@@ -62,6 +70,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error exporting data:', error);
     } finally {
@@ -144,30 +153,26 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     });
   };
 
-  const SettingItem = ({ 
-    icon: Icon, 
-    title, 
-    description, 
-    action 
-  }: { 
-    icon: React.FC<any>; 
-    title: string; 
-    description: string; 
-    action: React.ReactNode;
-  }) => (
-    <div className={styles.settingItem}>
-      <div className={styles.settingContent}>
-        <div className={styles.settingIcon}>
-          <Icon size={20} />
-        </div>
-        <div className={styles.settingInfo}>
-          <h3 className={styles.settingTitle}>{title}</h3>
-          <p className={styles.settingDescription}>{description}</p>
-        </div>
-      </div>
-      <div>{action}</div>
-    </div>
-  );
+  // Handle theme change
+  const handleThemeChange = (theme: ThemeOption) => {
+    setSelectedTheme(theme);
+    
+    if (theme === 'system') {
+      // Let system preference decide
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.classList.toggle('dark-mode', prefersDark);
+      document.documentElement.classList.toggle('light-mode', !prefersDark);
+      localStorage.removeItem('bossbitch-theme');
+    } else {
+      // Manually set theme
+      const isDark = theme === 'dark';
+      document.documentElement.classList.toggle('dark-mode', isDark);
+      document.documentElement.classList.toggle('light-mode', !isDark);
+      localStorage.setItem('bossbitch-theme', isDark ? 'dark' : 'light');
+    }
+    
+    onThemeChange(theme);
+  };
 
   const renderColorSettings = () => (
     <div className={styles.colorSettings}>
@@ -225,58 +230,100 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         <div className={styles.settingSection}>
           <h3 className={styles.sectionTitle}>Account</h3>
           
-          <SettingItem
-            icon={LogIn}
-            title={isAuthenticated ? "Account" : "Sign In"}
-            description={
-              isAuthenticated 
-                ? `Signed in as ${currentUser?.email}` 
-                : "Sign in to sync your data across devices"
-            }
-            action={
-              <AuthButton 
-                onClick={() => setShowAuthModal(true)}
-                showName={false}
-              />
-            }
-          />
+          <div className={styles.settingItem}>
+            <div className={styles.settingContent}>
+              <div className={styles.settingIcon}>
+                <LogIn size={20} />
+              </div>
+              <div className={styles.settingInfo}>
+                <h3 className={styles.settingTitle}>
+                  {isAuthenticated ? "Account" : "Sign In"}
+                </h3>
+                <p className={styles.settingDescription}>
+                  {isAuthenticated 
+                    ? `Signed in as ${currentUser?.email}` 
+                    : "Sign in to sync your data across devices"}
+                </p>
+              </div>
+            </div>
+            <AuthButton 
+              onClick={() => setShowAuthModal(true)}
+              showName={false}
+            />
+          </div>
         </div>
 
         {/* Appearance Section */}
         <div className={styles.settingSection}>
           <h3 className={styles.sectionTitle}>Appearance</h3>
           
-          {/* Theme Toggle */}
-          <SettingItem
-            icon={isDarkMode ? Moon : Sun}
-            title="App Theme"
-            description="Switch between dark and light mode"
-            action={
-              <button
-                onClick={onThemeToggle}
-                className={`${styles.toggleSwitch} ${isDarkMode ? styles.toggleSwitchActive : ''}`}
+          {/* Theme Selection */}
+          <div className={styles.settingItem}>
+            <div className={styles.settingContent}>
+              <div className={styles.settingIcon}>
+                {selectedTheme === 'dark' ? (
+                  <Moon size={20} />
+                ) : selectedTheme === 'light' ? (
+                  <Sun size={20} />
+                ) : (
+                  <Computer size={20} />
+                )}
+              </div>
+              <div className={styles.settingInfo}>
+                <h3 className={styles.settingTitle}>App Theme</h3>
+                <p className={styles.settingDescription}>
+                  Choose between light, dark, or system default theme
+                </p>
+              </div>
+            </div>
+            <div className={styles.themeOptions}>
+              <button 
+                className={`${styles.themeButton} ${selectedTheme === 'light' ? styles.themeButtonActive : ''}`}
+                onClick={() => handleThemeChange('light')}
+                aria-label="Light theme"
               >
-                <span
-                  className={`${styles.toggleKnob} ${isDarkMode ? styles.toggleKnobActive : ''}`}
-                />
+                <Sun size={16} />
+                <span>Light</span>
               </button>
-            }
-          />
+              <button 
+                className={`${styles.themeButton} ${selectedTheme === 'system' ? styles.themeButtonActive : ''}`}
+                onClick={() => handleThemeChange('system')}
+                aria-label="System theme"
+              >
+                <Computer size={16} />
+                <span>System</span>
+              </button>
+              <button 
+                className={`${styles.themeButton} ${selectedTheme === 'dark' ? styles.themeButtonActive : ''}`}
+                onClick={() => handleThemeChange('dark')}
+                aria-label="Dark theme"
+              >
+                <Moon size={16} />
+                <span>Dark</span>
+              </button>
+            </div>
+          </div>
 
           {/* Color Customization */}
-          <SettingItem
-            icon={Palette}
-            title="Colors"
-            description="Customize app colors and ring themes"
-            action={
-              <button
-                onClick={() => setShowColorPicker(true)}
-                className={styles.actionButton}
-              >
-                Edit
-              </button>
-            }
-          />
+          <div className={styles.settingItem}>
+            <div className={styles.settingContent}>
+              <div className={styles.settingIcon}>
+                <Palette size={20} />
+              </div>
+              <div className={styles.settingInfo}>
+                <h3 className={styles.settingTitle}>Colors</h3>
+                <p className={styles.settingDescription}>
+                  Customize app colors and ring themes
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowColorPicker(true)}
+              className={styles.actionButton}
+            >
+              Edit
+            </button>
+          </div>
         </div>
 
         {/* Data Management Section */}
@@ -284,41 +331,53 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
           <h3 className={styles.sectionTitle}>Data</h3>
           
           {/* Export Data */}
-          <SettingItem
-            icon={Download}
-            title="Export Data"
-            description="Download your goals and progress data"
-            action={
-              <button
-                onClick={handleExportData}
-                className={styles.actionButton}
-                disabled={isLoading}
-              >
-                Export
-              </button>
-            }
-          />
+          <div className={styles.settingItem}>
+            <div className={styles.settingContent}>
+              <div className={styles.settingIcon}>
+                <Download size={20} />
+              </div>
+              <div className={styles.settingInfo}>
+                <h3 className={styles.settingTitle}>Export Data</h3>
+                <p className={styles.settingDescription}>
+                  Download your goals and progress data
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleExportData}
+              className={styles.actionButton}
+              disabled={isLoading}
+            >
+              Export
+            </button>
+          </div>
           
           {/* Import Data */}
-          <SettingItem
-            icon={Upload}
-            title="Import Data"
-            description="Restore from a previous export"
-            action={
-              <div className={styles.importContainer}>
-                <label className={styles.importLabel}>
-                  <span className={styles.actionButton}>Import</span>
-                  <input 
-                    type="file" 
-                    accept=".json" 
-                    onChange={handleImportData}
-                    className={styles.fileInput}
-                    disabled={isLoading}
-                  />
-                </label>
+          <div className={styles.settingItem}>
+            <div className={styles.settingContent}>
+              <div className={styles.settingIcon}>
+                <Upload size={20} />
               </div>
-            }
-          />
+              <div className={styles.settingInfo}>
+                <h3 className={styles.settingTitle}>Import Data</h3>
+                <p className={styles.settingDescription}>
+                  Restore from a previous export
+                </p>
+              </div>
+            </div>
+            <div className={styles.importContainer}>
+              <label className={styles.importLabel}>
+                <span className={styles.actionButton}>Import</span>
+                <input 
+                  type="file" 
+                  accept=".json" 
+                  onChange={handleImportData}
+                  className={styles.fileInput}
+                  disabled={isLoading}
+                />
+              </label>
+            </div>
+          </div>
           
           {/* Error/Success messages for import */}
           {importError && (
@@ -334,20 +393,26 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
           )}
           
           {/* Clear Data */}
-          <SettingItem
-            icon={Trash2}
-            title="Clear Data"
-            description="Delete all your goal data"
-            action={
-              <button
-                onClick={handleClearData}
-                className={confirmClear ? styles.dangerButtonConfirm : styles.dangerButton}
-                disabled={isLoading}
-              >
-                {confirmClear ? 'Confirm' : 'Clear'}
-              </button>
-            }
-          />
+          <div className={styles.settingItem}>
+            <div className={styles.settingContent}>
+              <div className={styles.settingIcon}>
+                <Trash2 size={20} />
+              </div>
+              <div className={styles.settingInfo}>
+                <h3 className={styles.settingTitle}>Clear Data</h3>
+                <p className={styles.settingDescription}>
+                  Delete all your goal data
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleClearData}
+              className={confirmClear ? styles.dangerButtonConfirm : styles.dangerButton}
+              disabled={isLoading}
+            >
+              {confirmClear ? 'Confirm' : 'Clear'}
+            </button>
+          </div>
           
           {confirmClear && (
             <div className={styles.confirmMessage}>

@@ -1,202 +1,337 @@
 /* src/apps/bossbitch/components/EditGoalsModal/styles.module.css */
 
 .modal {
-    position: fixed;
-    inset: 0;
-    background-color: #ffffff;
-    backdrop-filter: blur(4px);
-    z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--spacing-4);
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(5px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.container {
+  background-color: #1A1A1A;
+  border-radius: 24px;
+  max-width: 28rem;
+  width: 100%;
+  padding: 1.5rem;
+  border: 1px solid #333333;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  animation: modalEnter 0.3s ease-out;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
   }
-  
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  font-family: serif;
+  font-style: italic;
+}
+
+.closeButton {
+  color: #888888;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 2rem;
+  height: 2rem;
+}
+
+.closeButton:hover {
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.inputGroup {
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  display: block;
+  color: #888888;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.input {
+  width: 100%;
+  background-color: #2A2A2A;
+  color: #FFFFFF;
+  border-radius: 16px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #333333;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #7C3AED;
+  border-color: #7C3AED;
+}
+
+/* Day selection grid */
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+.dayButton {
+  padding: 0.75rem 0;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #333333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #2A2A2A;
+  color: #888888;
+  position: relative;
+  overflow: hidden;
+}
+
+.dayButton:hover {
+  background-color: #333333;
+  color: #FFFFFF;
+  border-color: #444444;
+}
+
+.dayButton.active {
+  background-color: #7C3AED;
+  color: #FFFFFF;
+  border-color: #6D28D9;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
+}
+
+.dayButton.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: white;
+  animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* Daily goal section */
+.dailyGoalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.calculateButton {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #7C3AED;
+  font-size: 0.875rem;
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calculateButton:hover {
+  color: #8B5CF6;
+  background-color: rgba(124, 58, 237, 0.1);
+}
+
+.customWarning {
+  color: #F59E0B;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(245, 158, 11, 0.1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 12px;
+  border-left: 3px solid #F59E0B;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.error {
+  color: #EF4444;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  padding: 0.75rem;
+  border-radius: 12px;
+  border-left: 3px solid #EF4444;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.submitButton {
+  width: 100%;
+  background-color: #7C3AED;
+  color: #FFFFFF;
+  border-radius: 16px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.submitButton:hover {
+  background-color: #6D28D9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+}
+
+.submitButton:disabled {
+  background-color: #444444;
+  color: #888888;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Light mode styles */
+:global(.light-mode) .modal {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+:global(.light-mode) .container {
+  background-color: #FFFFFF;
+  border: 1px solid #DDDDDD;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+:global(.light-mode) .title {
+  color: #000000;
+}
+
+:global(.light-mode) .closeButton {
+  color: #666666;
+}
+
+:global(.light-mode) .closeButton:hover {
+  color: #000000;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+:global(.light-mode) .label {
+  color: #666666;
+}
+
+:global(.light-mode) .input {
+  background-color: #F5F5F7;
+  color: #000000;
+  border: 1px solid #DDDDDD;
+}
+
+:global(.light-mode) .dayButton {
+  background-color: #F5F5F7;
+  color: #666666;
+  border: 1px solid #DDDDDD;
+}
+
+:global(.light-mode) .dayButton:hover {
+  background-color: #EEEEEE;
+  color: #000000;
+  border-color: #CCCCCC;
+}
+
+:global(.light-mode) .dayButton.active {
+  background-color: #7C3AED;
+  color: #FFFFFF;
+  border-color: #6D28D9;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+:global(.light-mode) .calculateButton {
+  color: #7C3AED;
+}
+
+:global(.light-mode) .calculateButton:hover {
+  background-color: rgba(124, 58, 237, 0.1);
+}
+
+/* Animation for warnings and errors */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
   .container {
-    background-color: var(--color-bg-secondary);
-    border-radius: var(--radius-2xl);
-    max-width: 28rem;
-    width: 100%;
-    padding: var(--spacing-6);
-    border: 1px solid var(--color-border-light);
-    box-shadow: var(--shadow-lg);
+    padding: 1rem;
+    border-radius: 16px;
   }
   
   .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-6);
+    margin-bottom: 1rem;
   }
   
   .title {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-semibold);
-    color: var(--color-text-primary);
-  }
-  
-  .closeButton {
-    color: var(--color-text-tertiary);
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    padding: var(--spacing-1);
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color var(--transition-fast), background-color var(--transition-fast);
-  }
-  
-  .closeButton:hover {
-    color: var(--color-text-primary);
-    background-color: var(--color-bg-tertiary);
-  }
-  
-  .inputGroup {
-    margin-bottom: var(--spacing-6);
-  }
-  
-  .label {
-    display: block;
-    color: var(--color-text-tertiary);
-    margin-bottom: var(--spacing-2);
-    font-size: var(--text-sm);
-  }
-  
-  .input {
-    width: 100%;
-    background-color: var(--color-bg-tertiary);
-    color: var(--color-text-primary);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-3) var(--spacing-4);
-    border: 1px solid var(--color-border-light);
-    font-size: var(--text-base);
-    transition: all var(--transition-fast);
-  }
-  
-  .input:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--color-purple-500);
-    border-color: var(--color-purple-500);
+    font-size: 1.25rem;
   }
   
   .daysGrid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: var(--spacing-2);
+    gap: 0.25rem;
   }
   
   .dayButton {
-    padding: var(--spacing-2);
-    border-radius: var(--radius-lg);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all var(--transition-fast);
+    padding: 0.5rem 0;
+    font-size: 0.75rem;
+    border-radius: 8px;
   }
   
-  .dayButton.inactive {
-    background-color: var(--color-bg-tertiary);
-    color: var(--color-text-tertiary);
+  .dayButton.active::after {
+    height: 2px;
   }
   
-  .dayButton.inactive:hover {
-    background-color: var(--color-bg-primary);
-    border-color: var(--color-border-medium);
+  .input, .submitButton {
+    border-radius: 12px;
   }
-  
-  .dayButton.active {
-    background-color: var(--color-purple-600);
-    color: var(--color-white);
-    border-color: var(--color-purple-500);
-  }
-  
-  .dailyGoalHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-2);
-  }
-  
-  .calculateButton {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-1);
-    color: var(--color-purple-400);
-    font-size: var(--text-sm);
-    background: transparent;
-    border: none;
-    padding: var(--spacing-1) var(--spacing-2);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-  }
-  
-  .calculateButton:hover {
-    color: var(--color-purple-300);
-    background-color: var(--color-bg-tertiary);
-  }
-  
-  .customWarning {
-    color: var(--color-yellow-500);
-    font-size: var(--text-sm);
-    margin-top: var(--spacing-2);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-2);
-    background-color: rgba(245, 158, 11, 0.1);
-    padding: var(--spacing-2) var(--spacing-3);
-    border-radius: var(--radius-lg);
-    border-left: 3px solid var(--color-yellow-500);
-  }
-  
-  .error {
-    color: var(--color-red-500);
-    margin-bottom: var(--spacing-4);
-    font-size: var(--text-sm);
-    background-color: rgba(239, 68, 68, 0.1);
-    padding: var(--spacing-3);
-    border-radius: var(--radius-lg);
-    border-left: 3px solid var(--color-red-500);
-  }
-  
-  .submitButton {
-    width: 100%;
-    background-color: var(--color-purple-600);
-    color: var(--color-white);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-3) var(--spacing-6);
-    font-weight: var(--font-medium);
-    border: none;
-    cursor: pointer;
-    transition: background-color var(--transition-fast);
-    font-size: var(--text-base);
-  }
-  
-  .submitButton:hover {
-    background-color: var(--color-purple-700);
-  }
-  
-  .submitButton:disabled {
-    background-color: var(--color-bg-tertiary);
-    color: var(--color-text-disabled);
-    cursor: not-allowed;
-  }
-  
-  /* Animation for warning and errors */
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .warning, .error {
-    animation: slideIn 200ms ease-out;
-  }
+}
