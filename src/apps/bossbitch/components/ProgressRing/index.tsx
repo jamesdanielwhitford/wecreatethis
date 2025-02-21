@@ -14,6 +14,7 @@ interface ProgressRingProps {
   segments?: IncomeSource[];
   animate?: boolean;
   className?: string;
+  emptyRing?: boolean; // New prop to handle empty ring styling
 }
 
 const ProgressRing: React.FC<ProgressRingProps> = ({
@@ -25,6 +26,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
   segments,
   animate = true,
   className = '',
+  emptyRing = false, // Default to false
 }) => {
   const circleRef = useRef<SVGCircleElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -125,30 +127,34 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
           strokeWidth={strokeWidth}
           className={styles.background}
           strokeLinecap="round"
+          // For empty rings, use dashed stroke
+          strokeDasharray={emptyRing ? '3,3' : undefined}
         />
         
         {/* Progress or segments */}
-        {segments && segments.length > 0 ? (
-          renderSegments()
-        ) : (
-          <circle
-            ref={circleRef}
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke={color}
-            strokeWidth={strokeWidth}
-            strokeDasharray={circumference}
-            strokeDashoffset={!isInitialized ? circumference : getStrokeDashoffset(percentage)}
-            className={styles.progress}
-            strokeLinecap="round"
-            style={{ 
-              transform: 'rotate(-90deg)',
-              transformOrigin: 'center',
-              transition: isInitialized && animate ? 'stroke-dashoffset 0.8s ease-in-out' : 'none'
-            }}
-          />
+        {!emptyRing && (
+          segments && segments.length > 0 ? (
+            renderSegments()
+          ) : (
+            <circle
+              ref={circleRef}
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke={color}
+              strokeWidth={strokeWidth}
+              strokeDasharray={circumference}
+              strokeDashoffset={!isInitialized ? circumference : getStrokeDashoffset(percentage)}
+              className={styles.progress}
+              strokeLinecap="round"
+              style={{ 
+                transform: 'rotate(-90deg)',
+                transformOrigin: 'center',
+                transition: isInitialized && animate ? 'stroke-dashoffset 0.8s ease-in-out' : 'none'
+              }}
+            />
+          )
         )}
       </svg>
     </div>

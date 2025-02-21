@@ -10,7 +10,7 @@
 }
 
 .background {
-  opacity: 0.1;
+  opacity: 0.2; /* Slightly increase opacity for better visibility */
   stroke: currentColor;
 }
 
@@ -46,18 +46,6 @@
   }
   to {
     opacity: 1;
-  }
-}
-
-/* Remove the rotation animation that may cause initial position issues */
-@keyframes ringEnter {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
   }
 }
 

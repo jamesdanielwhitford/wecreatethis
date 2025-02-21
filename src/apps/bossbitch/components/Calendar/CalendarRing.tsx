@@ -28,8 +28,10 @@ const CalendarRing: React.FC<CalendarRingProps> = ({
   onClick,
   type
 }) => {
-  // Use the same colors as main rings based on type
-  const ringColor = type === 'daily' ? '#FF0000' : '#FFD700';
+  // Use a neutral color for empty rings, and the theme color for rings with data
+  const ringColor = progress > 0 
+    ? (type === 'daily' ? '#FF0000' : '#FFD700') 
+    : '#888888'; // Neutral gray for empty rings
   
   // Calculate ring size based on type
   const ringSize = type === 'monthly' ? 60 : 40;
@@ -79,6 +81,7 @@ const CalendarRing: React.FC<CalendarRingProps> = ({
           strokeWidth={strokeWidth}
           segments={segments}
           animate={false}
+          emptyRing={!hasData} // Add a prop to indicate empty ring
         />
       </div>
       
