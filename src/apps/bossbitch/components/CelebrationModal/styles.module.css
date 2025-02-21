@@ -1,0 +1,202 @@
+/* src/apps/bossbitch/components/CelebrationModal/styles.module.css */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-4);
+    overflow: hidden;
+  }
+  
+  .container {
+    max-width: 28rem;
+    width: 100%;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: var(--spacing-4);
+  }
+  
+  .closeButton {
+    color: var(--color-text-tertiary);
+    background: rgba(0, 0, 0, 0.3);
+    border: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+  
+  .closeButton:hover {
+    color: var(--color-text-primary);
+    background: rgba(0, 0, 0, 0.5);
+  }
+  
+  .content {
+    background: linear-gradient(135deg, var(--color-purple-600), var(--color-purple-700), var(--color-purple-800));
+    border-radius: var(--radius-2xl);
+    padding: var(--spacing-8);
+    text-align: center;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .title {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    color: var(--color-white);
+    margin-bottom: var(--spacing-6);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  
+  .quote {
+    font-size: var(--text-xl);
+    color: var(--color-white);
+    min-height: 4rem;
+    margin-bottom: var(--spacing-8);
+    transition: opacity 500ms, transform 500ms;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+  
+  .songContainer {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-6);
+    margin-bottom: var(--spacing-6);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .songLabel {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: var(--spacing-2);
+    font-size: var(--text-sm);
+  }
+  
+  .songTitle {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--color-white);
+    margin-bottom: var(--spacing-1);
+  }
+  
+  .songArtist {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: var(--spacing-4);
+    font-size: var(--text-sm);
+  }
+  
+  .playButton {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    background-color: var(--color-white);
+    color: var(--color-purple-600);
+    padding: var(--spacing-3) var(--spacing-6);
+    border-radius: var(--radius-xl);
+    font-weight: var(--font-semibold);
+    transition: all var(--transition-fast);
+    text-decoration: none;
+  }
+  
+  .playButton:hover {
+    background-color: var(--color-purple-50);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .continueButton {
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--color-white);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-3) var(--spacing-6);
+    font-weight: var(--font-medium);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+  }
+  
+  .continueButton:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Confetti animation */
+  .confetti {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  .confettiPiece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: var(--color-purple-500);
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    animation: confettiFall 3s linear infinite;
+  }
+  
+  /* Animations */
+  @keyframes bounceIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.1);
+    }
+    80% {
+      opacity: 1;
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  @keyframes confettiFall {
+    0% {
+      transform: translateY(-100%) rotate(0deg);
+    }
+    100% {
+      transform: translateY(100vh) rotate(720deg);
+    }
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .fadeSlide {
+    animation: slideIn 0.5s ease-out;
+  }

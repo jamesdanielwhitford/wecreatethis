@@ -1,0 +1,202 @@
+/* src/apps/bossbitch/components/EditGoalsModal/styles.module.css */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background-color: #ffffff;
+    backdrop-filter: blur(4px);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-4);
+  }
+  
+  .container {
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-2xl);
+    max-width: 28rem;
+    width: 100%;
+    padding: var(--spacing-6);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-6);
+  }
+  
+  .title {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-primary);
+  }
+  
+  .closeButton {
+    color: var(--color-text-tertiary);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: var(--spacing-1);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+  }
+  
+  .closeButton:hover {
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-tertiary);
+  }
+  
+  .inputGroup {
+    margin-bottom: var(--spacing-6);
+  }
+  
+  .label {
+    display: block;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--spacing-2);
+    font-size: var(--text-sm);
+  }
+  
+  .input {
+    width: 100%;
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-3) var(--spacing-4);
+    border: 1px solid var(--color-border-light);
+    font-size: var(--text-base);
+    transition: all var(--transition-fast);
+  }
+  
+  .input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-purple-500);
+    border-color: var(--color-purple-500);
+  }
+  
+  .daysGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--spacing-2);
+  }
+  
+  .dayButton {
+    padding: var(--spacing-2);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+  
+  .dayButton.inactive {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-tertiary);
+  }
+  
+  .dayButton.inactive:hover {
+    background-color: var(--color-bg-primary);
+    border-color: var(--color-border-medium);
+  }
+  
+  .dayButton.active {
+    background-color: var(--color-purple-600);
+    color: var(--color-white);
+    border-color: var(--color-purple-500);
+  }
+  
+  .dailyGoalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-2);
+  }
+  
+  .calculateButton {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    color: var(--color-purple-400);
+    font-size: var(--text-sm);
+    background: transparent;
+    border: none;
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+  
+  .calculateButton:hover {
+    color: var(--color-purple-300);
+    background-color: var(--color-bg-tertiary);
+  }
+  
+  .customWarning {
+    color: var(--color-yellow-500);
+    font-size: var(--text-sm);
+    margin-top: var(--spacing-2);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    background-color: rgba(245, 158, 11, 0.1);
+    padding: var(--spacing-2) var(--spacing-3);
+    border-radius: var(--radius-lg);
+    border-left: 3px solid var(--color-yellow-500);
+  }
+  
+  .error {
+    color: var(--color-red-500);
+    margin-bottom: var(--spacing-4);
+    font-size: var(--text-sm);
+    background-color: rgba(239, 68, 68, 0.1);
+    padding: var(--spacing-3);
+    border-radius: var(--radius-lg);
+    border-left: 3px solid var(--color-red-500);
+  }
+  
+  .submitButton {
+    width: 100%;
+    background-color: var(--color-purple-600);
+    color: var(--color-white);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-3) var(--spacing-6);
+    font-weight: var(--font-medium);
+    border: none;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    font-size: var(--text-base);
+  }
+  
+  .submitButton:hover {
+    background-color: var(--color-purple-700);
+  }
+  
+  .submitButton:disabled {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-disabled);
+    cursor: not-allowed;
+  }
+  
+  /* Animation for warning and errors */
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .warning, .error {
+    animation: slideIn 200ms ease-out;
+  }

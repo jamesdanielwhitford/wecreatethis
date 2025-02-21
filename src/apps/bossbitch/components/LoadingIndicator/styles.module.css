@@ -1,0 +1,105 @@
+/* src/apps/bossbitch/components/LoadingIndicator/styles.module.css */
+
+.fullScreenContainer {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .inlineContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-4);
+  }
+  
+  .content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-2);
+  }
+  
+  .text {
+    color: var(--color-white);
+    font-size: var(--text-base);
+    margin: 0;
+  }
+  
+  .spinner {
+    display: flex;
+    gap: var(--spacing-2);
+  }
+  
+  .spinnerSmall {
+    gap: 0.25rem;
+  }
+  
+  .spinnerMedium {
+    gap: 0.375rem;
+  }
+  
+  .spinnerLarge {
+    gap: 0.5rem;
+  }
+  
+  .dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    background-color: var(--color-purple-500);
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out both;
+  }
+  
+  .spinnerSmall .dot {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+  
+  .spinnerMedium .dot {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+  
+  .spinnerLarge .dot {
+    width: 1rem;
+    height: 1rem;
+  }
+  
+  .dot:nth-child(1) {
+    animation-delay: -0.32s;
+  }
+  
+  .dot:nth-child(2) {
+    animation-delay: -0.16s;
+  }
+  
+  @keyframes bounce {
+    0%, 80%, 100% { 
+      transform: scale(0);
+    } 
+    40% { 
+      transform: scale(1.0);
+    }
+  }
+  
+  /* Dark background fallback for when backdrop-filter is not supported */
+  @supports not (backdrop-filter: blur(2px)) {
+    .fullScreenContainer {
+      background-color: rgba(0, 0, 0, 0.75);
+    }
+  }
+  
+  /* When loading in light mode */
+  :global(.light-mode) .fullScreenContainer {
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+  
+  :global(.light-mode) .text {
+    color: var(--color-text-primary);
+  }

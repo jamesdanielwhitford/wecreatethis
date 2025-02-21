@@ -1,0 +1,415 @@
+/* src/apps/bossbitch/components/Settings/styles.module.css */
+
+.container {
+    max-width: 28rem;
+    margin: 0 auto;
+    padding: var(--spacing-4);
+  }
+  
+  .title {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-6);
+  }
+  
+  .settingsCard {
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-2xl);
+    overflow: hidden;
+    border: 1px solid var(--color-border-light);
+    margin-bottom: var(--spacing-6);
+  }
+  
+  .settingSection {
+    border-bottom: 1px solid var(--color-border-light);
+    padding-bottom: var(--spacing-4);
+    margin-bottom: var(--spacing-4);
+  }
+  
+  .settingSection:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+  
+  .sectionTitle {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-text-primary);
+    padding: var(--spacing-4) var(--spacing-4) var(--spacing-2);
+  }
+  
+  .settingItem {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: var(--spacing-3) var(--spacing-4);
+  }
+  
+  .settingContent {
+    display: flex;
+    gap: var(--spacing-4);
+  }
+  
+  .settingIcon {
+    color: var(--color-purple-500);
+    margin-top: var(--spacing-1);
+  }
+  
+  .settingInfo {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .settingTitle {
+    color: var(--color-text-primary);
+    font-weight: var(--font-medium);
+  }
+  
+  .settingDescription {
+    color: var(--color-text-tertiary);
+    font-size: var(--text-sm);
+  }
+  
+  .actionButton {
+    color: var(--color-purple-500);
+    transition: color var(--transition-fast);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--radius-md);
+  }
+  
+  .actionButton:hover {
+    color: var(--color-purple-400);
+    background-color: rgba(124, 58, 237, 0.1);
+  }
+  
+  .actionButton:disabled {
+    color: var(--color-text-disabled);
+    cursor: not-allowed;
+  }
+  
+  .dangerButton {
+    color: var(--color-red-500);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    transition: all var(--transition-fast);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--radius-md);
+  }
+  
+  .dangerButton:hover {
+    color: var(--color-red-400);
+    background-color: rgba(239, 68, 68, 0.1);
+  }
+  
+  .dangerButtonConfirm {
+    color: var(--color-white);
+    background-color: var(--color-red-500);
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--radius-md);
+    border: none;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+  }
+  
+  .dangerButtonConfirm:hover {
+    background-color: var(--color-red-600);
+  }
+  
+  .confirmMessage {
+    margin: 0 var(--spacing-4) var(--spacing-4);
+    padding: var(--spacing-3);
+    background-color: rgba(239, 68, 68, 0.1);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    color: var(--color-text-primary);
+    border-left: 3px solid var(--color-red-500);
+  }
+  
+  .cancelButton {
+    margin-top: var(--spacing-2);
+    padding: var(--spacing-1) var(--spacing-3);
+    background-color: transparent;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    cursor: pointer;
+  }
+  
+  .cancelButton:hover {
+    background-color: var(--color-bg-tertiary);
+  }
+  
+  .toggleSwitch {
+    position: relative;
+    display: inline-flex;
+    height: 1.5rem;
+    width: 2.75rem;
+    align-items: center;
+    border-radius: var(--radius-full);
+    background-color: var(--color-bg-tertiary);
+    transition: background-color var(--transition-fast);
+    cursor: pointer;
+    border: none;
+  }
+  
+  .toggleSwitchActive {
+    background-color: var(--color-purple-500);
+  }
+  
+  .toggleKnob {
+    display: inline-block;
+    height: 1rem;
+    width: 1rem;
+    transform: translateX(0.25rem);
+    border-radius: var(--radius-full);
+    background-color: var(--color-white);
+    transition: transform var(--transition-fast);
+  }
+  
+  .toggleKnobActive {
+    transform: translateX(1.5rem);
+  }
+  
+  .importContainer {
+    position: relative;
+  }
+  
+  .importLabel {
+    cursor: pointer;
+    display: inline-block;
+  }
+  
+  .fileInput {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+  
+  .importMessage {
+    margin: 0 var(--spacing-4) var(--spacing-4);
+  }
+  
+  .error {
+    color: var(--color-red-500);
+    padding: var(--spacing-3);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    background-color: rgba(239, 68, 68, 0.1);
+    border-left: 3px solid var(--color-red-500);
+  }
+  
+  .success {
+    color: var(--color-green-500);
+    padding: var(--spacing-3);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    background-color: rgba(16, 185, 129, 0.1);
+    border-left: 3px solid var(--color-green-500);
+  }
+  
+  .versionInfo {
+    text-align: center;
+    color: var(--color-text-tertiary);
+    font-size: var(--text-sm);
+    margin-top: var(--spacing-8);
+  }
+  
+  /* Color Picker Styles */
+  .colorPickerOverlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-4);
+  }
+  
+  .colorSettings {
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-2xl);
+    max-width: 28rem;
+    width: 100%;
+    padding: var(--spacing-6);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .colorTitle {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-4);
+  }
+  
+  .colorOptions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+    margin-bottom: var(--spacing-6);
+  }
+  
+  .colorOption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-3) var(--spacing-4);
+    background-color: var(--color-bg-tertiary);
+    border-radius: var(--radius-lg);
+  }
+  
+  .colorLabel {
+    color: var(--color-text-primary);
+    font-weight: var(--font-medium);
+  }
+  
+  .colorInput {
+    appearance: none;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  
+  .colorInput::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+  
+  .colorInput::-webkit-color-swatch {
+    border: none;
+    border-radius: var(--radius-md);
+  }
+  
+  .colorInput::-moz-color-swatch {
+    border: none;
+    border-radius: var(--radius-md);
+  }
+  
+  .doneButton {
+    width: 100%;
+    background-color: var(--color-purple-600);
+    color: var(--color-white);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-3) var(--spacing-6);
+    font-weight: var(--font-medium);
+    border: none;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    font-size: var(--text-base);
+  }
+  
+  .doneButton:hover {
+    background-color: var(--color-purple-700);
+  }
+  
+  /* Color Picker Component Styles */
+  .colorPickerContainer {
+    margin-bottom: var(--spacing-4);
+  }
+  
+  .colorPickerLabel {
+    display: block;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--spacing-2);
+    font-size: var(--text-sm);
+  }
+  
+  .colorInputWrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-3);
+  }
+  
+  .colorPickerInput {
+    appearance: none;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  
+  .colorPickerInput::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+  
+  .colorPickerInput::-webkit-color-swatch {
+    border: none;
+    border-radius: var(--radius-md);
+  }
+  
+  .colorPickerInput::-moz-color-swatch {
+    border: none;
+    border-radius: var(--radius-md);
+  }
+  
+  .colorPreview {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-light);
+  }
+  
+  .colorOptions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-2);
+  }
+  
+  .colorOption {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-light);
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+    padding: 0;
+  }
+  
+  .colorOption:hover {
+    transform: scale(1.1);
+  }
+  
+  .activeColor {
+    box-shadow: 0 0 0 2px var(--color-purple-500);
+    transform: scale(1.1);
+  }
+  
+  @media (max-width: 480px) {
+    .colorOptions {
+      gap: var(--spacing-1);
+    }
+    
+    .colorOption {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }

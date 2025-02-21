@@ -1,0 +1,229 @@
+/* src/apps/bossbitch/components/Auth/styles.module.css */
+
+.authModal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-4);
+  }
+  
+  .container {
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-2xl);
+    max-width: 28rem;
+    width: 100%;
+    padding: var(--spacing-6);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-6);
+  }
+  
+  .title {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-primary);
+  }
+  
+  .closeButton {
+    color: var(--color-text-tertiary);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: var(--spacing-1);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+  }
+  
+  .closeButton:hover {
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-tertiary);
+  }
+  
+  .form {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .inputGroup {
+    margin-bottom: var(--spacing-4);
+  }
+  
+  .label {
+    display: block;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--spacing-2);
+    font-size: var(--text-sm);
+  }
+  
+  .input {
+    width: 100%;
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-3) var(--spacing-4);
+    border: 1px solid var(--color-border-light);
+    font-size: var(--text-base);
+    transition: all var(--transition-fast);
+  }
+  
+  .input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-purple-500);
+    border-color: var(--color-purple-500);
+  }
+  
+  .error {
+    color: var(--color-red-500);
+    margin-bottom: var(--spacing-4);
+    font-size: var(--text-sm);
+    background-color: rgba(239, 68, 68, 0.1);
+    padding: var(--spacing-3);
+    border-radius: var(--radius-lg);
+    border-left: 3px solid var(--color-red-500);
+  }
+  
+  .submitButton {
+    width: 100%;
+    background-color: var(--color-purple-600);
+    color: var(--color-white);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-3) var(--spacing-6);
+    font-weight: var(--font-medium);
+    border: none;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    font-size: var(--text-base);
+    margin-bottom: var(--spacing-4);
+  }
+  
+  .submitButton:hover {
+    background-color: var(--color-purple-700);
+  }
+  
+  .submitButton:disabled {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-disabled);
+    cursor: not-allowed;
+  }
+  
+  .toggleMode {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-4);
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+  }
+  
+  .toggleButton {
+    background: none;
+    border: none;
+    color: var(--color-purple-400);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    padding: 0;
+    transition: color var(--transition-fast);
+  }
+  
+  .toggleButton:hover {
+    color: var(--color-purple-300);
+    text-decoration: underline;
+  }
+  
+  .note {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    text-align: center;
+    line-height: 1.4;
+  }
+  
+  .success {
+    color: var(--color-green-500);
+    margin-bottom: var(--spacing-4);
+    font-size: var(--text-sm);
+    background-color: rgba(16, 185, 129, 0.1);
+    padding: var(--spacing-3);
+    border-radius: var(--radius-lg);
+    border-left: 3px solid var(--color-green-500);
+  }
+  
+  /* Auth Button Styles */
+  .authButton {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-2) var(--spacing-3);
+    background-color: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-xl);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+  
+  .authButton:hover {
+    background-color: var(--color-bg-tertiary);
+    border-color: var(--color-border-medium);
+  }
+  
+  .userAvatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    background-color: var(--color-purple-600);
+    color: var(--color-white);
+    border-radius: 50%;
+  }
+  
+  .userName {
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .authIcon {
+    color: var(--color-text-tertiary);
+  }
+  
+  /* Animation for form elements */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .form > * {
+    animation: fadeIn 0.2s ease-out;
+    animation-fill-mode: both;
+  }
+  
+  .form > *:nth-child(1) { animation-delay: 0.05s; }
+  .form > *:nth-child(2) { animation-delay: 0.1s; }
+  .form > *:nth-child(3) { animation-delay: 0.15s; }
+  .form > *:nth-child(4) { animation-delay: 0.2s; }
+  .form > *:nth-child(5) { animation-delay: 0.25s; }
+  .form > *:nth-child(6) { animation-delay: 0.3s; }
