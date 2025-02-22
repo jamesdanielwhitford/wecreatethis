@@ -39,12 +39,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     dailyData,
     monthlyData,
     isLoading,
-    setSelectedDate: hookSetSelectedDate
+    setSelectedDate: hookSetSelectedDate = setSelectedDate // Add default value
   } = useGoalData({ initialDate: selectedDate });
 
   // When selected date changes in the component, update the hook
   useEffect(() => {
-    hookSetSelectedDate(selectedDate);
+    if (hookSetSelectedDate) {
+      hookSetSelectedDate(selectedDate);
+    }
   }, [selectedDate, hookSetSelectedDate]);
 
   // Generate week days for the selected date

@@ -33,6 +33,7 @@ function BossBitchContent() {
     dailyData,
     monthlyData,
     dailyGoal,
+    originalDailyGoal,
     monthlyGoal,
     activeDays,
     dailyRingColor,
@@ -40,7 +41,11 @@ function BossBitchContent() {
     addIncome,
     updateGoalSettings,
     isLoading,
-    isDataReady
+    isDataReady,
+    remainingDaysInMonth,
+    remainingActiveWorkdays,
+    deficitInfo,
+    refreshData
   } = useGoalData();
 
   // Initialize theme based on saved preference and device setting
@@ -114,27 +119,42 @@ function BossBitchContent() {
     dailyGoal: number;
     activeDays: boolean[];
   }) => {
-    updateGoalSettings(settings);
-    setShowEditModal(false);
+    updateGoalSettings(settings)
+      .then(() => {
+        setShowEditModal(false);
+        // Manual refresh to ensure UI updates
+        refreshData();
+      })
+      .catch((error) => {
+        console.error('Failed to update goals:', error);
+      });
   };
 
   // Handle adding new income
   const handleAddIncome = async (amount: number, source: { id: string; name: string; color: string }) => {
-    const newDailyValue = dailyData.progress + amount;
-    const newMonthlyValue = monthlyData.progress + amount;
+    try {
+      // Add income
+      await addIncome(amount, source);
+      
+      // Calculate new values to determine if celebration should show
+      const newDailyValue = dailyData.progress + amount;
+      const newMonthlyValue = monthlyData.progress + amount;
 
-    // Add income
-    await addIncome(amount, source);
+      // Show celebration if goal is met
+      if (
+        (dailyData.progress < dailyGoal && newDailyValue >= dailyGoal) ||
+        (monthlyData.progress < monthlyGoal && newMonthlyValue >= monthlyGoal)
+      ) {
+        setShowCelebration(true);
+      }
 
-    // Show celebration if goal is met
-    if (
-      (dailyData.progress < dailyGoal && newDailyValue >= dailyGoal) ||
-      (monthlyData.progress < monthlyGoal && newMonthlyValue >= monthlyGoal)
-    ) {
-      setShowCelebration(true);
+      setShowAddModal(false);
+      
+      // Manual refresh to ensure UI updates
+      refreshData();
+    } catch (error) {
+      console.error('Failed to add income:', error);
     }
-
-    setShowAddModal(false);
   };
 
   // Conditionally render skeleton loading state or actual content
@@ -143,8 +163,13 @@ function BossBitchContent() {
     data: { progress: number; segments: IncomeSource[] }, 
     goal: number, 
     color: string, 
-    onClick: () => void
+    onClick: () => void,
+    isDaily: boolean = false
   ) => {
+    // Safety checks for NaN values
+    const safeProgress = isNaN(data.progress) ? 0 : data.progress;
+    const safeGoal = isNaN(goal) ? 100 : goal;
+    
     return (
       <div className={styles.goalSection}>
         <h2 className={styles.goalCardTitle}>{title}</h2>
@@ -154,20 +179,56 @@ function BossBitchContent() {
         >
           <div className={styles.ringContainer}>
             <ProgressRing
-              progress={data.progress}
-              maxValue={goal}
+              progress={safeProgress}
+              maxValue={safeGoal}
               color={color}
               size={240}
               strokeWidth={24}
-              segments={data.segments}
-              // Only animate after data is ready
-              animate={isDataReady}
+              segments={data.segments || []}
+              animate={isDataReady && !isLoading}
             />
           </div>
           <div className={styles.goalValue}>
-            {formatZAR(data.progress)} / {formatZAR(goal)}
+            {formatZAR(safeProgress)} / {formatZAR(safeGoal)}
           </div>
+          
+          {/* Show adaptive goal info for daily goal */}
+          {isDaily && originalDailyGoal !== dailyGoal && (
+            <div className={`${styles.goalAdjustment} ${deficitInfo.isDeficit ? styles.deficit : styles.surplus}`}>
+              {originalDailyGoal < dailyGoal ? (
+                <span>⬆️ Adjusted from {formatZAR(originalDailyGoal)}</span>
+              ) : (
+                <span>⬇️ Adjusted from {formatZAR(originalDailyGoal)}</span>
+              )}
+            </div>
+          )}
         </button>
+      </div>
+    );
+  };
+
+  // Render dynamic goal status information
+  const renderGoalStatusInfo = () => {
+    if (!isDataReady || remainingActiveWorkdays === 0) return null;
+    
+    return (
+      <div className={`${styles.goalStatusCard} ${deficitInfo.isDeficit ? styles.deficitCard : styles.surplusCard}`}>
+        <h3 className={styles.goalStatusTitle}>
+          {deficitInfo.isDeficit ? 'Catching Up' : 'You\'re Ahead!'}
+        </h3>
+        <p className={styles.goalStatusMessage}>{deficitInfo.message}</p>
+        <div className={styles.goalStatusDetails}>
+          <div className={styles.goalStatusItem}>
+            <span className={styles.goalStatusLabel}>Remaining active days:</span>
+            <span className={styles.goalStatusValue}>{remainingActiveWorkdays}</span>
+          </div>
+          <div className={styles.goalStatusItem}>
+            <span className={styles.goalStatusLabel}>
+              {deficitInfo.isDeficit ? 'Extra needed per day:' : 'Less needed per day:'}
+            </span>
+            <span className={styles.goalStatusValue}>{formatZAR(deficitInfo.perDay)}</span>
+          </div>
+        </div>
       </div>
     );
   };
@@ -196,8 +257,12 @@ function BossBitchContent() {
                 dailyData, 
                 dailyGoal, 
                 dailyRingColor, 
-                () => setActiveView('daily')
+                () => setActiveView('daily'),
+                true
               )}
+
+              {/* Goal Status Info Section */}
+              {renderGoalStatusInfo()}
 
               {/* Monthly Goal Section */}
               {renderGoalCard(
@@ -262,7 +327,7 @@ function BossBitchContent() {
             onClose={() => setShowEditModal(false)}
             onSave={handleGoalUpdate}
             currentMonthlyGoal={monthlyGoal}
-            currentDailyGoal={dailyGoal}
+            currentDailyGoal={originalDailyGoal || dailyGoal}
             initialActiveDays={activeDays}
           />
         )}
