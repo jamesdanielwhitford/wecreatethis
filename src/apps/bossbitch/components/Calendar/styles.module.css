@@ -255,9 +255,9 @@
  /* Calendar Grid */
  .daysGrid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.25rem;
+  width: 100%;
  }
  
  .monthsGrid {
@@ -656,3 +656,16 @@
     height: 28px;
   }
  }
+
+/* Fix calendar grid width on mobile */
+@media (max-width: 480px) {
+
+  .monthsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;    
+  }
+
+  .ringCell {
+    padding: 0.125rem;
+  }
+}
