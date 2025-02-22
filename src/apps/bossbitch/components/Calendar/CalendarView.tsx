@@ -2,7 +2,7 @@
 
 // src/apps/bossbitch/components/Calendar/CalendarView.tsx
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, X, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Plus, Edit } from 'lucide-react';
 import CalendarGrid from './CalendarGrid';
 import ProgressRing from '../ProgressRing';
 import { IncomeSource } from '../../types/goal.types';
@@ -10,6 +10,8 @@ import { formatZAR } from '../../utils/currency';
 import useGoalData from '../../hooks/useGoalData';
 import { dataService } from '../../services/data/dataService';
 import LoadingIndicator from '../LoadingIndicator';
+import AddGoalModal from '../../components/AddGoalModal';
+import EditDayModal from '../EditDayModal/EditDayModal';
 import styles from './styles.module.css';
 
 interface CalendarViewProps {
@@ -29,6 +31,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [calendarGoals, setCalendarGoals] = useState<any[]>([]);
   const [isLoadingCalendar, setIsLoadingCalendar] = useState(false);
   const [showCalendarGrid, setShowCalendarGrid] = useState(false);
+  
+  // Add modals state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Get goal data from hook
   const { 
@@ -39,6 +45,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     dailyData,
     monthlyData,
     isLoading,
+    addIncome,
     setSelectedDate: hookSetSelectedDate = setSelectedDate // Add default value
   } = useGoalData({ initialDate: selectedDate });
 
@@ -291,6 +298,32 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     }
   };
 
+  // Add income for the selected date
+  const handleAddIncome = async (amount: number, source: IncomeSource) => {
+    try {
+      await addIncome(amount, source);
+      setShowAddModal(false);
+      
+      // Refresh week data to show the newly added income
+      if (weekDays.length > 0) {
+        loadWeekData(weekDays);
+      }
+    } catch (error) {
+      console.error('Error adding income:', error);
+    }
+  };
+
+  // Handle editing income sources for the selected day
+  const handleEditIncome = () => {
+    // This will be implemented in the EditDayModal component
+    setShowEditModal(false);
+    
+    // Refresh week data to show the edited income
+    if (weekDays.length > 0) {
+      loadWeekData(weekDays);
+    }
+  };
+
   const displayValue = type === 'daily' ? dailyData : monthlyData;
   const maxValue = type === 'daily' ? dailyGoal : monthlyGoal;
   const ringColor = type === 'daily' ? dailyRingColor : monthlyRingColor;
@@ -466,6 +499,26 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                           </div>
                         </>
                       )}
+                      
+                      {/* New Action Buttons */}
+                      <div className={styles.dayActionButtons}>
+                        <button 
+                          className={styles.dayActionButton}
+                          onClick={() => setShowAddModal(true)}
+                        >
+                          <Plus size={18} />
+                          <span>Add Income</span>
+                        </button>
+                        
+                        <button 
+                          className={styles.dayActionButton}
+                          onClick={() => setShowEditModal(true)}
+                          disabled={!displayValue.segments || displayValue.segments.length === 0}
+                        >
+                          <Edit size={18} />
+                          <span>Edit Income</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -549,6 +602,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                     <p className={styles.emptyMessage}>
                       No data for this {type === 'daily' ? 'day' : 'month'}.
                     </p>
+                    
+                    {/* Add button for empty state in daily view */}
+                    {type === 'daily' && (
+                      <button 
+                        className={styles.emptyStateButton}
+                        onClick={() => setShowAddModal(true)}
+                      >
+                        <Plus size={18} />
+                        <span>Add Income for this Day</span>
+                      </button>
+                    )}
                   </div>
                 )}
               </>
@@ -556,6 +620,28 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           </>
         )}
       </div>
+      
+      {/* Add Income Modal */}
+      {showAddModal && (
+        <AddGoalModal
+          onClose={() => setShowAddModal(false)}
+          onAdd={handleAddIncome}
+          currentValue={dailyData.progress}
+          maxValue={dailyGoal}
+          existingSources={dailyData.segments}
+          selectedDate={selectedDate}
+        />
+      )}
+      
+      {/* Edit Day Income Modal */}
+      {showEditModal && (
+        <EditDayModal
+          onClose={() => setShowEditModal(false)}
+          onSave={handleEditIncome}
+          selectedDate={selectedDate}
+          incomeSources={displayValue.segments || []}
+        />
+      )}
     </div>
   );
 };

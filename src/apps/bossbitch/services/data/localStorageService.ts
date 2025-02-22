@@ -136,6 +136,13 @@ export class LocalStorageService {
     return updatedEntry;
   }
 
+  deleteDayEntry(date: Date): void {
+    const key = getEntryKey(date);
+    // Delete the daily entry
+    delete this.userData.dailyEntries[key];
+    this.saveData();
+  }
+
   // Monthly entries
   getMonthlyEntry(year: number, month: number): MonthlyEntry | null {
     const key = getMonthKey(year, month);

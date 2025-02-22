@@ -111,6 +111,14 @@ class DataService {
     }
   }
 
+  async deleteDayEntry(date: Date): Promise<void> {
+    if (this.isAuthenticated) {
+      return firebaseService.deleteDayEntry(date);
+    } else {
+      return localStorageService.deleteDayEntry(date);
+    }
+  }
+
   // Monthly entries
   async getMonthlyEntry(year: number, month: number): Promise<MonthlyEntry | null> {
     if (this.isAuthenticated) {

@@ -377,6 +377,34 @@ export class FirebaseService {
     return updatedEntry;
   }
 
+  async deleteDayEntry(date: Date): Promise<void> {
+    if (!this.currentUser) throw new Error('User not authenticated');
+    
+    const key = getEntryKey(date);
+    
+    try {
+      // Make sure the document exists first
+      const userDocRef = doc(db, 'users', this.currentUser.uid);
+      const docSnap = await getDoc(userDocRef);
+      
+      if (!docSnap.exists()) {
+        console.log("Document doesn't exist, nothing to delete");
+        return;
+      }
+      
+      // Remove the entry from local cache
+      delete this.localCache.dailyEntries[key];
+      
+      // Update the document by setting the specific entry to null or removing it
+      // Firebase doesn't support true deletion of nested fields, so we set it to null
+      await updateDoc(userDocRef, { [`dailyEntries.${key}`]: null });
+      console.log("Daily entry deleted successfully");
+    } catch (error) {
+      console.error("Error deleting day entry:", error);
+      throw error;
+    }
+  }
+
   // Monthly entries
   async getMonthlyEntry(year: number, month: number): Promise<MonthlyEntry | null> {
     await this.ensureDataLoaded();

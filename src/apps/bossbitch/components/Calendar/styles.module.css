@@ -669,3 +669,98 @@
     padding: 0.125rem;
   }
 }
+
+/* Day Action Buttons */
+.dayActionButtons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.dayActionButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.2));
+  background-color: #2A2A2A;
+  color: #FFFFFF;
+}
+
+.dayActionButton:first-child {
+  background-color: #7C3AED; /* Purple */
+  border: none;
+}
+
+.dayActionButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.dayActionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Empty State Button */
+.emptyStateButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  margin-top: 1rem;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  background-color: #7C3AED; /* Purple */
+  color: #FFFFFF;
+}
+
+.emptyStateButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Light mode overrides */
+:global(.light-mode) .dayActionButton {
+  background-color: #F5F5F7;
+  color: #333333;
+  border: 1px solid #DDDDDD;
+}
+
+:global(.light-mode) .dayActionButton:first-child {
+  background-color: #7C3AED;
+  color: #FFFFFF;
+  border: none;
+}
+
+:global(.light-mode) .emptyStateButton {
+  background-color: #7C3AED;
+  color: #FFFFFF;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .dayActionButtons {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .dayActionButton {
+    width: 100%;
+  }
+}
