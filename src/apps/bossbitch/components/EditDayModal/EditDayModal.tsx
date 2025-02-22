@@ -1,12 +1,11 @@
 'use client';
 
-// src/apps/bossbitch/components/EditDayModal.tsx
+// src/apps/bossbitch/components/EditDayModal/EditDayModal.tsx
 import React, { useState, useEffect } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { IncomeSource } from '../../types/goal.types';
 import { formatZAR, parseZAR } from '../../utils/currency';
 import { useData } from '../../contexts/DataContext';
-import { getEntryKey } from '../../services/data/types';
 import styles from './styles.module.css';
 
 interface EditDayModalProps {
@@ -24,7 +23,8 @@ const EditDayModal: React.FC<EditDayModalProps> = ({
 }) => {
   const [editableSources, setEditableSources] = useState<IncomeSource[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const { dataService, setIsLoading } = useData();
+  // Get only what we need from the context
+  const { addIncomeToDay, isLoading, setIsLoading } = useData();
   
   // Initialize editable sources with the existing ones
   useEffect(() => {
@@ -59,41 +59,41 @@ const EditDayModal: React.FC<EditDayModalProps> = ({
     setIsLoading(true);
     
     try {
-      // Get the full original entry from the dataService
-      const dateKey = getEntryKey(selectedDate);
-      const entry = await dataService.getDailyEntry(selectedDate);
-      
-      if (!entry) {
-        throw new Error('Entry not found');
+      // Direct approach - use local storage APIs to manually handle the update
+      if (typeof window !== 'undefined') {
+        const STORAGE_KEY = 'bossbitch_data';
+        const storedData = localStorage.getItem(STORAGE_KEY);
+        
+        if (storedData) {
+          // Parse the stored data
+          const userData = JSON.parse(storedData);
+          
+          // Format date to YYYY-MM-DD for storage key
+          const dateKey = selectedDate.toISOString().split('T')[0];
+          
+          // Calculate total progress
+          const totalProgress = editableSources.reduce((total, source) => total + source.value, 0);
+          
+          // If total is zero, remove entry completely
+          if (totalProgress === 0 && editableSources.length === 0) {
+            if (userData.dailyEntries && userData.dailyEntries[dateKey]) {
+              delete userData.dailyEntries[dateKey];
+            }
+          } else {
+            // Create/update entry with new values
+            userData.dailyEntries[dateKey] = {
+              date: dateKey,
+              progress: totalProgress,
+              segments: editableSources
+            };
+          }
+          
+          // Save back to localStorage
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+        }
       }
       
-      // Calculate the new total progress
-      const newProgress = editableSources.reduce((total, source) => total + source.value, 0);
-      
-      // Create updated entry
-      const updatedEntry = {
-        ...entry,
-        progress: newProgress,
-        segments: editableSources
-      };
-      
-      // Update in Firebase/localStorage
-      // The approach depends on your implementation
-      // This is a simplified approach that mimics recreating the entry
-      
-      // First, remove all existing sources by creating a new empty entry
-      await dataService.deleteDayEntry(selectedDate);
-      
-      // Then add each source back one by one
-      for (const source of editableSources) {
-        await dataService.addIncomeToDay(selectedDate, source.value, {
-          id: source.id,
-          name: source.name,
-          color: source.color,
-          value: 0 // Will be set by addIncomeToDay
-        });
-      }
-      
+      // Success - let parent component know
       onSave();
     } catch (error) {
       console.error('Error updating day income:', error);
