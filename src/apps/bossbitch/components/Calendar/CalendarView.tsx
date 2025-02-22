@@ -46,7 +46,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     monthlyData,
     isLoading,
     addIncome,
-    setSelectedDate: hookSetSelectedDate = setSelectedDate // Add default value
+    refreshData,
+    setSelectedDate: hookSetSelectedDate 
   } = useGoalData({ initialDate: selectedDate });
 
   // When selected date changes in the component, update the hook
@@ -314,13 +315,37 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   // Handle editing income sources for the selected day
-  const handleEditIncome = () => {
-    // This will be implemented in the EditDayModal component
+  const handleEditIncome = async () => {
     setShowEditModal(false);
+    
+    // First, refresh the selected date data in the hook
+    if (refreshData) {
+      await refreshData();
+    }
     
     // Refresh week data to show the edited income
     if (weekDays.length > 0) {
-      loadWeekData(weekDays);
+      await loadWeekData(weekDays);
+    }
+    
+    // If we're showing the calendar grid, refresh that too
+    if (showCalendarGrid) {
+      // Create start and end dates for the current month view
+      const startDate = new Date(currentYear, currentMonth, 1);
+      const endDate = new Date(currentYear, currentMonth + 1, 0);
+      
+      // Get all daily entries for the month
+      const entries = await dataService.getDailyEntries(startDate, endDate);
+      
+      // Map to the format CalendarGrid expects
+      const goals = entries.map(entry => ({
+        date: new Date(entry.date),
+        progress: entry.progress,
+        maxValue: dailyGoal,
+        segments: entry.segments
+      }));
+      
+      setCalendarGoals(goals);
     }
   };
 
@@ -500,7 +525,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                         </>
                       )}
                       
-                      {/* New Action Buttons */}
+                      {/* Action Buttons */}
                       <div className={styles.dayActionButtons}>
                         <button 
                           className={styles.dayActionButton}
