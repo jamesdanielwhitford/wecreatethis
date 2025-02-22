@@ -34,22 +34,22 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({ onClose }) => {
         }
       },
       {
-        quote: "Own your crown and never dim your shine. 👑",
+        quote: "I work for myself, so i guess I work for a boss 🤷🏻‍♀️",
         song: {
-          title: "Crown",
-          artist: "Kelly Rowland",
-          url: "https://www.youtube.com/watch?v=_YF5W9Eo7gk"
+          title: "Feel A Way",
+          artist: "2 Chainz",
+          url: "https://www.youtube.com/watch?v=f6vg4ZVyUW8&t=42s"
         }
       }
     ],
     // Monday: Boss Moves & Money Vibes
     [
       {
-        quote: "Who run the world? Girls. 💪",
+        quote: "Work work work work work!",
         song: {
-          title: "Run the World (Girls)",
-          artist: "Beyoncé",
-          url: "https://www.youtube.com/watch?v=VBmMU_iwe6U"
+          title: "Work",
+          artist: "Rihanna",
+          url: "https://www.youtube.com/watch?v=puxjq3p-fU0"
         }
       },
       {
@@ -57,47 +57,39 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({ onClose }) => {
         song: {
           title: "Savage Remix (feat. Beyoncé)",
           artist: "Megan Thee Stallion",
-          url: "https://www.youtube.com/watch?v=6xW2rkh9v4k"
+          url: "https://www.youtube.com/watch?v=lEIqjoO0-Bs"
         }
       }
     ],
     // Tuesday: Confidence & Hustle Energy
     [
       {
-        quote: "Because confidence is your superpower. ✨",
+        quote: "Bad bitch contest? It wouldn't be no contest 💅",
         song: {
-          title: "Confident",
-          artist: "Demi Lovato",
-          url: "https://www.youtube.com/watch?v=cwLRQn61oUY"
+          title: "Hot Shit!",
+          artist: "Cardi B",
+          url: "https://www.youtube.com/watch?v=vjbBaai9ZA8&t=33s"
         }
       },
       {
-        quote: "Every day's a chance to level up. 💯",
+        quote: "Wait till I get my money right!",
         song: {
-          title: "Level Up",
-          artist: "Ciara",
-          url: "https://www.youtube.com/watch?v=Dh-ULbQmmF8"
+          title: "Can't Tell Me Nothing",
+          artist: "Kanye West",
+          url: "https://youtu.be/E58qLXBfLrs?feature=shared&t=55"
         }
       }
     ],
     // Wednesday: Ambition & Power Moves
     [
       {
-        quote: "I see it, I want it, I stunt, yellow bone it. 💸",
+        quote: "I see it, I want it, I stunt. 💸",
         song: {
           title: "Formation",
           artist: "Beyoncé",
           url: "https://www.youtube.com/watch?v=WDZJPJV__bQ"
         }
       },
-      {
-        quote: "You’ve got the power. 💪",
-        song: {
-          title: "Power",
-          artist: "Little Mix",
-          url: "https://www.youtube.com/watch?v=cOQUePka3hE"
-        }
-      }
     ],
     // Thursday: Boss Bitch Energy
     [
@@ -106,55 +98,31 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({ onClose }) => {
         song: {
           title: "Boss Bitch",
           artist: "Doja Cat",
-          url: "https://www.youtube.com/watch?v=RpdBXp8YyrE"
+          url: "https://www.youtube.com/watch?v=RsW66teC0BQ"
         }
       },
-      {
-        quote: "Because you’re doing just fine, living your best life. 🌟",
-        song: {
-          title: "Just Fine",
-          artist: "Mary J. Blige",
-          url: "https://www.youtube.com/watch?v=yt5SPJcE6sM"
-        }
-      }
     ],
     // Friday: Money & Ambition Vibes
     [
       {
-        quote: "Because making money is a vibe and a statement. 💰",
+        quote: "Baby WORK IT!",
         song: {
-          title: "Money",
-          artist: "Cardi B",
-          url: "https://www.youtube.com/watch?v=zUOh09GoQgk"
+          title: "Work It",
+          artist: "Missy Elliot",
+          url: "https://youtu.be/cjIvu7e6Wq8"
         }
       },
-      {
-        quote: "A timeless anthem about new beginnings and unstoppable energy. ✨",
-        song: {
-          title: "Feeling Good",
-          artist: "Nina Simone",
-          url: "https://www.youtube.com/watch?v=D5Y11hwjMNs"
-        }
-      }
     ],
     // Saturday: Ultimate Celebration
     [
       {
-        quote: "Celebrating feeling good, looking good, and doing good for yourself. 💖",
+        quote: "Go to my tailor, got me dripped. I'm too swift, don't tell Taylor 'bout this sh-",
         song: {
-          title: "Good as Hell",
-          artist: "Lizzo",
-          url: "https://www.youtube.com/watch?v=vuq-VAiW9kw"
+          title: "Taylor Swif",
+          artist: "A$AP Rocky",
+          url: "https://www.youtube.com/watch?v=5URefVYaJrA&t=52s"
         }
       },
-      {
-        quote: "A vibe for embracing every part of your powerful self. 🌟",
-        song: {
-          title: "I Am Woman",
-          artist: "Emmy Meli",
-          url: "https://www.youtube.com/watch?v=tjnq5StX68g"
-        }
-      }
     ]
   ];
 
