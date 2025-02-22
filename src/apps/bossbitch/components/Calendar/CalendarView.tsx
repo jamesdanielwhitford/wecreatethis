@@ -65,8 +65,57 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       }
       
       setWeekDays(days);
+      
+      // Load data for the current week when in daily view
+      if (type === 'daily') {
+        loadWeekData(days);
+      }
     }
-  }, [selectedDate]);
+  }, [selectedDate, type]);
+
+  // Load data for the week
+  const loadWeekData = async (days: Date[]) => {
+    if (days.length === 0 || type !== 'daily') return;
+    
+    setIsLoadingCalendar(true);
+    try {
+      // Get start and end date of week
+      const startDate = new Date(days[0]);
+      const endDate = new Date(days[days.length - 1]);
+      
+      // Get all daily entries for the week
+      const entries = await dataService.getDailyEntries(startDate, endDate);
+      
+      // Map to the format CalendarGrid expects
+      const goals = entries.map(entry => ({
+        date: new Date(entry.date),
+        progress: entry.progress,
+        maxValue: dailyGoal,
+        segments: entry.segments
+      }));
+      
+      // Include current selected date data if available
+      if (dailyData && dailyData.progress > 0) {
+        const dateStr = formatDateString(selectedDate);
+        const hasSelectedDate = goals.some(g => formatDateString(g.date) === dateStr);
+        
+        if (!hasSelectedDate) {
+          goals.push({
+            date: new Date(selectedDate),
+            progress: dailyData.progress,
+            maxValue: dailyGoal,
+            segments: dailyData.segments
+          });
+        }
+      }
+      
+      setCalendarGoals(goals);
+    } catch (error) {
+      console.error('Error loading week data:', error);
+    } finally {
+      setIsLoadingCalendar(false);
+    }
+  };
 
   // Load calendar data when month/year changes
   useEffect(() => {
@@ -121,6 +170,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     
     loadCalendarData();
   }, [currentYear, currentMonth, type, dailyGoal, monthlyGoal, showCalendarGrid]);
+
+  // Format date to YYYY-MM-DD for consistent comparison
+  const formatDateString = (d: Date) => {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
 
   // Navigation handlers
   const goToPrevious = () => {
@@ -200,8 +254,25 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   // Get goal data for a specific date
   const getGoalData = (date: Date) => {
-    const dateString = date.toDateString();
-    return calendarGoals.find(goal => goal.date.toDateString() === dateString);
+    if (!date) return null;
+    
+    const dateString = formatDateString(date);
+    
+    // Check the current displayed value when date matches the selected date
+    if (dateString === formatDateString(selectedDate) && type === 'daily' && dailyData && dailyData.progress > 0) {
+      return {
+        date: selectedDate,
+        progress: dailyData.progress,
+        maxValue: dailyGoal,
+        segments: dailyData.segments
+      };
+    }
+    
+    // Try to find in calendar goals
+    return calendarGoals.find(goal => {
+      if (!goal || !goal.date) return false;
+      return formatDateString(goal.date) === dateString;
+    });
   };
 
   // Toggle between date view and calendar grid
@@ -308,11 +379,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                             <span className={styles.weekDayLabel}>
                               {['S', 'M', 'T', 'W', 'T', 'F', 'S'][day.getDay()]}
                             </span>
-                            <div className={isActive ? styles.activeWeekDayHighlight : ''}>
+                            {isActive ? (
+                              <div className={styles.activeWeekDayHighlight}>
+                                <span className={styles.weekDayNumberActive}>
+                                  {day.getDate()}
+                                </span>
+                              </div>
+                            ) : (
                               <span className={styles.weekDayNumber}>
                                 {day.getDate()}
                               </span>
-                            </div>
+                            )}
                             <div className={styles.miniRing}>
                               <ProgressRing
                                 progress={dayGoal?.progress || 0}
