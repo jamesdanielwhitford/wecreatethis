@@ -1,17 +1,17 @@
-'use client';
-
 // src/apps/bossbitch/components/Calendar/CalendarView.tsx
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Plus, Edit } from 'lucide-react';
+import WeekStrip from './components/WeekStrip';
+import SelectedDateView from './components/SelectedDateView';
+import CalendarHeader from './components/CalendarHeader';
 import CalendarGrid from './CalendarGrid';
-import ProgressRing from '../ProgressRing';
-import { IncomeSource } from '../../types/goal.types';
-import { formatZAR } from '../../utils/currency';
-import useGoalData from '../../hooks/useGoalData';
-import { dataService } from '../../services/data/dataService';
 import LoadingIndicator from '../LoadingIndicator';
-import AddGoalModal from '../../components/AddGoalModal';
-import EditDayModal from '../EditDayModal/EditDayModal';
+import AddGoalModal from '../AddGoalModal';
+import EditDayModal from './components/EditDayModal/EditDayModal';
+import { IncomeSource } from '../../types/goal.types';
+import { dataService } from '../../services/data/dataService';
+import { DailyEntry } from '../../services/data/types';
+import useGoalData from '../../hooks/useGoalData';
+import { getEntryKey } from '../../services/data/types';
 import styles from './styles.module.css';
 
 interface CalendarViewProps {
@@ -28,15 +28,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [weekDays, setWeekDays] = useState<Date[]>([]);
-  const [calendarGoals, setCalendarGoals] = useState<any[]>([]);
+  const [calendarGoals, setCalendarGoals] = useState<DailyEntry[]>([]);
   const [isLoadingCalendar, setIsLoadingCalendar] = useState(false);
   const [showCalendarGrid, setShowCalendarGrid] = useState(false);
-  
-  // Add modals state
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // Get goal data from hook
   const { 
     dailyGoal, 
     monthlyGoal, 
@@ -50,14 +47,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     setSelectedDate: hookSetSelectedDate 
   } = useGoalData({ initialDate: selectedDate });
 
-  // When selected date changes in the component, update the hook
+  // Sync selected date with hook
   useEffect(() => {
     if (hookSetSelectedDate) {
       hookSetSelectedDate(selectedDate);
     }
   }, [selectedDate, hookSetSelectedDate]);
 
-  // Generate week days for the selected date
+  // Generate week days for selected date
   useEffect(() => {
     if (selectedDate) {
       const date = new Date(selectedDate);
@@ -76,7 +73,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       
       setWeekDays(days);
       
-      // Load data for the current week when in daily view
       if (type === 'daily') {
         loadWeekData(days);
       }
@@ -89,14 +85,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     
     setIsLoadingCalendar(true);
     try {
-      // Get start and end date of week
       const startDate = new Date(days[0]);
       const endDate = new Date(days[days.length - 1]);
       
-      // Get all daily entries for the week
       const entries = await dataService.getDailyEntries(startDate, endDate);
       
-      // Map to the format CalendarGrid expects
       const goals = entries.map(entry => ({
         date: new Date(entry.date),
         progress: entry.progress,
@@ -104,7 +97,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         segments: entry.segments
       }));
       
-      // Include current selected date data if available
       if (dailyData && dailyData.progress > 0) {
         const dateStr = formatDateString(selectedDate);
         const hasSelectedDate = goals.some(g => formatDateString(g.date) === dateStr);
@@ -130,19 +122,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   // Load calendar data when month/year changes
   useEffect(() => {
     const loadCalendarData = async () => {
-      if (!showCalendarGrid) return; // Only load data when calendar grid is shown
+      if (!showCalendarGrid) return;
       
       setIsLoadingCalendar(true);
       try {
         if (type === 'daily') {
-          // Create start and end dates for the current month view
           const startDate = new Date(currentYear, currentMonth, 1);
           const endDate = new Date(currentYear, currentMonth + 1, 0);
           
-          // Get all daily entries for the month
           const entries = await dataService.getDailyEntries(startDate, endDate);
           
-          // Map to the format CalendarGrid expects
           const goals = entries.map(entry => ({
             date: new Date(entry.date),
             progress: entry.progress,
@@ -152,16 +141,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           
           setCalendarGoals(goals);
         } else {
-          // For monthly view, get data for the entire year
-          const startMonth = 0; // January
-          const endMonth = 11; // December
+          const startMonth = 0;
+          const endMonth = 11;
           
-          // Get all monthly entries for the year
           const entries = await dataService.getMonthlyEntries(
             currentYear, startMonth, currentYear, endMonth
           );
           
-          // Map to the format CalendarGrid expects
           const goals = entries.map(entry => ({
             date: new Date(entry.year, entry.month, 1),
             progress: entry.progress,
@@ -181,15 +167,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     loadCalendarData();
   }, [currentYear, currentMonth, type, dailyGoal, monthlyGoal, showCalendarGrid]);
 
-  // Format date to YYYY-MM-DD for consistent comparison
+  // Format date string for consistent comparison
   const formatDateString = (d: Date) => {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return getEntryKey(d);
   };
 
   // Navigation handlers
   const goToPrevious = () => {
     if (showCalendarGrid) {
-      // When in calendar grid mode, navigate months/years
       if (type === 'monthly') {
         setCurrentYear(prev => prev - 1);
       } else {
@@ -201,7 +186,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         }
       }
     } else {
-      // When in day view mode, navigate days
       const newDate = new Date(selectedDate);
       if (type === 'daily') {
         newDate.setDate(newDate.getDate() - 1);
@@ -214,7 +198,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   const goToNext = () => {
     if (showCalendarGrid) {
-      // When in calendar grid mode, navigate months/years
       if (type === 'monthly') {
         setCurrentYear(prev => prev + 1);
       } else {
@@ -226,7 +209,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         }
       }
     } else {
-      // When in day view mode, navigate days
       const newDate = new Date(selectedDate);
       if (type === 'daily') {
         newDate.setDate(newDate.getDate() + 1);
@@ -268,7 +250,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     
     const dateString = formatDateString(date);
     
-    // Check the current displayed value when date matches the selected date
     if (dateString === formatDateString(selectedDate) && type === 'daily' && dailyData && dailyData.progress > 0) {
       return {
         date: selectedDate,
@@ -278,36 +259,20 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       };
     }
     
-    // Try to find in calendar goals
     return calendarGoals.find(goal => {
       if (!goal || !goal.date) return false;
       return formatDateString(goal.date) === dateString;
     });
   };
 
-  // Toggle between date view and calendar grid
-  const toggleCalendarGrid = () => {
-    setShowCalendarGrid(prev => !prev);
-  };
-
-  // Calculate the percentage for progress bar
-  const calculatePercentage = () => {
-    if (type === 'daily') {
-      return Math.min((dailyData.progress / dailyGoal) * 100, 100);
-    } else {
-      return Math.min((monthlyData.progress / monthlyGoal) * 100, 100);
-    }
-  };
-
-  // Add income for the selected date
+  // Handle adding income for the selected date
   const handleAddIncome = async (amount: number, source: IncomeSource) => {
     try {
       await addIncome(amount, source);
       setShowAddModal(false);
       
-      // Refresh week data to show the newly added income
       if (weekDays.length > 0) {
-        loadWeekData(weekDays);
+        await loadWeekData(weekDays);
       }
     } catch (error) {
       console.error('Error adding income:', error);
@@ -318,26 +283,20 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const handleEditIncome = async () => {
     setShowEditModal(false);
     
-    // First, refresh the selected date data in the hook
     if (refreshData) {
       await refreshData();
     }
     
-    // Refresh week data to show the edited income
     if (weekDays.length > 0) {
       await loadWeekData(weekDays);
     }
     
-    // If we're showing the calendar grid, refresh that too
     if (showCalendarGrid) {
-      // Create start and end dates for the current month view
       const startDate = new Date(currentYear, currentMonth, 1);
       const endDate = new Date(currentYear, currentMonth + 1, 0);
       
-      // Get all daily entries for the month
       const entries = await dataService.getDailyEntries(startDate, endDate);
       
-      // Map to the format CalendarGrid expects
       const goals = entries.map(entry => ({
         date: new Date(entry.date),
         progress: entry.progress,
@@ -349,6 +308,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     }
   };
 
+  // Handle date selection in calendar grid
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+    setShowCalendarGrid(false);
+  };
+
   const displayValue = type === 'daily' ? dailyData : monthlyData;
   const maxValue = type === 'daily' ? dailyGoal : monthlyGoal;
   const ringColor = type === 'daily' ? dailyRingColor : monthlyRingColor;
@@ -356,56 +321,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   return (
     <div className={styles.calendarView}>
       <div className={styles.container}>
-        {/* Header */}
-        <div className={styles.header}>
-          <button
-            onClick={onClose}
-            className={styles.iconButton}
-            aria-label="Close"
-          >
-            <X size={24} />
-          </button>
-          
-          <div className={styles.navigationContainer}>
-            <button
-              onClick={goToPrevious}
-              className={styles.iconButton}
-              aria-label="Previous"
-            >
-              <ChevronLeft size={24} />
-            </button>
-            
-            <h2 className={styles.headerTitle}>
-              {getHeaderText()}
-            </h2>
-            
-            <button
-              onClick={goToNext}
-              className={styles.iconButton}
-              aria-label="Next"
-            >
-              <ChevronRight size={24} />
-            </button>
-          </div>
+        <CalendarHeader
+          headerText={getHeaderText()}
+          onClose={onClose}
+          onPrevious={goToPrevious}
+          onNext={goToNext}
+          onToggleView={() => setShowCalendarGrid(!showCalendarGrid)}
+        />
 
-          <button
-            onClick={toggleCalendarGrid}
-            className={styles.iconButton}
-            aria-label={showCalendarGrid ? "Show Day View" : "Show Calendar"}
-          >
-            <CalendarIcon size={24} />
-          </button>
-        </div>
-
-        {/* Loading Indicator */}
         {isLoadingCalendar ? (
           <div className={styles.loadingState}>
-            <div className={styles.spinner}></div>
+            <LoadingIndicator />
             <p>Loading calendar data...</p>
           </div>
         ) : (
           <>
-            {/* Calendar Grid (shown only when toggled on) */}
             {showCalendarGrid ? (
               <CalendarGrid
                 type={type}
@@ -413,260 +343,51 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 year={currentYear}
                 goals={calendarGoals}
                 selectedDate={selectedDate}
-                onDateSelect={(date) => {
-                  setSelectedDate(date);
-                  setShowCalendarGrid(false);
-                }}
+                onDateSelect={handleDateSelect}
               />
             ) : (
-              /* Day View (default view) */
-              <>
+              <SelectedDateView
+                type={type}
+                displayValue={displayValue}
+                maxValue={maxValue}
+                ringColor={ringColor}
+                onAddClick={() => setShowAddModal(true)}
+                onEditClick={() => setShowEditModal(true)}
+              >
                 {type === 'daily' && (
-                  <div className={styles.selectedDateView}>
-                    {/* Week Strip */}
-                    <div className={styles.weekStrip}>
-                      {weekDays.map((day, index) => {
-                        const dayGoal = getGoalData(day);
-                        const isActive = day.toDateString() === selectedDate.toDateString();
-                        const isCurrentDay = day.toDateString() === today.toDateString();
-                        
-                        return (
-                          <div 
-                            key={index} 
-                            className={`${styles.weekDay} ${isActive ? styles.activeWeekDay : ''}`}
-                            onClick={() => setSelectedDate(day)}
-                          >
-                            <span className={styles.weekDayLabel}>
-                              {['S', 'M', 'T', 'W', 'T', 'F', 'S'][day.getDay()]}
-                            </span>
-                            {isActive ? (
-                              <div className={styles.activeWeekDayHighlight}>
-                                <span className={styles.weekDayNumberActive}>
-                                  {day.getDate()}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className={styles.weekDayNumber}>
-                                {day.getDate()}
-                              </span>
-                            )}
-                            <div className={styles.miniRing}>
-                              <ProgressRing
-                                progress={dayGoal?.progress || 0}
-                                maxValue={dayGoal?.maxValue || 1}
-                                color={isCurrentDay ? dailyRingColor : '#888888'}
-                                size={30}
-                                strokeWidth={3}
-                                segments={dayGoal?.segments}
-                                animate={false}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Selected Date Ring */}
-                    <div className={styles.selectedRingContainer}>
-                      <ProgressRing
-                        progress={displayValue.progress}
-                        maxValue={maxValue}
-                        color={ringColor}
-                        size={240}
-                        strokeWidth={24}
-                        segments={displayValue.segments}
-                        animate={true}
-                      />
-                      <div className={styles.ringCenterValue}>
-                        {formatZAR(displayValue.progress)}
-                      </div>
-                    </div>
-                    
-                    {/* Details Section */}
-                    <div className={styles.detailsContainer}>
-                      <div className={styles.detailsHeader}>
-                        <h4 className={styles.detailsTitle}>
-                          Daily Goal
-                        </h4>
-                        <span className={styles.detailsValue}>
-                          {formatZAR(maxValue)}
-                        </span>
-                      </div>
-                      
-                      <div className={styles.progressBar}>
-                        <div 
-                          className={styles.progressFill}
-                          style={{ width: `${calculatePercentage()}%` }}
-                        />
-                      </div>
-                      
-                      {displayValue.segments && displayValue.segments.length > 0 && (
-                        <>
-                          <h5 className={styles.sourcesTitle}>Income Sources:</h5>
-                          <div className={styles.sourcesList}>
-                            {displayValue.segments.map((segment: IncomeSource) => (
-                              <div 
-                                key={segment.id}
-                                className={styles.sourceItem}
-                              >
-                                <div className={styles.sourceInfo}>
-                                  <div 
-                                    className={styles.sourceColor}
-                                    style={{ backgroundColor: segment.color }}
-                                  />
-                                  <span className={styles.sourceName}>{segment.name}</span>
-                                </div>
-                                <span className={styles.sourceValue}>
-                                  {formatZAR(segment.value)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                      
-                      {/* Action Buttons */}
-                      <div className={styles.dayActionButtons}>
-                        <button 
-                          className={styles.dayActionButton}
-                          onClick={() => setShowAddModal(true)}
-                        >
-                          <Plus size={18} />
-                          <span>Add Income</span>
-                        </button>
-                        
-                        <button 
-                          className={styles.dayActionButton}
-                          onClick={() => setShowEditModal(true)}
-                          disabled={!displayValue.segments || displayValue.segments.length === 0}
-                        >
-                          <Edit size={18} />
-                          <span>Edit Income</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <WeekStrip
+                    weekDays={weekDays}
+                    selectedDate={selectedDate}
+                    dailyRingColor={dailyRingColor}
+                    getGoalData={getGoalData}
+                    onDateSelect={setSelectedDate}
+                  />
                 )}
-
-                {/* Monthly View */}
-                {type === 'monthly' && (
-                  <div className={styles.selectedDateView}>
-                    {/* Month Ring */}
-                    <div className={styles.selectedRingContainer}>
-                      <ProgressRing
-                        progress={displayValue.progress}
-                        maxValue={maxValue}
-                        color={ringColor}
-                        size={240}
-                        strokeWidth={24}
-                        segments={displayValue.segments}
-                        animate={true}
-                      />
-                      <div className={styles.ringCenterValue}>
-                        {formatZAR(displayValue.progress)}
-                      </div>
-                    </div>
-                    
-                    {/* Details Section */}
-                    <div className={styles.detailsContainer}>
-                      <div className={styles.detailsHeader}>
-                        <h4 className={styles.detailsTitle}>
-                          Monthly Goal
-                        </h4>
-                        <span className={styles.detailsValue}>
-                          {formatZAR(maxValue)}
-                        </span>
-                      </div>
-                      
-                      <div className={styles.progressBar}>
-                        <div 
-                          className={styles.progressFill}
-                          style={{ width: `${calculatePercentage()}%` }}
-                        />
-                      </div>
-                      
-                      {displayValue.segments && displayValue.segments.length > 0 && (
-                        <>
-                          <h5 className={styles.sourcesTitle}>Income Sources:</h5>
-                          <div className={styles.sourcesList}>
-                            {displayValue.segments.map((segment: IncomeSource) => (
-                              <div 
-                                key={segment.id}
-                                className={styles.sourceItem}
-                              >
-                                <div className={styles.sourceInfo}>
-                                  <div 
-                                    className={styles.sourceColor}
-                                    style={{ backgroundColor: segment.color }}
-                                  />
-                                  <span className={styles.sourceName}>{segment.name}</span>
-                                </div>
-                                <span className={styles.sourceValue}>
-                                  {formatZAR(segment.value)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Empty State */}
-                {selectedDate && !displayValue.progress && (
-                  <div className={styles.emptyState}>
-                    <ProgressRing
-                      progress={0}
-                      maxValue={100}
-                      color="#888888"
-                      size={80}
-                      strokeWidth={8}
-                      animate={false}
-                    />
-                    <p className={styles.emptyMessage}>
-                      No data for this {type === 'daily' ? 'day' : 'month'}.
-                    </p>
-                    
-                    {/* Add button for empty state in daily view */}
-                    {type === 'daily' && (
-                      <button 
-                        className={styles.emptyStateButton}
-                        onClick={() => setShowAddModal(true)}
-                      >
-                        <Plus size={18} />
-                        <span>Add Income for this Day</span>
-                      </button>
-                    )}
-                  </div>
-                )}
-              </>
+              </SelectedDateView>
             )}
           </>
         )}
+
+        {showAddModal && (
+          <AddGoalModal
+            onClose={() => setShowAddModal(false)}
+            onAdd={handleAddIncome}
+            currentValue={dailyData.progress}
+            maxValue={dailyGoal}
+            existingSources={dailyData.segments}
+            selectedDate={selectedDate}
+          />
+        )}
+
+        {showEditModal && (
+          <EditDayModal
+            onClose={() => setShowEditModal(false)}
+            onSave={handleEditIncome}
+            selectedDate={selectedDate}
+            incomeSources={displayValue.segments || []}
+          />
+        )}
       </div>
-      
-      {/* Add Income Modal */}
-      {showAddModal && (
-        <AddGoalModal
-          onClose={() => setShowAddModal(false)}
-          onAdd={handleAddIncome}
-          currentValue={dailyData.progress}
-          maxValue={dailyGoal}
-          existingSources={dailyData.segments}
-          selectedDate={selectedDate}
-        />
-      )}
-      
-      {/* Edit Day Income Modal */}
-      {showEditModal && (
-        <EditDayModal
-          onClose={() => setShowEditModal(false)}
-          onSave={handleEditIncome}
-          selectedDate={selectedDate}
-          incomeSources={displayValue.segments || []}
-        />
-      )}
     </div>
   );
 };
