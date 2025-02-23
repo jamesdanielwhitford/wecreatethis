@@ -31,6 +31,7 @@ const useGoalData = (props?: UseGoalDataProps) => {
     setIsLoading
   } = useData();
 
+  // Initialize all state with safe default values
   const [monthlyGoal, setMonthlyGoal] = useState<number>(0);
   const [dailyGoal, setDailyGoal] = useState<number>(0);
   const [originalDailyGoal, setOriginalDailyGoal] = useState<number>(0);
@@ -42,8 +43,6 @@ const useGoalData = (props?: UseGoalDataProps) => {
   const [monthlyDeficit, setMonthlyDeficit] = useState<number>(0);
   const [isDataReady, setIsDataReady] = useState<boolean>(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
-  
-  // Add selected date state
   const [selectedDate, setSelectedDate] = useState<Date>(props?.initialDate || new Date());
 
   // Colors for the rings
@@ -67,14 +66,19 @@ const useGoalData = (props?: UseGoalDataProps) => {
     const loadGoals = async () => {
       try {
         if (goals) {
-          setMonthlyGoal(goals.monthlyGoal);
-          setDailyGoal(goals.dailyGoal);
-          setOriginalDailyGoal(goals.dailyGoal);
-          setActiveDays(goals.activeDays || [false, true, true, true, true, true, false]); // Fallback
+          setMonthlyGoal(goals.monthlyGoal || 0);
+          setDailyGoal(goals.dailyGoal || 0);
+          setOriginalDailyGoal(goals.dailyGoal || 0);
+          setActiveDays(goals.activeDays || [false, true, true, true, true, true, false]);
           setIsDataReady(true);
         }
       } catch (error) {
         console.error('Failed to load goals:', error);
+        // Set safe defaults in case of error
+        setMonthlyGoal(0);
+        setDailyGoal(0);
+        setOriginalDailyGoal(0);
+        setActiveDays([false, true, true, true, true, true, false]);
       }
     };
 
@@ -89,39 +93,37 @@ const useGoalData = (props?: UseGoalDataProps) => {
       setIsLoading(true);
       const today = new Date();
       
-      // For simplicity, we'll manually fetch the daily entries for today from local storage
-      // In a real implementation, you would use your data service API
       if (typeof window !== 'undefined') {
-        // Try to get daily data
         const storageData = localStorage.getItem('bossbitch_data');
         if (storageData) {
           const data = JSON.parse(storageData);
           const todayKey = getTodayDateString();
           const monthKey = getCurrentMonthString();
           
-          // Get daily entry if it exists
-          if (data.dailyEntries && data.dailyEntries[todayKey]) {
-            setDailyData({
-              progress: data.dailyEntries[todayKey].progress || 0,
-              segments: data.dailyEntries[todayKey].segments || []
-            });
-          } else {
-            setDailyData({ progress: 0, segments: [] });
-          }
+          // Get daily entry with safe defaults
+          const dailyEntry = data.dailyEntries?.[todayKey] || { progress: 0, segments: [] };
+          setDailyData({
+            progress: Number(dailyEntry.progress) || 0,
+            segments: Array.isArray(dailyEntry.segments) ? dailyEntry.segments : []
+          });
           
-          // Get monthly entry if it exists
-          if (data.monthlyEntries && data.monthlyEntries[monthKey]) {
-            setMonthlyData({
-              progress: data.monthlyEntries[monthKey].progress || 0,
-              segments: data.monthlyEntries[monthKey].segments || []
-            });
-          } else {
-            setMonthlyData({ progress: 0, segments: [] });
-          }
+          // Get monthly entry with safe defaults
+          const monthlyEntry = data.monthlyEntries?.[monthKey] || { progress: 0, segments: [] };
+          setMonthlyData({
+            progress: Number(monthlyEntry.progress) || 0,
+            segments: Array.isArray(monthlyEntry.segments) ? monthlyEntry.segments : []
+          });
+        } else {
+          // Set safe defaults if no data exists
+          setDailyData({ progress: 0, segments: [] });
+          setMonthlyData({ progress: 0, segments: [] });
         }
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      // Set safe defaults in case of error
+      setDailyData({ progress: 0, segments: [] });
+      setMonthlyData({ progress: 0, segments: [] });
     } finally {
       setIsLoading(false);
       setLastRefreshTime(Date.now());
@@ -146,12 +148,12 @@ const useGoalData = (props?: UseGoalDataProps) => {
       const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
       
       // Calculate remaining days in this month (including today)
-      const remainingDays = lastDayOfMonth - today.getDate() + 1;
+      const remainingDays = Math.max(0, lastDayOfMonth - today.getDate() + 1);
       setRemainingDaysInMonth(remainingDays);
       
-      // Calculate remaining active workdays in this month (excluding today if it's already done)
+      // Calculate remaining active workdays
       let remainingWorkdays = 0;
-      const todayDayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const todayDayOfWeek = today.getDay();
       const isTodayActive = activeDays[todayDayOfWeek];
       const isTodayCompleted = dailyData.progress >= dailyGoal;
       
@@ -168,13 +170,16 @@ const useGoalData = (props?: UseGoalDataProps) => {
       
       setRemainingActiveWorkdays(remainingWorkdays);
       
-      // Calculate current deficit/surplus for the month
-      const targetProgressToDate = monthlyGoal - (remainingWorkdays * originalDailyGoal);
-      const deficit = targetProgressToDate - monthlyData.progress;
+      // Calculate current deficit/surplus for the month with safe math
+      const safeMonthlyGoal = monthlyGoal || 0;
+      const safeOriginalDailyGoal = originalDailyGoal || 0;
+      const safeMonthlyProgress = monthlyData.progress || 0;
+      const targetProgressToDate = safeMonthlyGoal - (remainingWorkdays * safeOriginalDailyGoal);
+      const deficit = targetProgressToDate - safeMonthlyProgress;
       setMonthlyDeficit(deficit);
     };
     
-    if (activeDays.length > 0 && dailyGoal > 0 && isDataReady && monthlyGoal > 0) {
+    if (activeDays.length > 0 && isDataReady) {
       calculateRemainingDays();
     }
   }, [activeDays, dailyGoal, monthlyGoal, originalDailyGoal, dailyData, monthlyData, isDataReady, lastRefreshTime]);
@@ -183,27 +188,20 @@ const useGoalData = (props?: UseGoalDataProps) => {
   useEffect(() => {
     if (remainingActiveWorkdays > 0 && monthlyDeficit !== 0) {
       // Calculate new daily goal based on remaining deficit distributed across remaining active days
-      const adjustedDailyGoal = originalDailyGoal + (monthlyDeficit / remainingActiveWorkdays);
-      
-      // Ensure the adjusted goal is never negative
+      const adjustedDailyGoal = (originalDailyGoal || 0) + (monthlyDeficit / remainingActiveWorkdays);
       setDailyGoal(Math.max(0, adjustedDailyGoal));
     } else if (remainingActiveWorkdays === 0 && monthlyData.progress < monthlyGoal) {
-      // Special case: If no active days left but still haven't met monthly goal,
-      // today becomes the last chance regardless of whether it's marked active
-      const remainingForMonth = monthlyGoal - monthlyData.progress;
-      setDailyGoal(remainingForMonth > 0 ? remainingForMonth : 0);
+      const remainingForMonth = Math.max(0, monthlyGoal - (monthlyData.progress || 0));
+      setDailyGoal(remainingForMonth);
     }
   }, [remainingActiveWorkdays, monthlyDeficit, originalDailyGoal, monthlyData, monthlyGoal]);
 
-  // Handle adding income - this now maps to addIncomeToDay from context
+  // Handle adding income
   const handleAddIncome = async (amount: number, source: IncomeSource) => {
     try {
       const today = new Date();
       await addIncomeToDay(today, amount, source);
-      
-      // Refresh data after adding income
       await fetchData();
-      
       return true;
     } catch (error) {
       console.error('Error adding income:', error);
@@ -211,7 +209,7 @@ const useGoalData = (props?: UseGoalDataProps) => {
     }
   };
 
-  // This maps to updateGoals from your context
+  // Handle goal settings update
   const handleUpdateGoalSettings = async (settings: {
     monthlyGoal: number;
     dailyGoal: number;
@@ -219,14 +217,11 @@ const useGoalData = (props?: UseGoalDataProps) => {
   }) => {
     try {
       await updateGoals(settings);
-      setMonthlyGoal(settings.monthlyGoal);
-      setDailyGoal(settings.dailyGoal);
-      setOriginalDailyGoal(settings.dailyGoal);
-      setActiveDays(settings.activeDays);
-      
-      // Refresh data after updating goals
+      setMonthlyGoal(settings.monthlyGoal || 0);
+      setDailyGoal(settings.dailyGoal || 0);
+      setOriginalDailyGoal(settings.dailyGoal || 0);
+      setActiveDays(settings.activeDays || [false, true, true, true, true, true, false]);
       await fetchData();
-      
       return settings;
     } catch (error) {
       console.error('Failed to update goal settings:', error);
@@ -236,19 +231,22 @@ const useGoalData = (props?: UseGoalDataProps) => {
 
   // Calculate deficit/surplus info for display
   const deficitInfo = useMemo(() => {
-    if (monthlyDeficit > 0) {
+    const safeMonthlyDeficit = monthlyDeficit || 0;
+    const safeRemainingDays = remainingActiveWorkdays || 1;
+    
+    if (safeMonthlyDeficit > 0) {
       return {
         isDeficit: true,
-        amount: monthlyDeficit,
-        perDay: remainingActiveWorkdays > 0 ? monthlyDeficit / remainingActiveWorkdays : 0,
-        message: `You're behind by ${formatCurrency(monthlyDeficit)} for the month`
+        amount: safeMonthlyDeficit,
+        perDay: safeMonthlyDeficit / safeRemainingDays,
+        message: `You're behind by ${formatCurrency(safeMonthlyDeficit)} for the month`
       };
-    } else if (monthlyDeficit < 0) {
+    } else if (safeMonthlyDeficit < 0) {
       return {
         isDeficit: false,
-        amount: Math.abs(monthlyDeficit),
-        perDay: remainingActiveWorkdays > 0 ? Math.abs(monthlyDeficit) / remainingActiveWorkdays : 0,
-        message: `You're ahead by ${formatCurrency(Math.abs(monthlyDeficit))} for the month`
+        amount: Math.abs(safeMonthlyDeficit),
+        perDay: Math.abs(safeMonthlyDeficit) / safeRemainingDays,
+        message: `You're ahead by ${formatCurrency(Math.abs(safeMonthlyDeficit))} for the month`
       };
     }
     return {
@@ -285,7 +283,6 @@ const useGoalData = (props?: UseGoalDataProps) => {
     remainingActiveWorkdays,
     deficitInfo,
     refreshData: fetchData,
-    // Add the selected date state and setter
     selectedDate,
     setSelectedDate
   };

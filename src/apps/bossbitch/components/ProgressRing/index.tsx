@@ -1,4 +1,3 @@
-// src/apps/bossbitch/components/ProgressRing/index.tsx
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -14,31 +13,41 @@ interface ProgressRingProps {
   segments?: IncomeSource[];
   animate?: boolean;
   className?: string;
-  emptyRing?: boolean; // New prop to handle empty ring styling
+  emptyRing?: boolean;
 }
 
 const ProgressRing: React.FC<ProgressRingProps> = ({
   size = 200,
   strokeWidth = 20,
-  progress,
-  maxValue,
+  progress = 0,
+  maxValue = 100,
   color,
   segments,
   animate = true,
   className = '',
-  emptyRing = false, // Default to false
+  emptyRing = false,
 }) => {
   const circleRef = useRef<SVGCircleElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-  const radius = (size - strokeWidth) / 2;
+  
+  // Ensure valid numbers for calculations
+  const safeSize = Math.max(strokeWidth * 2, size || 200);
+  const safeStrokeWidth = Math.max(1, strokeWidth || 20);
+  const radius = (safeSize - safeStrokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   
-  // Calculate total progress percentage (cap at 100% for visual purposes)
-  const percentage = Math.min((progress / maxValue) * 100, 100);
+  // Ensure we have valid numbers for progress calculation
+  const safeProgress = isNaN(progress) || progress < 0 ? 0 : progress;
+  const safeMaxValue = isNaN(maxValue) || maxValue <= 0 ? 100 : maxValue;
   
-  // Calculate stroke dashoffset based on progress
-  const getStrokeDashoffset = (percent: number) => {
-    return circumference - (percent / 100) * circumference;
+  // Calculate percentage with safety checks
+  const percentage = Math.min((safeProgress / safeMaxValue) * 100, 100);
+  
+  // Calculate stroke dashoffset with safety check
+  const getStrokeDashoffset = (percent: number): number => {
+    if (isNaN(percent)) return circumference;
+    const offset = circumference - (percent / 100) * circumference;
+    return isNaN(offset) ? circumference : offset;
   };
 
   useEffect(() => {
@@ -57,7 +66,8 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
       if (percentage > 0) {
         // Animate stroke dashoffset
         circle.style.transition = 'stroke-dashoffset 0.8s ease-in-out';
-        circle.style.strokeDashoffset = `${getStrokeDashoffset(percentage)}`;
+        const offset = getStrokeDashoffset(percentage);
+        circle.style.strokeDashoffset = `${offset}`;
       } else {
         // Don't animate if percentage is 0
         circle.style.strokeDashoffset = `${circumference}`;
@@ -66,19 +76,24 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
   }, [percentage, animate, circumference, isInitialized]);
 
   const renderSegments = () => {
-    if (!segments || segments.length === 0) return null;
+    if (!segments || !Array.isArray(segments) || segments.length === 0) return null;
 
-    // Sum of all segment values
-    const totalValue = segments.reduce((sum, seg) => sum + seg.value, 0);
+    // Sum of all segment values with safety checks
+    const totalValue = segments.reduce((sum, seg) => {
+      const segValue = isNaN(seg.value) ? 0 : seg.value;
+      return sum + segValue;
+    }, 0);
     
-    // The actual percentage each segment takes of the whole circumference
-    // We convert the overall progress percentage to the segment percentages
+    if (totalValue <= 0) return null;
+    
+    // Calculate segment percentages
     const segmentPercentages = segments.map(segment => {
-      const segmentRatio = segment.value / totalValue;
+      const segmentValue = isNaN(segment.value) ? 0 : segment.value;
+      const segmentRatio = segmentValue / totalValue;
       return segmentRatio * percentage;
     });
 
-    // Render segments in a continuous manner
+    // Render segments
     let currentOffset = 0;
     
     return segments.map((segment, index) => {
@@ -93,17 +108,19 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
         <circle
           key={segment.id}
           className={styles.segment}
-          cx={size / 2}
-          cy={size / 2}
+          cx={safeSize / 2}
+          cy={safeSize / 2}
           r={radius}
           fill="none"
-          stroke={segment.color}
-          strokeWidth={strokeWidth}
+          stroke={segment.color || color}
+          strokeWidth={safeStrokeWidth}
           strokeDasharray={`${segmentLength} ${circumference - segmentLength}`}
           strokeDashoffset={dashOffset}
           strokeLinecap="butt"
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          style={{ transition: isInitialized ? 'stroke-dashoffset 0.8s ease-in-out' : 'none' }}
+          transform={`rotate(-90 ${safeSize / 2} ${safeSize / 2})`}
+          style={{ 
+            transition: isInitialized ? 'stroke-dashoffset 0.8s ease-in-out' : 'none'
+          }}
         />
       );
     });
@@ -112,22 +129,21 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
   return (
     <div className={`${styles.ring} ${className}`}>
       <svg 
-        width={size} 
-        height={size} 
+        width={safeSize} 
+        height={safeSize} 
         className={animate && isInitialized ? styles.animate : ''}
         style={{ overflow: 'visible' }}
       >
         {/* Background circle */}
         <circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={safeSize / 2}
+          cy={safeSize / 2}
           r={radius}
           fill="none"
           stroke="currentColor"
-          strokeWidth={strokeWidth}
+          strokeWidth={safeStrokeWidth}
           className={styles.background}
           strokeLinecap="round"
-          // For empty rings, use dashed stroke
           strokeDasharray={emptyRing ? '3,3' : undefined}
         />
         
@@ -138,12 +154,12 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
           ) : (
             <circle
               ref={circleRef}
-              cx={size / 2}
-              cy={size / 2}
+              cx={safeSize / 2}
+              cy={safeSize / 2}
               r={radius}
               fill="none"
               stroke={color}
-              strokeWidth={strokeWidth}
+              strokeWidth={safeStrokeWidth}
               strokeDasharray={circumference}
               strokeDashoffset={!isInitialized ? circumference : getStrokeDashoffset(percentage)}
               className={styles.progress}
