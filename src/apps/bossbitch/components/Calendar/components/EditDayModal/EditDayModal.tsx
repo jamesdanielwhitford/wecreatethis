@@ -1,11 +1,10 @@
-'use client';
-
-// src/apps/bossbitch/components/EditDayModal/EditDayModal.tsx
+// src/apps/bossbitch/components/Calendar/components/EditDayModal/EditDayModal.tsx
 import React, { useState, useEffect } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { IncomeSource } from '../../../../types/goal.types';
 import { formatZAR, parseZAR } from '../../../../utils/currency';
 import { useData } from '../../../../contexts/DataContext';
+import { dataService } from '../../../../services/data/dataService';
 import styles from './styles.module.css';
 
 interface EditDayModalProps {
@@ -23,7 +22,7 @@ const EditDayModal: React.FC<EditDayModalProps> = ({
 }) => {
   const [editableSources, setEditableSources] = useState<IncomeSource[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const { setIsLoading } = useData();
+  const { setIsLoading, refreshAllData } = useData();
   
   // Initialize editable sources with the existing ones
   useEffect(() => {
@@ -58,106 +57,26 @@ const EditDayModal: React.FC<EditDayModalProps> = ({
     setIsLoading(true);
     
     try {
-      // Direct approach - use local storage APIs to manually handle the update
-      if (typeof window !== 'undefined') {
-        const STORAGE_KEY = 'bossbitch_data';
-        const storedData = localStorage.getItem(STORAGE_KEY);
+      // First, delete the existing daily entry
+      await dataService.deleteDayEntry(selectedDate);
+      
+      // If we have sources with values, create a new entry
+      if (editableSources.length > 0) {
+        const totalProgress = editableSources.reduce((total, source) => total + source.value, 0);
         
-        if (storedData) {
-          // Parse the stored data
-          const userData = JSON.parse(storedData);
-          
-          // Format date to YYYY-MM-DD for storage key
-          const dateKey = selectedDate.toISOString().split('T')[0];
-          
-          // Get current year and month for monthly entry update
-          const year = selectedDate.getFullYear();
-          const month = selectedDate.getMonth();
-          const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-          
-          // Calculate total progress
-          const totalProgress = editableSources.reduce((total, source) => total + source.value, 0);
-          
-          // If total is zero, remove entry completely
-          if (totalProgress === 0 && editableSources.length === 0) {
-            if (userData.dailyEntries && userData.dailyEntries[dateKey]) {
-              delete userData.dailyEntries[dateKey];
-            }
-          } else {
-            // Create/update entry with new values
-            userData.dailyEntries[dateKey] = {
-              date: dateKey,
-              progress: totalProgress,
-              segments: editableSources
-            };
+        // Add each source individually to ensure proper daily and monthly updates
+        for (const source of editableSources) {
+          if (source.value > 0) {
+            await dataService.addIncomeToDay(selectedDate, source.value, source);
           }
-          
-          // Also update monthly entry
-          // First, get all daily entries for this month
-          const monthEntries = Object.values(userData.dailyEntries)
-            .filter((entry: any) => {
-              const entryDate = new Date(entry.date);
-              return entryDate.getFullYear() === year && entryDate.getMonth() === month;
-            });
-          
-          // Calculate monthly totals by segment
-          const segmentTotals: Record<string, number> = {};
-          const segmentDetails: Record<string, IncomeSource> = {};
-          
-          monthEntries.forEach((entry: any) => {
-            entry.segments.forEach((segment: IncomeSource) => {
-              // Initialize segment if not already done
-              if (!segmentTotals[segment.id]) {
-                segmentTotals[segment.id] = 0;
-                segmentDetails[segment.id] = {
-                  id: segment.id,
-                  name: segment.name,
-                  color: segment.color,
-                  value: 0
-                };
-              }
-              
-              // Add to segment total
-              segmentTotals[segment.id] += segment.value;
-              
-              // Update segment details
-              segmentDetails[segment.id].value = segmentTotals[segment.id];
-            });
-          });
-          
-          // Create monthly segments array
-          const monthlySegments = Object.values(segmentDetails);
-          
-          // Calculate monthly total
-          const monthlyTotal = monthlySegments.reduce(
-            (total, segment) => total + segment.value,
-            0
-          );
-          
-          // Update monthly entry
-          userData.monthlyEntries[monthKey] = {
-            year,
-            month,
-            progress: monthlyTotal,
-            segments: monthlySegments
-          };
-          
-          // Save back to localStorage
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
-          
-          // Force a refresh of the current data in memory
-          window.dispatchEvent(new Event('storage'));
         }
       }
+
+      // Refresh all data to ensure consistency
+      await refreshAllData();
       
-      // Success - let parent component know
+      // Notify parent of successful save
       onSave();
-      
-      // Small delay to ensure the parent component has time to react
-      setTimeout(() => {
-        // Force reload of data by dispatching a storage event
-        window.dispatchEvent(new Event('storage'));
-      }, 100);
       
     } catch (error) {
       console.error('Error updating day income:', error);

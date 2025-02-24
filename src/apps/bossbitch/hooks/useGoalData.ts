@@ -28,7 +28,9 @@ const useGoalData = (props?: UseGoalDataProps) => {
     addIncomeToDay,
     incomeSources,
     isLoading,
-    setIsLoading
+    setIsLoading,
+    refreshAllData,
+    lastUpdateTimestamp
   } = useData();
 
   // Initialize all state with safe default values
@@ -42,7 +44,6 @@ const useGoalData = (props?: UseGoalDataProps) => {
   const [remainingActiveWorkdays, setRemainingActiveWorkdays] = useState<number>(0);
   const [monthlyDeficit, setMonthlyDeficit] = useState<number>(0);
   const [isDataReady, setIsDataReady] = useState<boolean>(false);
-  const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
   const [selectedDate, setSelectedDate] = useState<Date>(props?.initialDate || new Date());
 
   // Colors for the rings
@@ -103,16 +104,19 @@ const useGoalData = (props?: UseGoalDataProps) => {
       setMonthlyData({ progress: 0, segments: [] });
     } finally {
       setIsLoading(false);
-      setLastRefreshTime(Date.now());
     }
   };
 
-  // Initial data fetch
+  // Initial data fetch and refresh when data changes
   useEffect(() => {
     if (isDataReady) {
+      console.log('Fetching data due to date change or data update', {
+        selectedDate,
+        lastUpdateTimestamp
+      });
       fetchData();
     }
-  }, [isDataReady, selectedDate]);
+  }, [isDataReady, selectedDate, lastUpdateTimestamp]);
 
   // Calculate remaining days and active workdays in the month
   useEffect(() => {
@@ -159,7 +163,7 @@ const useGoalData = (props?: UseGoalDataProps) => {
     if (activeDays.length > 0 && isDataReady) {
       calculateRemainingDays();
     }
-  }, [activeDays, dailyGoal, monthlyGoal, originalDailyGoal, dailyData, monthlyData, isDataReady, lastRefreshTime]);
+  }, [activeDays, dailyGoal, monthlyGoal, originalDailyGoal, dailyData, monthlyData, isDataReady, lastUpdateTimestamp]);
 
   // Dynamically adjust daily goal based on progress
   useEffect(() => {
@@ -178,6 +182,7 @@ const useGoalData = (props?: UseGoalDataProps) => {
     try {
       const targetDate = date || new Date();
       await addIncomeToDay(targetDate, amount, source);
+      await refreshAllData();
       await fetchData();
       return true;
     } catch (error) {
@@ -198,6 +203,7 @@ const useGoalData = (props?: UseGoalDataProps) => {
       setDailyGoal(settings.dailyGoal || 0);
       setOriginalDailyGoal(settings.dailyGoal || 0);
       setActiveDays(settings.activeDays || [false, true, true, true, true, true, false]);
+      await refreshAllData();
       await fetchData();
       return settings;
     } catch (error) {

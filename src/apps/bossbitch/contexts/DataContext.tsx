@@ -38,6 +38,10 @@ interface DataContextType {
   // Loading state
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+
+  // Data refresh
+  refreshAllData: () => Promise<void>;
+  lastUpdateTimestamp: number;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -61,6 +65,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState<number>(Date.now());
 
   // Handle authentication state changes
   useEffect(() => {
@@ -95,11 +100,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       // Load income sources
       const sources = await dataService.getIncomeSources();
       setIncomeSources(sources);
+
+      // Update timestamp after successful load
+      setLastUpdateTimestamp(Date.now());
     } catch (error) {
       console.error('Error loading initial data:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Refresh all data
+  const refreshAllData = async () => {
+    console.log('Refreshing all data');
+    await loadInitialData();
   };
 
   // Authentication handlers
@@ -109,6 +123,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       const user = await dataService.signIn(email, password);
       setCurrentUser(user);
       setIsAuthenticated(true);
+      await refreshAllData();
     } finally {
       setIsLoading(false);
     }
@@ -120,6 +135,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       const user = await dataService.signUp(email, password);
       setCurrentUser(user);
       setIsAuthenticated(true);
+      await refreshAllData();
     } finally {
       setIsLoading(false);
     }
@@ -131,6 +147,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       await dataService.signOut();
       setCurrentUser(null);
       setIsAuthenticated(false);
+      await refreshAllData();
     } finally {
       setIsLoading(false);
     }
@@ -142,6 +159,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     try {
       const newGoals = await dataService.updateGoals(updatedGoals);
       setGoals(newGoals);
+      await refreshAllData();
     } finally {
       setIsLoading(false);
     }
@@ -153,6 +171,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     try {
       const newPreferences = await dataService.updatePreferences(updatedPreferences);
       setPreferences(newPreferences);
+      await refreshAllData();
     } finally {
       setIsLoading(false);
     }
@@ -164,6 +183,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     try {
       const newSources = await dataService.addIncomeSource(source);
       setIncomeSources(newSources);
+      await refreshAllData();
     } finally {
       setIsLoading(false);
     }
@@ -174,6 +194,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     try {
       const newSources = await dataService.updateIncomeSource(id, updates);
       setIncomeSources(newSources);
+      await refreshAllData();
     } finally {
       setIsLoading(false);
     }
@@ -184,10 +205,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       await dataService.addIncomeToDay(date, amount, source);
-      
-      // Refresh income sources after adding income
-      const sources = await dataService.getIncomeSources();
-      setIncomeSources(sources);
+      await refreshAllData();
     } finally {
       setIsLoading(false);
     }
@@ -198,8 +216,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       await dataService.clearAllData();
-      // Reload data after clearing
-      await loadInitialData();
+      await refreshAllData();
     } finally {
       setIsLoading(false);
     }
@@ -219,8 +236,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     try {
       const success = await dataService.importData(jsonData);
       if (success) {
-        // Reload data after import
-        await loadInitialData();
+        await refreshAllData();
       }
       return success;
     } finally {
@@ -233,8 +249,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     try {
       const success = await dataService.migrateLocalToFirebase();
       if (success) {
-        // Reload data after migration
-        await loadInitialData();
+        await refreshAllData();
       }
       return success;
     } finally {
@@ -262,6 +277,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     migrateLocalToFirebase,
     isLoading,
     setIsLoading,
+    refreshAllData,
+    lastUpdateTimestamp,
   };
 
   return (
