@@ -4,14 +4,17 @@ import { firebaseService } from './firebaseService';
 import { User } from 'firebase/auth';
 import { UserGoals, UserPreferences, DailyEntry, MonthlyEntry } from './types';
 import { IncomeSource } from '../../types/goal.types';
+import { OfflineManager } from './offlineManager';
 
 /**
  * Unified data service that uses Firebase for authenticated users
  * and falls back to localStorage for non-authenticated users.
+ * Includes offline support and synchronization capabilities.
  */
 class DataService {
   private authStateListeners: ((isAuthenticated: boolean) => void)[] = [];
   private isAuthenticated = false;
+  private syncInProgress = false;
 
   constructor() {
     // Listen to authentication state changes from Firebase
@@ -23,7 +26,18 @@ class DataService {
       if (wasAuthenticated !== this.isAuthenticated) {
         this.authStateListeners.forEach(listener => listener(this.isAuthenticated));
       }
+
+      // Try to sync offline data when coming back online
+      if (this.isAuthenticated && OfflineManager.isOnline()) {
+        this.syncOfflineData();
+      }
     });
+
+    // Set up online/offline event listeners
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => this.handleOnline());
+      window.addEventListener('offline', () => this.handleOffline());
+    }
   }
 
   // Auth state management
@@ -41,7 +55,10 @@ class DataService {
   }
 
   async signIn(email: string, password: string): Promise<User> {
-    return firebaseService.signIn(email, password);
+    const user = await firebaseService.signIn(email, password);
+    // After successful sign-in, try to sync any offline data
+    await this.syncOfflineData();
+    return user;
   }
 
   async signUp(email: string, password: string): Promise<User> {
@@ -52,143 +69,208 @@ class DataService {
     return firebaseService.signOut();
   }
 
-  // Goals management
-  async getGoals(): Promise<UserGoals> {
-    if (this.isAuthenticated) {
-      return firebaseService.getGoals();
+  // Offline operation handler
+  private async handleOfflineOperation<T>(
+    operation: () => Promise<T>,
+    fallback: () => Promise<T>,
+    actionType: 'update' | 'add' | 'delete',
+    path: string,
+    data?: any
+  ): Promise<T> {
+    if (OfflineManager.isOnline()) {
+      try {
+        const result = await operation();
+        return result;
+      } catch (error) {
+        console.error('Operation failed, falling back to offline mode:', error);
+        await this.handleOfflineAction(actionType, path, data);
+        return fallback();
+      }
     } else {
-      return localStorageService.getGoals();
+      await this.handleOfflineAction(actionType, path, data);
+      return fallback();
     }
   }
 
+  private async handleOfflineAction(
+    type: 'update' | 'add' | 'delete',
+    path: string,
+    data?: any
+  ) {
+    await OfflineManager.storeOfflineAction({
+      type,
+      path,
+      data
+    });
+  }
+
+  // Goals management
+  async getGoals(): Promise<UserGoals> {
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated ? firebaseService.getGoals() : localStorageService.getGoals(),
+      () => localStorageService.getGoals(),
+      'update',
+      'goals',
+      null
+    );
+  }
+
   async updateGoals(goals: Partial<UserGoals>): Promise<UserGoals> {
-    if (this.isAuthenticated) {
-      return firebaseService.updateGoals(goals);
-    } else {
-      return localStorageService.updateGoals(goals);
-    }
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated ? firebaseService.updateGoals(goals) : localStorageService.updateGoals(goals),
+      () => localStorageService.updateGoals(goals),
+      'update',
+      'goals',
+      goals
+    );
   }
 
   // Preferences management
   async getPreferences(): Promise<UserPreferences> {
-    if (this.isAuthenticated) {
-      return firebaseService.getPreferences();
-    } else {
-      return localStorageService.getPreferences();
-    }
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated ? firebaseService.getPreferences() : localStorageService.getPreferences(),
+      () => localStorageService.getPreferences(),
+      'update',
+      'preferences',
+      null
+    );
   }
 
   async updatePreferences(preferences: Partial<UserPreferences>): Promise<UserPreferences> {
-    if (this.isAuthenticated) {
-      return firebaseService.updatePreferences(preferences);
-    } else {
-      return localStorageService.updatePreferences(preferences);
-    }
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated ? firebaseService.updatePreferences(preferences) : localStorageService.updatePreferences(preferences),
+      () => localStorageService.updatePreferences(preferences),
+      'update',
+      'preferences',
+      preferences
+    );
   }
 
   // Daily entries
   async getDailyEntry(date: Date): Promise<DailyEntry | null> {
-    if (this.isAuthenticated) {
-      return firebaseService.getDailyEntry(date);
-    } else {
-      return localStorageService.getDailyEntry(date);
-    }
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated ? firebaseService.getDailyEntry(date) : localStorageService.getDailyEntry(date),
+      () => localStorageService.getDailyEntry(date),
+      'update',
+      `dailyEntries/${date.toISOString().split('T')[0]}`,
+      null
+    );
   }
 
   async getDailyEntries(startDate: Date, endDate: Date): Promise<DailyEntry[]> {
-    if (this.isAuthenticated) {
-      return firebaseService.getDailyEntries(startDate, endDate);
-    } else {
-      return localStorageService.getDailyEntries(startDate, endDate);
-    }
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated ? firebaseService.getDailyEntries(startDate, endDate) : localStorageService.getDailyEntries(startDate, endDate),
+      () => localStorageService.getDailyEntries(startDate, endDate),
+      'update',
+      'dailyEntries',
+      null
+    );
   }
 
   async addIncomeToDay(date: Date, amount: number, source: IncomeSource): Promise<DailyEntry> {
-    if (this.isAuthenticated) {
-      return firebaseService.addIncomeToDay(date, amount, source);
-    } else {
-      return localStorageService.addIncomeToDay(date, amount, source);
-    }
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated ? firebaseService.addIncomeToDay(date, amount, source) : localStorageService.addIncomeToDay(date, amount, source),
+      () => localStorageService.addIncomeToDay(date, amount, source),
+      'add',
+      `dailyEntries/${date.toISOString().split('T')[0]}`,
+      { amount, source }
+    );
   }
 
   async deleteDayEntry(date: Date): Promise<void> {
-    if (this.isAuthenticated) {
-      await firebaseService.deleteDayEntry(date);
-    } else {
-      await localStorageService.deleteDayEntry(date);
-    }
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated ? firebaseService.deleteDayEntry(date) : localStorageService.deleteDayEntry(date),
+      () => localStorageService.deleteDayEntry(date),
+      'delete',
+      `dailyEntries/${date.toISOString().split('T')[0]}`,
+      null
+    );
   }
 
   // Monthly entries
   async getMonthlyEntry(year: number, month: number): Promise<MonthlyEntry | null> {
-    if (this.isAuthenticated) {
-      return firebaseService.getMonthlyEntry(year, month);
-    } else {
-      return localStorageService.getMonthlyEntry(year, month);
-    }
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated ? firebaseService.getMonthlyEntry(year, month) : localStorageService.getMonthlyEntry(year, month),
+      () => localStorageService.getMonthlyEntry(year, month),
+      'update',
+      `monthlyEntries/${year}-${month}`,
+      null
+    );
   }
 
   async getMonthlyEntries(
-    startYear: number, 
-    startMonth: number, 
-    endYear: number, 
+    startYear: number,
+    startMonth: number,
+    endYear: number,
     endMonth: number
   ): Promise<MonthlyEntry[]> {
-    if (this.isAuthenticated) {
-      return firebaseService.getMonthlyEntries(startYear, startMonth, endYear, endMonth);
-    } else {
-      return localStorageService.getMonthlyEntries(startYear, startMonth, endYear, endMonth);
-    }
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated 
+        ? firebaseService.getMonthlyEntries(startYear, startMonth, endYear, endMonth)
+        : localStorageService.getMonthlyEntries(startYear, startMonth, endYear, endMonth),
+      () => localStorageService.getMonthlyEntries(startYear, startMonth, endYear, endMonth),
+      'update',
+      'monthlyEntries',
+      null
+    );
   }
 
   // Income sources management
   async getIncomeSources(): Promise<IncomeSource[]> {
-    if (this.isAuthenticated) {
-      return firebaseService.getIncomeSources();
-    } else {
-      return localStorageService.getIncomeSources();
-    }
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated ? firebaseService.getIncomeSources() : localStorageService.getIncomeSources(),
+      () => localStorageService.getIncomeSources(),
+      'update',
+      'incomeSources',
+      null
+    );
   }
 
   async addIncomeSource(source: IncomeSource): Promise<IncomeSource[]> {
-    if (this.isAuthenticated) {
-      return firebaseService.addIncomeSource(source);
-    } else {
-      return localStorageService.addIncomeSource(source);
-    }
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated ? firebaseService.addIncomeSource(source) : localStorageService.addIncomeSource(source),
+      () => localStorageService.addIncomeSource(source),
+      'add',
+      'incomeSources',
+      source
+    );
   }
 
   async updateIncomeSource(id: string, updates: Partial<Omit<IncomeSource, 'id'>>): Promise<IncomeSource[]> {
-    if (this.isAuthenticated) {
-      return firebaseService.updateIncomeSource(id, updates);
-    } else {
-      return localStorageService.updateIncomeSource(id, updates);
-    }
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated ? firebaseService.updateIncomeSource(id, updates) : localStorageService.updateIncomeSource(id, updates),
+      () => localStorageService.updateIncomeSource(id, updates),
+      'update',
+      `incomeSources/${id}`,
+      updates
+    );
   }
 
   // Data management
   async clearAllData(): Promise<void> {
     if (this.isAuthenticated) {
-      return firebaseService.clearAllData();
-    } else {
-      return localStorageService.clearAllData();
+      await firebaseService.clearAllData();
     }
+    await localStorageService.clearAllData();
+    await OfflineManager.clearOfflineQueue();
+    await OfflineManager.clearOfflineData();
   }
 
   async exportData(): Promise<string> {
     if (this.isAuthenticated) {
       return firebaseService.exportData();
-    } else {
-      return localStorageService.exportData();
     }
+    return localStorageService.exportData();
   }
 
   async importData(jsonData: string): Promise<boolean> {
-    if (this.isAuthenticated) {
-      return firebaseService.importData(jsonData);
-    } else {
-      return localStorageService.importData(jsonData);
-    }
+    return this.handleOfflineOperation(
+      () => this.isAuthenticated ? firebaseService.importData(jsonData) : localStorageService.importData(jsonData),
+      () => localStorageService.importData(jsonData),
+      'update',
+      'importData',
+      jsonData
+    );
   }
 
   // Migration utilities
@@ -212,6 +294,83 @@ class DataService {
       console.error('Error migrating data:', error);
       return false;
     }
+  }
+
+  // Offline synchronization
+  private async handleOnline() {
+    if (this.isAuthenticated) {
+      await this.syncOfflineData();
+    }
+    // Notify any listeners that we're back online
+    window.dispatchEvent(new CustomEvent('app-online'));
+  }
+
+  private handleOffline() {
+    // Notify any listeners that we're offline
+    window.dispatchEvent(new CustomEvent('app-offline'));
+  }
+
+  async syncOfflineData(): Promise<void> {
+    if (!this.isAuthenticated || !OfflineManager.isOnline() || this.syncInProgress) {
+      return;
+    }
+
+    this.syncInProgress = true;
+    try {
+      const queue = await OfflineManager.getOfflineQueue();
+      for (const action of queue) {
+        try {
+          switch (action.type) {
+            case 'add':
+              if (action.path.includes('dailyEntries')) {
+                const data = action.data;
+                await firebaseService.addIncomeToDay(
+                  new Date(action.path.split('/')[1]),
+                  data.amount,
+                  data.source
+                );
+              }
+              break;
+            case 'update':
+              if (action.path === 'goals') {
+                await firebaseService.updateGoals(action.data);
+              } else if (action.path === 'preferences') {
+                await firebaseService.updatePreferences(action.data);
+              }
+              break;
+            case 'delete':
+              if (action.path.includes('dailyEntries')) {
+                await firebaseService.deleteDayEntry(
+                  new Date(action.path.split('/')[1])
+                );
+              }
+              break;
+          }
+          await OfflineManager.removeOfflineAction(action.id);
+        } catch (error) {
+          console.error('Error syncing action:', error);
+        }
+      }
+    } finally {
+      this.syncInProgress = false;
+    }
+  }
+
+  // Network status
+  isOnline(): boolean {
+    return OfflineManager.isOnline();
+  }
+
+  onOnline(callback: () => void) {
+    const handler = () => callback();
+    window.addEventListener('app-online', handler);
+    return () => window.removeEventListener('app-online', handler);
+  }
+
+  onOffline(callback: () => void) {
+    const handler = () => callback();
+    window.addEventListener('app-offline', handler);
+    return () => window.removeEventListener('app-offline', handler);
   }
 }
 

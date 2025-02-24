@@ -4,6 +4,7 @@ import { dataService } from '../services/data/dataService';
 import { UserGoals, UserPreferences } from '../services/data/types';
 import { IncomeSource } from '../types/goal.types';
 import { User } from 'firebase/auth';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
 
 interface DataContextType {
   // Authentication
@@ -42,6 +43,13 @@ interface DataContextType {
   // Data refresh
   refreshAllData: () => Promise<void>;
   lastUpdateTimestamp: number;
+
+  // Network status
+  isOnline: boolean;
+
+  // PWA installation
+  showInstallPrompt: boolean;
+  installApp: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -59,6 +67,7 @@ interface DataProviderProps {
 }
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
+  // State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [goals, setGoals] = useState<UserGoals | null>(null);
@@ -66,24 +75,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState<number>(Date.now());
+  const [isOnline, setIsOnline] = useState<boolean>(true);
 
-  // Handle authentication state changes
-  useEffect(() => {
-    const unsubscribe = dataService.onAuthStateChanged((authenticated) => {
-      setIsAuthenticated(authenticated);
-      setCurrentUser(dataService.getCurrentUser());
-      
-      // Reset state when auth status changes
-      setGoals(null);
-      setPreferences(null);
-      setIncomeSources([]);
-      
-      // Load data for the new auth state
-      loadInitialData();
-    });
-    
-    return unsubscribe;
-  }, []);
+  // PWA installation hook
+  const { isInstallable, promptToInstall } = useInstallPrompt();
 
   // Load initial data
   const loadInitialData = async () => {
@@ -109,6 +104,47 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setIsLoading(false);
     }
   };
+
+  // Handle authentication state changes
+  useEffect(() => {
+    const unsubscribe = dataService.onAuthStateChanged((authenticated) => {
+      setIsAuthenticated(authenticated);
+      setCurrentUser(dataService.getCurrentUser());
+      
+      // Reset state when auth status changes
+      setGoals(null);
+      setPreferences(null);
+      setIncomeSources([]);
+      
+      // Load data for the new auth state
+      loadInitialData();
+    });
+    
+    return unsubscribe;
+  }, []);
+
+  // Handle online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      refreshAllData();
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    const unsubscribeOnline = dataService.onOnline(handleOnline);
+    const unsubscribeOffline = dataService.onOffline(handleOffline);
+
+    // Initial online status
+    setIsOnline(dataService.isOnline());
+
+    return () => {
+      unsubscribeOnline();
+      unsubscribeOffline();
+    };
+  }, []);
 
   // Refresh all data
   const refreshAllData = async () => {
@@ -279,6 +315,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setIsLoading,
     refreshAllData,
     lastUpdateTimestamp,
+    isOnline,
+    showInstallPrompt: isInstallable,
+    installApp: promptToInstall,
   };
 
   return (
