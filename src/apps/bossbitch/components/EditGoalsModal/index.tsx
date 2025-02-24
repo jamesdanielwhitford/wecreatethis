@@ -1,9 +1,11 @@
+// Modified version of EditGoalsModal
+// src/apps/bossbitch/components/EditGoalsModal/index.tsx
+
 'use client';
 
-// src/apps/bossbitch/components/EditGoalsModal/index.tsx
 import React, { useState } from 'react';
 import { X, Calculator } from 'lucide-react';
-import { formatZAR, parseZAR } from '../../utils/currency';
+import { formatZAR, parseZAR, createCurrencyInputHandler } from '../../utils/currency';
 import { useData } from '../../contexts/DataContext';
 import LoadingIndicator from '../LoadingIndicator';
 import styles from './styles.module.css';
@@ -36,27 +38,12 @@ const EditGoalsModal: React.FC<EditGoalsModalProps> = ({
   const [isCustomDaily, setIsCustomDaily] = useState(false);
   const [error, setError] = useState('');
 
-  // Handle currency input formatting
-  const handleCurrencyInput = (value: string, setter: (value: string) => void) => {
-    const cleaned = value.replace(/[^0-9.]/g, '');
-    
-    if (cleaned === '') {
-      setter('');
-      return;
-    }
-
-    const parts = cleaned.split('.');
-    if (parts.length > 2) return;
-    
-    try {
-      const number = parseFloat(cleaned);
-      if (!isNaN(number)) {
-        setter(formatZAR(number));
-      }
-    } catch {
-      setter(cleaned);
-    }
-  };
+  // Create currency input handlers that preserve cursor position
+  const handleMonthlyGoalChange = createCurrencyInputHandler(setMonthlyGoal);
+  const handleDailyGoalChange = createCurrencyInputHandler((value) => {
+    setDailyGoal(value);
+    setIsCustomDaily(true);
+  });
 
   // Calculate daily goal based on monthly goal and active days
   const calculateDailyGoal = () => {
@@ -134,7 +121,7 @@ const EditGoalsModal: React.FC<EditGoalsModalProps> = ({
           <input
             type="text"
             value={monthlyGoal}
-            onChange={(e) => handleCurrencyInput(e.target.value, setMonthlyGoal)}
+            onChange={handleMonthlyGoalChange}
             placeholder="R 0.00"
             className={styles.input}
           />
@@ -173,10 +160,7 @@ const EditGoalsModal: React.FC<EditGoalsModalProps> = ({
           <input
             type="text"
             value={dailyGoal}
-            onChange={(e) => {
-              handleCurrencyInput(e.target.value, setDailyGoal);
-              setIsCustomDaily(true);
-            }}
+            onChange={handleDailyGoalChange}
             placeholder="R 0.00"
             className={styles.input}
           />

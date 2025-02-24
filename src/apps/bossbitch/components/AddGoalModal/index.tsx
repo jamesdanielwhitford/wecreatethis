@@ -1,10 +1,12 @@
+// Modified version of AddGoalModal
+// src/apps/bossbitch/components/AddGoalModal/index.tsx
+
 'use client';
 
-// src/apps/bossbitch/components/AddGoalModal/index.tsx
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Check } from 'lucide-react';
 import { IncomeSource } from '../../types/goal.types';
-import { formatZAR, parseZAR } from '../../utils/currency';
+import { formatZAR, parseZAR, createCurrencyInputHandler } from '../../utils/currency';
 import { useData } from '../../contexts/DataContext';
 import LoadingIndicator from '../LoadingIndicator';
 import styles from './styles.module.css';
@@ -31,28 +33,9 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [error, setError] = useState('');
   const [availableSources, setAvailableSources] = useState<IncomeSource[]>([]);
-
-  // Format amount as currency while typing
-  const handleAmountChange = (value: string) => {
-    const cleaned = value.replace(/[^0-9.]/g, '');
-    
-    if (cleaned === '') {
-      setAmount('');
-      return;
-    }
-
-    const parts = cleaned.split('.');
-    if (parts.length > 2) return;
-    
-    try {
-      const number = parseFloat(cleaned);
-      if (!isNaN(number)) {
-        setAmount(formatZAR(number));
-      }
-    } catch {
-      setAmount(cleaned);
-    }
-  };
+  
+  // Create the currency input handler that preserves cursor position
+  const handleAmountChange = createCurrencyInputHandler(setAmount);
 
   // Load available income sources
   useEffect(() => {
@@ -120,7 +103,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
           <input
             type="text"
             value={amount}
-            onChange={(e) => handleAmountChange(e.target.value)}
+            onChange={handleAmountChange}
             placeholder="R 0.00"
             className={styles.input}
           />

@@ -1,8 +1,10 @@
+// Modified version of EditDayModal
 // src/apps/bossbitch/components/Calendar/components/EditDayModal/EditDayModal.tsx
+
 import React, { useState, useEffect } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { IncomeSource } from '../../../../types/goal.types';
-import { formatZAR, parseZAR } from '../../../../utils/currency';
+import { formatZAR, parseZAR, createCurrencyInputHandler } from '../../../../utils/currency';
 import { useData } from '../../../../contexts/DataContext';
 import { dataService } from '../../../../services/data/dataService';
 import styles from './styles.module.css';
@@ -14,34 +16,43 @@ interface EditDayModalProps {
   incomeSources: IncomeSource[];
 }
 
+interface EditableSource extends IncomeSource {
+  inputValue: string; // Store the formatted input value separately
+}
+
 const EditDayModal: React.FC<EditDayModalProps> = ({
   onClose,
   onSave,
   selectedDate,
   incomeSources,
 }) => {
-  const [editableSources, setEditableSources] = useState<IncomeSource[]>([]);
+  const [editableSources, setEditableSources] = useState<EditableSource[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const { setIsLoading, refreshAllData } = useData();
   
   // Initialize editable sources with the existing ones
   useEffect(() => {
-    setEditableSources([...incomeSources]);
+    setEditableSources(incomeSources.map(source => ({
+      ...source,
+      inputValue: formatZAR(source.value)
+    })));
   }, [incomeSources]);
 
-  // Handle updating the amount of a source
-  const handleUpdateAmount = (id: string, newValue: string) => {
-    const parsedValue = parseZAR(newValue);
-    
-    if (isNaN(parsedValue)) return;
-    
-    setEditableSources(prevSources => 
-      prevSources.map(source => 
-        source.id === id 
-          ? { ...source, value: parsedValue } 
-          : source
-      )
-    );
+  // Creates an input handler for a specific source ID
+  const createSourceInputHandler = (sourceId: string) => {
+    return createCurrencyInputHandler((newValue: string) => {
+      setEditableSources(prevSources => 
+        prevSources.map(source => 
+          source.id === sourceId 
+            ? { 
+                ...source, 
+                inputValue: newValue, 
+                value: parseZAR(newValue) 
+              } 
+            : source
+        )
+      );
+    });
   };
 
   // Handle removing a source
@@ -118,8 +129,8 @@ const EditDayModal: React.FC<EditDayModalProps> = ({
                     <input
                       type="text"
                       className={styles.amountInput}
-                      value={formatZAR(source.value)}
-                      onChange={(e) => handleUpdateAmount(source.id, e.target.value)}
+                      value={source.inputValue}
+                      onChange={createSourceInputHandler(source.id)}
                     />
                     
                     <button 
