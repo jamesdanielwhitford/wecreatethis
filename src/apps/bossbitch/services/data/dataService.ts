@@ -2,9 +2,19 @@
 import { localStorageService } from './localStorageService';
 import { firebaseService } from './firebaseService';
 import { User } from 'firebase/auth';
-import { UserGoals, UserPreferences, DailyEntry, MonthlyEntry } from './types';
+import { UserGoals, UserPreferences, DailyEntry, MonthlyEntry, UserData } from './types';
 import { IncomeSource } from '../../types/goal.types';
 import { OfflineManager } from './offlineManager';
+
+// Interface definitions for type safety
+interface IncomeData {
+  amount?: number;
+  source?: IncomeSource;
+}
+
+interface ImportData {
+  jsonData?: string;
+}
 
 /**
  * Unified data service that uses Firebase for authenticated users
@@ -69,13 +79,14 @@ class DataService {
     return firebaseService.signOut();
   }
 
-  // Offline operation handler
-  private async handleOfflineOperation<T>(
+  // Generic method to handle operations with offline fallback
+  // We need to convert specific data types to the expected UserData format for offline storage
+  private async handleOfflineOperation<T, D = unknown>(
     operation: () => Promise<T>,
     fallback: () => Promise<T>,
     actionType: 'update' | 'add' | 'delete',
     path: string,
-    data?: any
+    data?: D
   ): Promise<T> {
     if (OfflineManager.isOnline()) {
       try {
@@ -83,19 +94,76 @@ class DataService {
         return result;
       } catch (error) {
         console.error('Operation failed, falling back to offline mode:', error);
-        await this.handleOfflineAction(actionType, path, data);
+        await this.handleOfflineAction(actionType, path, this.convertToUserDataFormat(path, data));
         return fallback();
       }
     } else {
-      await this.handleOfflineAction(actionType, path, data);
+      await this.handleOfflineAction(actionType, path, this.convertToUserDataFormat(path, data));
       return fallback();
     }
   }
-
+  
+  // Convert various data types to the format expected by OfflineManager
+  private convertToUserDataFormat<D = unknown>(path: string, data?: D): Partial<UserData> | undefined {
+    if (!data) return undefined;
+    
+    // Create a partial UserData object with the appropriate structure based on the path
+    if (path === 'goals') {
+      return { goals: data as unknown as UserGoals };
+    } else if (path === 'preferences') {
+      return { preferences: data as unknown as UserPreferences };
+    } else if (path.startsWith('dailyEntries/')) {
+      const dateKey = path.split('/')[1];
+      
+      const typedData = data as unknown as IncomeData;
+      if (typedData.amount !== undefined && typedData.source) {
+        // This is income data that needs to be structured as a DailyEntry
+        const dailyEntry: Record<string, DailyEntry> = {
+          [dateKey]: {
+            date: dateKey,
+            progress: typedData.amount,
+            segments: [typedData.source]
+          }
+        };
+        return { dailyEntries: dailyEntry };
+      }
+    } else if (path === 'incomeSources') {
+      return { incomeSources: Array.isArray(data) ? data as unknown as IncomeSource[] : [data as unknown as IncomeSource] };
+    } else if (path.startsWith('incomeSources/')) {
+      // For updating a specific income source, we need the ID
+      const id = path.split('/')[1];
+      // Create an array with one updated source
+      const sourceWithUpdates = { id, ...(data as object) };
+      return { incomeSources: [sourceWithUpdates as unknown as IncomeSource] };
+    } else if (path === 'importData') {
+      const importData = data as unknown as ImportData;
+      if (importData.jsonData) {
+        // For importing data, parse the JSON and return it directly
+        try {
+          return JSON.parse(importData.jsonData) as Partial<UserData>;
+        } catch (e) {
+          console.error('Failed to parse import data:', e);
+        }
+      }
+    }
+    
+    // Default case - attempt to create an empty structure based on path
+    if (path.includes('dailyEntries')) {
+      return { dailyEntries: {} };
+    } else if (path.includes('monthlyEntries')) {
+      return { monthlyEntries: {} };
+    }
+    
+    // If we can't determine the type, return an empty object
+    // This shouldn't happen in practice if all paths are handled properly
+    console.warn('Unknown data type for path:', path);
+    return {};
+  }
+  
   private async handleOfflineAction(
     type: 'update' | 'add' | 'delete',
     path: string,
-    data?: any
+    data?: Partial<UserData>
   ) {
     await OfflineManager.storeOfflineAction({
       type,
@@ -107,18 +175,18 @@ class DataService {
   // Goals management
   async getGoals(): Promise<UserGoals> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated ? firebaseService.getGoals() : localStorageService.getGoals(),
-      () => localStorageService.getGoals(),
+      async () => this.isAuthenticated ? await firebaseService.getGoals() : await localStorageService.getGoals(),
+      async () => await localStorageService.getGoals(),
       'update',
       'goals',
-      null
+      undefined
     );
   }
 
   async updateGoals(goals: Partial<UserGoals>): Promise<UserGoals> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated ? firebaseService.updateGoals(goals) : localStorageService.updateGoals(goals),
-      () => localStorageService.updateGoals(goals),
+      async () => this.isAuthenticated ? await firebaseService.updateGoals(goals) : await localStorageService.updateGoals(goals),
+      async () => await localStorageService.updateGoals(goals),
       'update',
       'goals',
       goals
@@ -128,18 +196,18 @@ class DataService {
   // Preferences management
   async getPreferences(): Promise<UserPreferences> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated ? firebaseService.getPreferences() : localStorageService.getPreferences(),
-      () => localStorageService.getPreferences(),
+      async () => this.isAuthenticated ? await firebaseService.getPreferences() : await localStorageService.getPreferences(),
+      async () => await localStorageService.getPreferences(),
       'update',
       'preferences',
-      null
+      undefined
     );
   }
 
   async updatePreferences(preferences: Partial<UserPreferences>): Promise<UserPreferences> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated ? firebaseService.updatePreferences(preferences) : localStorageService.updatePreferences(preferences),
-      () => localStorageService.updatePreferences(preferences),
+      async () => this.isAuthenticated ? await firebaseService.updatePreferences(preferences) : await localStorageService.updatePreferences(preferences),
+      async () => await localStorageService.updatePreferences(preferences),
       'update',
       'preferences',
       preferences
@@ -149,28 +217,28 @@ class DataService {
   // Daily entries
   async getDailyEntry(date: Date): Promise<DailyEntry | null> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated ? firebaseService.getDailyEntry(date) : localStorageService.getDailyEntry(date),
-      () => localStorageService.getDailyEntry(date),
+      async () => this.isAuthenticated ? await firebaseService.getDailyEntry(date) : await localStorageService.getDailyEntry(date),
+      async () => await localStorageService.getDailyEntry(date),
       'update',
       `dailyEntries/${date.toISOString().split('T')[0]}`,
-      null
+      undefined
     );
   }
 
   async getDailyEntries(startDate: Date, endDate: Date): Promise<DailyEntry[]> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated ? firebaseService.getDailyEntries(startDate, endDate) : localStorageService.getDailyEntries(startDate, endDate),
-      () => localStorageService.getDailyEntries(startDate, endDate),
+      async () => this.isAuthenticated ? await firebaseService.getDailyEntries(startDate, endDate) : await localStorageService.getDailyEntries(startDate, endDate),
+      async () => await localStorageService.getDailyEntries(startDate, endDate),
       'update',
       'dailyEntries',
-      null
+      undefined
     );
   }
 
   async addIncomeToDay(date: Date, amount: number, source: IncomeSource): Promise<DailyEntry> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated ? firebaseService.addIncomeToDay(date, amount, source) : localStorageService.addIncomeToDay(date, amount, source),
-      () => localStorageService.addIncomeToDay(date, amount, source),
+      async () => this.isAuthenticated ? await firebaseService.addIncomeToDay(date, amount, source) : await localStorageService.addIncomeToDay(date, amount, source),
+      async () => await localStorageService.addIncomeToDay(date, amount, source),
       'add',
       `dailyEntries/${date.toISOString().split('T')[0]}`,
       { amount, source }
@@ -179,22 +247,22 @@ class DataService {
 
   async deleteDayEntry(date: Date): Promise<void> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated ? firebaseService.deleteDayEntry(date) : localStorageService.deleteDayEntry(date),
-      () => localStorageService.deleteDayEntry(date),
+      async () => this.isAuthenticated ? await firebaseService.deleteDayEntry(date) : await localStorageService.deleteDayEntry(date),
+      async () => await localStorageService.deleteDayEntry(date),
       'delete',
       `dailyEntries/${date.toISOString().split('T')[0]}`,
-      null
+      undefined
     );
   }
 
   // Monthly entries
   async getMonthlyEntry(year: number, month: number): Promise<MonthlyEntry | null> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated ? firebaseService.getMonthlyEntry(year, month) : localStorageService.getMonthlyEntry(year, month),
-      () => localStorageService.getMonthlyEntry(year, month),
+      async () => this.isAuthenticated ? await firebaseService.getMonthlyEntry(year, month) : await localStorageService.getMonthlyEntry(year, month),
+      async () => await localStorageService.getMonthlyEntry(year, month),
       'update',
       `monthlyEntries/${year}-${month}`,
-      null
+      undefined
     );
   }
 
@@ -205,31 +273,31 @@ class DataService {
     endMonth: number
   ): Promise<MonthlyEntry[]> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated 
-        ? firebaseService.getMonthlyEntries(startYear, startMonth, endYear, endMonth)
-        : localStorageService.getMonthlyEntries(startYear, startMonth, endYear, endMonth),
-      () => localStorageService.getMonthlyEntries(startYear, startMonth, endYear, endMonth),
+      async () => this.isAuthenticated 
+        ? await firebaseService.getMonthlyEntries(startYear, startMonth, endYear, endMonth)
+        : await localStorageService.getMonthlyEntries(startYear, startMonth, endYear, endMonth),
+      async () => await localStorageService.getMonthlyEntries(startYear, startMonth, endYear, endMonth),
       'update',
       'monthlyEntries',
-      null
+      undefined
     );
   }
 
   // Income sources management
   async getIncomeSources(): Promise<IncomeSource[]> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated ? firebaseService.getIncomeSources() : localStorageService.getIncomeSources(),
-      () => localStorageService.getIncomeSources(),
+      async () => this.isAuthenticated ? await firebaseService.getIncomeSources() : await localStorageService.getIncomeSources(),
+      async () => await localStorageService.getIncomeSources(),
       'update',
       'incomeSources',
-      null
+      undefined
     );
   }
 
   async addIncomeSource(source: IncomeSource): Promise<IncomeSource[]> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated ? firebaseService.addIncomeSource(source) : localStorageService.addIncomeSource(source),
-      () => localStorageService.addIncomeSource(source),
+      async () => this.isAuthenticated ? await firebaseService.addIncomeSource(source) : await localStorageService.addIncomeSource(source),
+      async () => await localStorageService.addIncomeSource(source),
       'add',
       'incomeSources',
       source
@@ -238,8 +306,8 @@ class DataService {
 
   async updateIncomeSource(id: string, updates: Partial<Omit<IncomeSource, 'id'>>): Promise<IncomeSource[]> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated ? firebaseService.updateIncomeSource(id, updates) : localStorageService.updateIncomeSource(id, updates),
-      () => localStorageService.updateIncomeSource(id, updates),
+      async () => this.isAuthenticated ? await firebaseService.updateIncomeSource(id, updates) : await localStorageService.updateIncomeSource(id, updates),
+      async () => await localStorageService.updateIncomeSource(id, updates),
       'update',
       `incomeSources/${id}`,
       updates
@@ -265,11 +333,11 @@ class DataService {
 
   async importData(jsonData: string): Promise<boolean> {
     return this.handleOfflineOperation(
-      () => this.isAuthenticated ? firebaseService.importData(jsonData) : localStorageService.importData(jsonData),
-      () => localStorageService.importData(jsonData),
+      async () => this.isAuthenticated ? await firebaseService.importData(jsonData) : await localStorageService.importData(jsonData),
+      async () => await localStorageService.importData(jsonData),
       'update',
       'importData',
-      jsonData
+      { jsonData }
     );
   }
 
@@ -323,19 +391,38 @@ class DataService {
           switch (action.type) {
             case 'add':
               if (action.path.includes('dailyEntries')) {
-                const data = action.data;
-                await firebaseService.addIncomeToDay(
-                  new Date(action.path.split('/')[1]),
-                  data.amount,
-                  data.source
-                );
+                // Extract the daily entry data from the UserData structure
+                const dateKey = action.path.split('/')[1];
+                const dailyEntry = action.data?.dailyEntries?.[dateKey];
+                
+                if (dailyEntry && dailyEntry.segments && dailyEntry.segments.length > 0) {
+                  const source = dailyEntry.segments[0];
+                  await firebaseService.addIncomeToDay(
+                    new Date(dateKey),
+                    dailyEntry.progress,
+                    source
+                  );
+                }
+              } else if (action.path.includes('incomeSources') && action.data?.incomeSources) {
+                // Handle adding income sources
+                for (const source of action.data.incomeSources) {
+                  await firebaseService.addIncomeSource(source);
+                }
               }
               break;
             case 'update':
-              if (action.path === 'goals') {
-                await firebaseService.updateGoals(action.data);
-              } else if (action.path === 'preferences') {
-                await firebaseService.updatePreferences(action.data);
+              if (action.path === 'goals' && action.data?.goals) {
+                await firebaseService.updateGoals(action.data.goals);
+              } else if (action.path === 'preferences' && action.data?.preferences) {
+                await firebaseService.updatePreferences(action.data.preferences);
+              } else if (action.path.includes('incomeSources/') && action.data?.incomeSources) {
+                // Handle updating a specific income source
+                const id = action.path.split('/')[1];
+                const source = action.data.incomeSources.find(s => s.id === id);
+                if (source) {
+                  const { id: sourceId, ...updates } = source;
+                  await firebaseService.updateIncomeSource(sourceId, updates);
+                }
               }
               break;
             case 'delete':

@@ -1,7 +1,7 @@
 'use client';
 
 // src/apps/bossbitch/components/CelebrationModal/index.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Music } from 'lucide-react';
 import styles from './styles.module.css';
 
@@ -22,7 +22,7 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({ onClose }) => {
   const [content, setContent] = useState<CelebrationContent | null>(null);
 
   // Updated quotes and songs organized by day of week (0 = Sunday, 6 = Saturday)
-  const celebrationContent: CelebrationContent[][] = [
+  const celebrationContent = useMemo<CelebrationContent[][]>(() => [
     // Sunday: Self-Worth & Celebrating Success
     [
       {
@@ -124,7 +124,7 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({ onClose }) => {
         }
       },
     ]
-  ];
+    ], []); // Empty dependency array means this only runs once
 
   useEffect(() => {
     const dayOfWeek = new Date().getDay();
@@ -132,7 +132,7 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({ onClose }) => {
     const randomIndex = Math.floor(Math.random() * todaysOptions.length);
     setContent(todaysOptions[randomIndex]);
     generateConfetti();
-  }, []);
+  }, [celebrationContent]); // Empty dependency array as celebrationContent is now memoized
 
   const generateConfetti = () => {
     // Confetti effect placeholder

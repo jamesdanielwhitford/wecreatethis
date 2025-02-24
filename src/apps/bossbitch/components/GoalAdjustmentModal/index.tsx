@@ -11,7 +11,6 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   originalGoal: string;
-  newGoal: string;
   isDeficit: boolean;
   message: string;
   remainingDays: number;
@@ -46,7 +45,6 @@ export const GoalAdjustmentModal: React.FC<ModalProps> = ({
   isOpen, 
   onClose, 
   originalGoal,
-  newGoal,
   isDeficit,
   message,
   remainingDays,

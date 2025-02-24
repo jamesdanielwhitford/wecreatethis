@@ -61,9 +61,7 @@ const EditDayModal: React.FC<EditDayModalProps> = ({
       await dataService.deleteDayEntry(selectedDate);
       
       // If we have sources with values, create a new entry
-      if (editableSources.length > 0) {
-        const totalProgress = editableSources.reduce((total, source) => total + source.value, 0);
-        
+      if (editableSources.length > 0) {        
         // Add each source individually to ensure proper daily and monthly updates
         for (const source of editableSources) {
           if (source.value > 0) {

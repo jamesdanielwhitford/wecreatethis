@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useData } from '../contexts/DataContext';
 import { IncomeSource } from '../types/goal.types';
 import { dataService } from '../services/data/dataService';
@@ -20,7 +20,7 @@ interface UseGoalDataProps {
 }
 
 // Debug logger for tracking state changes and data flow
-const debugLog = (area: string, message: string, data?: any) => {
+const debugLog = (area: string, message: string, data?: unknown) => {
   console.group(`🔄 ${area}`);
   console.log(`[${new Date().toISOString()}] ${message}`);
   if (data) console.log('Data:', data);
@@ -32,7 +32,7 @@ const useGoalData = (props?: UseGoalDataProps) => {
     goals,
     updateGoals,
     addIncomeToDay,
-    incomeSources,
+    // incomeSources, - Not used, removing to fix linting error
     isLoading,
     setIsLoading,
     refreshAllData,
@@ -86,48 +86,46 @@ const useGoalData = (props?: UseGoalDataProps) => {
     loadGoals();
   }, [goals]);
 
-  // Fetch daily and monthly data
-  const fetchData = async () => {
-    if (!isDataReady) {
-      debugLog('Data Fetch', 'Skipping fetch - data not ready');
-      return;
-    }
-    
-    debugLog('Data Fetch', 'Starting data fetch', { selectedDate });
-    
-    try {
-      setIsLoading(true);
-      
-      // Get daily entry for selected date
-      const dailyEntry = await dataService.getDailyEntry(selectedDate);
-      debugLog('Daily Data', 'Fetched daily entry', dailyEntry);
-      
-      setDailyData({
-        progress: dailyEntry?.progress || 0,
-        segments: Array.isArray(dailyEntry?.segments) ? dailyEntry.segments : []
-      });
-      
-      // Get monthly entry for selected date's month
-      const monthlyEntry = await dataService.getMonthlyEntry(
-        selectedDate.getFullYear(),
-        selectedDate.getMonth()
-      );
-      debugLog('Monthly Data', 'Fetched monthly entry', monthlyEntry);
-      
-      setMonthlyData({
-        progress: monthlyEntry?.progress || 0,
-        segments: Array.isArray(monthlyEntry?.segments) ? monthlyEntry.segments : []
-      });
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      debugLog('Error', 'Error fetching data', error);
-      // Set safe defaults in case of error
-      setDailyData({ progress: 0, segments: [] });
-      setMonthlyData({ progress: 0, segments: [] });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+// Fetch daily and monthly data
+const fetchData = useCallback(async () => {
+  if (!isDataReady) {
+    debugLog('Data Fetch', 'Skipping fetch - data not ready');
+    return;
+  }
+
+  debugLog('Data Fetch', 'Starting data fetch', { selectedDate });
+
+  try {
+    setIsLoading(true);
+
+    const dailyEntry = await dataService.getDailyEntry(selectedDate);
+    debugLog('Daily Data', 'Fetched daily entry', dailyEntry);
+
+    setDailyData({
+      progress: dailyEntry?.progress || 0,
+      segments: Array.isArray(dailyEntry?.segments) ? dailyEntry.segments : []
+    });
+
+    const monthlyEntry = await dataService.getMonthlyEntry(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth()
+    );
+    debugLog('Monthly Data', 'Fetched monthly entry', monthlyEntry);
+
+    setMonthlyData({
+      progress: monthlyEntry?.progress || 0,
+      segments: Array.isArray(monthlyEntry?.segments) ? monthlyEntry.segments : []
+    });
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    debugLog('Error', 'Error fetching data', error);
+    setDailyData({ progress: 0, segments: [] });
+    setMonthlyData({ progress: 0, segments: [] });
+  } finally {
+    setIsLoading(false);
+  }
+}, [isDataReady, selectedDate, setIsLoading]);
+
 
   // Initial data fetch and refresh when data changes
   useEffect(() => {
@@ -138,7 +136,7 @@ const useGoalData = (props?: UseGoalDataProps) => {
       });
       fetchData();
     }
-  }, [isDataReady, selectedDate, lastUpdateTimestamp]);
+  }, [isDataReady, selectedDate, lastUpdateTimestamp, fetchData]);
 
   // Calculate remaining days and active workdays in the month
   useEffect(() => {

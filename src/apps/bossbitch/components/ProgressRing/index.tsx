@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { IncomeSource } from '../../types/goal.types';
 import styles from './styles.module.css';
 
@@ -43,12 +43,12 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
   // Calculate percentage with safety checks
   const percentage = Math.min((safeProgress / safeMaxValue) * 100, 100);
   
-  // Calculate stroke dashoffset with safety check
-  const getStrokeDashoffset = (percent: number): number => {
+  // Wrap getStrokeDashoffset in useCallback to prevent recreation on every render
+  const getStrokeDashoffset = useCallback((percent: number): number => {
     if (isNaN(percent)) return circumference;
     const offset = circumference - (percent / 100) * circumference;
     return isNaN(offset) ? circumference : offset;
-  };
+  }, [circumference]);
 
   useEffect(() => {
     // Set initialization flag on mount
@@ -73,7 +73,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
         circle.style.strokeDashoffset = `${circumference}`;
       }
     }
-  }, [percentage, animate, circumference, isInitialized]);
+  }, [percentage, animate, circumference, isInitialized, getStrokeDashoffset]);
 
   const renderSegments = () => {
     if (!segments || !Array.isArray(segments) || segments.length === 0) return null;

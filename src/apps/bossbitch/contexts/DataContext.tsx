@@ -1,5 +1,5 @@
 // src/apps/bossbitch/contexts/DataContext.tsx
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { dataService } from '../services/data/dataService';
 import { UserGoals, UserPreferences } from '../services/data/types';
 import { IncomeSource } from '../types/goal.types';
@@ -81,7 +81,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const { isInstallable, promptToInstall } = useInstallPrompt();
 
   // Load initial data
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     setIsLoading(true);
     try {
       // Load goals
@@ -103,7 +103,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [setGoals, setPreferences, setIncomeSources, setLastUpdateTimestamp, setIsLoading]);
+
+  // Refresh all data - memoized with useCallback
+  const refreshAllData = useCallback(async () => {
+    console.log('Refreshing all data');
+    await loadInitialData();
+  }, [loadInitialData]);
 
   // Handle authentication state changes
   useEffect(() => {
@@ -121,7 +127,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
     
     return unsubscribe;
-  }, []);
+  }, [loadInitialData]);
 
   // Handle online/offline status
   useEffect(() => {
@@ -144,13 +150,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       unsubscribeOnline();
       unsubscribeOffline();
     };
-  }, []);
-
-  // Refresh all data
-  const refreshAllData = async () => {
-    console.log('Refreshing all data');
-    await loadInitialData();
-  };
+  }, [refreshAllData]);
 
   // Authentication handlers
   const signIn = async (email: string, password: string) => {

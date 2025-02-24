@@ -1,21 +1,16 @@
 // src/apps/bossbitch/services/data/firebaseService.ts
 import { UserData, DEFAULT_USER_DATA, getEntryKey, getMonthKey, DailyEntry, MonthlyEntry } from './types';
 import { IncomeSource } from '../../types/goal.types';
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { 
   getFirestore, 
   doc, 
   getDoc, 
   setDoc, 
   updateDoc, 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  Timestamp, 
-  orderBy,
   Firestore
 } from 'firebase/firestore';
+
 import { 
   getAuth, 
   signInWithEmailAndPassword, 
@@ -38,8 +33,8 @@ const firebaseConfig = {
 
 // Initialize Firebase with a specific app name to avoid conflicts
 let bossbitchApp: FirebaseApp;
-let db: Firestore;
-let auth: Auth;
+
+
 
 // Check if we already have a 'bossbitch' app instance
 const existingApp = getApps().find(app => app.name === 'bossbitch');
@@ -52,9 +47,8 @@ if (existingApp) {
   bossbitchApp = initializeApp(firebaseConfig, 'bossbitch');
 }
 
-// Get Firestore and Auth from our app instance
-db = getFirestore(bossbitchApp);
-auth = getAuth(bossbitchApp);
+const db: Firestore = getFirestore(bossbitchApp);
+const auth: Auth = getAuth(bossbitchApp);
 
 export class FirebaseService {
   private localCache: UserData = { ...DEFAULT_USER_DATA };

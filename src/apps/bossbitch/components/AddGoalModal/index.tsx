@@ -49,7 +49,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
       if (!isNaN(number)) {
         setAmount(formatZAR(number));
       }
-    } catch (e) {
+    } catch {
       setAmount(cleaned);
     }
   };

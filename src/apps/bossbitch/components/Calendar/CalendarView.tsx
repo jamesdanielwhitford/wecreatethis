@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import WeekStrip from './components/WeekStrip';
 import SelectedDateView from './components/SelectedDateView';
 import CalendarHeader from './components/CalendarHeader';
@@ -8,7 +8,6 @@ import AddGoalModal from '../AddGoalModal';
 import EditDayModal from './components/EditDayModal/EditDayModal';
 import { IncomeSource } from '../../types/goal.types';
 import { dataService } from '../../services/data/dataService';
-import { DailyEntry } from '../../services/data/types';
 import useGoalData from '../../hooks/useGoalData';
 import { getEntryKey } from '../../services/data/types';
 import styles from './styles.module.css';
@@ -16,6 +15,14 @@ import styles from './styles.module.css';
 interface CalendarViewProps {
   type: 'daily' | 'monthly';
   onClose: () => void;
+}
+
+// Create a local extended interface for our view data
+interface CalendarEntryView {
+  date: Date;
+  progress: number;
+  maxValue: number;
+  segments: IncomeSource[];
 }
 
 const CalendarView: React.FC<CalendarViewProps> = ({
@@ -27,7 +34,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [weekDays, setWeekDays] = useState<Date[]>([]);
-  const [calendarGoals, setCalendarGoals] = useState<DailyEntry[]>([]);
+  const [calendarGoals, setCalendarGoals] = useState<CalendarEntryView[]>([]);
   const [isLoadingCalendar, setIsLoadingCalendar] = useState(false);
   const [showCalendarGrid, setShowCalendarGrid] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -40,46 +47,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     monthlyRingColor,
     dailyData,
     monthlyData,
-    isLoading,
     addIncome,
     refreshData,
     setSelectedDate: hookSetSelectedDate 
   } = useGoalData({ initialDate: selectedDate });
 
-  // Sync selected date with hook
-  useEffect(() => {
-    if (hookSetSelectedDate) {
-      hookSetSelectedDate(selectedDate);
-    }
-  }, [selectedDate, hookSetSelectedDate]);
-
-  // Generate week days for selected date
-  useEffect(() => {
-    if (selectedDate) {
-      const date = new Date(selectedDate);
-      const day = date.getDay();
-      const diff = date.getDate() - day;
-      
-      const weekStart = new Date(date);
-      weekStart.setDate(diff);
-      
-      const days = [];
-      for (let i = 0; i < 7; i++) {
-        const weekDay = new Date(weekStart);
-        weekDay.setDate(weekStart.getDate() + i);
-        days.push(weekDay);
-      }
-      
-      setWeekDays(days);
-      
-      if (type === 'daily') {
-        loadWeekData(days);
-      }
-    }
-  }, [selectedDate, type]);
-
   // Load data for the week
-  const loadWeekData = async (days: Date[]) => {
+  const loadWeekData = useCallback(async (days: Date[]) => {
     if (days.length === 0 || type !== 'daily') return;
     
     setIsLoadingCalendar(true);
@@ -116,7 +90,39 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     } finally {
       setIsLoadingCalendar(false);
     }
-  };
+  }, [dailyGoal, dailyData, selectedDate, type]);
+  
+  // Sync selected date with hook
+  useEffect(() => {
+    if (hookSetSelectedDate) {
+      hookSetSelectedDate(selectedDate);
+    }
+  }, [selectedDate, hookSetSelectedDate]);
+
+  // Generate week days for selected date
+  useEffect(() => {
+    if (selectedDate) {
+      const date = new Date(selectedDate);
+      const day = date.getDay();
+      const diff = date.getDate() - day;
+      
+      const weekStart = new Date(date);
+      weekStart.setDate(diff);
+      
+      const days = [];
+      for (let i = 0; i < 7; i++) {
+        const weekDay = new Date(weekStart);
+        weekDay.setDate(weekStart.getDate() + i);
+        days.push(weekDay);
+      }
+      
+      setWeekDays(days);
+      
+      if (type === 'daily') {
+        loadWeekData(days);
+      }
+    }
+  }, [selectedDate, type, loadWeekData]);
 
   // Load calendar data when month/year changes
   useEffect(() => {
@@ -171,8 +177,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     return getEntryKey(d);
   };
 
-  // Get goal data for a specific date
-  const getGoalData = (date: Date) => {
+  // Get goal data for internal use (returns CalendarEntryView)
+  const getCalendarEntryData = (date: Date) => {
     if (!date) return null;
     
     const dateString = formatDateString(date);
@@ -199,6 +205,19 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       progress: 0,
       maxValue: dailyGoal,
       segments: []
+    };
+  };
+  
+  // Get goal data for WeekStrip (returns DailyEntry compatible format)
+  const getGoalData = (date: Date) => {
+    const calendarEntry = getCalendarEntryData(date);
+    if (!calendarEntry) return null;
+    
+    // Convert to DailyEntry compatible format
+    return {
+      date: formatDateString(calendarEntry.date),
+      progress: calendarEntry.progress,
+      segments: calendarEntry.segments
     };
   };
 
@@ -277,9 +296,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   // Handle adding income for the selected date
   const handleAddIncome = async (amount: number, source: IncomeSource) => {
     try {
-      // Get the current data for the selected date
-      const selectedDateData = getGoalData(selectedDate);
-      
       // Add income for the selected date
       await addIncome(amount, source, selectedDate);
       setShowAddModal(false);
@@ -407,10 +423,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           <AddGoalModal
             onClose={() => setShowAddModal(false)}
             onAdd={handleAddIncome}
-            currentValue={getGoalData(selectedDate)?.progress || 0}
+            currentValue={getCalendarEntryData(selectedDate)?.progress || 0}
             maxValue={dailyGoal}
-            existingSources={getGoalData(selectedDate)?.segments || []}
-            selectedDate={selectedDate}
+            existingSources={getCalendarEntryData(selectedDate)?.segments || []}
           />
         )}
 

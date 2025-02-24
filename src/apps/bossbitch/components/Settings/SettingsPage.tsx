@@ -7,30 +7,23 @@ import {
   Sun, 
   Computer,
   Trash2, 
-  Database, 
   Palette, 
   LogIn,
   Download,
-  Upload,
-  Info
+  Upload
 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { AuthModal, AuthButton } from '../Auth';
-import ColorPicker from './ColorPicker';
 import styles from './styles.module.css';
 
 type ThemeOption = 'light' | 'dark' | 'system';
 
 interface SettingsPageProps {
-  isDarkMode: boolean;
-  onThemeToggle: () => void;
   themePreference?: ThemeOption;
   onThemeChange?: (theme: ThemeOption) => void;
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({
-  isDarkMode,
-  onThemeToggle,
   themePreference = 'system',
   onThemeChange = () => {}
 }) => {
@@ -49,7 +42,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [exportedData, setExportedData] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<ThemeOption>(themePreference);
@@ -59,7 +51,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     setIsLoading(true);
     try {
       const data = await exportData();
-      setExportedData(data);
       
       // Create and download file
       const blob = new Blob([data], { type: 'application/json' });

@@ -10,6 +10,12 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
+// Firebase Auth Error type
+interface FirebaseAuthError extends Error {
+  code: string;
+  message: string;
+}
+
 const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
   const { signIn, signUp, migrateLocalToFirebase, isLoading } = useData();
   const [email, setEmail] = useState('');
@@ -41,13 +47,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
 
       // Close modal on success
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Authentication error:', error);
-      setError(getAuthErrorMessage(error));
+      setError(getAuthErrorMessage(error as FirebaseAuthError));
     }
   };
 
-  const getAuthErrorMessage = (error: any): string => {
+  const getAuthErrorMessage = (error: FirebaseAuthError): string => {
     const errorCode = error?.code || 'unknown';
     
     switch (errorCode) {

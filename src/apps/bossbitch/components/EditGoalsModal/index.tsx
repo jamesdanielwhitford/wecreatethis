@@ -1,7 +1,7 @@
 'use client';
 
 // src/apps/bossbitch/components/EditGoalsModal/index.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Calculator } from 'lucide-react';
 import { formatZAR, parseZAR } from '../../utils/currency';
 import { useData } from '../../contexts/DataContext';
@@ -53,7 +53,7 @@ const EditGoalsModal: React.FC<EditGoalsModalProps> = ({
       if (!isNaN(number)) {
         setter(formatZAR(number));
       }
-    } catch (e) {
+    } catch {
       setter(cleaned);
     }
   };
@@ -86,7 +86,6 @@ const EditGoalsModal: React.FC<EditGoalsModalProps> = ({
     
     // Recalculate daily goal if not using custom value
     if (!isCustomDaily && newActiveDays.filter(Boolean).length > 0) {
-      // We'll recalculate in useEffect after state updates
       setTimeout(calculateDailyGoal, 0);
     }
   };

@@ -43,7 +43,6 @@ function BossBitchContent() {
     updateGoalSettings,
     isLoading,
     isDataReady,
-    remainingDaysInMonth,
     remainingActiveWorkdays,
     deficitInfo,
     refreshData
@@ -204,32 +203,6 @@ function BossBitchContent() {
     );
   };
 
-  // Render dynamic goal status information
-  const renderGoalStatusInfo = () => {
-    if (!isDataReady || remainingActiveWorkdays === 0) return null;
-    
-    return (
-      <div className={`${styles.goalStatusCard} ${deficitInfo.isDeficit ? styles.deficitCard : styles.surplusCard}`}>
-        <h3 className={styles.goalStatusTitle}>
-          {deficitInfo.isDeficit ? 'Catching Up' : 'You\'re Ahead!'}
-        </h3>
-        <p className={styles.goalStatusMessage}>{deficitInfo.message}</p>
-        <div className={styles.goalStatusDetails}>
-          <div className={styles.goalStatusItem}>
-            <span className={styles.goalStatusLabel}>Remaining active days:</span>
-            <span className={styles.goalStatusValue}>{remainingActiveWorkdays}</span>
-          </div>
-          <div className={styles.goalStatusItem}>
-            <span className={styles.goalStatusLabel}>
-              {deficitInfo.isDeficit ? 'Extra needed per day:' : 'Less needed per day:'}
-            </span>
-            <span className={styles.goalStatusValue}>{formatZAR(deficitInfo.perDay)}</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className={styles.container}>
       <main className={styles.mainContent}>
@@ -263,7 +236,6 @@ function BossBitchContent() {
                 isOpen={showAdjustmentModal}
                 onClose={() => setShowAdjustmentModal(false)}
                 originalGoal={formatZAR(originalDailyGoal)}
-                newGoal={formatZAR(dailyGoal)}
                 isDeficit={deficitInfo.isDeficit}
                 message={deficitInfo.message}
                 remainingDays={remainingActiveWorkdays}
@@ -296,12 +268,11 @@ function BossBitchContent() {
                   Edit Goals
                 </button>
               </div>
+
             </div>
           </>
         ) : (
           <SettingsPage
-            isDarkMode={isDarkMode ?? true}
-            onThemeToggle={() => handleThemeChange(isDarkMode ? 'light' : 'dark')}
             themePreference={themePreference}
             onThemeChange={handleThemeChange}
           />
@@ -323,7 +294,6 @@ function BossBitchContent() {
           isOpen={showAdjustmentModal}
           onClose={() => setShowAdjustmentModal(false)}
           originalGoal={formatZAR(originalDailyGoal)}
-          newGoal={formatZAR(dailyGoal)}
           isDeficit={deficitInfo.isDeficit}
           message={deficitInfo.message}
           remainingDays={remainingActiveWorkdays}
@@ -337,7 +307,6 @@ function BossBitchContent() {
             currentValue={dailyData.progress}
             maxValue={dailyGoal}
             existingSources={dailyData.segments}
-            selectedDate={new Date()} // Explicitly pass today's date
           />
         )}
 

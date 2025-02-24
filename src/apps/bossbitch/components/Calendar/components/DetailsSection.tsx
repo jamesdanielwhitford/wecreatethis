@@ -2,6 +2,8 @@
 import React from 'react';
 import { formatZAR } from '../../../utils/currency';
 import { IncomeSource } from '../../../types/goal.types';
+import { IncomeSourcesList } from './IncomeSourcesList';
+import { ActionButtons } from './ActionButtons';
 import styles from '../styles.module.css';
 
 interface DetailsSectionProps {
@@ -35,7 +37,7 @@ export const DetailsSection: React.FC<DetailsSectionProps> = ({
     </div>
     
     <div className={styles.progressBar}>
-      <div 
+      <div
         className={styles.progressFill}
         style={{ width: `${percentage}%` }}
       />

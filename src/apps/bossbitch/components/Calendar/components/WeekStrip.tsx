@@ -1,4 +1,3 @@
-// src/apps/bossbitch/components/Calendar/components/WeekStrip.tsx
 import React from 'react';
 import ProgressRing from '../../ProgressRing';
 import { DailyEntry } from '../../../services/data/types';
@@ -10,6 +9,7 @@ interface WeekStripProps {
   dailyRingColor: string;
   getGoalData: (date: Date) => DailyEntry | null;
   onDateSelect: (date: Date) => void;
+  dailyGoal?: number; // Add dailyGoal prop to use as maxValue
 }
 
 const WeekStrip: React.FC<WeekStripProps> = ({
@@ -17,10 +17,11 @@ const WeekStrip: React.FC<WeekStripProps> = ({
   selectedDate,
   dailyRingColor,
   getGoalData,
-  onDateSelect
+  onDateSelect,
+  dailyGoal = 1 // Default to 1 if not provided
 }) => {
   const today = new Date();
-
+  
   return (
     <div className={styles.weekStrip}>
       {weekDays.map((day, index) => {
@@ -31,8 +32,8 @@ const WeekStrip: React.FC<WeekStripProps> = ({
         const hasData = Boolean(dayGoal?.progress);
         
         return (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className={`${styles.weekDay} ${isActive ? styles.activeWeekDay : ''}`}
             onClick={() => onDateSelect(day)}
           >
@@ -53,7 +54,7 @@ const WeekStrip: React.FC<WeekStripProps> = ({
             <div className={styles.miniRing}>
               <ProgressRing
                 progress={dayGoal?.progress || 0}
-                maxValue={dayGoal?.maxValue || 1}
+                maxValue={dailyGoal} // Use the dailyGoal prop instead of trying to get maxValue from dayGoal
                 color={isCurrentDay ? dailyRingColor : '#888888'}
                 size={30}
                 strokeWidth={3}
