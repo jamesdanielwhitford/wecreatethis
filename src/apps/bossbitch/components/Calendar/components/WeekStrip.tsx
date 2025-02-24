@@ -27,6 +27,8 @@ const WeekStrip: React.FC<WeekStripProps> = ({
         const dayGoal = getGoalData(day);
         const isActive = day.toDateString() === selectedDate.toDateString();
         const isCurrentDay = day.toDateString() === today.toDateString();
+        // Fix: Handle both null and undefined cases
+        const hasData = Boolean(dayGoal?.progress);
         
         return (
           <div 
@@ -57,6 +59,7 @@ const WeekStrip: React.FC<WeekStripProps> = ({
                 strokeWidth={3}
                 segments={dayGoal?.segments}
                 animate={false}
+                emptyRing={!hasData}
               />
             </div>
           </div>

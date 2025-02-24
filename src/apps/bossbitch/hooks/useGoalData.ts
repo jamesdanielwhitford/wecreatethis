@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useData } from '../contexts/DataContext';
 import { IncomeSource } from '../types/goal.types';
-import { getEntryKey } from '../services/data/types';
+import { dataService } from '../services/data/dataService';
 
 interface DailyData {
   progress: number;
@@ -49,18 +49,6 @@ const useGoalData = (props?: UseGoalDataProps) => {
   const dailyRingColor = "#FF0000"; // Red
   const monthlyRingColor = "#FFD700"; // Gold
 
-  // Function to get today's date formatted as a string
-  const getTodayDateString = () => {
-    const today = new Date();
-    return getEntryKey(today);
-  };
-
-  // Function to get current month formatted as year-month
-  const getCurrentMonthString = () => {
-    const today = new Date();
-    return `${today.getFullYear()}-${String(today.getMonth()).padStart(2, '0')}`;
-  };
-  
   // Load initial goals data
   useEffect(() => {
     const loadGoals = async () => {
@@ -91,34 +79,23 @@ const useGoalData = (props?: UseGoalDataProps) => {
     
     try {
       setIsLoading(true);
-      const today = new Date();
       
-      if (typeof window !== 'undefined') {
-        const storageData = localStorage.getItem('bossbitch_data');
-        if (storageData) {
-          const data = JSON.parse(storageData);
-          const todayKey = getTodayDateString();
-          const monthKey = getCurrentMonthString();
-          
-          // Get daily entry with safe defaults
-          const dailyEntry = data.dailyEntries?.[todayKey] || { progress: 0, segments: [] };
-          setDailyData({
-            progress: Number(dailyEntry.progress) || 0,
-            segments: Array.isArray(dailyEntry.segments) ? dailyEntry.segments : []
-          });
-          
-          // Get monthly entry with safe defaults
-          const monthlyEntry = data.monthlyEntries?.[monthKey] || { progress: 0, segments: [] };
-          setMonthlyData({
-            progress: Number(monthlyEntry.progress) || 0,
-            segments: Array.isArray(monthlyEntry.segments) ? monthlyEntry.segments : []
-          });
-        } else {
-          // Set safe defaults if no data exists
-          setDailyData({ progress: 0, segments: [] });
-          setMonthlyData({ progress: 0, segments: [] });
-        }
-      }
+      // Get daily entry for selected date
+      const dailyEntry = await dataService.getDailyEntry(selectedDate);
+      setDailyData({
+        progress: dailyEntry?.progress || 0,
+        segments: Array.isArray(dailyEntry?.segments) ? dailyEntry.segments : []
+      });
+      
+      // Get monthly entry for selected date's month
+      const monthlyEntry = await dataService.getMonthlyEntry(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth()
+      );
+      setMonthlyData({
+        progress: monthlyEntry?.progress || 0,
+        segments: Array.isArray(monthlyEntry?.segments) ? monthlyEntry.segments : []
+      });
     } catch (error) {
       console.error('Error fetching data:', error);
       // Set safe defaults in case of error
@@ -135,7 +112,7 @@ const useGoalData = (props?: UseGoalDataProps) => {
     if (isDataReady) {
       fetchData();
     }
-  }, [isDataReady]);
+  }, [isDataReady, selectedDate]);
 
   // Calculate remaining days and active workdays in the month
   useEffect(() => {

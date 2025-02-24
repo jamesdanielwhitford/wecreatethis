@@ -133,6 +133,8 @@ const SelectedDateView: React.FC<SelectedDateViewProps> = ({
     return Math.min((displayValue.progress / maxValue) * 100, 100);
   };
 
+  const hasData = Boolean(displayValue?.progress);
+
   return (
     <div className={styles.selectedDateView}>
       {children}
@@ -146,6 +148,7 @@ const SelectedDateView: React.FC<SelectedDateViewProps> = ({
           strokeWidth={24}
           segments={displayValue.segments}
           animate={true}
+          emptyRing={!hasData}
         />
         <div className={styles.ringCenterValue}>
           {formatZAR(displayValue.progress)}

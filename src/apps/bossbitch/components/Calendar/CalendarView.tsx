@@ -172,6 +172,37 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     return getEntryKey(d);
   };
 
+  // Get goal data for a specific date
+  const getGoalData = (date: Date) => {
+    if (!date) return null;
+    
+    const dateString = formatDateString(date);
+    const isSelectedDate = dateString === formatDateString(selectedDate);
+
+    // Return current daily data for selected date
+    if (isSelectedDate && type === 'daily') {
+      return {
+        date: selectedDate,
+        progress: dailyData.progress || 0,
+        maxValue: dailyGoal,
+        segments: dailyData.segments
+      };
+    }
+    
+    // Look for data in calendar goals
+    const goalData = calendarGoals.find(goal => {
+      if (!goal || !goal.date) return false;
+      return formatDateString(goal.date) === dateString;
+    });
+
+    return goalData || {
+      date: date,
+      progress: 0,
+      maxValue: dailyGoal,
+      segments: []
+    };
+  };
+
   // Navigation handlers
   const goToPrevious = () => {
     if (showCalendarGrid) {
@@ -242,27 +273,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         year: 'numeric'
       }).format(selectedDate);
     }
-  };
-
-  // Get goal data for a specific date
-  const getGoalData = (date: Date) => {
-    if (!date) return null;
-    
-    const dateString = formatDateString(date);
-    
-    if (dateString === formatDateString(selectedDate) && type === 'daily' && dailyData && dailyData.progress > 0) {
-      return {
-        date: selectedDate,
-        progress: dailyData.progress,
-        maxValue: dailyGoal,
-        segments: dailyData.segments
-      };
-    }
-    
-    return calendarGoals.find(goal => {
-      if (!goal || !goal.date) return false;
-      return formatDateString(goal.date) === dateString;
-    });
   };
 
   // Handle adding income for the selected date
