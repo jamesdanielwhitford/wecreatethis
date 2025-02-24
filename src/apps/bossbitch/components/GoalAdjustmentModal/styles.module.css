@@ -1,0 +1,250 @@
+/* src/apps/bossbitch/components/GoalAdjustment/styles.module.css */
+
+.notification {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: rgba(124, 58, 237, 0.1);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #7C3AED;
+    animation: fadeIn 0.1s;
+  }
+  
+  .notification:hover {
+    background-color: rgba(124, 58, 237, 0.15);
+    transform: translateY(-1px);
+  }
+  
+  .icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+  }
+  
+  .modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(5px);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  
+  .container {
+    background-color: #1A1A1A;
+    border-radius: 24px;
+    max-width: 28rem;
+    width: 100%;
+    padding: 1.5rem;
+    border: 1px solid #333333;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #FFFFFF;
+    font-family: serif;
+    font-style: italic;
+  }
+  
+  .closeButton {
+    color: #888888;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 2rem;
+    height: 2rem;
+  }
+  
+  .closeButton:hover {
+    color: #FFFFFF;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .adjustmentInfo {
+    padding: 1rem;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  .deficit {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-left: 3px solid #EF4444;
+    color: #EF4444;
+  }
+  
+  .surplus {
+    background-color: rgba(16, 185, 129, 0.1);
+    border-left: 3px solid #10B981;
+    color: #10B981;
+  }
+  
+  .detailsSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    background-color: #2A2A2A;
+    border-radius: 16px;
+    border: 1px solid #333333;
+  }
+  
+  .detailItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .label {
+    color: #888888;
+    font-size: 0.875rem;
+  }
+  
+  .value {
+    color: #FFFFFF;
+    font-weight: 500;
+  }
+  
+  .submitButton {
+    width: 100%;
+    background-color: #7C3AED;
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  }
+  
+  .submitButton:hover {
+    background-color: #6D28D9;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Light mode styles */
+  :global(.light-mode) .modal {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+  
+  :global(.light-mode) .container {
+    background-color: #FFFFFF;
+    border: 1px solid #DDDDDD;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+  
+  :global(.light-mode) .title {
+    color: #000000;
+  }
+  
+  :global(.light-mode) .closeButton {
+    color: #666666;
+  }
+  
+  :global(.light-mode) .closeButton:hover {
+    color: #000000;
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  :global(.light-mode) .notification {
+    background-color: rgba(124, 58, 237, 0.1);
+    color: #7C3AED;
+  }
+  
+  :global(.light-mode) .notification:hover {
+    background-color: rgba(124, 58, 237, 0.15);
+  }
+  
+  :global(.light-mode) .detailsSection {
+    background-color: #F5F5F7;
+    border: 1px solid #DDDDDD;
+  }
+  
+  :global(.light-mode) .label {
+    color: #666666;
+  }
+  
+  :global(.light-mode) .value {
+    color: #000000;
+  }
+  
+  @keyframes modalEnter {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 480px) {
+    .container {
+      padding: 1rem;
+      border-radius: 16px;
+    }
+    
+    .header {
+      margin-bottom: 1rem;
+    }
+    
+    .title {
+      font-size: 1.25rem;
+    }
+    
+    .notification {
+      border-radius: 12px;
+    }
+    
+    .adjustmentInfo,
+    .detailsSection,
+    .submitButton {
+      border-radius: 12px;
+    }
+  }

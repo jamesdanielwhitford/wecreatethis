@@ -13,6 +13,7 @@ import SettingsPage from '@/apps/bossbitch/components/Settings/SettingsPage';
 import { DataProvider } from '@/apps/bossbitch/contexts/DataContext';
 import useGoalData from '@/apps/bossbitch/hooks/useGoalData';
 import { IncomeSource } from '@/apps/bossbitch/types/goal.types';
+import { GoalAdjustmentNotification, GoalAdjustmentModal } from '@/apps/bossbitch/components/GoalAdjustmentModal';
 import styles from './page.module.css';
 
 type ThemeOption = 'light' | 'dark' | 'system';
@@ -26,6 +27,7 @@ function BossBitchContent() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState<boolean | null>(null);
   const [themePreference, setThemePreference] = useState<ThemeOption>('system');
+  const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
 
   // Get data from the hook
   const {
@@ -166,7 +168,6 @@ function BossBitchContent() {
     onClick: () => void,
     isDaily: boolean = false
   ) => {
-    // Safety checks for NaN values
     const safeProgress = isNaN(data.progress) ? 0 : data.progress;
     const safeGoal = isNaN(goal) ? 100 : goal;
     
@@ -191,18 +192,14 @@ function BossBitchContent() {
           <div className={styles.goalValue}>
             {formatZAR(safeProgress)} / {formatZAR(safeGoal)}
           </div>
-          
-          {/* Show adaptive goal info for daily goal */}
-          {isDaily && originalDailyGoal !== dailyGoal && (
-            <div className={`${styles.goalAdjustment} ${deficitInfo.isDeficit ? styles.deficit : styles.surplus}`}>
-              {originalDailyGoal < dailyGoal ? (
-                <span>⬆️ Adjusted from {formatZAR(originalDailyGoal)}</span>
-              ) : (
-                <span>⬇️ Adjusted from {formatZAR(originalDailyGoal)}</span>
-              )}
-            </div>
-          )}
         </button>
+        
+        {/* Add notification below the card if goal is adjusted */}
+        {isDaily && originalDailyGoal !== dailyGoal && (
+          <GoalAdjustmentNotification
+            onClick={() => setShowAdjustmentModal(true)}
+          />
+        )}
       </div>
     );
   };
@@ -261,8 +258,17 @@ function BossBitchContent() {
                 true
               )}
 
-              {/* Goal Status Info Section */}
-              {renderGoalStatusInfo()}
+              {/* Goal Adjustment Modal */}
+              <GoalAdjustmentModal 
+                isOpen={showAdjustmentModal}
+                onClose={() => setShowAdjustmentModal(false)}
+                originalGoal={formatZAR(originalDailyGoal)}
+                newGoal={formatZAR(dailyGoal)}
+                isDeficit={deficitInfo.isDeficit}
+                message={deficitInfo.message}
+                remainingDays={remainingActiveWorkdays}
+                adjustmentPerDay={formatZAR(deficitInfo.perDay)}
+              />
 
               {/* Monthly Goal Section */}
               {renderGoalCard(
@@ -311,6 +317,18 @@ function BossBitchContent() {
             onClose={() => setActiveView(null)}
           />
         )}
+
+        {/* Goal Adjustment Modal */}
+        <GoalAdjustmentModal 
+          isOpen={showAdjustmentModal}
+          onClose={() => setShowAdjustmentModal(false)}
+          originalGoal={formatZAR(originalDailyGoal)}
+          newGoal={formatZAR(dailyGoal)}
+          isDeficit={deficitInfo.isDeficit}
+          message={deficitInfo.message}
+          remainingDays={remainingActiveWorkdays}
+          adjustmentPerDay={formatZAR(deficitInfo.perDay)}
+        />
 
         {showAddModal && (
           <AddGoalModal
