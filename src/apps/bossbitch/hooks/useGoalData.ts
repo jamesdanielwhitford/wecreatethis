@@ -1,4 +1,3 @@
-// src/apps/bossbitch/hooks/useGoalData.ts
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -20,8 +19,15 @@ interface UseGoalDataProps {
   initialDate?: Date;
 }
 
+// Debug logger for tracking state changes and data flow
+const debugLog = (area: string, message: string, data?: any) => {
+  console.group(`🔄 ${area}`);
+  console.log(`[${new Date().toISOString()}] ${message}`);
+  if (data) console.log('Data:', data);
+  console.groupEnd();
+};
+
 const useGoalData = (props?: UseGoalDataProps) => {
-  // Get correct function names from context
   const { 
     goals,
     updateGoals,
@@ -53,6 +59,7 @@ const useGoalData = (props?: UseGoalDataProps) => {
   // Load initial goals data
   useEffect(() => {
     const loadGoals = async () => {
+      debugLog('Initial Load', 'Loading initial goals data', goals);
       try {
         if (goals) {
           setMonthlyGoal(goals.monthlyGoal || 0);
@@ -60,6 +67,11 @@ const useGoalData = (props?: UseGoalDataProps) => {
           setOriginalDailyGoal(goals.dailyGoal || 0);
           setActiveDays(goals.activeDays || [false, true, true, true, true, true, false]);
           setIsDataReady(true);
+          debugLog('Initial Load', 'Goals loaded successfully', {
+            monthlyGoal: goals.monthlyGoal,
+            dailyGoal: goals.dailyGoal,
+            activeDays: goals.activeDays
+          });
         }
       } catch (error) {
         console.error('Failed to load goals:', error);
@@ -76,13 +88,20 @@ const useGoalData = (props?: UseGoalDataProps) => {
 
   // Fetch daily and monthly data
   const fetchData = async () => {
-    if (!isDataReady) return;
+    if (!isDataReady) {
+      debugLog('Data Fetch', 'Skipping fetch - data not ready');
+      return;
+    }
+    
+    debugLog('Data Fetch', 'Starting data fetch', { selectedDate });
     
     try {
       setIsLoading(true);
       
       // Get daily entry for selected date
       const dailyEntry = await dataService.getDailyEntry(selectedDate);
+      debugLog('Daily Data', 'Fetched daily entry', dailyEntry);
+      
       setDailyData({
         progress: dailyEntry?.progress || 0,
         segments: Array.isArray(dailyEntry?.segments) ? dailyEntry.segments : []
@@ -93,12 +112,15 @@ const useGoalData = (props?: UseGoalDataProps) => {
         selectedDate.getFullYear(),
         selectedDate.getMonth()
       );
+      debugLog('Monthly Data', 'Fetched monthly entry', monthlyEntry);
+      
       setMonthlyData({
         progress: monthlyEntry?.progress || 0,
         segments: Array.isArray(monthlyEntry?.segments) ? monthlyEntry.segments : []
       });
     } catch (error) {
       console.error('Error fetching data:', error);
+      debugLog('Error', 'Error fetching data', error);
       // Set safe defaults in case of error
       setDailyData({ progress: 0, segments: [] });
       setMonthlyData({ progress: 0, segments: [] });
@@ -110,7 +132,7 @@ const useGoalData = (props?: UseGoalDataProps) => {
   // Initial data fetch and refresh when data changes
   useEffect(() => {
     if (isDataReady) {
-      console.log('Fetching data due to date change or data update', {
+      debugLog('Data Update', 'Fetching data due to date change or data update', {
         selectedDate,
         lastUpdateTimestamp
       });
@@ -121,6 +143,8 @@ const useGoalData = (props?: UseGoalDataProps) => {
   // Calculate remaining days and active workdays in the month
   useEffect(() => {
     const calculateRemainingDays = async () => {
+      debugLog('Calculations', 'Starting remaining days calculation');
+      
       const today = new Date();
       const currentMonth = today.getMonth();
       const currentYear = today.getFullYear();
@@ -158,6 +182,12 @@ const useGoalData = (props?: UseGoalDataProps) => {
       const targetProgressToDate = safeMonthlyGoal - (remainingWorkdays * safeOriginalDailyGoal);
       const deficit = targetProgressToDate - safeMonthlyProgress;
       setMonthlyDeficit(deficit);
+
+      debugLog('Calculations', 'Completed remaining days calculation', {
+        remainingDays,
+        remainingWorkdays,
+        deficit
+      });
     };
     
     if (activeDays.length > 0 && isDataReady) {
@@ -167,26 +197,48 @@ const useGoalData = (props?: UseGoalDataProps) => {
 
   // Dynamically adjust daily goal based on progress
   useEffect(() => {
+    debugLog('Goal Adjustment', 'Starting daily goal adjustment', {
+      remainingActiveWorkdays,
+      monthlyDeficit,
+      originalDailyGoal
+    });
+
     if (remainingActiveWorkdays > 0 && monthlyDeficit !== 0) {
       // Calculate new daily goal based on remaining deficit distributed across remaining active days
       const adjustedDailyGoal = (originalDailyGoal || 0) + (monthlyDeficit / remainingActiveWorkdays);
       setDailyGoal(Math.max(0, adjustedDailyGoal));
+      
+      debugLog('Goal Adjustment', 'Adjusted daily goal', {
+        originalGoal: originalDailyGoal,
+        adjustedGoal: adjustedDailyGoal
+      });
     } else if (remainingActiveWorkdays === 0 && monthlyData.progress < monthlyGoal) {
       const remainingForMonth = Math.max(0, monthlyGoal - (monthlyData.progress || 0));
       setDailyGoal(remainingForMonth);
+      
+      debugLog('Goal Adjustment', 'Set final day goal', {
+        remainingForMonth
+      });
     }
   }, [remainingActiveWorkdays, monthlyDeficit, originalDailyGoal, monthlyData, monthlyGoal]);
 
   // Handle adding income
   const handleAddIncome = async (amount: number, source: IncomeSource, date?: Date) => {
+    const targetDate = date || new Date();
+    debugLog('Income Addition', 'Adding new income', { amount, source, targetDate });
+    
     try {
-      const targetDate = date || new Date();
       await addIncomeToDay(targetDate, amount, source);
+      debugLog('Income Addition', 'Income added successfully');
+      
       await refreshAllData();
+      debugLog('Data Refresh', 'Data refreshed after income addition');
+      
       await fetchData();
       return true;
     } catch (error) {
       console.error('Error adding income:', error);
+      debugLog('Error', 'Failed to add income', error);
       throw error;
     }
   };
@@ -197,23 +249,36 @@ const useGoalData = (props?: UseGoalDataProps) => {
     dailyGoal: number;
     activeDays: boolean[];
   }) => {
+    debugLog('Goal Update', 'Updating goal settings', settings);
+    
     try {
       await updateGoals(settings);
+      debugLog('Goal Update', 'Goals updated in storage');
+      
       setMonthlyGoal(settings.monthlyGoal || 0);
       setDailyGoal(settings.dailyGoal || 0);
       setOriginalDailyGoal(settings.dailyGoal || 0);
       setActiveDays(settings.activeDays || [false, true, true, true, true, true, false]);
+      
       await refreshAllData();
+      debugLog('Goal Update', 'All data refreshed after goal update');
+      
       await fetchData();
       return settings;
     } catch (error) {
       console.error('Failed to update goal settings:', error);
+      debugLog('Error', 'Failed to update goal settings', error);
       throw error;
     }
   };
 
   // Calculate deficit/surplus info for display
   const deficitInfo = useMemo(() => {
+    debugLog('Deficit Calculation', 'Calculating deficit info', {
+      monthlyDeficit,
+      remainingActiveWorkdays
+    });
+
     const safeMonthlyDeficit = monthlyDeficit || 0;
     const safeRemainingDays = remainingActiveWorkdays || 1;
     

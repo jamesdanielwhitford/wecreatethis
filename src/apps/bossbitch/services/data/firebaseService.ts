@@ -27,7 +27,6 @@ import {
 } from 'firebase/auth';
 
 // Firebase configuration
-// NOTE: In a real app, these values should come from environment variables
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY_BOSSBITCH,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN_BOSSBITCH,
@@ -81,11 +80,7 @@ export class FirebaseService {
   // Authentication methods
   onAuthStateChanged(callback: (user: User | null) => void): () => void {
     this.authListeners.push(callback);
-    
-    // Initial callback with current user
     callback(this.currentUser);
-    
-    // Return unsubscribe function
     return () => {
       this.authListeners = this.authListeners.filter(listener => listener !== callback);
     };
@@ -112,10 +107,7 @@ export class FirebaseService {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       console.log("User created successfully:", result.user.uid);
-      
-      // Initialize user data
       await this.initializeUserData(result.user.uid);
-      
       return result.user;
     } catch (error) {
       console.error("Sign up error:", error);
@@ -146,7 +138,6 @@ export class FirebaseService {
         this.localCache = userData;
       } else {
         console.log("User document not found, initializing new data");
-        // Initialize user data if it doesn't exist
         await this.initializeUserData(this.currentUser.uid);
       }
     } catch (error) {
@@ -158,12 +149,9 @@ export class FirebaseService {
     try {
       console.log("Initializing user data for:", userId);
       const userDocRef = doc(db, 'users', userId);
-      
-      // Check if document already exists
       const docSnapshot = await getDoc(userDocRef);
       
       if (!docSnapshot.exists()) {
-        // Only create if it doesn't exist
         console.log("Creating new user document with ID:", userId);
         await setDoc(userDocRef, DEFAULT_USER_DATA);
         console.log("User document created successfully");
@@ -174,7 +162,7 @@ export class FirebaseService {
       }
     } catch (error) {
       console.error('Error initializing user data:', error);
-      throw error; // Re-throw to see in console
+      throw error;
     }
   }
 
@@ -210,7 +198,6 @@ export class FirebaseService {
     };
     
     try {
-      // Make sure the document exists first
       const userDocRef = doc(db, 'users', this.currentUser.uid);
       const docSnap = await getDoc(userDocRef);
       
@@ -219,7 +206,6 @@ export class FirebaseService {
         await this.initializeUserData(this.currentUser.uid);
       }
       
-      // Update the goals field
       await updateDoc(userDocRef, { goals: this.localCache.goals });
       console.log("Goals updated successfully");
       
@@ -246,7 +232,6 @@ export class FirebaseService {
     };
     
     try {
-      // Make sure the document exists first
       const userDocRef = doc(db, 'users', this.currentUser.uid);
       const docSnap = await getDoc(userDocRef);
       
@@ -255,7 +240,6 @@ export class FirebaseService {
         await this.initializeUserData(this.currentUser.uid);
       }
       
-      // Update the preferences field
       await updateDoc(userDocRef, { preferences: this.localCache.preferences });
       console.log("Preferences updated successfully");
       
@@ -311,33 +295,28 @@ export class FirebaseService {
     
     let updatedSegments: IncomeSource[];
     if (existingSegmentIndex >= 0) {
-      // Update existing segment
       updatedSegments = existingEntry.segments.map((segment, index) => 
         index === existingSegmentIndex
           ? { ...segment, value: segment.value + amount }
           : segment
       );
     } else {
-      // Add new segment
       updatedSegments = [
         ...existingEntry.segments,
         { ...source, value: amount }
       ];
     }
   
-    // Update entry
     const updatedEntry: DailyEntry = {
       ...existingEntry,
       progress: existingEntry.progress + amount,
       segments: updatedSegments,
     };
   
-    // Update local cache
     this.localCache.dailyEntries[key] = updatedEntry;
     
     try {
       console.log("Saving daily entry to Firestore");
-      // Make sure the document exists
       const userDocRef = doc(db, 'users', this.currentUser.uid);
       const docSnapshot = await getDoc(userDocRef);
       
@@ -345,8 +324,6 @@ export class FirebaseService {
         console.log("User document doesn't exist, creating it first");
         await this.initializeUserData(this.currentUser.uid);
         
-        // After creating the document, we need to use setDoc again because
-        // the original document didn't have the dailyEntries field
         const updatedUserData = {
           ...this.localCache,
           dailyEntries: {
@@ -356,7 +333,6 @@ export class FirebaseService {
         
         await setDoc(userDocRef, updatedUserData);
       } else {
-        // Document exists, update using updateDoc
         await updateDoc(userDocRef, { [`dailyEntries.${key}`]: updatedEntry });
       }
       
@@ -366,10 +342,8 @@ export class FirebaseService {
       throw error;
     }
   
-    // Also update monthly entry
     await this.addIncomeToMonth(date, amount, source);
   
-    // Update income sources if it's a new one
     if (existingSegmentIndex < 0) {
       await this.addIncomeSource(source);
     }
@@ -381,24 +355,51 @@ export class FirebaseService {
     if (!this.currentUser) throw new Error('User not authenticated');
     
     const key = getEntryKey(date);
+    const monthKey = getMonthKey(date.getFullYear(), date.getMonth());
     
     try {
-      // Make sure the document exists first
-      const userDocRef = doc(db, 'users', this.currentUser.uid);
-      const docSnap = await getDoc(userDocRef);
+      await this.ensureDataLoaded();
       
-      if (!docSnap.exists()) {
-        console.log("Document doesn't exist, nothing to delete");
-        return;
+      // Get the entry we're about to delete
+      const entryToDelete = this.localCache.dailyEntries[key];
+      
+      if (entryToDelete) {
+        // Get the monthly entry that needs updating
+        const monthlyEntry = this.localCache.monthlyEntries[monthKey];
+        
+        if (monthlyEntry) {
+          // Update monthly entry by subtracting the deleted day's values
+          const updatedMonthlyEntry: MonthlyEntry = {
+            ...monthlyEntry,
+            progress: monthlyEntry.progress - entryToDelete.progress,
+            segments: monthlyEntry.segments.map(segment => {
+              const matchingDaySegment = entryToDelete.segments.find(s => s.id === segment.id);
+              return {
+                ...segment,
+                value: segment.value - (matchingDaySegment?.value || 0)
+              };
+            }).filter(segment => segment.value > 0) // Remove segments with 0 value
+          };
+          
+          // Update local cache
+          this.localCache.monthlyEntries[monthKey] = updatedMonthlyEntry;
+          delete this.localCache.dailyEntries[key];
+          
+          // Update both daily and monthly entries in Firestore atomically
+          const userDocRef = doc(db, 'users', this.currentUser.uid);
+          await updateDoc(userDocRef, {
+            [`dailyEntries.${key}`]: null,
+            [`monthlyEntries.${monthKey}`]: updatedMonthlyEntry
+          });
+          
+          console.log("Daily entry and monthly totals updated successfully");
+        }
+      } else {
+        // If no entry found, just ensure it's removed from storage
+        const userDocRef = doc(db, 'users', this.currentUser.uid);
+        await updateDoc(userDocRef, { [`dailyEntries.${key}`]: null });
+        console.log("Daily entry deleted (no monthly update needed)");
       }
-      
-      // Remove the entry from local cache
-      delete this.localCache.dailyEntries[key];
-      
-      // Update the document by setting the specific entry to null or removing it
-      // Firebase doesn't support true deletion of nested fields, so we set it to null
-      await updateDoc(userDocRef, { [`dailyEntries.${key}`]: null });
-      console.log("Daily entry deleted successfully");
     } catch (error) {
       console.error("Error deleting day entry:", error);
       throw error;
@@ -414,7 +415,7 @@ export class FirebaseService {
 
   async getMonthlyEntries(
     startYear: number, 
-    startMonth: number, 
+    startMonth: number,
     endYear: number, 
     endMonth: number
   ): Promise<MonthlyEntry[]> {

@@ -113,9 +113,9 @@ class DataService {
 
   async deleteDayEntry(date: Date): Promise<void> {
     if (this.isAuthenticated) {
-      return firebaseService.deleteDayEntry(date);
+      await firebaseService.deleteDayEntry(date);
     } else {
-      return localStorageService.deleteDayEntry(date);
+      await localStorageService.deleteDayEntry(date);
     }
   }
 

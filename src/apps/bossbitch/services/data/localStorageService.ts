@@ -138,8 +138,38 @@ export class LocalStorageService {
 
   deleteDayEntry(date: Date): void {
     const key = getEntryKey(date);
+    const monthKey = getMonthKey(date.getFullYear(), date.getMonth());
+    
+    // Get the entry we're about to delete
+    const entryToDelete = this.userData.dailyEntries[key];
+    
+    if (entryToDelete) {
+      // Get the monthly entry that needs updating
+      const monthlyEntry = this.userData.monthlyEntries[monthKey];
+      
+      if (monthlyEntry) {
+        // Update monthly entry by subtracting the deleted day's values
+        const updatedMonthlyEntry: MonthlyEntry = {
+          ...monthlyEntry,
+          progress: monthlyEntry.progress - entryToDelete.progress,
+          segments: monthlyEntry.segments.map(segment => {
+            const matchingDaySegment = entryToDelete.segments.find(s => s.id === segment.id);
+            return {
+              ...segment,
+              value: segment.value - (matchingDaySegment?.value || 0)
+            };
+          }).filter(segment => segment.value > 0) // Remove segments with 0 value
+        };
+        
+        // Update monthly entry in storage
+        this.userData.monthlyEntries[monthKey] = updatedMonthlyEntry;
+      }
+    }
+    
     // Delete the daily entry
     delete this.userData.dailyEntries[key];
+    
+    // Save all changes
     this.saveData();
   }
 
