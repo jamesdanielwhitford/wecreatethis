@@ -1,4 +1,3 @@
-// src/apps/bossbitch/components/Calendar/CalendarView.tsx
 import React, { useState, useEffect } from 'react';
 import WeekStrip from './components/WeekStrip';
 import SelectedDateView from './components/SelectedDateView';
@@ -278,11 +277,37 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   // Handle adding income for the selected date
   const handleAddIncome = async (amount: number, source: IncomeSource) => {
     try {
-      await addIncome(amount, source);
+      // Get the current data for the selected date
+      const selectedDateData = getGoalData(selectedDate);
+      
+      // Add income for the selected date
+      await addIncome(amount, source, selectedDate);
       setShowAddModal(false);
       
+      // Refresh the week data
       if (weekDays.length > 0) {
         await loadWeekData(weekDays);
+      }
+      
+      // If calendar grid is shown, refresh that data too
+      if (showCalendarGrid) {
+        const startDate = new Date(currentYear, currentMonth, 1);
+        const endDate = new Date(currentYear, currentMonth + 1, 0);
+        
+        const entries = await dataService.getDailyEntries(startDate, endDate);
+        const goals = entries.map(entry => ({
+          date: new Date(entry.date),
+          progress: entry.progress,
+          maxValue: dailyGoal,
+          segments: entry.segments
+        }));
+        
+        setCalendarGoals(goals);
+      }
+      
+      // Refresh the overall data
+      if (refreshData) {
+        await refreshData();
       }
     } catch (error) {
       console.error('Error adding income:', error);
@@ -382,9 +407,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           <AddGoalModal
             onClose={() => setShowAddModal(false)}
             onAdd={handleAddIncome}
-            currentValue={dailyData.progress}
+            currentValue={getGoalData(selectedDate)?.progress || 0}
             maxValue={dailyGoal}
-            existingSources={dailyData.segments}
+            existingSources={getGoalData(selectedDate)?.segments || []}
             selectedDate={selectedDate}
           />
         )}

@@ -1,6 +1,5 @@
 'use client';
 
-// src/app/bossbitch/page.tsx
 import React, { useState, useEffect } from 'react';
 import { CalendarView } from '@/apps/bossbitch/components/Calendar';
 import { formatZAR } from '@/apps/bossbitch/utils/currency';
@@ -130,11 +129,12 @@ function BossBitchContent() {
       });
   };
 
-  // Handle adding new income
-  const handleAddIncome = async (amount: number, source: { id: string; name: string; color: string }) => {
+  // Handle adding new income for the current date
+  const handleAddIncome = async (amount: number, source: IncomeSource) => {
     try {
-      // Add income
-      await addIncome(amount, source);
+      // Add income for today's date from the main page
+      const today = new Date();
+      await addIncome(amount, source, today);
       
       // Calculate new values to determine if celebration should show
       const newDailyValue = dailyData.progress + amount;
@@ -319,6 +319,7 @@ function BossBitchContent() {
             currentValue={dailyData.progress}
             maxValue={dailyGoal}
             existingSources={dailyData.segments}
+            selectedDate={new Date()} // Explicitly pass today's date
           />
         )}
 

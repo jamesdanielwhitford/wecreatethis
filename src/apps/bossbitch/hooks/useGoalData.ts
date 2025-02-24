@@ -174,10 +174,10 @@ const useGoalData = (props?: UseGoalDataProps) => {
   }, [remainingActiveWorkdays, monthlyDeficit, originalDailyGoal, monthlyData, monthlyGoal]);
 
   // Handle adding income
-  const handleAddIncome = async (amount: number, source: IncomeSource) => {
+  const handleAddIncome = async (amount: number, source: IncomeSource, date?: Date) => {
     try {
-      const today = new Date();
-      await addIncomeToDay(today, amount, source);
+      const targetDate = date || new Date();
+      await addIncomeToDay(targetDate, amount, source);
       await fetchData();
       return true;
     } catch (error) {
