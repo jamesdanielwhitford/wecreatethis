@@ -1,4 +1,4 @@
-.folderViewContainer {
+.noteListContainer {
     padding: 1rem 0;
   }
   
@@ -6,12 +6,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
   }
   
   .title {
     margin: 0;
     font-size: 1.5rem;
+    color: white;
   }
   
   .createButton {
@@ -29,32 +30,6 @@
     background-color: #2980b9;
   }
   
-  .subfolders {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-bottom: 1.5rem;
-  }
-  
-  .subfolder {
-    padding: 0.35rem 0.75rem;
-    background-color: #f0f0f0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: background-color 0.2s;
-  }
-  
-  .subfolder:hover {
-    background-color: #e0e0e0;
-  }
-  
-  .subfolder.active {
-    background-color: #3498db;
-    color: white;
-  }
-  
   .noteGrid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -62,11 +37,12 @@
   }
   
   .noteCard {
-    border: 1px solid #e0e0e0;
+    border: 1px solid #333;
     border-radius: 8px;
     overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s;
-    background-color: white;
+    background-color: #2a2a2a;
+    color: white;
     cursor: pointer;
     position: relative;
   }
@@ -96,10 +72,11 @@
   .noteTitle {
     margin: 0 0 0.5rem;
     font-size: 1.1rem;
+    color: white;
   }
   
   .noteText {
-    color: #666;
+    color: #bbb;
     font-size: 0.9rem;
     margin: 0 0 1rem;
     line-height: 1.4;
@@ -124,10 +101,10 @@
   
   .tag {
     padding: 0.2rem 0.5rem;
-    background-color: #f0f0f0;
+    background-color: #333;
     border-radius: 4px;
     font-size: 0.75rem;
-    color: #666;
+    color: #ddd;
   }
   
   .deleteButton {
@@ -152,7 +129,7 @@
   .emptyState {
     text-align: center;
     padding: 3rem 1rem;
-    color: #999;
+    color: #aaa;
   }
   
   /* Responsive adjustments */

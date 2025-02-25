@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './NoteList.module.css';
 import { Note } from '../types';
+import Image from 'next/image';
 
 interface NoteListProps {
   notes: Note[];
@@ -44,7 +45,13 @@ export const NoteList: React.FC<NoteListProps> = ({
               <div className={styles.noteContent}>
                 {note.type === 'image' && note.imageData && (
                   <div className={styles.imagePreview}>
-                    <img src={note.imageData} alt="Note" />
+                    <Image 
+                      src={note.imageData} 
+                      alt="Note" 
+                      width={300}
+                      height={200}
+                      style={{ objectFit: 'cover' }}
+                    />
                   </div>
                 )}
                 <h3 className={styles.noteTitle}>{note.title}</h3>

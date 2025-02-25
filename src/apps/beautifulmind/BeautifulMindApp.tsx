@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styles from './BeautifulMindApp.module.css';
 import { NoteList } from './components/NoteList';
 import { NoteEditor } from './components/NoteEditor';
@@ -34,9 +34,15 @@ export function BeautifulMindApp() {
     setIsEditing(true);
   };
 
-  const handleSaveNote = (note: Note) => {
+  // Fixed type issue: Now explicitly accepts Omit<Note, "id" | "createdAt" | "updatedAt">
+  const handleSaveNote = (note: Omit<Note, "id" | "createdAt" | "updatedAt">) => {
     if (activeNote) {
-      updateNote({ ...note, id: activeNote.id });
+      updateNote({ 
+        ...note, 
+        id: activeNote.id,
+        createdAt: activeNote.createdAt,
+        updatedAt: Date.now()
+      });
     } else {
       addNote(note);
     }

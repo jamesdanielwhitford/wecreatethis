@@ -1,7 +1,7 @@
 .sidebar {
-    width: 250px;
-    background-color: #f5f5f5;
-    border-right: 1px solid #e0e0e0;
+    width: 240px;
+    background-color: #222;
+    border-right: 1px solid #333;
     padding: 1rem;
     height: 100%;
   }
@@ -20,22 +20,25 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 1rem;
+    color: white;
     transition: background-color 0.2s;
   }
   
   .navigationItem:hover {
-    background-color: #e0e0e0;
+    background-color: #333;
   }
   
   .navigationItem.active {
-    background-color: #e0e0e0;
+    background-color: #444;
     font-weight: bold;
   }
   
   .sectionTitle {
     font-size: 1rem;
     margin-bottom: 0.75rem;
-    color: #666;
+    color: #bbb;
+    text-transform: uppercase;
+    font-weight: normal;
   }
   
   .folderList {
@@ -58,15 +61,16 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.9rem;
+    color: white;
     transition: background-color 0.2s;
   }
   
   .folderButton:hover {
-    background-color: #e0e0e0;
+    background-color: #333;
   }
   
   .emptyState {
-    color: #999;
+    color: #888;
     font-size: 0.85rem;
     font-style: italic;
   }
@@ -76,7 +80,7 @@
     .sidebar {
       width: 100%;
       border-right: none;
-      border-bottom: 1px solid #e0e0e0;
+      border-bottom: 1px solid #333;
       padding: 0.5rem 1rem;
     }
   }

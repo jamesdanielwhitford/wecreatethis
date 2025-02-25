@@ -12,6 +12,7 @@
   .title {
     margin: 0;
     font-size: 1.5rem;
+    color: white;
   }
   
   .createButton {
@@ -36,11 +37,12 @@
   }
   
   .noteCard {
-    border: 1px solid #e0e0e0;
+    border: 1px solid #333;
     border-radius: 8px;
     overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s;
-    background-color: white;
+    background-color: #2a2a2a;
+    color: white;
     cursor: pointer;
     position: relative;
   }
@@ -70,10 +72,11 @@
   .noteTitle {
     margin: 0 0 0.5rem;
     font-size: 1.1rem;
+    color: white;
   }
   
   .noteText {
-    color: #666;
+    color: #bbb;
     font-size: 0.9rem;
     margin: 0 0 1rem;
     line-height: 1.4;
@@ -98,10 +101,10 @@
   
   .tag {
     padding: 0.2rem 0.5rem;
-    background-color: #f0f0f0;
+    background-color: #333;
     border-radius: 4px;
     font-size: 0.75rem;
-    color: #666;
+    color: #ddd;
   }
   
   .deleteButton {
@@ -126,7 +129,7 @@
   .emptyState {
     text-align: center;
     padding: 3rem 1rem;
-    color: #999;
+    color: #aaa;
   }
   
   /* Responsive adjustments */

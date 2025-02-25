@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styles from './FolderView.module.css';
 import { Note } from '../types';
+import Image from 'next/image';
 
 interface FolderViewProps {
   folderTag: string;
@@ -96,7 +97,13 @@ export const FolderView: React.FC<FolderViewProps> = ({
               <div className={styles.noteContent}>
                 {note.type === 'image' && note.imageData && (
                   <div className={styles.imagePreview}>
-                    <img src={note.imageData} alt="Note" />
+                    <Image 
+                      src={note.imageData} 
+                      alt="Note" 
+                      width={300} 
+                      height={200} 
+                      style={{ objectFit: 'cover' }}
+                    />
                   </div>
                 )}
                 <h3 className={styles.noteTitle}>{note.title}</h3>
@@ -130,7 +137,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
         </div>
       ) : (
         <div className={styles.emptyState}>
-          <p>No notes in this folder. Create a note and add the tag "{folderTag}" to it.</p>
+          <p>No notes in this folder. Create a note and add the tag &quot;{folderTag}&quot; to it.</p>
         </div>
       )}
     </div>

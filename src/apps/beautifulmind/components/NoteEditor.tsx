@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './NoteEditor.module.css';
 import { Note } from '../types';
+import Image from 'next/image';
 
 interface NoteEditorProps {
   note: Note | null;
@@ -175,10 +176,13 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           <label className={styles.label}>Image</label>
           {imageData ? (
             <div className={styles.imageContainer}>
-              <img 
+              <Image 
                 src={imageData} 
                 alt="Uploaded" 
                 className={styles.uploadedImage}
+                width={400}
+                height={300}
+                style={{ maxWidth: '100%', height: 'auto' }}
               />
               <button
                 type="button"

@@ -29,7 +29,7 @@ export const useNotes = () => {
     setNotes(updatedNotes);
     
     // Update tags if necessary
-    updateTagsList(noteData.tags);
+    updateTagsList();
   };
 
   const updateNote = (updatedNote: Note) => {
@@ -42,7 +42,7 @@ export const useNotes = () => {
     setNotes(updatedNotes);
     
     // Update tags if necessary
-    updateTagsList(updatedNote.tags);
+    updateTagsList();
   };
 
   const deleteNote = (noteId: string) => {
@@ -59,7 +59,7 @@ export const useNotes = () => {
   };
 
   // Helper to update tags list
-  const updateTagsList = (noteTags: string[]) => {
+  const updateTagsList = () => {
     const updatedTags = localStorageService.getTags();
     setTags(updatedTags);
   };
