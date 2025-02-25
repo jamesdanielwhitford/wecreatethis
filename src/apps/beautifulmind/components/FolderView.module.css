@@ -1,0 +1,163 @@
+.folderViewContainer {
+    padding: 1rem 0;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  
+  .title {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+  
+  .createButton {
+    padding: 0.5rem 1rem;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background-color 0.2s;
+  }
+  
+  .createButton:hover {
+    background-color: #2980b9;
+  }
+  
+  .subfolders {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  
+  .subfolder {
+    padding: 0.35rem 0.75rem;
+    background-color: #f0f0f0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background-color 0.2s;
+  }
+  
+  .subfolder:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .subfolder.active {
+    background-color: #3498db;
+    color: white;
+  }
+  
+  .noteGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  
+  .noteCard {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    background-color: white;
+    cursor: pointer;
+    position: relative;
+  }
+  
+  .noteCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .noteContent {
+    padding: 1rem;
+  }
+  
+  .imagePreview {
+    margin-bottom: 0.75rem;
+    border-radius: 4px;
+    overflow: hidden;
+    max-height: 150px;
+  }
+  
+  .imagePreview img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+  }
+  
+  .noteTitle {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+  }
+  
+  .noteText {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 0 0 1rem;
+    line-height: 1.4;
+  }
+  
+  .noteFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+  }
+  
+  .noteDate {
+    color: #999;
+  }
+  
+  .noteTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  
+  .tag {
+    padding: 0.2rem 0.5rem;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #666;
+  }
+  
+  .deleteButton {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    padding: 0.35rem 0.7rem;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    cursor: pointer;
+  }
+  
+  .noteCard:hover .deleteButton {
+    opacity: 1;
+  }
+  
+  .emptyState {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #999;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .noteGrid {
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+  }

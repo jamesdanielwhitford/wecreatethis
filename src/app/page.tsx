@@ -3,6 +3,10 @@ import Link from 'next/link';
 
 const apps = [
   {
+    name: 'Beautiful Mind',
+    path: '/beautifulmind'
+  },
+  {
     name: 'Hardle',
     path: '/hardle'
   },
