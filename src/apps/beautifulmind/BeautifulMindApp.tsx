@@ -1,32 +1,58 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styles from './BeautifulMindApp.module.css';
 import { NoteList } from './components/NoteList';
 import { NoteEditor } from './components/NoteEditor';
 import { FolderView } from './components/FolderView';
 import { Sidebar } from './components/Sidebar';
 import { useNotes } from './hooks/useNotes';
-import { Note, View } from './types';
+import { useFolders } from './hooks/useFolders';
+import { Note, View, FolderMetadata, SubfolderView } from './types';
 
 export function BeautifulMindApp() {
   const [currentView, setCurrentView] = useState<View>('notes');
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
+  const [currentSubfolder, setCurrentSubfolder] = useState<string | null>(null);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [folderNotes, setFolderNotes] = useState<Note[]>([]);
+  const [activeFolderNotes, setActiveFolderNotes] = useState<Note[]>([]);
   const [isLoadingFolder, setIsLoadingFolder] = useState(false);
   
   const { 
     notes, 
     tags, 
-    isLoading, 
-    error,
+    isLoading: isLoadingNotes, 
+    error: notesError,
     addNote, 
     updateNote, 
     deleteNote,
     getNotesByTag 
   } = useNotes();
+
+  const {
+    rootFolders,
+    folderTags,
+    isLoading: isLoadingFolders,
+    error: foldersError,
+    createFolder,
+    getSubfolderViews,
+    getFolderByTag
+  } = useFolders();
+
+  // Current active folder metadata
+  const activeFolderMetadata = useMemo(() => {
+    if (!currentFolder) return null;
+    return getFolderByTag(currentFolder);
+  }, [currentFolder, getFolderByTag]);
+
+  // Generate subfolder views for the current folder
+  const subfolderViews = useMemo<SubfolderView[]>(() => {
+    if (!currentFolder || !activeFolderMetadata || !activeFolderNotes.length) {
+      return [];
+    }
+    return getSubfolderViews(activeFolderMetadata, activeFolderNotes);
+  }, [currentFolder, activeFolderMetadata, activeFolderNotes, getSubfolderViews]);
 
   // Load notes for the current folder when it changes
   useEffect(() => {
@@ -35,7 +61,9 @@ export function BeautifulMindApp() {
         setIsLoadingFolder(true);
         try {
           const notesForFolder = await getNotesByTag(currentFolder);
-          setFolderNotes(notesForFolder);
+          setActiveFolderNotes(notesForFolder);
+          // Reset subfolder when folder changes
+          setCurrentSubfolder(null);
         } finally {
           setIsLoadingFolder(false);
         }
@@ -57,6 +85,16 @@ export function BeautifulMindApp() {
 
   const handleSaveNote = async (note: Omit<Note, "id" | "createdAt" | "updatedAt">) => {
     try {
+      // If we're in a folder view, automatically add the folder tag
+      if (currentView === 'folder' && currentFolder && !note.tags.includes(currentFolder)) {
+        note.tags = [...note.tags, currentFolder];
+      }
+      
+      // If we're in a subfolder view, also add the subfolder tag
+      if (currentSubfolder && !note.tags.includes(currentSubfolder)) {
+        note.tags = [...note.tags, currentSubfolder];
+      }
+      
       if (activeNote) {
         await updateNote({ 
           ...note, 
@@ -73,7 +111,7 @@ export function BeautifulMindApp() {
       // Reload folder notes if in folder view
       if (currentView === 'folder' && currentFolder) {
         const updatedFolderNotes = await getNotesByTag(currentFolder);
-        setFolderNotes(updatedFolderNotes);
+        setActiveFolderNotes(updatedFolderNotes);
       }
     } catch (err) {
       console.error('Error saving note:', err);
@@ -86,14 +124,20 @@ export function BeautifulMindApp() {
     setActiveNote(null);
   };
 
-  const handleSelectFolder = (tag: string) => {
-    setCurrentFolder(tag);
+  const handleSelectFolder = (folderTag: string) => {
+    setCurrentFolder(folderTag);
+    setCurrentSubfolder(null);
     setCurrentView('folder');
+  };
+
+  const handleSelectSubfolder = (tag: string | null) => {
+    setCurrentSubfolder(tag);
   };
 
   const handleBackToNotes = () => {
     setCurrentView('notes');
     setCurrentFolder(null);
+    setCurrentSubfolder(null);
   };
   
   const handleDeleteNote = async (noteId: string) => {
@@ -103,7 +147,7 @@ export function BeautifulMindApp() {
       // If in folder view, update folder notes
       if (currentView === 'folder' && currentFolder) {
         const updatedFolderNotes = await getNotesByTag(currentFolder);
-        setFolderNotes(updatedFolderNotes);
+        setActiveFolderNotes(updatedFolderNotes);
       }
       
       return true;
@@ -113,7 +157,35 @@ export function BeautifulMindApp() {
       return false;
     }
   };
+  
+  const handleCreateRootFolder = (folderName: string) => {
+    try {
+      const newFolder = createFolder(folderName, null);
+      handleSelectFolder(newFolder.tag);
+    } catch (err) {
+      console.error('Error creating folder:', err);
+      alert('Failed to create folder. Please try again.');
+    }
+  };
+  
+  const handleCreateSubfolder = (folderName: string) => {
+    if (!currentFolder || !activeFolderMetadata) return;
+    
+    try {
+      const newFolder = createFolder(folderName, activeFolderMetadata.id);
+      // Switch to this subfolder view
+      setCurrentSubfolder(newFolder.tag);
+    } catch (err) {
+      console.error('Error creating subfolder:', err);
+      alert('Failed to create subfolder. Please try again.');
+    }
+  };
 
+  // Combine errors
+  const error = notesError || foldersError;
+  // Combine loading states
+  const isLoading = isLoadingNotes || isLoadingFolders;
+  
   return (
     <div className={styles.container}>
       <header className={styles.header}>
@@ -123,10 +195,14 @@ export function BeautifulMindApp() {
       
       <div className={styles.content}>
         <Sidebar 
-          tags={tags}
+          allTags={tags}
+          rootFolders={rootFolders}
+          folderTags={folderTags}
           onSelectFolder={handleSelectFolder}
           onBackToNotes={handleBackToNotes}
+          onCreateFolder={handleCreateRootFolder}
           currentView={currentView}
+          currentFolder={currentFolder}
         />
         
         <main className={styles.main}>
@@ -138,6 +214,8 @@ export function BeautifulMindApp() {
             <NoteEditor 
               note={activeNote}
               availableTags={tags}
+              currentFolder={currentFolder}
+              currentSubfolder={currentSubfolder}
               onSave={handleSaveNote}
               onCancel={handleCancelEdit}
             />
@@ -150,12 +228,18 @@ export function BeautifulMindApp() {
             />
           ) : currentView === 'folder' && currentFolder ? (
             <FolderView
-              folderTag={currentFolder}
-              notes={folderNotes}
+              folderMetadata={activeFolderMetadata}
+              currentSubfolder={currentSubfolder}
+              notes={activeFolderNotes}
+              subfolders={subfolderViews}
+              allTags={tags}
+              folderTags={folderTags}
               isLoading={isLoadingFolder}
               onCreateNote={handleCreateNote}
               onEditNote={handleEditNote}
               onDeleteNote={handleDeleteNote}
+              onCreateSubfolder={handleCreateSubfolder}
+              onSelectSubfolder={handleSelectSubfolder}
             />
           ) : null}
         </main>

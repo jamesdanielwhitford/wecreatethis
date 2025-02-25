@@ -34,7 +34,7 @@ export const useNotes = () => {
   }, []);
 
   // Add a new note
-  const addNote = useCallback(async (noteData: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addNote = useCallback(async (noteData: Omit<Note, "id" | "createdAt" | "updatedAt">) => {
     try {
       setError(null);
       
@@ -107,13 +107,36 @@ export const useNotes = () => {
   // Get notes by tag
   const getNotesByTag = useCallback(async (tag: string): Promise<Note[]> => {
     try {
-      return await localStorageService.getNotesByTag(tag);
+      // Get the direct tag match
+      const directMatches = await localStorageService.getNotesByTag(tag);
+      
+      // Also get notes with child folder tags
+      if (tag.includes('/')) {
+        return directMatches;
+      } else {
+        // For a root folder like "Work", also get notes with "Work/Project1"
+        const childNotes = notes.filter(note => 
+          note.tags.some(noteTag => 
+            noteTag !== tag && noteTag.startsWith(`${tag}/`)
+          )
+        );
+        
+        // Combine direct matches and child notes, removing duplicates
+        const allNotes = [...directMatches];
+        childNotes.forEach(childNote => {
+          if (!allNotes.some(note => note.id === childNote.id)) {
+            allNotes.push(childNote);
+          }
+        });
+        
+        return allNotes;
+      }
     } catch (err) {
       console.error('Error getting notes by tag:', err);
       setError('Failed to load notes for this folder.');
       return [];
     }
-  }, []);
+  }, [notes]);
 
   return {
     notes,

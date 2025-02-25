@@ -1,61 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import styles from './FolderView.module.css';
-import { Note } from '../types';
+import { Note, FolderMetadata, SubfolderView } from '../types';
 import Image from 'next/image';
+import { FolderManager } from './FolderManager';
 
 interface FolderViewProps {
-  folderTag: string;
+  folderMetadata: FolderMetadata | null;
+  currentSubfolder: string | null;
   notes: Note[];
-  isLoading?: boolean; // Add isLoading as an optional prop
+  subfolders: SubfolderView[];
+  allTags: string[];
+  folderTags: string[];
+  isLoading?: boolean;
   onCreateNote: () => void;
   onEditNote: (note: Note) => void;
   onDeleteNote: (noteId: string) => Promise<boolean>;
+  onCreateSubfolder: (folderName: string) => void;
+  onSelectSubfolder: (tag: string | null) => void;
 }
 
 export const FolderView: React.FC<FolderViewProps> = ({ 
-  folderTag, 
+  folderMetadata,
+  currentSubfolder,
   notes, 
-  isLoading: externalLoading = false, // Provide a default value
+  subfolders,
+  allTags,
+  folderTags,
+  isLoading = false,
   onCreateNote, 
   onEditNote, 
-  onDeleteNote 
+  onDeleteNote,
+  onCreateSubfolder,
+  onSelectSubfolder
 }) => {
-  const [selectedSubfolder, setSelectedSubfolder] = useState<string | null>(null);
   const [internalLoading, setInternalLoading] = useState(false);
   
-  // Reset selected subfolder when folder changes
-  useEffect(() => {
-    setSelectedSubfolder(null);
-  }, [folderTag]);
+  // If we don't have folder metadata (shouldn't happen)
+  if (!folderMetadata) {
+    return <div className={styles.errorState}>Folder not found</div>;
+  }
+
+  // Filter the notes based on current subfolder selection
+  const filteredNotes = currentSubfolder 
+    ? notes.filter(note => note.tags.includes(currentSubfolder))
+    : notes;
   
-  // Find all other tags that are used together with the current folder tag
-  const getSubfolderTags = () => {
-    const subfoldersSet = new Set<string>();
-    
-    notes.forEach(note => {
-      note.tags.forEach(tag => {
-        // Only include tags that are not the current folder tag
-        if (tag !== folderTag) {
-          subfoldersSet.add(tag);
-        }
-      });
-    });
-    
-    return Array.from(subfoldersSet);
-  };
-  
-  const subfolderTags = getSubfolderTags();
-  
-  // Filter notes based on selected subfolder
-  const getFilteredNotes = () => {
-    if (!selectedSubfolder) {
-      return notes;
-    }
-    
-    return notes.filter(note => note.tags.includes(selectedSubfolder));
-  };
-  
-  const filteredNotes = getFilteredNotes();
   const sortedNotes = [...filteredNotes].sort((a, b) => b.updatedAt - a.updatedAt);
   
   const formatDate = (timestamp: number) => {
@@ -74,12 +63,15 @@ export const FolderView: React.FC<FolderViewProps> = ({
   };
 
   // Use either external loading state or internal loading state
-  const isLoadingState = externalLoading || internalLoading;
+  const isLoadingState = isLoading || internalLoading;
 
   return (
     <div className={styles.folderViewContainer}>
       <div className={styles.header}>
-        <h2 className={styles.title}>{folderTag}</h2>
+        <h2 className={styles.title}>
+          {folderMetadata.name}
+          {currentSubfolder && <span className={styles.subfolderTitle}> / {currentSubfolder}</span>}
+        </h2>
         <button 
           className={styles.createButton}
           onClick={onCreateNote}
@@ -88,25 +80,31 @@ export const FolderView: React.FC<FolderViewProps> = ({
         </button>
       </div>
       
-      {subfolderTags.length > 0 && (
-        <div className={styles.subfolders}>
+      <div className={styles.subfolderNavigation}>
+        <button 
+          className={`${styles.subfolderButton} ${!currentSubfolder ? styles.active : ''}`}
+          onClick={() => onSelectSubfolder(null)}
+        >
+          All
+        </button>
+        {subfolders.map(subfolder => (
           <button 
-            className={`${styles.subfolder} ${!selectedSubfolder ? styles.active : ''}`}
-            onClick={() => setSelectedSubfolder(null)}
+            key={subfolder.id} 
+            className={`${styles.subfolderButton} ${currentSubfolder === subfolder.tag ? styles.active : ''}`}
+            onClick={() => onSelectSubfolder(subfolder.tag)}
           >
-            All
+            {subfolder.name} ({subfolder.count})
           </button>
-          {subfolderTags.map(tag => (
-            <button 
-              key={tag} 
-              className={`${styles.subfolder} ${selectedSubfolder === tag ? styles.active : ''}`}
-              onClick={() => setSelectedSubfolder(tag === selectedSubfolder ? null : tag)}
-            >
-              {tag}
-            </button>
-          ))}
+        ))}
+        
+        <div className={styles.createSubfolderContainer}>
+          <FolderManager 
+            availableTags={allTags}
+            existingFolderTags={folderTags}
+            onCreateFolder={onCreateSubfolder}
+          />
         </div>
-      )}
+      </div>
       
       {isLoadingState ? (
         <div className={styles.loadingState}>
@@ -161,7 +159,12 @@ export const FolderView: React.FC<FolderViewProps> = ({
         </div>
       ) : (
         <div className={styles.emptyState}>
-          <p>No notes in this folder. Create a note and add the tag &quot;{folderTag}&quot; to it.</p>
+          <p>
+            {currentSubfolder 
+              ? `No notes with tags "${folderMetadata.tag}" and "${currentSubfolder}". Add notes with both tags to see them here.`
+              : `No notes with tag "${folderMetadata.tag}". Add notes with this tag to see them here.`
+            }
+          </p>
         </div>
       )}
     </div>

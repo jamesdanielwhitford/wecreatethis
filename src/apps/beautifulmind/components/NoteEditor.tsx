@@ -6,13 +6,17 @@ import Image from 'next/image';
 interface NoteEditorProps {
   note: Note | null;
   availableTags: string[];
+  currentFolder: string | null;
+  currentSubfolder: string | null;
   onSave: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onCancel: () => void;
 }
 
 export const NoteEditor: React.FC<NoteEditorProps> = ({ 
   note, 
-  availableTags, 
+  availableTags,
+  currentFolder,
+  currentSubfolder,
   onSave, 
   onCancel 
 }) => {
@@ -47,12 +51,26 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       setTitle('');
       setContent('');
       setType('text');
-      setTags([]);
+      
+      // Initialize tags based on current context
+      const initialTags: string[] = [];
+      
+      // If we're in a folder, add that tag
+      if (currentFolder) {
+        initialTags.push(currentFolder);
+      }
+      
+      // If we're in a subfolder, add that tag too
+      if (currentSubfolder) {
+        initialTags.push(currentSubfolder);
+      }
+      
+      setTags(initialTags);
       setImageData(undefined);
       setCompressedSize(null);
       setOriginalSize(null);
     }
-  }, [note]);
+  }, [note, currentFolder, currentSubfolder]);
   
   const calculateSizeInKB = (dataUrl: string): number => {
     // Remove the data URL prefix to get just the base64 string
@@ -71,6 +89,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   };
   
   const handleRemoveTag = (tagToRemove: string) => {
+    // Don't allow removing the current folder tag or subfolder tag if we're in those contexts
+    if ((currentFolder && tagToRemove === currentFolder) || 
+        (currentSubfolder && tagToRemove === currentSubfolder)) {
+      return;
+    }
+    
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
   
@@ -203,6 +227,20 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       imageData
     });
   };
+  
+  // Filter available tags to exclude already selected ones
+  const filteredAvailableTags = availableTags.filter(tag => !tags.includes(tag));
+
+  // Separate context tags (folder/subfolder) from other tags
+  const contextTags = tags.filter(tag => 
+    (currentFolder && tag === currentFolder) || 
+    (currentSubfolder && tag === currentSubfolder)
+  );
+  
+  const regularTags = tags.filter(tag => 
+    !(currentFolder && tag === currentFolder) && 
+    !(currentSubfolder && tag === currentSubfolder)
+  );
   
   return (
     <div className={styles.editorContainer}>
@@ -363,31 +401,45 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             </button>
           </div>
           
-          {availableTags.length > 0 && (
+          {filteredAvailableTags.length > 0 && (
             <div className={styles.availableTags}>
               <p className={styles.availableTagsLabel}>Available tags:</p>
               <div className={styles.tagsList}>
-                {availableTags
-                  .filter(tag => !tags.includes(tag))
-                  .map(tag => (
-                    <button
-                      key={tag}
-                      type="button"
-                      className={styles.availableTag}
-                      onClick={() => setTags([...tags, tag])}
-                    >
-                      {tag}
-                    </button>
-                  ))}
+                {filteredAvailableTags.map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    className={styles.availableTag}
+                    onClick={() => setTags([...tags, tag])}
+                  >
+                    {tag}
+                  </button>
+                ))}
               </div>
             </div>
           )}
           
-          {tags.length > 0 && (
+          {/* Display context (folder/subfolder) tags first if present */}
+          {contextTags.length > 0 && (
             <div className={styles.selectedTags}>
-              <p className={styles.selectedTagsLabel}>Selected tags:</p>
+              <p className={styles.selectedTagsLabel}>Context tags:</p>
               <div className={styles.tagsList}>
-                {tags.map(tag => (
+                {contextTags.map(tag => (
+                  <div key={tag} className={`${styles.tagChip} ${styles.contextTagChip}`}>
+                    <span className={styles.tagName}>{tag}</span>
+                    {/* Context tags can't be removed */}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Then display regular tags */}
+          {regularTags.length > 0 && (
+            <div className={styles.selectedTags}>
+              <p className={styles.selectedTagsLabel}>Tags:</p>
+              <div className={styles.tagsList}>
+                {regularTags.map(tag => (
                   <div key={tag} className={styles.tagChip}>
                     <span className={styles.tagName}>{tag}</span>
                     <button

@@ -27,3 +27,12 @@ export interface Note {
     tag: string;
     children?: FolderPath[];
   }
+  
+  // Folder metadata for localStorage
+  export interface FolderMetadata {
+    id: string;
+    name: string;
+    path: string;  // Full path like "parent/child/grandchild"
+    parentId: string | null;
+    createdAt: number;
+  }
