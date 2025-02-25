@@ -5,7 +5,15 @@ const apps = [
   {
     name: 'Hardle',
     path: '/hardle'
-  }
+  },
+  {
+    name: 'Randle',
+    path: '/randle'
+  },
+  {
+    name: 'Boss Bitch',
+    path: '/bossbitch'
+  },
 ];
 
 export default function Home() {
