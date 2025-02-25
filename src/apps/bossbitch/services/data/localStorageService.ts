@@ -4,18 +4,18 @@ import { IncomeSource } from '../../types/goal.types';
 
 // Default values
 const DEFAULT_GOALS: UserGoals = {
-  daily: 1000,
-  monthly: 20000
+  dailyGoal: 1000,
+  monthlyGoal: 20000,
+  activeDays: [false, true, true, true, true, true, false] // Sunday-Saturday, with Mon-Fri active
 };
 
 const DEFAULT_PREFERENCES: UserPreferences = {
+  isDarkMode: true,
   colors: {
     dailyRing: '#FF6B6B',
     monthlyRing: '#7C3AED',
     accent: '#4ECDC4'
-  },
-  showCelebrations: true,
-  currency: 'ZAR'
+  }
 };
 
 /**
@@ -326,7 +326,7 @@ class LocalStorageService {
   async exportData(): Promise<string> {
     try {
       // Get all keys that start with 'bossbitch-'
-      const dataToExport: Record<string, any> = {};
+      const dataToExport: Record<string, unknown> = {};
       
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -338,7 +338,7 @@ class LocalStorageService {
             // Store with a normalized key (remove prefix)
             const normalizedKey = key.replace('bossbitch-', '');
             dataToExport[normalizedKey] = value;
-          } catch (e) {
+          } catch {
             console.warn(`Could not parse item at ${key}, skipping`);
           }
         }

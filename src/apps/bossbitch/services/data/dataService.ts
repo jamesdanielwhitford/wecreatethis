@@ -463,10 +463,10 @@ class DataService {
     if (!this.isAuthenticated) {
       throw new Error('User must be authenticated to migrate data');
     }
-
+  
     try {
-      // Export local data
-      const localData = localStorageService.exportData();
+      // Export local data - awaiting the Promise to get the string value
+      const localData = await localStorageService.exportData();
       
       // Import into Firebase
       await firebaseService.importData(localData);

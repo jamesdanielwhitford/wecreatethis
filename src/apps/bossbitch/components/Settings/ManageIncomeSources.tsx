@@ -69,14 +69,14 @@ const ManageIncomeSources: React.FC<ManageIncomeSourcesProps> = ({
       // Get the original source to preserve properties we're not updating
       const originalSource = getOriginalSource(id);
       
-      // Build updates object preserving value
-      const updates = {
+      // Build updates object with correct typing to include value property
+      const updates: Partial<Omit<IncomeSource, 'id'>> = {
         name: editName.trim(),
         color: editColor
       };
       
       // Ensure we don't lose the value property during updates
-      if (originalSource && originalSource.value !== undefined) {
+      if (originalSource && 'value' in originalSource) {
         updates.value = originalSource.value;
       }
       

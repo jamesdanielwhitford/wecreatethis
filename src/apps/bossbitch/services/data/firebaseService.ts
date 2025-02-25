@@ -20,8 +20,7 @@ import {
   query,
   where,
   orderBy,
-  limit,
-  Timestamp,
+  // Removed unused imports
   serverTimestamp
 } from 'firebase/firestore';
 import { UserGoals, UserPreferences, DailyEntry, MonthlyEntry, getEntryKey } from './types';
@@ -29,18 +28,18 @@ import { IncomeSource } from '../../types/goal.types';
 
 // Default values
 const DEFAULT_GOALS: UserGoals = {
-  daily: 1000,
-  monthly: 20000
+  dailyGoal: 1000,
+  monthlyGoal: 20000,
+  activeDays: [false, true, true, true, true, true, false] // Mon-Fri are active
 };
 
 const DEFAULT_PREFERENCES: UserPreferences = {
+  isDarkMode: true,
   colors: {
     dailyRing: '#FF6B6B',
     monthlyRing: '#7C3AED',
     accent: '#4ECDC4'
-  },
-  showCelebrations: true,
-  currency: 'ZAR'
+  }
 };
 
 // Firebase configuration
@@ -90,9 +89,10 @@ class FirebaseService {
     try {
       const result = await signInWithEmailAndPassword(this.auth, email, password);
       return result.user;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Firebase sign in error:', error);
-      throw new Error(`Authentication failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Authentication failed: ${errorMessage}`);
     }
   }
   
@@ -106,9 +106,10 @@ class FirebaseService {
       await this.initializeUserData(result.user.uid);
       
       return result.user;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Firebase sign up error:', error);
-      throw new Error(`Registration failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Registration failed: ${errorMessage}`);
     }
   }
   
@@ -117,9 +118,10 @@ class FirebaseService {
     
     try {
       await firebaseSignOut(this.auth);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Firebase sign out error:', error);
-      throw new Error(`Sign out failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Sign out failed: ${errorMessage}`);
     }
   }
   
@@ -169,6 +171,7 @@ class FirebaseService {
       
       if (docSnap.exists()) {
         // Use the data without the timestamp
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { updatedAt, ...goals } = docSnap.data();
         return goals as UserGoals;
       } else {
@@ -229,6 +232,7 @@ class FirebaseService {
       
       if (docSnap.exists()) {
         // Use the data without the timestamp
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { updatedAt, ...preferences } = docSnap.data();
         return preferences as UserPreferences;
       } else {
@@ -296,6 +300,7 @@ class FirebaseService {
       
       if (docSnap.exists()) {
         // Extract relevant fields, excluding metadata
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { updatedAt, ...entryData } = docSnap.data();
         return entryData as DailyEntry;
       } else {
@@ -332,6 +337,7 @@ class FirebaseService {
       // Transform to DailyEntry objects
       const entries: DailyEntry[] = [];
       querySnapshot.forEach(doc => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { updatedAt, ...entryData } = doc.data();
         entries.push(entryData as DailyEntry);
       });
@@ -441,8 +447,9 @@ class FirebaseService {
         await this.updateMonthlyEntryFromDaily(date);
       }
       
-      // Return the updated data without the timestamps
-      const { createdAt, updatedAt, ...result } = updatedData;
+      // Return the updated data without the timestamp
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { updatedAt, ...result } = updatedData;
       return result;
     } catch (error) {
       console.error(`Error updating daily entry for ${dateKey}:`, error);
@@ -512,356 +519,357 @@ class FirebaseService {
       const monthlyEntry: MonthlyEntry = {
         year,
         month,
-        monthKey,
+        monthKey,  // Include the monthKey property
         progress: monthlyProgress,
         segments: Object.values(segments)
       };
       
       // Save to Firestore
-// Save to Firestore
-const entryDoc = doc(this.db, 'users', userId, 'monthlyEntries', monthKey);
-await setDoc(entryDoc, {
-  ...monthlyEntry,
-  updatedAt: serverTimestamp()
-});
+      const entryDoc = doc(this.db, 'users', userId, 'monthlyEntries', monthKey);
+      await setDoc(entryDoc, {
+        ...monthlyEntry,
+        updatedAt: serverTimestamp()
+      });
 
-return monthlyEntry;
-} catch (error) {
-console.error('Error updating monthly entry from daily in Firestore:', error);
-throw error;
-}
-}
-
-async getMonthlyEntry(year: number, month: number): Promise<MonthlyEntry | null> {
-if (!this.db) throw new Error('Firestore not initialized');
-
-const userId = this.getCurrentUser()?.uid;
-if (!userId) {
-throw new Error('User not authenticated');
-}
-
-try {
-const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
-const entryDoc = doc(this.db, 'users', userId, 'monthlyEntries', monthKey);
-const docSnap = await getDoc(entryDoc);
-
-if (docSnap.exists()) {
-  // Extract relevant fields, excluding metadata
-  const { updatedAt, ...entryData } = docSnap.data();
-  return entryData as MonthlyEntry;
-} else {
-  return null;
-}
-} catch (error) {
-console.error('Error getting monthly entry from Firestore:', error);
-return null;
-}
-}
-
-async getMonthlyEntries(
-startYear: number,
-startMonth: number,
-endYear: number,
-endMonth: number
-): Promise<MonthlyEntry[]> {
-if (!this.db) throw new Error('Firestore not initialized');
-
-const userId = this.getCurrentUser()?.uid;
-if (!userId) {
-throw new Error('User not authenticated');
-}
-
-try {
-const startKey = `${startYear}-${startMonth.toString().padStart(2, '0')}`;
-const endKey = `${endYear}-${endMonth.toString().padStart(2, '0')}`;
-
-// Query entries within date range
-const entriesQuery = query(
-  collection(this.db, 'users', userId, 'monthlyEntries'),
-  where('monthKey', '>=', startKey),
-  where('monthKey', '<=', endKey),
-  orderBy('monthKey', 'asc')
-);
-
-const querySnapshot = await getDocs(entriesQuery);
-
-// Transform to MonthlyEntry objects
-const entries: MonthlyEntry[] = [];
-querySnapshot.forEach(doc => {
-  const { updatedAt, ...entryData } = doc.data();
-  entries.push(entryData as MonthlyEntry);
-});
-
-return entries;
-} catch (error) {
-console.error('Error getting monthly entries from Firestore:', error);
-return [];
-}
-}
-
-// Income sources
-async getIncomeSources(): Promise<IncomeSource[]> {
-if (!this.db) throw new Error('Firestore not initialized');
-
-const userId = this.getCurrentUser()?.uid;
-if (!userId) {
-throw new Error('User not authenticated');
-}
-
-try {
-const sourcesQuery = query(
-  collection(this.db, 'users', userId, 'incomeSources'),
-  orderBy('name', 'asc')
-);
-
-const querySnapshot = await getDocs(sourcesQuery);
-
-// Transform to IncomeSource objects
-const sources: IncomeSource[] = [];
-querySnapshot.forEach(doc => {
-  sources.push(doc.data() as IncomeSource);
-});
-
-return sources;
-} catch (error) {
-console.error('Error getting income sources from Firestore:', error);
-return [];
-}
-}
-
-async addIncomeSource(source: IncomeSource): Promise<IncomeSource[]> {
-if (!this.db) throw new Error('Firestore not initialized');
-
-const userId = this.getCurrentUser()?.uid;
-if (!userId) {
-throw new Error('User not authenticated');
-}
-
-try {
-// Add the source
-const sourceDoc = doc(this.db, 'users', userId, 'incomeSources', source.id);
-await setDoc(sourceDoc, {
-  ...source,
-  updatedAt: serverTimestamp()
-});
-
-// Get the updated list
-return this.getIncomeSources();
-} catch (error) {
-console.error('Error adding income source to Firestore:', error);
-throw error;
-}
-}
-
-async updateIncomeSource(id: string, updates: Partial<Omit<IncomeSource, 'id'>>): Promise<IncomeSource[]> {
-if (!this.db) throw new Error('Firestore not initialized');
-
-const userId = this.getCurrentUser()?.uid;
-if (!userId) {
-throw new Error('User not authenticated');
-}
-
-try {
-// Get the source first to make sure it exists
-const sourceDoc = doc(this.db, 'users', userId, 'incomeSources', id);
-const docSnap = await getDoc(sourceDoc);
-
-if (!docSnap.exists()) {
-  throw new Error(`Income source with id ${id} not found`);
-}
-
-// Update the source
-await updateDoc(sourceDoc, {
-  ...updates,
-  updatedAt: serverTimestamp()
-});
-
-// Get the updated list
-return this.getIncomeSources();
-} catch (error) {
-console.error('Error updating income source in Firestore:', error);
-throw error;
-}
-}
-
-// Data management
-async clearAllData(): Promise<void> {
-if (!this.db) throw new Error('Firestore not initialized');
-
-const userId = this.getCurrentUser()?.uid;
-if (!userId) {
-throw new Error('User not authenticated');
-}
-
-try {
-// Delete all daily entries
-const dailyEntriesQuery = query(
-  collection(this.db, 'users', userId, 'dailyEntries')
-);
-
-const dailySnapshot = await getDocs(dailyEntriesQuery);
-for (const doc of dailySnapshot.docs) {
-  await deleteDoc(doc.ref);
-}
-
-// Delete all monthly entries
-const monthlyEntriesQuery = query(
-  collection(this.db, 'users', userId, 'monthlyEntries')
-);
-
-const monthlySnapshot = await getDocs(monthlyEntriesQuery);
-for (const doc of monthlySnapshot.docs) {
-  await deleteDoc(doc.ref);
-}
-
-// Delete all income sources
-const sourcesQuery = query(
-  collection(this.db, 'users', userId, 'incomeSources')
-);
-
-const sourcesSnapshot = await getDocs(sourcesQuery);
-for (const doc of sourcesSnapshot.docs) {
-  await deleteDoc(doc.ref);
-}
-
-// Reset goals to defaults
-const goalsDoc = doc(this.db, 'users', userId, 'settings', 'goals');
-await setDoc(goalsDoc, {
-  ...DEFAULT_GOALS,
-  updatedAt: serverTimestamp()
-});
-
-// Reset preferences to defaults
-const prefsDoc = doc(this.db, 'users', userId, 'settings', 'preferences');
-await setDoc(prefsDoc, {
-  ...DEFAULT_PREFERENCES,
-  updatedAt: serverTimestamp()
-});
-} catch (error) {
-console.error('Error clearing data from Firestore:', error);
-throw error;
-}
-}
-
-async exportData(): Promise<string> {
-if (!this.db) throw new Error('Firestore not initialized');
-
-const userId = this.getCurrentUser()?.uid;
-if (!userId) {
-throw new Error('User not authenticated');
-}
-
-try {
-const dataToExport: Record<string, any> = {
-  goals: await this.getGoals(),
-  preferences: await this.getPreferences(),
-  incomeSources: await this.getIncomeSources()
-};
-
-// Get all daily entries (for past 2 years)
-const today = new Date();
-const twoYearsAgo = new Date(today.getFullYear() - 2, today.getMonth(), today.getDate());
-
-const dailyEntries = await this.getDailyEntries(twoYearsAgo, today);
-dataToExport.dailyEntries = {};
-
-dailyEntries.forEach(entry => {
-  dataToExport.dailyEntries[entry.date] = entry;
-});
-
-// Get all monthly entries (for past 2 years)
-const startYear = twoYearsAgo.getFullYear();
-const startMonth = twoYearsAgo.getMonth();
-const endYear = today.getFullYear();
-const endMonth = today.getMonth();
-
-const monthlyEntries = await this.getMonthlyEntries(
-  startYear, startMonth, endYear, endMonth
-);
-
-dataToExport.monthlyEntries = {};
-monthlyEntries.forEach(entry => {
-  dataToExport.monthlyEntries[entry.monthKey] = entry;
-});
-
-// Convert to JSON
-return JSON.stringify({
-  version: '1.0.0',
-  timestamp: new Date().toISOString(),
-  data: dataToExport
-});
-} catch (error) {
-console.error('Error exporting data from Firestore:', error);
-throw error;
-}
-}
-
-async importData(jsonData: string): Promise<boolean> {
-if (!this.db) throw new Error('Firestore not initialized');
-
-const userId = this.getCurrentUser()?.uid;
-if (!userId) {
-throw new Error('User not authenticated');
-}
-
-try {
-// Parse the imported data
-const imported = JSON.parse(jsonData);
-
-if (!imported || !imported.data) {
-  throw new Error('Invalid import data format');
-}
-
-// First clear existing data
-await this.clearAllData();
-
-const importedData = imported.data;
-
-// Import goals
-if (importedData.goals) {
-  await this.updateGoals(importedData.goals);
-}
-
-// Import preferences
-if (importedData.preferences) {
-  await this.updatePreferences(importedData.preferences);
-}
-
-// Import income sources
-if (importedData.incomeSources && Array.isArray(importedData.incomeSources)) {
-  for (const source of importedData.incomeSources) {
-    await this.addIncomeSource(source);
+      return monthlyEntry;
+    } catch (error) {
+      console.error('Error updating monthly entry from daily in Firestore:', error);
+      throw error;
+    }
   }
-}
 
-// Import daily entries
-if (importedData.dailyEntries) {
-  for (const [dateKey, entry] of Object.entries(importedData.dailyEntries)) {
-    const entryDoc = doc(this.db, 'users', userId, 'dailyEntries', dateKey);
-    await setDoc(entryDoc, {
-      ...(entry as DailyEntry),
-      updatedAt: serverTimestamp()
-    });
+  async getMonthlyEntry(year: number, month: number): Promise<MonthlyEntry | null> {
+    if (!this.db) throw new Error('Firestore not initialized');
+
+    const userId = this.getCurrentUser()?.uid;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+      const entryDoc = doc(this.db, 'users', userId, 'monthlyEntries', monthKey);
+      const docSnap = await getDoc(entryDoc);
+
+      if (docSnap.exists()) {
+        // Extract relevant fields, excluding metadata
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { updatedAt, ...entryData } = docSnap.data();
+        return entryData as MonthlyEntry;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error('Error getting monthly entry from Firestore:', error);
+      return null;
+    }
   }
-}
 
-// Import monthly entries
-if (importedData.monthlyEntries) {
-  for (const [monthKey, entry] of Object.entries(importedData.monthlyEntries)) {
-    const entryDoc = doc(this.db, 'users', userId, 'monthlyEntries', monthKey);
-    await setDoc(entryDoc, {
-      ...(entry as MonthlyEntry),
-      updatedAt: serverTimestamp()
-    });
+  async getMonthlyEntries(
+    startYear: number,
+    startMonth: number,
+    endYear: number,
+    endMonth: number
+  ): Promise<MonthlyEntry[]> {
+    if (!this.db) throw new Error('Firestore not initialized');
+
+    const userId = this.getCurrentUser()?.uid;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const startKey = `${startYear}-${startMonth.toString().padStart(2, '0')}`;
+      const endKey = `${endYear}-${endMonth.toString().padStart(2, '0')}`;
+
+      // Query entries within date range
+      const entriesQuery = query(
+        collection(this.db, 'users', userId, 'monthlyEntries'),
+        where('monthKey', '>=', startKey),
+        where('monthKey', '<=', endKey),
+        orderBy('monthKey', 'asc')
+      );
+
+      const querySnapshot = await getDocs(entriesQuery);
+
+      // Transform to MonthlyEntry objects
+      const entries: MonthlyEntry[] = [];
+      querySnapshot.forEach(doc => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { updatedAt, ...entryData } = doc.data();
+        entries.push(entryData as MonthlyEntry);
+      });
+
+      return entries;
+    } catch (error) {
+      console.error('Error getting monthly entries from Firestore:', error);
+      return [];
+    }
   }
-}
 
-return true;
-} catch (error) {
-console.error('Error importing data to Firestore:', error);
-return false;
-}
-}
+  // Income sources
+  async getIncomeSources(): Promise<IncomeSource[]> {
+    if (!this.db) throw new Error('Firestore not initialized');
+
+    const userId = this.getCurrentUser()?.uid;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const sourcesQuery = query(
+        collection(this.db, 'users', userId, 'incomeSources'),
+        orderBy('name', 'asc')
+      );
+
+      const querySnapshot = await getDocs(sourcesQuery);
+
+      // Transform to IncomeSource objects
+      const sources: IncomeSource[] = [];
+      querySnapshot.forEach(doc => {
+        sources.push(doc.data() as IncomeSource);
+      });
+
+      return sources;
+    } catch (error) {
+      console.error('Error getting income sources from Firestore:', error);
+      return [];
+    }
+  }
+
+  async addIncomeSource(source: IncomeSource): Promise<IncomeSource[]> {
+    if (!this.db) throw new Error('Firestore not initialized');
+
+    const userId = this.getCurrentUser()?.uid;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      // Add the source
+      const sourceDoc = doc(this.db, 'users', userId, 'incomeSources', source.id);
+      await setDoc(sourceDoc, {
+        ...source,
+        updatedAt: serverTimestamp()
+      });
+
+      // Get the updated list
+      return this.getIncomeSources();
+    } catch (error) {
+      console.error('Error adding income source to Firestore:', error);
+      throw error;
+    }
+  }
+
+  async updateIncomeSource(id: string, updates: Partial<Omit<IncomeSource, 'id'>>): Promise<IncomeSource[]> {
+    if (!this.db) throw new Error('Firestore not initialized');
+
+    const userId = this.getCurrentUser()?.uid;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      // Get the source first to make sure it exists
+      const sourceDoc = doc(this.db, 'users', userId, 'incomeSources', id);
+      const docSnap = await getDoc(sourceDoc);
+
+      if (!docSnap.exists()) {
+        throw new Error(`Income source with id ${id} not found`);
+      }
+
+      // Update the source
+      await updateDoc(sourceDoc, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+
+      // Get the updated list
+      return this.getIncomeSources();
+    } catch (error) {
+      console.error('Error updating income source in Firestore:', error);
+      throw error;
+    }
+  }
+
+  // Data management
+  async clearAllData(): Promise<void> {
+    if (!this.db) throw new Error('Firestore not initialized');
+
+    const userId = this.getCurrentUser()?.uid;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      // Delete all daily entries
+      const dailyEntriesQuery = query(
+        collection(this.db, 'users', userId, 'dailyEntries')
+      );
+
+      const dailySnapshot = await getDocs(dailyEntriesQuery);
+      for (const doc of dailySnapshot.docs) {
+        await deleteDoc(doc.ref);
+      }
+
+      // Delete all monthly entries
+      const monthlyEntriesQuery = query(
+        collection(this.db, 'users', userId, 'monthlyEntries')
+      );
+
+      const monthlySnapshot = await getDocs(monthlyEntriesQuery);
+      for (const doc of monthlySnapshot.docs) {
+        await deleteDoc(doc.ref);
+      }
+
+      // Delete all income sources
+      const sourcesQuery = query(
+        collection(this.db, 'users', userId, 'incomeSources')
+      );
+
+      const sourcesSnapshot = await getDocs(sourcesQuery);
+      for (const doc of sourcesSnapshot.docs) {
+        await deleteDoc(doc.ref);
+      }
+
+      // Reset goals to defaults
+      const goalsDoc = doc(this.db, 'users', userId, 'settings', 'goals');
+      await setDoc(goalsDoc, {
+        ...DEFAULT_GOALS,
+        updatedAt: serverTimestamp()
+      });
+
+      // Reset preferences to defaults
+      const prefsDoc = doc(this.db, 'users', userId, 'settings', 'preferences');
+      await setDoc(prefsDoc, {
+        ...DEFAULT_PREFERENCES,
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error clearing data from Firestore:', error);
+      throw error;
+    }
+  }
+
+  async exportData(): Promise<string> {
+    if (!this.db) throw new Error('Firestore not initialized');
+
+    const userId = this.getCurrentUser()?.uid;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const dataToExport: Record<string, unknown> = {
+        goals: await this.getGoals(),
+        preferences: await this.getPreferences(),
+        incomeSources: await this.getIncomeSources()
+      };
+
+      // Get all daily entries (for past 2 years)
+      const today = new Date();
+      const twoYearsAgo = new Date(today.getFullYear() - 2, today.getMonth(), today.getDate());
+
+      const dailyEntries = await this.getDailyEntries(twoYearsAgo, today);
+      dataToExport.dailyEntries = {};
+
+      dailyEntries.forEach(entry => {
+        (dataToExport.dailyEntries as Record<string, DailyEntry>)[entry.date] = entry;
+      });
+
+      // Get all monthly entries (for past 2 years)
+      const startYear = twoYearsAgo.getFullYear();
+      const startMonth = twoYearsAgo.getMonth();
+      const endYear = today.getFullYear();
+      const endMonth = today.getMonth();
+
+      const monthlyEntries = await this.getMonthlyEntries(
+        startYear, startMonth, endYear, endMonth
+      );
+
+      dataToExport.monthlyEntries = {};
+      monthlyEntries.forEach(entry => {
+        (dataToExport.monthlyEntries as Record<string, MonthlyEntry>)[entry.monthKey] = entry;
+      });
+
+      // Convert to JSON
+      return JSON.stringify({
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+        data: dataToExport
+      });
+    } catch (error) {
+      console.error('Error exporting data from Firestore:', error);
+      throw error;
+    }
+  }
+
+  async importData(jsonData: string): Promise<boolean> {
+    if (!this.db) throw new Error('Firestore not initialized');
+
+    const userId = this.getCurrentUser()?.uid;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      // Parse the imported data
+      const imported = JSON.parse(jsonData);
+
+      if (!imported || !imported.data) {
+        throw new Error('Invalid import data format');
+      }
+
+      // First clear existing data
+      await this.clearAllData();
+
+      const importedData = imported.data;
+
+      // Import goals
+      if (importedData.goals) {
+        await this.updateGoals(importedData.goals);
+      }
+
+      // Import preferences
+      if (importedData.preferences) {
+        await this.updatePreferences(importedData.preferences);
+      }
+
+      // Import income sources
+      if (importedData.incomeSources && Array.isArray(importedData.incomeSources)) {
+        for (const source of importedData.incomeSources) {
+          await this.addIncomeSource(source);
+        }
+      }
+
+      // Import daily entries
+      if (importedData.dailyEntries) {
+        for (const [dateKey, entry] of Object.entries(importedData.dailyEntries)) {
+          const entryDoc = doc(this.db, 'users', userId, 'dailyEntries', dateKey);
+          await setDoc(entryDoc, {
+            ...(entry as DailyEntry),
+            updatedAt: serverTimestamp()
+          });
+        }
+      }
+
+      // Import monthly entries
+      if (importedData.monthlyEntries) {
+        for (const [monthKey, entry] of Object.entries(importedData.monthlyEntries)) {
+          const entryDoc = doc(this.db, 'users', userId, 'monthlyEntries', monthKey);
+          await setDoc(entryDoc, {
+            ...(entry as MonthlyEntry),
+            updatedAt: serverTimestamp()
+          });
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error importing data to Firestore:', error);
+      return false;
+    }
+  }
 }
 
 // Create a singleton instance

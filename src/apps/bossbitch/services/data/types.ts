@@ -25,6 +25,7 @@ export interface DailyEntry {
 export interface MonthlyEntry {
   year: number;
   month: number; // 0-11 (Jan-Dec)
+  monthKey: string; // Format: 'YYYY-MM'
   progress: number;
   segments: IncomeSource[];
 }
