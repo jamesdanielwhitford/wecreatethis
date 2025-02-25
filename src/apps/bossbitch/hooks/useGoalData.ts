@@ -32,7 +32,8 @@ const useGoalData = (props?: UseGoalDataProps) => {
     goals,
     updateGoals,
     addIncomeToDay,
-    // incomeSources, - Not used, removing to fix linting error
+    addIncomeSource, // Add this to access the global income sources list
+    incomeSources,   // Add this to check if source already exists
     isLoading,
     setIsLoading,
     refreshAllData,
@@ -226,6 +227,18 @@ const fetchData = useCallback(async () => {
     debugLog('Income Addition', 'Adding new income', { amount, source, targetDate });
     
     try {
+      // IMPORTANT FIX: First, add the income source to the global list if it doesn't exist
+      // Check if this source already exists in the global list
+      const sourceExists = Array.isArray(incomeSources) && 
+                          incomeSources.some(s => s.id === source.id);
+      
+      // If source doesn't exist, add it to the global list first
+      if (!sourceExists) {
+        debugLog('Income Source', 'Adding new income source to global list', source);
+        await addIncomeSource(source);
+      }
+      
+      // Then add the income to the specific day
       await addIncomeToDay(targetDate, amount, source);
       debugLog('Income Addition', 'Income added successfully');
       

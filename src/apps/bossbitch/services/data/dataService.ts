@@ -25,7 +25,8 @@ class DataService {
   private authStateListeners: ((isAuthenticated: boolean) => void)[] = [];
   private isAuthenticated = false;
   private syncInProgress = false;
-
+  private isLoading = false;
+  
   constructor() {
     // Listen to authentication state changes from Firebase
     firebaseService.onAuthStateChanged((user) => {
@@ -77,6 +78,11 @@ class DataService {
 
   async signOut(): Promise<void> {
     return firebaseService.signOut();
+  }
+
+  // Method to set loading state for external access
+  setIsLoading(loading: boolean) {
+    this.isLoading = loading;
   }
 
   // Generic method to handle operations with offline fallback
@@ -245,6 +251,16 @@ class DataService {
     );
   }
 
+  async updateDayEntry(date: Date, updates: Partial<DailyEntry>): Promise<DailyEntry> {
+    return this.handleOfflineOperation(
+      async () => this.isAuthenticated ? await firebaseService.updateDayEntry(date, updates) : await localStorageService.updateDayEntry(date, updates),
+      async () => await localStorageService.updateDayEntry(date, updates),
+      'update',
+      `dailyEntries/${date.toISOString().split('T')[0]}`,
+      updates
+    );
+  }
+
   async deleteDayEntry(date: Date): Promise<void> {
     return this.handleOfflineOperation(
       async () => this.isAuthenticated ? await firebaseService.deleteDayEntry(date) : await localStorageService.deleteDayEntry(date),
@@ -312,6 +328,107 @@ class DataService {
       `incomeSources/${id}`,
       updates
     );
+  }
+
+  // Update an income source and all its references in existing entries
+  async updateIncomeSourceEverywhere(
+    id: string, 
+    updates: Partial<Omit<IncomeSource, 'id'>>
+  ): Promise<IncomeSource[]> {
+    this.isLoading = true;
+    try {
+      // First, update the income source in the sources list
+      const sources = await this.updateIncomeSource(id, updates);
+      
+      // Get the updated source with its new properties
+      const updatedSource = sources.find(source => source.id === id);
+      if (!updatedSource) {
+        throw new Error('Updated source not found');
+      }
+      
+      // Get all daily entries - FIXED DATE RANGE
+      const today = new Date();
+      const startDate = new Date(today.getFullYear() - 1, today.getMonth(), 1); // Go back 1 year
+      
+      // Add 1 day to include today and any future entries
+      const endDate = new Date(today);
+      endDate.setDate(today.getDate() + 1);
+      
+      const entries = await this.getDailyEntries(startDate, endDate);
+      
+      // Update all entries that reference this income source
+      for (const entry of entries) {
+        let hasUpdated = false;
+        
+        // Check if this entry has segments that need updating
+        if (entry.segments && entry.segments.length > 0) {
+          // Look for segments with matching source ID
+          for (let i = 0; i < entry.segments.length; i++) {
+            if (entry.segments[i].id === id) {
+              // Update this segment with the new source properties
+              entry.segments[i] = {
+                ...entry.segments[i],
+                name: updatedSource.name,
+                color: updatedSource.color
+              };
+              hasUpdated = true;
+            }
+          }
+          
+          // If we updated any segments, save the entry back
+          if (hasUpdated) {
+            const entryDate = new Date(entry.date);
+            
+            // Create a synthetic update that just updates the segments
+            await this.handleOfflineOperation(
+              async () => {
+                if (this.isAuthenticated) {
+                  return await firebaseService.updateDayEntry(entryDate, { segments: entry.segments });
+                } else {
+                  return await localStorageService.updateDayEntry(entryDate, { segments: entry.segments });
+                }
+              },
+              async () => {
+                return await localStorageService.updateDayEntry(entryDate, { segments: entry.segments });
+              },
+              'update',
+              `dailyEntries/${entry.date}`,
+              { segments: entry.segments }
+            );
+          }
+        }
+      }
+      
+      // Also fetch and update today's entry explicitly
+      const todayEntry = await this.getDailyEntry(today);
+      if (todayEntry && todayEntry.segments && todayEntry.segments.length > 0) {
+        let hasUpdated = false;
+        
+        // Update segments with matching ID
+        for (let i = 0; i < todayEntry.segments.length; i++) {
+          if (todayEntry.segments[i].id === id) {
+            todayEntry.segments[i] = {
+              ...todayEntry.segments[i],
+              name: updatedSource.name,
+              color: updatedSource.color
+            };
+            hasUpdated = true;
+          }
+        }
+        
+        // Save if updated
+        if (hasUpdated) {
+          await this.updateDayEntry(today, { segments: todayEntry.segments });
+        }
+      }
+      
+      return sources;
+    } catch (error) {
+      console.error('Error updating income source everywhere:', error);
+      throw error;
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   // Data management
@@ -422,6 +539,13 @@ class DataService {
                 if (source) {
                   const { id: sourceId, ...updates } = source;
                   await firebaseService.updateIncomeSource(sourceId, updates);
+                }
+              } else if (action.path.includes('dailyEntries/') && action.data?.dailyEntries) {
+                // Handle updating specific daily entry
+                const dateKey = action.path.split('/')[1];
+                const dailyUpdates = action.data.dailyEntries[dateKey];
+                if (dailyUpdates) {
+                  await firebaseService.updateDayEntry(new Date(dateKey), dailyUpdates);
                 }
               }
               break;

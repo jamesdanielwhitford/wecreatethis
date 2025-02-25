@@ -1,300 +1,382 @@
 // src/apps/bossbitch/services/data/localStorageService.ts
-import { UserData, DEFAULT_USER_DATA, getEntryKey, getMonthKey, DailyEntry, MonthlyEntry } from './types';
+import { UserGoals, UserPreferences, DailyEntry, MonthlyEntry, getEntryKey } from './types';
 import { IncomeSource } from '../../types/goal.types';
 
-const STORAGE_KEY = 'bossbitch_data';
+// Default values
+const DEFAULT_GOALS: UserGoals = {
+  daily: 1000,
+  monthly: 20000
+};
 
-export class LocalStorageService {
-  private userData: UserData;
+const DEFAULT_PREFERENCES: UserPreferences = {
+  colors: {
+    dailyRing: '#FF6B6B',
+    monthlyRing: '#7C3AED',
+    accent: '#4ECDC4'
+  },
+  showCelebrations: true,
+  currency: 'ZAR'
+};
 
-  constructor() {
-    this.userData = this.loadData();
-  }
-
-  // Core data operations
-  private loadData(): UserData {
-    if (typeof window === 'undefined') {
-      return { ...DEFAULT_USER_DATA };
-    }
-
-    const storedData = localStorage.getItem(STORAGE_KEY);
-    if (!storedData) {
-      return { ...DEFAULT_USER_DATA };
-    }
-
-    try {
-      return JSON.parse(storedData) as UserData;
-    } catch (error) {
-      console.error('Error parsing stored data:', error);
-      return { ...DEFAULT_USER_DATA };
-    }
-  }
-
-  private saveData(): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.userData));
-  }
-
+/**
+ * Service for interacting with browser localStorage.
+ * Used as a fallback for non-authenticated users or when offline.
+ */
+class LocalStorageService {
   // Goals management
-  getGoals() {
-    return { ...this.userData.goals };
+  async getGoals(): Promise<UserGoals> {
+    try {
+      const goalsJson = localStorage.getItem('bossbitch-goals');
+      if (!goalsJson) {
+        return DEFAULT_GOALS;
+      }
+      return JSON.parse(goalsJson) as UserGoals;
+    } catch (error) {
+      console.error('Error getting goals from localStorage:', error);
+      return DEFAULT_GOALS;
+    }
   }
 
-  updateGoals(goals: Partial<UserData['goals']>) {
-    this.userData.goals = {
-      ...this.userData.goals,
-      ...goals,
-    };
-    this.saveData();
-    return this.userData.goals;
+  async updateGoals(goals: Partial<UserGoals>): Promise<UserGoals> {
+    try {
+      const currentGoals = await this.getGoals();
+      const updatedGoals = { ...currentGoals, ...goals };
+      localStorage.setItem('bossbitch-goals', JSON.stringify(updatedGoals));
+      return updatedGoals;
+    } catch (error) {
+      console.error('Error updating goals in localStorage:', error);
+      throw error;
+    }
   }
 
   // Preferences management
-  getPreferences() {
-    return { ...this.userData.preferences };
+  async getPreferences(): Promise<UserPreferences> {
+    try {
+      const prefsJson = localStorage.getItem('bossbitch-preferences');
+      if (!prefsJson) {
+        return DEFAULT_PREFERENCES;
+      }
+      return JSON.parse(prefsJson) as UserPreferences;
+    } catch (error) {
+      console.error('Error getting preferences from localStorage:', error);
+      return DEFAULT_PREFERENCES;
+    }
   }
 
-  updatePreferences(preferences: Partial<UserData['preferences']>) {
-    this.userData.preferences = {
-      ...this.userData.preferences,
-      ...preferences,
-    };
-    this.saveData();
-    return this.userData.preferences;
+  async updatePreferences(preferences: Partial<UserPreferences>): Promise<UserPreferences> {
+    try {
+      const currentPrefs = await this.getPreferences();
+      // Deep merge for nested objects like colors
+      const updatedPrefs = {
+        ...currentPrefs,
+        ...preferences,
+        colors: preferences.colors 
+          ? { ...currentPrefs.colors, ...preferences.colors }
+          : currentPrefs.colors
+      };
+      localStorage.setItem('bossbitch-preferences', JSON.stringify(updatedPrefs));
+      return updatedPrefs;
+    } catch (error) {
+      console.error('Error updating preferences in localStorage:', error);
+      throw error;
+    }
   }
 
   // Daily entries
-  getDailyEntry(date: Date): DailyEntry | null {
-    const key = getEntryKey(date);
-    return this.userData.dailyEntries[key] || null;
-  }
-
-  getDailyEntries(startDate: Date, endDate: Date): DailyEntry[] {
-    const entries: DailyEntry[] = [];
-    const currentDate = new Date(startDate);
-
-    while (currentDate <= endDate) {
-      const key = getEntryKey(currentDate);
-      const entry = this.userData.dailyEntries[key];
+  async getDailyEntry(date: Date): Promise<DailyEntry | null> {
+    try {
+      const dateKey = getEntryKey(date);
+      const entryJson = localStorage.getItem(`bossbitch-daily-${dateKey}`);
       
-      if (entry) {
-        entries.push(entry);
+      if (!entryJson) {
+        return null;
       }
-
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return entries;
-  }
-
-  addIncomeToDay(date: Date, amount: number, source: IncomeSource): DailyEntry {
-    const key = getEntryKey(date);
-    const existingEntry = this.userData.dailyEntries[key] || {
-      date: key,
-      progress: 0,
-      segments: [],
-    };
-
-    // Check if this source already exists in the day's segments
-    const existingSegmentIndex = existingEntry.segments.findIndex(seg => seg.id === source.id);
-    
-    let updatedSegments: IncomeSource[];
-    if (existingSegmentIndex >= 0) {
-      // Update existing segment
-      updatedSegments = existingEntry.segments.map((segment, index) => 
-        index === existingSegmentIndex
-          ? { ...segment, value: segment.value + amount }
-          : segment
-      );
-    } else {
-      // Add new segment
-      updatedSegments = [
-        ...existingEntry.segments,
-        { ...source, value: amount }
-      ];
-    }
-
-    // Update entry
-    const updatedEntry: DailyEntry = {
-      ...existingEntry,
-      progress: existingEntry.progress + amount,
-      segments: updatedSegments,
-    };
-
-    // Save to storage
-    this.userData.dailyEntries[key] = updatedEntry;
-    this.saveData();
-
-    // Also update monthly entry
-    this.addIncomeToMonth(date, amount, source);
-
-    // Update income sources if it's a new one
-    if (existingSegmentIndex < 0) {
-      this.addIncomeSource(source);
-    }
-
-    return updatedEntry;
-  }
-
-  deleteDayEntry(date: Date): void {
-    const key = getEntryKey(date);
-    const monthKey = getMonthKey(date.getFullYear(), date.getMonth());
-    
-    // Get the entry we're about to delete
-    const entryToDelete = this.userData.dailyEntries[key];
-    
-    if (entryToDelete) {
-      // Get the monthly entry that needs updating
-      const monthlyEntry = this.userData.monthlyEntries[monthKey];
       
-      if (monthlyEntry) {
-        // Update monthly entry by subtracting the deleted day's values
-        const updatedMonthlyEntry: MonthlyEntry = {
-          ...monthlyEntry,
-          progress: monthlyEntry.progress - entryToDelete.progress,
-          segments: monthlyEntry.segments.map(segment => {
-            const matchingDaySegment = entryToDelete.segments.find(s => s.id === segment.id);
-            return {
-              ...segment,
-              value: segment.value - (matchingDaySegment?.value || 0)
-            };
-          }).filter(segment => segment.value > 0) // Remove segments with 0 value
-        };
-        
-        // Update monthly entry in storage
-        this.userData.monthlyEntries[monthKey] = updatedMonthlyEntry;
-      }
+      return JSON.parse(entryJson) as DailyEntry;
+    } catch (error) {
+      console.error('Error getting daily entry from localStorage:', error);
+      return null;
     }
-    
-    // Delete the daily entry
-    delete this.userData.dailyEntries[key];
-    
-    // Save all changes
-    this.saveData();
   }
 
-  // Monthly entries
-  getMonthlyEntry(year: number, month: number): MonthlyEntry | null {
-    const key = getMonthKey(year, month);
-    return this.userData.monthlyEntries[key] || null;
-  }
-
-  getMonthlyEntries(startYear: number, startMonth: number, endYear: number, endMonth: number): MonthlyEntry[] {
-    const entries: MonthlyEntry[] = [];
-    
-    for (let year = startYear; year <= endYear; year++) {
-      const monthStart = year === startYear ? startMonth : 0;
-      const monthEnd = year === endYear ? endMonth : 11;
+  async getDailyEntries(startDate: Date, endDate: Date): Promise<DailyEntry[]> {
+    try {
+      const entries: DailyEntry[] = [];
       
-      for (let month = monthStart; month <= monthEnd; month++) {
-        const key = getMonthKey(year, month);
-        const entry = this.userData.monthlyEntries[key];
-        
+      // Iterate through each day in the range
+      const currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        const entry = await this.getDailyEntry(currentDate);
         if (entry) {
           entries.push(entry);
         }
+        
+        // Move to next day
+        currentDate.setDate(currentDate.getDate() + 1);
       }
+      
+      return entries;
+    } catch (error) {
+      console.error('Error getting daily entries from localStorage:', error);
+      return [];
     }
-    
-    return entries;
   }
 
-  private addIncomeToMonth(date: Date, amount: number, source: IncomeSource): MonthlyEntry {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const key = getMonthKey(year, month);
-    
-    const existingEntry = this.userData.monthlyEntries[key] || {
-      year,
-      month,
-      progress: 0,
-      segments: [],
-    };
-
-    // Check if this source already exists in the month's segments
-    const existingSegmentIndex = existingEntry.segments.findIndex(seg => seg.id === source.id);
-    
-    let updatedSegments: IncomeSource[];
-    if (existingSegmentIndex >= 0) {
-      // Update existing segment
-      updatedSegments = existingEntry.segments.map((segment, index) => 
-        index === existingSegmentIndex
-          ? { ...segment, value: segment.value + amount }
-          : segment
-      );
-    } else {
-      // Add new segment
-      updatedSegments = [
-        ...existingEntry.segments,
-        { ...source, value: amount }
-      ];
+  async addIncomeToDay(date: Date, amount: number, source: IncomeSource): Promise<DailyEntry> {
+    try {
+      const dateKey = getEntryKey(date);
+      const storageKey = `bossbitch-daily-${dateKey}`;
+      
+      // Get existing entry or create a new one
+      const existingEntry = await this.getDailyEntry(date) || {
+        date: dateKey,
+        progress: 0,
+        segments: []
+      };
+      
+      // Update the entry
+      const updatedEntry: DailyEntry = {
+        ...existingEntry,
+        progress: existingEntry.progress + amount,
+        segments: [...existingEntry.segments, { ...source, value: amount }]
+      };
+      
+      // Save to localStorage
+      localStorage.setItem(storageKey, JSON.stringify(updatedEntry));
+      
+      return updatedEntry;
+    } catch (error) {
+      console.error('Error adding income to day in localStorage:', error);
+      throw error;
     }
-
-    // Update entry
-    const updatedEntry: MonthlyEntry = {
-      ...existingEntry,
-      progress: existingEntry.progress + amount,
-      segments: updatedSegments,
-    };
-
-    // Save to storage
-    this.userData.monthlyEntries[key] = updatedEntry;
-    this.saveData();
-
-    return updatedEntry;
   }
 
-  // Income sources management
-  getIncomeSources(): IncomeSource[] {
-    return [...this.userData.incomeSources];
-  }
-
-  addIncomeSource(source: IncomeSource): IncomeSource[] {
-    // Check if source already exists
-    const existingSourceIndex = this.userData.incomeSources.findIndex(s => s.id === source.id);
+  // Update specific fields of a daily entry
+  async updateDayEntry(date: Date, updates: Partial<DailyEntry>): Promise<DailyEntry> {
+    const dateKey = getEntryKey(date);
+    const storageKey = `bossbitch-daily-${dateKey}`;
     
-    if (existingSourceIndex < 0) {
-      this.userData.incomeSources.push({
-        id: source.id,
-        name: source.name,
-        color: source.color,
-        value: 0, // Reset value since this is just the source template
-      });
-      this.saveData();
+    try {
+      // Get the existing entry
+      const existingEntry = await this.getDailyEntry(date);
+      
+      // If no entry exists, throw an error
+      if (!existingEntry) {
+        throw new Error(`No entry exists for date ${dateKey}`);
+      }
+      
+      // Merge the updates with the existing entry
+      const updatedEntry = {
+        ...existingEntry,
+        ...updates
+      };
+      
+      // Save the updated entry
+      localStorage.setItem(storageKey, JSON.stringify(updatedEntry));
+      
+      return updatedEntry;
+    } catch (error) {
+      console.error(`Error updating daily entry for ${dateKey}:`, error);
+      throw error;
     }
-    
-    return this.userData.incomeSources;
   }
 
-  updateIncomeSource(id: string, updates: Partial<Omit<IncomeSource, 'id'>>): IncomeSource[] {
-    this.userData.incomeSources = this.userData.incomeSources.map(source => 
-      source.id === id
-        ? { ...source, ...updates }
-        : source
-    );
-    
-    this.saveData();
-    return this.userData.incomeSources;
+  async deleteDayEntry(date: Date): Promise<void> {
+    try {
+      const dateKey = getEntryKey(date);
+      localStorage.removeItem(`bossbitch-daily-${dateKey}`);
+    } catch (error) {
+      console.error('Error deleting day entry from localStorage:', error);
+      throw error;
+    }
+  }
+
+  // Monthly entries
+  async getMonthlyEntry(year: number, month: number): Promise<MonthlyEntry | null> {
+    try {
+      const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+      const entryJson = localStorage.getItem(`bossbitch-monthly-${monthKey}`);
+      
+      if (!entryJson) {
+        return null;
+      }
+      
+      return JSON.parse(entryJson) as MonthlyEntry;
+    } catch (error) {
+      console.error('Error getting monthly entry from localStorage:', error);
+      return null;
+    }
+  }
+
+  async getMonthlyEntries(
+    startYear: number,
+    startMonth: number,
+    endYear: number,
+    endMonth: number
+  ): Promise<MonthlyEntry[]> {
+    try {
+      const entries: MonthlyEntry[] = [];
+      
+      // Iterate through each month in the range
+      for (let year = startYear; year <= endYear; year++) {
+        const monthStart = year === startYear ? startMonth : 0;
+        const monthEnd = year === endYear ? endMonth : 11;
+        
+        for (let month = monthStart; month <= monthEnd; month++) {
+          const entry = await this.getMonthlyEntry(year, month);
+          if (entry) {
+            entries.push(entry);
+          }
+        }
+      }
+      
+      return entries;
+    } catch (error) {
+      console.error('Error getting monthly entries from localStorage:', error);
+      return [];
+    }
+  }
+
+  // Income sources
+  async getIncomeSources(): Promise<IncomeSource[]> {
+    try {
+      const sourcesJson = localStorage.getItem('bossbitch-income-sources');
+      if (!sourcesJson) {
+        return [];
+      }
+      return JSON.parse(sourcesJson) as IncomeSource[];
+    } catch (error) {
+      console.error('Error getting income sources from localStorage:', error);
+      return [];
+    }
+  }
+
+  async addIncomeSource(source: IncomeSource): Promise<IncomeSource[]> {
+    try {
+      const sources = await this.getIncomeSources();
+      
+      // Check if source with this ID already exists
+      const existingIndex = sources.findIndex(s => s.id === source.id);
+      if (existingIndex >= 0) {
+        // Update existing source
+        sources[existingIndex] = source;
+      } else {
+        // Add new source
+        sources.push(source);
+      }
+      
+      localStorage.setItem('bossbitch-income-sources', JSON.stringify(sources));
+      return sources;
+    } catch (error) {
+      console.error('Error adding income source to localStorage:', error);
+      throw error;
+    }
+  }
+
+  async updateIncomeSource(id: string, updates: Partial<Omit<IncomeSource, 'id'>>): Promise<IncomeSource[]> {
+    try {
+      const sources = await this.getIncomeSources();
+      
+      // Find the source to update
+      const sourceIndex = sources.findIndex(source => source.id === id);
+      if (sourceIndex === -1) {
+        throw new Error(`Income source with id ${id} not found`);
+      }
+      
+      // Update the source
+      sources[sourceIndex] = {
+        ...sources[sourceIndex],
+        ...updates
+      };
+      
+      // Save to localStorage
+      localStorage.setItem('bossbitch-income-sources', JSON.stringify(sources));
+      
+      return sources;
+    } catch (error) {
+      console.error('Error updating income source in localStorage:', error);
+      throw error;
+    }
   }
 
   // Data management
-  clearAllData(): void {
-    this.userData = { ...DEFAULT_USER_DATA };
-    this.saveData();
-  }
-
-  exportData(): string {
-    return JSON.stringify(this.userData);
-  }
-
-  importData(jsonData: string): boolean {
+  async clearAllData(): Promise<void> {
     try {
-      const data = JSON.parse(jsonData) as UserData;
-      this.userData = data;
-      this.saveData();
+      // Get all keys that start with 'bossbitch-'
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('bossbitch-')) {
+          keysToRemove.push(key);
+        }
+      }
+      
+      // Remove all keys
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      // Add default values back
+      localStorage.setItem('bossbitch-goals', JSON.stringify(DEFAULT_GOALS));
+      localStorage.setItem('bossbitch-preferences', JSON.stringify(DEFAULT_PREFERENCES));
+    } catch (error) {
+      console.error('Error clearing data from localStorage:', error);
+      throw error;
+    }
+  }
+
+  async exportData(): Promise<string> {
+    try {
+      // Get all keys that start with 'bossbitch-'
+      const dataToExport: Record<string, any> = {};
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('bossbitch-')) {
+          try {
+            // Parse the value to get the actual object
+            const value = JSON.parse(localStorage.getItem(key) || '');
+            
+            // Store with a normalized key (remove prefix)
+            const normalizedKey = key.replace('bossbitch-', '');
+            dataToExport[normalizedKey] = value;
+          } catch (e) {
+            console.warn(`Could not parse item at ${key}, skipping`);
+          }
+        }
+      }
+      
+      // Convert to JSON
+      return JSON.stringify({
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+        data: dataToExport
+      });
+    } catch (error) {
+      console.error('Error exporting data from localStorage:', error);
+      throw error;
+    }
+  }
+
+  async importData(jsonData: string): Promise<boolean> {
+    try {
+      // Parse the imported data
+      const imported = JSON.parse(jsonData);
+      
+      if (!imported || !imported.data) {
+        throw new Error('Invalid import data format');
+      }
+      
+      // First clear existing data
+      await this.clearAllData();
+      
+      // Import each key-value pair
+      Object.entries(imported.data).forEach(([key, value]) => {
+        const storageKey = `bossbitch-${key}`;
+        localStorage.setItem(storageKey, JSON.stringify(value));
+      });
+      
       return true;
     } catch (error) {
-      console.error('Error importing data:', error);
+      console.error('Error importing data to localStorage:', error);
       return false;
     }
   }

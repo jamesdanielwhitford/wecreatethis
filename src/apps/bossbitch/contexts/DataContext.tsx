@@ -26,6 +26,7 @@ interface DataContextType {
   incomeSources: IncomeSource[];
   addIncomeSource: (source: IncomeSource) => Promise<void>;
   updateIncomeSource: (id: string, updates: Partial<Omit<IncomeSource, 'id'>>) => Promise<void>;
+  updateIncomeSourceEverywhere: (id: string, updates: Partial<Omit<IncomeSource, 'id'>>) => Promise<void>;
   
   // Daily entries
   addIncomeToDay: (date: Date, amount: number, source: IncomeSource) => Promise<void>;
@@ -82,6 +83,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Load initial data
   const loadInitialData = useCallback(async () => {
+    
     setIsLoading(true);
     try {
       // Load goals
@@ -94,6 +96,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       
       // Load income sources
       const sources = await dataService.getIncomeSources();
+
+      console.log("Loaded Income Sources:", sources);
+
       setIncomeSources(sources);
 
       // Update timestamp after successful load
@@ -236,6 +241,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  const updateIncomeSourceEverywhere = async (id: string, updates: Partial<Omit<IncomeSource, 'id'>>) => {
+    setIsLoading(true);
+    try {
+      const newSources = await dataService.updateIncomeSourceEverywhere(id, updates);
+      setIncomeSources(newSources);
+      await refreshAllData();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Daily entry handlers
   const addIncomeToDay = async (date: Date, amount: number, source: IncomeSource) => {
     setIsLoading(true);
@@ -306,6 +322,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     incomeSources,
     addIncomeSource,
     updateIncomeSource,
+    updateIncomeSourceEverywhere,
     addIncomeToDay,
     clearAllData,
     exportData,

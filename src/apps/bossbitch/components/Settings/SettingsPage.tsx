@@ -10,11 +10,13 @@ import {
   Palette, 
   LogIn,
   Download,
-  Upload
+  Upload,
+  DollarSign
 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { AuthModal, AuthButton } from '../Auth';
 import styles from './styles.module.css';
+import ManageIncomeSources from './ManageIncomeSources';
 
 type ThemeOption = 'light' | 'dark' | 'system';
 
@@ -22,6 +24,7 @@ interface SettingsPageProps {
   themePreference?: ThemeOption;
   onThemeChange?: (theme: ThemeOption) => void;
 }
+
 
 const SettingsPage: React.FC<SettingsPageProps> = ({
   themePreference = 'system',
@@ -36,11 +39,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     preferences,
     updatePreferences,
     isLoading,
-    setIsLoading
+    setIsLoading,
+    incomeSources,
+    updateIncomeSourceEverywhere
   } = useData();
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showIncomeSourcesModal, setShowIncomeSourcesModal] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState(false);
@@ -211,7 +217,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       </button>
     </div>
   );
-
+  // Add right before the return statement in SettingsPage
+  console.log("SettingsPage - Income Sources:", incomeSources);
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>Settings</h2>
@@ -302,7 +309,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 <Palette size={20} />
               </div>
               <div className={styles.settingInfo}>
-                <h3 className={styles.settingTitle}>Colors</h3>
+                <h3 className={styles.settingTitle}>App Colors</h3>
                 <p className={styles.settingDescription}>
                   Customize app colors and ring themes
                 </p>
@@ -313,6 +320,28 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
               className={styles.actionButton}
             >
               Edit
+            </button>
+          </div>
+
+          {/* Income Sources Management */}
+          <div className={styles.settingItem}>
+            <div className={styles.settingContent}>
+              <div className={styles.settingIcon}>
+                <DollarSign size={20} />
+              </div>
+              <div className={styles.settingInfo}>
+                <h3 className={styles.settingTitle}>Income Sources</h3>
+                <p className={styles.settingDescription}>
+                  Manage your income sources and their colors
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowIncomeSourcesModal(true)}
+              className={styles.actionButton}
+              disabled={!incomeSources || incomeSources.length === 0}
+            >
+              Manage
             </button>
           </div>
         </div>
@@ -431,6 +460,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         <div className={styles.colorPickerOverlay}>
           {renderColorSettings()}
         </div>
+      )}
+
+      {/* Income Sources Management Modal */}
+      {showIncomeSourcesModal && (
+        <ManageIncomeSources
+          incomeSources={incomeSources}
+          onUpdateSource={updateIncomeSourceEverywhere}
+          onClose={() => setShowIncomeSourcesModal(false)}
+          isLoading={isLoading}
+        />
       )}
     </div>
   );
