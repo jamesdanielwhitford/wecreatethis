@@ -33,7 +33,6 @@ export function createCurrencyInputHandler(
     const input = e.target;
     const oldValue = input.value;
     const oldSelectionStart = input.selectionStart || 0;
-    const oldSelectionEnd = input.selectionEnd || 0;
     
     // Get the numeric value before the cursor (ignoring formatting characters)
     const valueBeforeCursor = oldValue.substring(0, oldSelectionStart).replace(/[R\s,]/g, '');
@@ -57,9 +56,6 @@ export function createCurrencyInputHandler(
         // Format the value
         const formatted = formatZAR(number);
         setValue(formatted);
-        
-        // Get the numeric part of the formatted string
-        const numericFormatted = formatted.replace(/[R\s,]/g, '');
         
         // Calculate new cursor position by finding where our numeric cursor position should be
         // in the formatted string
