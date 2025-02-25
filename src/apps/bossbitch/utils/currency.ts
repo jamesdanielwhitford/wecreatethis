@@ -32,10 +32,12 @@ export function createCurrencyInputHandler(
   ) {
     const input = e.target;
     const oldValue = input.value;
-    const cursorPosition = input.selectionStart || 0;
+    const oldSelectionStart = input.selectionStart || 0;
+    const oldSelectionEnd = input.selectionEnd || 0;
     
-    // Count number of currency symbols and spaces before cursor
-    const symbolsBeforeCursor = (oldValue.substring(0, cursorPosition).match(/[R\s,]/g) || []).length;
+    // Get the numeric value before the cursor (ignoring formatting characters)
+    const valueBeforeCursor = oldValue.substring(0, oldSelectionStart).replace(/[R\s,]/g, '');
+    const numericValueBeforeCursor = valueBeforeCursor.length;
     
     // Clean the input (remove all non-numeric and non-decimal characters)
     const cleaned = oldValue.replace(/[^0-9.]/g, '');
@@ -56,18 +58,33 @@ export function createCurrencyInputHandler(
         const formatted = formatZAR(number);
         setValue(formatted);
         
-        // Calculate new cursor position 
-        // (accounting for added/removed formatting characters)
-        const newSymbolsBeforeCursor = (formatted.substring(0, cursorPosition).match(/[R\s,]/g) || []).length;
-        const symbolDiff = newSymbolsBeforeCursor - symbolsBeforeCursor;
+        // Get the numeric part of the formatted string
+        const numericFormatted = formatted.replace(/[R\s,]/g, '');
+        
+        // Calculate new cursor position by finding where our numeric cursor position should be
+        // in the formatted string
+        let newCursorPos = 0;
+        let numericCharCount = 0;
+        
+        // Walk through the formatted string to find the position where we've seen
+        // the same number of numeric characters as were before the cursor in the original value
+        for (let i = 0; i < formatted.length; i++) {
+          const char = formatted[i];
+          if (!/[R\s,]/.test(char)) {
+            numericCharCount++;
+          }
+          
+          if (numericCharCount > numericValueBeforeCursor) {
+            newCursorPos = i;
+            break;
+          }
+          
+          newCursorPos = i + 1;
+        }
         
         // Set cursor position in next render cycle
         setTimeout(() => {
-          const newPosition = Math.min(
-            cursorPosition + symbolDiff,
-            formatted.length
-          );
-          input.setSelectionRange(newPosition, newPosition);
+          input.setSelectionRange(newCursorPos, newCursorPos);
         }, 0);
       }
     } catch {
