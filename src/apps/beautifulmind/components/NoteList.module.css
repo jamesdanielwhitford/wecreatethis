@@ -126,7 +126,7 @@
     opacity: 1;
   }
   
-  .emptyState {
+  .emptyState, .loadingState {
     text-align: center;
     padding: 3rem 1rem;
     color: #aaa;

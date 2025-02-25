@@ -30,6 +30,20 @@
     overflow-y: auto;
     background-color: #1a1a1a;
   }
+
+  .errorMessage {
+    color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  
+  .loadingState {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #aaa;
+  }
   
   /* Responsive adjustments */
   @media (max-width: 768px) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './FolderView.module.css';
 import { Note } from '../types';
 import Image from 'next/image';
@@ -6,19 +6,27 @@ import Image from 'next/image';
 interface FolderViewProps {
   folderTag: string;
   notes: Note[];
+  isLoading?: boolean; // Add isLoading as an optional prop
   onCreateNote: () => void;
   onEditNote: (note: Note) => void;
-  onDeleteNote: (noteId: string) => void;
+  onDeleteNote: (noteId: string) => Promise<boolean>;
 }
 
 export const FolderView: React.FC<FolderViewProps> = ({ 
   folderTag, 
   notes, 
+  isLoading: externalLoading = false, // Provide a default value
   onCreateNote, 
   onEditNote, 
   onDeleteNote 
 }) => {
   const [selectedSubfolder, setSelectedSubfolder] = useState<string | null>(null);
+  const [internalLoading, setInternalLoading] = useState(false);
+  
+  // Reset selected subfolder when folder changes
+  useEffect(() => {
+    setSelectedSubfolder(null);
+  }, [folderTag]);
   
   // Find all other tags that are used together with the current folder tag
   const getSubfolderTags = () => {
@@ -53,6 +61,20 @@ export const FolderView: React.FC<FolderViewProps> = ({
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString();
   };
+  
+  const handleDeleteNote = async (noteId: string) => {
+    if (window.confirm('Are you sure you want to delete this note?')) {
+      setInternalLoading(true);
+      try {
+        await onDeleteNote(noteId);
+      } finally {
+        setInternalLoading(false);
+      }
+    }
+  };
+
+  // Use either external loading state or internal loading state
+  const isLoadingState = externalLoading || internalLoading;
 
   return (
     <div className={styles.folderViewContainer}>
@@ -86,7 +108,11 @@ export const FolderView: React.FC<FolderViewProps> = ({
         </div>
       )}
       
-      {sortedNotes.length > 0 ? (
+      {isLoadingState ? (
+        <div className={styles.loadingState}>
+          <p>Loading...</p>
+        </div>
+      ) : sortedNotes.length > 0 ? (
         <div className={styles.noteGrid}>
           {sortedNotes.map(note => (
             <div 
@@ -99,7 +125,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
                   <div className={styles.imagePreview}>
                     <Image 
                       src={note.imageData} 
-                      alt="Note" 
+                      alt={note.title} 
                       width={300} 
                       height={200} 
                       style={{ objectFit: 'cover' }}
@@ -125,9 +151,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
                 className={styles.deleteButton} 
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (window.confirm('Are you sure you want to delete this note?')) {
-                    onDeleteNote(note.id);
-                  }
+                  handleDeleteNote(note.id);
                 }}
               >
                 Delete

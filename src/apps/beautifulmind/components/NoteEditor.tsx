@@ -22,6 +22,9 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [imageData, setImageData] = useState<string | undefined>(undefined);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressedSize, setCompressedSize] = useState<string | null>(null);
+  const [originalSize, setOriginalSize] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -33,6 +36,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       setType(note.type);
       setTags([...note.tags]);
       setImageData(note.imageData);
+      
+      // Calculate size for existing image
+      if (note.type === 'image' && note.imageData) {
+        const sizeInKB = calculateSizeInKB(note.imageData);
+        setCompressedSize(`${sizeInKB} KB`);
+      }
     } else {
       // Reset form for a new note
       setTitle('');
@@ -40,8 +49,19 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       setType('text');
       setTags([]);
       setImageData(undefined);
+      setCompressedSize(null);
+      setOriginalSize(null);
     }
   }, [note]);
+  
+  const calculateSizeInKB = (dataUrl: string): number => {
+    // Remove the data URL prefix to get just the base64 string
+    const base64 = dataUrl.split(',')[1];
+    // Calculate size in bytes (approximate: each Base64 digit represents 6 bits)
+    const sizeInBytes = (base64.length * 3) / 4;
+    // Convert to KB and round to 1 decimal place
+    return Math.round(sizeInBytes / 1024 * 10) / 10;
+  };
   
   const handleAddTag = () => {
     if (newTag.trim() !== '' && !tags.includes(newTag.trim())) {
@@ -54,18 +74,104 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
   
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = async (imageData: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      try {
+        // Use the browser's built-in HTML Image element constructor
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Calculate new dimensions (max width/height of 1200px)
+          let width = img.width;
+          let height = img.height;
+          const maxDimension = 1200;
+          
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+          
+          // Set canvas dimensions
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Draw image on canvas
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convert to WebP with quality of 0.8 (80%)
+            const quality = 0.8;
+            const webpData = canvas.toDataURL('image/webp', quality);
+            resolve(webpData);
+          } else {
+            reject('Could not get canvas context');
+          }
+        };
+        
+        img.onerror = () => {
+          reject('Error loading image');
+        };
+        
+        img.src = imageData;
+      } catch (error) {
+        reject(`Error compressing image: ${error}`);
+      }
+    });
+  };
+  
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (typeof event.target?.result === 'string') {
-        setImageData(event.target.result);
-        setType('image');
+    try {
+      setIsCompressing(true);
+      
+      // Read the file as data URL
+      const originalDataUrl = await readFileAsDataURL(file);
+      const originalSizeKB = calculateSizeInKB(originalDataUrl);
+      setOriginalSize(`${originalSizeKB} KB`);
+      
+      // Compress the image to WebP
+      const compressedDataUrl = await compressImage(originalDataUrl);
+      const compressedSizeKB = calculateSizeInKB(compressedDataUrl);
+      setCompressedSize(`${compressedSizeKB} KB`);
+      
+      // Set the compressed image data
+      setImageData(compressedDataUrl);
+      setType('image');
+      
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      alert('Failed to process image. Please try again with a different image.');
+    } finally {
+      setIsCompressing(false);
+    }
+  };
+  
+  const readFileAsDataURL = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (typeof event.target?.result === 'string') {
+          resolve(event.target.result);
+        } else {
+          reject('Failed to read file');
+        }
+      };
+      reader.onerror = () => reject('Error reading file');
+      reader.readAsDataURL(file);
+    });
   };
   
   const triggerImageUpload = () => {
@@ -174,16 +280,33 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       ) : (
         <div className={styles.formGroup}>
           <label className={styles.label}>Image</label>
-          {imageData ? (
+          {isCompressing ? (
+            <div className={styles.compressionLoading}>
+              <p>Compressing image...</p>
+            </div>
+          ) : imageData ? (
             <div className={styles.imageContainer}>
-              <Image 
-                src={imageData} 
-                alt="Uploaded" 
-                className={styles.uploadedImage}
-                width={400}
-                height={300}
-                style={{ maxWidth: '100%', height: 'auto' }}
-              />
+              <div className={styles.imagePreview}>
+                <Image 
+                  src={imageData} 
+                  alt="Uploaded" 
+                  width={400}
+                  height={300}
+                  style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
+                />
+              </div>
+              
+              {(originalSize || compressedSize) && (
+                <div className={styles.imageSizeInfo}>
+                  {originalSize && compressedSize && (
+                    <p>Compressed from {originalSize} to {compressedSize}</p>
+                  )}
+                  {!originalSize && compressedSize && (
+                    <p>Image size: {compressedSize}</p>
+                  )}
+                </div>
+              )}
+              
               <button
                 type="button"
                 className={styles.changeImageButton}
