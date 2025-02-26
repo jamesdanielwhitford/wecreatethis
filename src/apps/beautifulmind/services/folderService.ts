@@ -3,6 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 const FOLDERS_STORAGE_KEY = 'beautiful-mind-folders';
 
+// Define the type for folder with children
+interface FolderWithChildren extends FolderMetadata {
+  children: FolderWithChildren[];
+}
+
 export const folderService = {
   /**
    * Get all folders metadata from localStorage
@@ -31,25 +36,27 @@ export const folderService = {
     const id = uuidv4();
     const timestamp = Date.now();
     
-    // The tag for this folder is simply the folder name
-    const tag = name;
-    
-    // Construct the path based on parent folder if exists
+    // Construct the path and tag based on parent folder if it exists
     let path = name;
+    let tag = name;
+    
     if (parentId) {
       const parentFolder = folderService.getFolderById(parentId);
       if (parentFolder) {
+        // For deeply nested folders, use the full path
         path = `${parentFolder.path}/${name}`;
+        // The tag should also follow the full path structure
+        tag = `${parentFolder.tag}/${name}`;
       }
     }
     
-    // Create the new folder with parentId instead of parentFolder
+    // Create the new folder
     const newFolder: FolderMetadata = {
       id,
       name,
       tag,
       path,
-      parentId, // Changed from parentFolder to parentId
+      parentId,
       createdAt: timestamp
     };
     
@@ -71,7 +78,7 @@ export const folderService = {
     
     // Get all subfolders recursively
     const getAllChildFolderIds = (parentId: string): string[] => {
-      const childFolders = folders.filter(f => f.parentId === parentId); // Changed from parentFolder to parentId
+      const childFolders = folders.filter(f => f.parentId === parentId);
       return [
         ...childFolders.map(f => f.id),
         ...childFolders.flatMap(f => getAllChildFolderIds(f.id))
@@ -93,7 +100,7 @@ export const folderService = {
    */
   getRootFolders: (): FolderMetadata[] => {
     const folders = folderService.getFoldersMetadata();
-    return folders.filter(folder => folder.parentId === null); // Changed from parentFolder to parentId
+    return folders.filter(folder => folder.parentId === null);
   },
 
   /**
@@ -101,7 +108,26 @@ export const folderService = {
    */
   getSubfolders: (parentFolderId: string): FolderMetadata[] => {
     const folders = folderService.getFoldersMetadata();
-    return folders.filter(folder => folder.parentId === parentFolderId); // Changed from parentFolder to parentId
+    return folders.filter(folder => folder.parentId === parentFolderId);
+  },
+
+  /**
+   * Get the entire folder hierarchy as a nested structure
+   */
+  getFolderHierarchy: (): FolderWithChildren[] => {
+    const allFolders = folderService.getFoldersMetadata();
+    
+    // Build nested hierarchy recursively
+    const buildHierarchy = (parentId: string | null): FolderWithChildren[] => {
+      return allFolders
+        .filter(folder => folder.parentId === parentId)
+        .map(folder => ({
+          ...folder,
+          children: buildHierarchy(folder.id)
+        }));
+    };
+    
+    return buildHierarchy(null);
   },
 
   /**
@@ -126,5 +152,22 @@ export const folderService = {
   getAllFolderTags: (): string[] => {
     const folders = folderService.getFoldersMetadata();
     return folders.map(folder => folder.tag);
+  },
+  
+  /**
+   * Get ancestor folder tags for a given folder tag
+   * Returns an array of tags from root to the specified folder
+   */
+  getAncestorTags: (tag: string): string[] => {
+    const parts = tag.split('/');
+    const ancestorTags: string[] = [];
+    
+    // Build the path parts incrementally
+    for (let i = 0; i < parts.length; i++) {
+      const ancestorTag = parts.slice(0, i + 1).join('/');
+      ancestorTags.push(ancestorTag);
+    }
+    
+    return ancestorTags;
   }
 };

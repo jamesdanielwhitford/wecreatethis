@@ -9,6 +9,7 @@ import { Sidebar } from './components/Sidebar';
 import { useNotes } from './hooks/useNotes';
 import { useFolders } from './hooks/useFolders';
 import { Note, View, SubfolderView } from './types';
+import { folderService } from './services/folderService';
 
 export function BeautifulMindApp() {
   const [currentView, setCurrentView] = useState<View>('notes');
@@ -51,13 +52,13 @@ export function BeautifulMindApp() {
       return [];
     }
     
-    // Get all subfolders created by the user for this parent folder
-    const userSubfolders = rootFolders.filter(folder => 
+    // Get only direct subfolders of the current folder
+    const directSubfolders = rootFolders.filter(folder => 
       folder.parentId === activeFolderMetadata.id
     );
     
     // Convert to SubfolderView format with count
-    return userSubfolders.map(subfolder => {
+    return directSubfolders.map(subfolder => {
       // Count notes that have both the parent folder tag and this subfolder tag
       const count = activeFolderNotes.filter(note => 
         note.tags.includes(subfolder.tag)
@@ -78,8 +79,10 @@ export function BeautifulMindApp() {
       const loadFolderNotes = async () => {
         setIsLoadingFolder(true);
         try {
+          // Get notes for the current folder
           const notesForFolder = await getNotesByTag(currentFolder);
           setActiveFolderNotes(notesForFolder);
+          
           // Reset subfolder when folder changes
           setCurrentSubfolder(null);
         } finally {
@@ -103,25 +106,57 @@ export function BeautifulMindApp() {
 
   const handleSaveNote = async (note: Omit<Note, "id" | "createdAt" | "updatedAt">) => {
     try {
-      // If we're in a folder view, automatically add the folder tag
-      if (currentView === 'folder' && currentFolder && !note.tags.includes(currentFolder)) {
-        note.tags = [...note.tags, currentFolder];
+      const updatedTags = [...note.tags];
+      
+      // If we're in a folder view, make sure all ancestor tags are included
+      if (currentView === 'folder' && currentFolder) {
+        // Get all ancestor tags for the current folder
+        const ancestorTags = folderService.getAncestorTags(currentFolder);
+        
+        // Add any missing ancestor tags
+        ancestorTags.forEach(tag => {
+          if (!updatedTags.includes(tag)) {
+            updatedTags.push(tag);
+          }
+        });
       }
       
-      // If we're in a subfolder view, also add the subfolder tag
-      if (currentSubfolder && !note.tags.includes(currentSubfolder)) {
-        note.tags = [...note.tags, currentSubfolder];
+      // If we're in a subfolder view, also add the subfolder tag and its ancestors
+      if (currentSubfolder) {
+        const ancestorTags = folderService.getAncestorTags(currentSubfolder);
+        
+        ancestorTags.forEach(tag => {
+          if (!updatedTags.includes(tag)) {
+            updatedTags.push(tag);
+          }
+        });
+        
+        // Also add the individual folder names as separate tags for backward compatibility
+        // For example, for "Design/Art/Painting", add "Design", "Art", and "Painting" as separate tags
+        if (currentSubfolder.includes('/')) {
+          const parts = currentSubfolder.split('/');
+          parts.forEach(part => {
+            if (!updatedTags.includes(part)) {
+              updatedTags.push(part);
+            }
+          });
+        }
       }
+      
+      const noteToSave = {
+        ...note,
+        tags: updatedTags
+      };
       
       if (activeNote) {
         await updateNote({ 
-          ...note, 
+          ...noteToSave, 
           id: activeNote.id,
           createdAt: activeNote.createdAt,
           updatedAt: Date.now()
         });
       } else {
-        await addNote(note);
+        await addNote(noteToSave);
       }
       setIsEditing(false);
       setActiveNote(null);
@@ -190,6 +225,7 @@ export function BeautifulMindApp() {
     if (!currentFolder || !activeFolderMetadata) return;
     
     try {
+      // Create subfolder of the current folder
       const newFolder = createFolder(folderName, activeFolderMetadata.id);
       // Switch to this subfolder view
       setCurrentSubfolder(newFolder.tag);

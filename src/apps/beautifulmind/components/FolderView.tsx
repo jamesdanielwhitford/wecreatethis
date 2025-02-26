@@ -41,7 +41,23 @@ export const FolderView: React.FC<FolderViewProps> = ({
 
   // Filter the notes based on current subfolder selection
   const filteredNotes = currentSubfolder 
-    ? notes.filter(note => note.tags.includes(currentSubfolder))
+    ? notes.filter(note => {
+        // Support both hierarchical tags and the legacy behavior
+        // Check if the note has the hierarchical tag directly
+        if (note.tags.includes(currentSubfolder)) {
+          return true;
+        }
+        
+        // Legacy support: check if the note has both the parent folder tag
+        // and the subfolder name as a separate tag
+        if (folderMetadata && currentSubfolder.includes('/')) {
+          // For hierarchical paths like "Design/Art", get the last part
+          const subfolderId = currentSubfolder.split('/').pop() || '';
+          return note.tags.includes(subfolderId);
+        }
+        
+        return false;
+      })
     : notes;
   
   const sortedNotes = [...filteredNotes].sort((a, b) => b.updatedAt - a.updatedAt);
@@ -72,8 +88,8 @@ export const FolderView: React.FC<FolderViewProps> = ({
     
     folderNotes.forEach(note => {
       note.tags.forEach(tag => {
-        // Don't include the parent folder's tag itself
-        if (tag !== folderMetadata.tag) {
+        // Don't include the parent folder's tag itself or any ancestor tag
+        if (tag !== folderMetadata.tag && !isAncestorTag(tag, folderMetadata.tag)) {
           uniqueTags.add(tag);
         }
       });
@@ -82,14 +98,33 @@ export const FolderView: React.FC<FolderViewProps> = ({
     return Array.from(uniqueTags);
   };
   
+  // Helper function to check if a tag is an ancestor of another tag
+  const isAncestorTag = (tag: string, potentialAncestor: string): boolean => {
+    // If the potential ancestor is a prefix of the tag and followed by a slash
+    // Example: potentialAncestor = "Design", tag = "Design/Art"
+    return tag.startsWith(potentialAncestor + '/');
+  };
+  
+  // Format the folder path for display
+  const formatFolderPath = (tag: string): string => {
+    // Convert "Design/Art/Painting" to "Design > Art > Painting"
+    return tag.split('/').join(' > ');
+  };
+  
+  // Get the display name for the current folder (last part of the path)
+  const getDisplayName = (tag: string): string => {
+    const parts = tag.split('/');
+    return parts[parts.length - 1];
+  };
+  
   const tagSuggestions = getTagSuggestions();
 
   return (
     <div className={styles.folderViewContainer}>
       <div className={styles.header}>
         <h2 className={styles.title}>
-          {folderMetadata.name}
-          {currentSubfolder && <span className={styles.subfolderTitle}> / {currentSubfolder}</span>}
+          {formatFolderPath(folderMetadata.tag)}
+          {currentSubfolder && <span className={styles.subfolderTitle}> / {getDisplayName(currentSubfolder)}</span>}
         </h2>
         <button 
           className={styles.createButton}
@@ -97,6 +132,27 @@ export const FolderView: React.FC<FolderViewProps> = ({
         >
           New Note
         </button>
+      </div>
+      
+      <div className={styles.folderPath}>
+        <div className={styles.breadcrumbs}>
+          {folderMetadata.path.split('/').map((part, index, parts) => {
+            // Build the path up to this part
+            const pathUpToHere = parts.slice(0, index + 1).join('/');
+            const isLast = index === parts.length - 1;
+            
+            return (
+              <React.Fragment key={pathUpToHere}>
+                {index > 0 && <span className={styles.breadcrumbSeparator}>/</span>}
+                <span 
+                  className={`${styles.breadcrumb} ${isLast ? styles.currentBreadcrumb : ''}`}
+                >
+                  {part}
+                </span>
+              </React.Fragment>
+            );
+          })}
+        </div>
       </div>
       
       <div className={styles.subfolderNavigation}>
@@ -107,7 +163,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
           All
         </button>
         
-        {/* Only show user-created subfolders */}
+        {/* Only show direct subfolders of the current folder */}
         {subfolders.map(subfolder => (
           <button 
             key={subfolder.id} 

@@ -37,6 +37,38 @@
     background-color: #2980b9;
   }
   
+  .folderPath {
+    margin-bottom: 1.5rem;
+  }
+  
+  .breadcrumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #aaa;
+  }
+  
+  .breadcrumb {
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  
+  .breadcrumb:hover {
+    color: white;
+  }
+  
+  .breadcrumbSeparator {
+    color: #666;
+    margin: 0 0.25rem;
+  }
+  
+  .currentBreadcrumb {
+    color: #3498db;
+    font-weight: 500;
+  }
+  
   .subfolderNavigation {
     display: flex;
     flex-wrap: wrap;

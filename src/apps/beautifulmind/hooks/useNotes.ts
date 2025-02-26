@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Note } from '../types';
 import { localStorageService } from '../services/localStorageService';
 
+
 export const useNotes = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -104,33 +105,47 @@ export const useNotes = () => {
     }
   }, []);
 
-  // Get notes by tag
+  // Get notes by tag, including hierarchical support
   const getNotesByTag = useCallback(async (tag: string): Promise<Note[]> => {
     try {
-      // Get the direct tag match
-      const directMatches = await localStorageService.getNotesByTag(tag);
+      // Get all notes that exactly match the tag
+      const exactMatches = await localStorageService.getNotesByTag(tag);
       
-      // Also get notes with child folder tags
+      // For hierarchical folders, we need to also get notes with child folder tags
+      // For example, if tag is "Design", also get notes with "Design/Art", "Design/Art/Painting", etc.
+      const childMatches = notes.filter(note => 
+        note.tags.some(noteTag => 
+          noteTag !== tag && noteTag.startsWith(`${tag}/`)
+        )
+      );
+      
+      // For backward compatibility: if tag is hierarchical (e.g., "Design/Art"),
+      // also include notes that have separate tags for each level
+      let legacyMatches: Note[] = [];
       if (tag.includes('/')) {
-        return directMatches;
-      } else {
-        // For a root folder like "Work", also get notes with "Work/Project1"
-        const childNotes = notes.filter(note => 
-          note.tags.some(noteTag => 
-            noteTag !== tag && noteTag.startsWith(`${tag}/`)
-          )
+        // Get the individual parts (e.g., ["Design", "Art"])
+        const parts = tag.split('/');
+        // Find notes that have all these parts as separate tags
+        legacyMatches = notes.filter(note => 
+          parts.every(part => note.tags.includes(part))
         );
-        
-        // Combine direct matches and child notes, removing duplicates
-        const allNotes = [...directMatches];
-        childNotes.forEach(childNote => {
-          if (!allNotes.some(note => note.id === childNote.id)) {
-            allNotes.push(childNote);
+      }
+      
+      // Combine all types of matches, removing duplicates
+      const allNotes = [...exactMatches];
+      
+      const addUniqueNotes = (notesToAdd: Note[]) => {
+        notesToAdd.forEach(noteToAdd => {
+          if (!allNotes.some(note => note.id === noteToAdd.id)) {
+            allNotes.push(noteToAdd);
           }
         });
-        
-        return allNotes;
-      }
+      };
+      
+      addUniqueNotes(childMatches);
+      addUniqueNotes(legacyMatches);
+      
+      return allNotes;
     } catch (err) {
       console.error('Error getting notes by tag:', err);
       setError('Failed to load notes for this folder.');

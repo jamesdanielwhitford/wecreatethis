@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styles from './NoteEditor.module.css';
 import { Note } from '../types';
 import Image from 'next/image';
+import { folderService } from '../services/folderService';
 
 interface NoteEditorProps {
   note: Note | null;
@@ -55,14 +56,23 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       // Initialize tags based on current context
       const initialTags: string[] = [];
       
-      // If we're in a folder, add that tag
-      if (currentFolder) {
-        initialTags.push(currentFolder);
-      }
-      
-      // If we're in a subfolder, add that tag too
+      // If we're in a folder or subfolder, add the appropriate tags
       if (currentSubfolder) {
-        initialTags.push(currentSubfolder);
+        // Add all ancestor tags for the subfolder
+        const ancestorTags = folderService.getAncestorTags(currentSubfolder);
+        ancestorTags.forEach(tag => {
+          if (!initialTags.includes(tag)) {
+            initialTags.push(tag);
+          }
+        });
+      } else if (currentFolder) {
+        // Add all ancestor tags for the folder
+        const ancestorTags = folderService.getAncestorTags(currentFolder);
+        ancestorTags.forEach(tag => {
+          if (!initialTags.includes(tag)) {
+            initialTags.push(tag);
+          }
+        });
       }
       
       setTags(initialTags);
@@ -89,13 +99,21 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   };
   
   const handleRemoveTag = (tagToRemove: string) => {
-    // Don't allow removing the current folder tag or subfolder tag if we're in those contexts
-    if ((currentFolder && tagToRemove === currentFolder) || 
-        (currentSubfolder && tagToRemove === currentSubfolder)) {
+    // Don't allow removing the current folder tag, subfolder tag,
+    // or any ancestor folder tags if we're in those contexts
+    if ((currentFolder && isRequiredTag(tagToRemove, currentFolder)) || 
+        (currentSubfolder && isRequiredTag(tagToRemove, currentSubfolder))) {
       return;
     }
     
     setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+  
+  // Check if a tag is required (i.e., it's the current folder/subfolder or an ancestor)
+  const isRequiredTag = (tag: string, currentTag: string): boolean => {
+    // Get all ancestor tags for the current context
+    const ancestorTags = folderService.getAncestorTags(currentTag);
+    return ancestorTags.includes(tag);
   };
   
   const compressImage = async (imageData: string): Promise<string> => {
@@ -230,17 +248,26 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   
   // Filter available tags to exclude already selected ones
   const filteredAvailableTags = availableTags.filter(tag => !tags.includes(tag));
-
-  // Separate context tags (folder/subfolder) from other tags
-  const contextTags = tags.filter(tag => 
-    (currentFolder && tag === currentFolder) || 
-    (currentSubfolder && tag === currentSubfolder)
-  );
   
-  const regularTags = tags.filter(tag => 
-    !(currentFolder && tag === currentFolder) && 
-    !(currentSubfolder && tag === currentSubfolder)
-  );
+  // Get all required tags based on the current context
+  const getContextTags = (): string[] => {
+    if (currentSubfolder) {
+      return folderService.getAncestorTags(currentSubfolder);
+    } else if (currentFolder) {
+      return folderService.getAncestorTags(currentFolder);
+    }
+    return [];
+  };
+
+  // Separate context tags (folder/subfolder and ancestors) from other tags
+  const contextTags = getContextTags().filter(tag => tags.includes(tag));
+  
+  const regularTags = tags.filter(tag => !contextTags.includes(tag));
+  
+  // Format folder path for display
+  const formatTagPath = (tag: string): string => {
+    return tag.split('/').join(' / ');
+  };
   
   return (
     <div className={styles.editorContainer}>
@@ -422,11 +449,11 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           {/* Display context (folder/subfolder) tags first if present */}
           {contextTags.length > 0 && (
             <div className={styles.selectedTags}>
-              <p className={styles.selectedTagsLabel}>Context tags:</p>
+              <p className={styles.selectedTagsLabel}>Folder tags:</p>
               <div className={styles.tagsList}>
                 {contextTags.map(tag => (
                   <div key={tag} className={`${styles.tagChip} ${styles.contextTagChip}`}>
-                    <span className={styles.tagName}>{tag}</span>
+                    <span className={styles.tagName}>{formatTagPath(tag)}</span>
                     {/* Context tags can't be removed */}
                   </div>
                 ))}
