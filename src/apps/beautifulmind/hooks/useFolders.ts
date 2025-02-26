@@ -32,7 +32,7 @@ export const useFolders = () => {
   // Load initial data with proper dependency array
   useEffect(() => {
     loadData();
-  }, []); // Add empty dependency array here to run only once on mount
+  }, [loadData]); // Add loadData to the dependency array
 
   // Create a new folder
   const createFolder = useCallback((name: string, parentFolder: string | null): FolderMetadata => {
