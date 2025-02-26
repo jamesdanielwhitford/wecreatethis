@@ -24,6 +24,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentView,
   currentFolder
 }) => {
+  // Filter out folders that have a parent (subfolders)
+  const topLevelFolders = rootFolders.filter(folder => folder.parentId === null);
+  
   return (
     <div className={styles.sidebar}>
       <div className={styles.navigation}>
@@ -44,9 +47,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onCreateFolder={onCreateFolder}
         />
         
-        {rootFolders.length > 0 ? (
+        {topLevelFolders.length > 0 ? (
           <ul className={styles.folderList}>
-            {rootFolders.map(folder => (
+            {topLevelFolders.map(folder => (
               <li key={folder.id} className={styles.folder}>
                 <button 
                   className={`${styles.folderButton} ${currentFolder === folder.tag ? styles.active : ''}`}
