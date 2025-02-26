@@ -26,7 +26,7 @@ export const folderService = {
   /**
    * Create a new folder
    */
-  createFolder: (name: string, parentFolder: string | null): FolderMetadata => {
+  createFolder: (name: string, parentId: string | null): FolderMetadata => {
     const folders = folderService.getFoldersMetadata();
     const id = uuidv4();
     const timestamp = Date.now();
@@ -34,12 +34,22 @@ export const folderService = {
     // The tag for this folder is simply the folder name
     const tag = name;
     
-    // Keep track of the parent folder if exists
+    // Construct the path based on parent folder if exists
+    let path = name;
+    if (parentId) {
+      const parentFolder = folderService.getFolderById(parentId);
+      if (parentFolder) {
+        path = `${parentFolder.path}/${name}`;
+      }
+    }
+    
+    // Create the new folder with parentId instead of parentFolder
     const newFolder: FolderMetadata = {
       id,
       name,
       tag,
-      parentFolder,
+      path,
+      parentId, // Changed from parentFolder to parentId
       createdAt: timestamp
     };
     
@@ -61,7 +71,7 @@ export const folderService = {
     
     // Get all subfolders recursively
     const getAllChildFolderIds = (parentId: string): string[] => {
-      const childFolders = folders.filter(f => f.parentFolder === parentId);
+      const childFolders = folders.filter(f => f.parentId === parentId); // Changed from parentFolder to parentId
       return [
         ...childFolders.map(f => f.id),
         ...childFolders.flatMap(f => getAllChildFolderIds(f.id))
@@ -83,7 +93,7 @@ export const folderService = {
    */
   getRootFolders: (): FolderMetadata[] => {
     const folders = folderService.getFoldersMetadata();
-    return folders.filter(folder => folder.parentFolder === null);
+    return folders.filter(folder => folder.parentId === null); // Changed from parentFolder to parentId
   },
 
   /**
@@ -91,7 +101,7 @@ export const folderService = {
    */
   getSubfolders: (parentFolderId: string): FolderMetadata[] => {
     const folders = folderService.getFoldersMetadata();
-    return folders.filter(folder => folder.parentFolder === parentFolderId);
+    return folders.filter(folder => folder.parentId === parentFolderId); // Changed from parentFolder to parentId
   },
 
   /**

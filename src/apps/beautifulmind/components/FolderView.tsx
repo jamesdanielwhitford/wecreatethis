@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styles from './FolderView.module.css';
 import { Note, FolderMetadata, SubfolderView } from '../types';
 import Image from 'next/image';
@@ -24,7 +24,6 @@ export const FolderView: React.FC<FolderViewProps> = ({
   currentSubfolder,
   notes, 
   subfolders,
-  allTags,
   folderTags,
   isLoading = false,
   onCreateNote, 
@@ -65,6 +64,26 @@ export const FolderView: React.FC<FolderViewProps> = ({
   // Use either external loading state or internal loading state
   const isLoadingState = isLoading || internalLoading;
 
+  // Get tag suggestions for creating subfolders
+  const getTagSuggestions = () => {
+    // Find all unique tags used in notes that have this folder's tag
+    const folderNotes = notes.filter(note => note.tags.includes(folderMetadata.tag));
+    const uniqueTags = new Set<string>();
+    
+    folderNotes.forEach(note => {
+      note.tags.forEach(tag => {
+        // Don't include the parent folder's tag itself
+        if (tag !== folderMetadata.tag) {
+          uniqueTags.add(tag);
+        }
+      });
+    });
+    
+    return Array.from(uniqueTags);
+  };
+  
+  const tagSuggestions = getTagSuggestions();
+
   return (
     <div className={styles.folderViewContainer}>
       <div className={styles.header}>
@@ -87,6 +106,8 @@ export const FolderView: React.FC<FolderViewProps> = ({
         >
           All
         </button>
+        
+        {/* Only show user-created subfolders */}
         {subfolders.map(subfolder => (
           <button 
             key={subfolder.id} 
@@ -99,9 +120,10 @@ export const FolderView: React.FC<FolderViewProps> = ({
         
         <div className={styles.createSubfolderContainer}>
           <FolderManager 
-            availableTags={allTags}
+            availableTags={tagSuggestions}
             existingFolderTags={folderTags}
             onCreateFolder={onCreateSubfolder}
+            isSubfolder={true}
           />
         </div>
       </div>

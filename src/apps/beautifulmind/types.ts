@@ -34,5 +34,14 @@ export interface Note {
     name: string;
     path: string;  // Full path like "parent/child/grandchild"
     parentId: string | null;
+    tag: string;   // Tag used to identify the folder and filter notes
     createdAt: number;
+  }
+  
+  // SubfolderView interface for displaying subfolders in the UI
+  export interface SubfolderView {
+    id: string;
+    name: string;
+    tag: string;
+    count: number;
   }

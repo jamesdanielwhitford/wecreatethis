@@ -8,7 +8,7 @@ import { FolderView } from './components/FolderView';
 import { Sidebar } from './components/Sidebar';
 import { useNotes } from './hooks/useNotes';
 import { useFolders } from './hooks/useFolders';
-import { Note, View, FolderMetadata, SubfolderView } from './types';
+import { Note, View, SubfolderView } from './types';
 
 export function BeautifulMindApp() {
   const [currentView, setCurrentView] = useState<View>('notes');
@@ -36,7 +36,6 @@ export function BeautifulMindApp() {
     isLoading: isLoadingFolders,
     error: foldersError,
     createFolder,
-    getSubfolderViews,
     getFolderByTag
   } = useFolders();
 
@@ -48,11 +47,30 @@ export function BeautifulMindApp() {
 
   // Generate subfolder views for the current folder
   const subfolderViews = useMemo<SubfolderView[]>(() => {
-    if (!currentFolder || !activeFolderMetadata || !activeFolderNotes.length) {
+    if (!currentFolder || !activeFolderMetadata) {
       return [];
     }
-    return getSubfolderViews(activeFolderMetadata, activeFolderNotes);
-  }, [currentFolder, activeFolderMetadata, activeFolderNotes, getSubfolderViews]);
+    
+    // Get all subfolders created by the user for this parent folder
+    const userSubfolders = rootFolders.filter(folder => 
+      folder.parentId === activeFolderMetadata.id
+    );
+    
+    // Convert to SubfolderView format with count
+    return userSubfolders.map(subfolder => {
+      // Count notes that have both the parent folder tag and this subfolder tag
+      const count = activeFolderNotes.filter(note => 
+        note.tags.includes(subfolder.tag)
+      ).length;
+      
+      return {
+        id: subfolder.id,
+        name: subfolder.name,
+        tag: subfolder.tag,
+        count
+      };
+    });
+  }, [currentFolder, activeFolderMetadata, activeFolderNotes, rootFolders]);
 
   // Load notes for the current folder when it changes
   useEffect(() => {

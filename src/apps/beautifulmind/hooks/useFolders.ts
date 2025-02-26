@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FolderMetadata, Note, SubfolderView } from '../types';
+import { FolderMetadata } from '../types';
 import { folderService } from '../services/folderService';
 
 export const useFolders = () => {
@@ -8,19 +8,15 @@ export const useFolders = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load initial data
-  useEffect(() => {
-    loadData();
-  }, []);
-
+  // Define loadData first before using it in useEffect
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // Load root folders
-      const loadedRootFolders = folderService.getRootFolders();
-      setRootFolders(loadedRootFolders);
+      // Load all folders (both root and subfolders)
+      const allFolders = folderService.getFoldersMetadata();
+      setRootFolders(allFolders);
       
       // Load all folder tags
       const tags = folderService.getAllFolderTags();
@@ -32,6 +28,11 @@ export const useFolders = () => {
       setIsLoading(false);
     }
   }, []);
+
+  // Load initial data with proper dependency array
+  useEffect(() => {
+    loadData();
+  }, []); // Add empty dependency array here to run only once on mount
 
   // Create a new folder
   const createFolder = useCallback((name: string, parentFolder: string | null): FolderMetadata => {
@@ -68,44 +69,9 @@ export const useFolders = () => {
     }
   }, [loadData]);
 
-  // Get subfolders for a folder
-  const getSubfolders = useCallback((parentFolderId: string): FolderMetadata[] => {
-    return folderService.getSubfolders(parentFolderId);
-  }, []);
-
   // Get a folder by its tag
   const getFolderByTag = useCallback((tag: string): FolderMetadata | null => {
     return folderService.getFolderByTag(tag);
-  }, []);
-
-  // Generate subfolder views for a parent folder based on available notes and tags
-  const getSubfolderViews = useCallback((parentFolder: FolderMetadata, notes: Note[]): SubfolderView[] => {
-    // Find notes that belong to this folder
-    const folderNotes = notes.filter(note => note.tags.includes(parentFolder.tag));
-    
-    // Get all unique tags from these notes
-    const uniqueTags = new Set<string>();
-    folderNotes.forEach(note => {
-      note.tags.forEach(tag => {
-        // Don't include the parent folder's tag itself
-        if (tag !== parentFolder.tag) {
-          uniqueTags.add(tag);
-        }
-      });
-    });
-    
-    // Create a subfolder view for each tag
-    return Array.from(uniqueTags).map(tag => {
-      // Count notes that have both the parent folder tag and this tag
-      const count = folderNotes.filter(note => note.tags.includes(tag)).length;
-      
-      return {
-        id: `subfolder_${parentFolder.tag}_${tag}`,
-        name: tag,
-        tag: tag,
-        count
-      };
-    }).sort((a, b) => b.count - a.count); // Sort by count descending
   }, []);
 
   return {
@@ -115,8 +81,6 @@ export const useFolders = () => {
     error,
     createFolder,
     deleteFolder,
-    getSubfolders,
-    getFolderByTag,
-    getSubfolderViews
+    getFolderByTag
   };
 };

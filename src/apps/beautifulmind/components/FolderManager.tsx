@@ -5,12 +5,14 @@ interface FolderManagerProps {
   availableTags: string[];
   existingFolderTags: string[];
   onCreateFolder: (folderName: string) => void;
+  isSubfolder?: boolean;
 }
 
 export const FolderManager: React.FC<FolderManagerProps> = ({ 
   availableTags, 
   existingFolderTags,
-  onCreateFolder
+  onCreateFolder,
+  isSubfolder = false
 }) => {
   const [newFolderName, setNewFolderName] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -51,7 +53,7 @@ export const FolderManager: React.FC<FolderManagerProps> = ({
                 setShowSuggestions(!!e.target.value);
               }}
               onFocus={() => setShowSuggestions(!!newFolderName)}
-              placeholder="Folder name"
+              placeholder={isSubfolder ? "Subfolder name" : "Folder name"}
               className={styles.folderInput}
             />
             {showSuggestions && suggestions.length > 0 && (
@@ -90,7 +92,7 @@ export const FolderManager: React.FC<FolderManagerProps> = ({
           className={styles.newFolderButton}
           onClick={() => setShowForm(true)}
         >
-          <span className={styles.plusIcon}>+</span> New Folder
+          <span className={styles.plusIcon}>+</span> New {isSubfolder ? "Subfolder" : "Folder"}
         </button>
       )}
     </div>
