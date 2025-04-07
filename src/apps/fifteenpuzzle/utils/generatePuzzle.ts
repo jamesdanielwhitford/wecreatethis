@@ -67,7 +67,7 @@ const getValidBlankMoves = (emptyIndex: number): number[] => {
  */
 export const generateSolvablePuzzleByShufflingBlank = (seed: string, shuffleMoves: number = 500): Tile[] => {
     console.log(`Generating puzzle with seed "${seed}" by shuffling blank ${shuffleMoves} times.`);
-    let currentTiles = [...SOLVED_STATE]; // Start with a copy of the solved state
+    const currentTiles = [...SOLVED_STATE]; // Start with a copy of the solved state
     let currentEmptyIndex = currentTiles.indexOf(BLANK_TILE); // Should be GRID_SIZE - 1 initially
 
     if (currentEmptyIndex === -1) {
@@ -163,7 +163,7 @@ export const formatTime = (milliseconds: number): string => {
 };
 
 // Prepare share text
-export const prepareShareText = (time: number, moves: number, date: string): string => {
+export const prepareShareText = (time: number, moves: number): string => {
     // Use the current date for sharing, regardless of the puzzle date
     const shareDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format
     return `I solved the 15-Puzzle for ${shareDate} in ${formatTime(time)} with ${moves} moves! Try it at wecreatethis.com/15puzzle`;

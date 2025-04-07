@@ -69,7 +69,6 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
     const shareText = prepareShareText(
       timerState.elapsedTime,
       gameState.moves,
-      gameState.date
     );
     
     if (navigator.clipboard) {
