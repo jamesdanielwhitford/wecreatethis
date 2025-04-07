@@ -10,10 +10,9 @@ export const Board: React.FC<BoardProps> = ({
   guessesRemaining,
   guessHistory,
   gameWord,
-  // isHardMode,
   onTileMark
 }) => {
-  const { getCorrectLetterCount } = useGameState({
+  const { getCorrectLetterCount, getLetterColor } = useGameState({
     gameWord,
     cacheKey: '', // Not needed for board functionality
     validGuesses: [], // Not needed for board functionality
@@ -27,7 +26,10 @@ export const Board: React.FC<BoardProps> = ({
         const correctLetterCount = guess ? getCorrectLetterCount(guess, gameWord) : '';
         
         // Determine if we should apply the yellow class to the score square
-        const isPartialMatch = correctLetterCount > 0 && correctLetterCount <= 4 && guess !== gameWord;
+        const isPartialMatch = typeof correctLetterCount === 'number' && 
+                              correctLetterCount > 0 && 
+                              correctLetterCount <= 4 && 
+                              guess !== gameWord;
         
         return (
           <div 
