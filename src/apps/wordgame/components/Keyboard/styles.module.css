@@ -57,11 +57,35 @@
 
 /* New outline classes for keyboard buttons */
 .keyboardButton.red-outline {
-  box-shadow: 0 0 0 3px rgb(220, 95, 95);
+  position: relative;
 }
 
 .keyboardButton.green-outline {
-  box-shadow: 0 0 0 3px rgb(106, 170, 100);
+  position: relative;
+}
+
+.keyboardButton.red-outline::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid rgb(220, 95, 95);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.keyboardButton.green-outline::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid rgb(106, 170, 100);
+  border-radius: 2px;
+  pointer-events: none;
 }
 
 .wideButton {
@@ -90,12 +114,12 @@
   color: rgb(248, 248, 248);
 }
 
-[data-theme="dark"] .keyboardButton.red-outline {
-  box-shadow: 0 0 0 3px rgb(180, 75, 75);
+[data-theme="dark"] .keyboardButton.red-outline::after {
+  border-color: rgb(180, 75, 75);
 }
 
-[data-theme="dark"] .keyboardButton.green-outline {
-  box-shadow: 0 0 0 3px rgb(83, 141, 78);
+[data-theme="dark"] .keyboardButton.green-outline::after {
+  border-color: rgb(83, 141, 78);
 }
 
 @media (min-width: 768px) {
