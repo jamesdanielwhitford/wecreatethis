@@ -2,7 +2,11 @@
 
 import { Tile } from "../types/game.types";
 
-// Fisher-Yates shuffle algorithm with better seeded random
+// The two possible solved states
+const SOLVED_STATE_1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]; // Empty first
+const SOLVED_STATE_2 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0]; // Empty last
+
+// Fisher-Yates shuffle algorithm
 const shuffleArray = (array: number[], seed: string): number[] => {
   const rng = seedRandom(seed);
   const result = [...array];
@@ -15,29 +19,41 @@ const shuffleArray = (array: number[], seed: string): number[] => {
   return result;
 };
 
-// Better seeded random number generator for consistency
+// Simple seeded random number generator
 function seedRandom(seed: string) {
-  // Create a more robust seed hash
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
     hash = ((hash << 5) - hash) + seed.charCodeAt(i);
     hash = hash & hash; // Convert to 32bit integer
   }
   
-  const m = 2**35 - 31; // A large prime number
-  const a = 185852;     // Multiplier
-  const c = 1;          // Increment
-  
-  let state = hash % m;
-  
   return function() {
-    state = (a * state + c) % m;
-    return state / m;
+    hash = (hash * 9301 + 49297) % 233280;
+    return hash / 233280;
   };
 }
 
+// Check if a puzzle is in either of the solved states
+const isAlreadySolved = (tiles: number[]): boolean => {
+  // Check if it matches either solved state exactly
+  const matchesFirst = tiles.every((val, idx) => val === SOLVED_STATE_1[idx]);
+  const matchesSecond = tiles.every((val, idx) => val === SOLVED_STATE_2[idx]);
+  
+  return matchesFirst || matchesSecond;
+};
+
 // Check if a puzzle is solvable
 export const isSolvable = (tiles: number[]): boolean => {
+  // For a 4x4 puzzle, a puzzle is solvable if:
+  // 1. If the empty tile is on an even row counting from the bottom and the number of inversions is odd
+  // 2. If the empty tile is on an odd row counting from the bottom and the number of inversions is even
+  
+  // Find the empty tile position (0)
+  const emptyTilePos = tiles.indexOf(0);
+  
+  // Calculate the row of the empty tile (counting from the bottom)
+  const emptyRow = 4 - Math.floor(emptyTilePos / 4);
+  
   // Count inversions
   let inversions = 0;
   for (let i = 0; i < tiles.length; i++) {
@@ -51,51 +67,68 @@ export const isSolvable = (tiles: number[]): boolean => {
     }
   }
   
-  // Find the empty tile row (counting from the bottom, 0-indexed)
-  const emptyTileIndex = tiles.indexOf(0);
-  const emptyTileRow = 3 - Math.floor(emptyTileIndex / 4);
-  
-  // For a 4x4 puzzle:
-  // If the empty tile is on an even row (from bottom), 
-  // the number of inversions must be odd for the puzzle to be solvable.
-  // If the empty tile is on an odd row (from bottom),
-  // the number of inversions must be even for the puzzle to be solvable.
-  return (emptyTileRow % 2 === 0) ? (inversions % 2 === 1) : (inversions % 2 === 0);
+  if (emptyRow % 2 === 0) {
+    return inversions % 2 === 1;
+  } else {
+    return inversions % 2 === 0;
+  }
 };
 
-// Generate a solvable puzzle
+// Create a predefined set of known good starting positions
+// Each of these is solvable but requires multiple moves
+const PREDEFINED_PUZZLES = [
+  [1, 2, 3, 4, 5, 6, 0, 8, 9, 10, 7, 11, 13, 14, 15, 12],
+  [1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12],
+  [1, 3, 0, 4, 5, 2, 7, 8, 9, 6, 11, 12, 13, 10, 14, 15],
+  [0, 2, 3, 4, 1, 6, 7, 8, 5, 10, 11, 12, 9, 13, 14, 15]
+];
+
+// Generate a solvable puzzle that is not already solved
 export const generateSolvablePuzzle = (seed: string): Tile[] => {
-  // Create array 0-15 representing the tiles (where 0 is the empty space)
+  // First, try to generate a random solvable puzzle
   const numbers = Array.from({ length: 16 }, (_, i) => i);
   
-  // Try up to 10 times to get a solvable puzzle
-  let shuffled;
-  let attempt = 0;
+  let shuffled: number[] = [];
+  let attempts = 0;
+  const maxAttempts = 50; // Limit attempts to avoid infinite loops
   
   do {
-    shuffled = shuffleArray([...numbers], seed + attempt.toString());
-    attempt++;
-  } while (!isSolvable(shuffled) && attempt < 10);
+    // Add the attempt number to the seed for variation
+    shuffled = shuffleArray(numbers, seed + attempts.toString());
+    attempts++;
+    
+    // Break after max attempts to avoid infinite loop
+    if (attempts >= maxAttempts) {
+      console.warn(`Hit max attempts (${maxAttempts}) trying to generate a valid puzzle.`);
+      
+      // Use a predefined puzzle based on the seed
+      const seedNumber = Array.from(seed).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const puzzleIndex = seedNumber % PREDEFINED_PUZZLES.length;
+      shuffled = [...PREDEFINED_PUZZLES[puzzleIndex]];
+      break;
+    }
+  } while (!isSolvable(shuffled) || isAlreadySolved(shuffled));
   
-  // If we couldn't generate a solvable puzzle after 10 attempts, use a known solvable one
-  if (!isSolvable(shuffled)) {
-    console.warn("Could not generate a solvable puzzle, using default arrangement");
-    shuffled = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0, 15]; // Known solvable
+  // If we somehow still ended up with a solved puzzle, force a swap
+  if (isAlreadySolved(shuffled)) {
+    console.warn("Generated a solved puzzle despite checks! Forcing a non-solved state.");
+    // Swap some positions to make it unsolved but still solvable
+    [shuffled[13], shuffled[14]] = [shuffled[14], shuffled[13]];
+    
+    // If that made it unsolvable, swap another pair to restore solvability
+    if (!isSolvable(shuffled)) {
+      [shuffled[11], shuffled[12]] = [shuffled[12], shuffled[11]];
+    }
   }
   
-  // Convert to Tile objects with positions
-  // This is a crucial step - map each value to an object with position and value
-  return shuffled.map((value, index) => ({
-    value,
-    position: index
-  }));
+  // Create tiles with positions
+  return shuffled.map((value, position) => ({ value, position }));
 };
 
 // Check if the puzzle is complete
 export const isPuzzleComplete = (tiles: Tile[]): boolean => {
-  // Sort tiles by position
-  const sortedTiles = [...tiles].sort((a, b) => a.position - b.position);
-  const values = sortedTiles.map(tile => tile.value);
+  // Check if tiles are in order (either starting or ending with empty)
+  const values = tiles.map(tile => tile.value);
   
   // Check if it starts with empty (0) and then 1-15 in order
   const startsWithEmpty = values[0] === 0 && 

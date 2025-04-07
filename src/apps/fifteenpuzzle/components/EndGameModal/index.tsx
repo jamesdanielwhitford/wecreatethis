@@ -13,7 +13,9 @@ const EndGameModal: React.FC<WinModalProps> = ({
   moves,
   date,
   onPlayInfinite,
-  onShare
+  onShare,
+  onNewGame,
+  gameMode
 }) => {
   const router = useRouter();
 
@@ -26,6 +28,14 @@ const EndGameModal: React.FC<WinModalProps> = ({
     
     // Update the URL
     router.push('/15puzzle/infinite');
+  };
+
+  // Handle "New Game" for infinite mode
+  const handleNewGame = () => {
+    if (onNewGame) {
+      onNewGame();
+    }
+    onClose();
   };
 
   return (
@@ -43,9 +53,17 @@ const EndGameModal: React.FC<WinModalProps> = ({
           <button className={styles.shareButton} onClick={onShare}>
             Share
           </button>
-          <button className={styles.infiniteButton} onClick={handlePlayInfinite}>
-            Play Infinite
-          </button>
+
+          {/* Show different button based on game mode */}
+          {gameMode === 'daily' ? (
+            <button className={styles.infiniteButton} onClick={handlePlayInfinite}>
+              Play Infinite
+            </button>
+          ) : (
+            <button className={styles.newGameButton} onClick={handleNewGame}>
+              New Puzzle
+            </button>
+          )}
         </div>
         
         <button className={styles.closeButton} onClick={onClose}>

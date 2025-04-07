@@ -86,6 +86,13 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
     handleModeChange('infinite');
   };
 
+  // Handle starting a new game (used in infinite mode)
+  const handleNewGame = () => {
+    resetGame();
+    resetTimer();
+    setIsWinModalOpen(false);
+  };
+
   // Handle pause overlay click (to resume)
   const handlePauseOverlayClick = () => {
     if (gameState.isPaused) {
@@ -136,13 +143,10 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
           )}
         </div>
         
-        {gameState.gameMode === 'infinite' && (
+        {gameState.gameMode === 'infinite' && !gameState.isComplete && (
           <button 
             className={styles.resetButton}
-            onClick={() => {
-              resetGame();
-              resetTimer();
-            }}
+            onClick={handleNewGame}
           >
             New Puzzle
           </button>
@@ -162,6 +166,8 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
         date={gameState.date}
         onPlayInfinite={handlePlayInfinite}
         onShare={handleShare}
+        onNewGame={handleNewGame}
+        gameMode={gameState.gameMode}
       />
     </div>
   );
