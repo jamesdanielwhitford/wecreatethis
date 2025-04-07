@@ -1,6 +1,6 @@
 // Update this version whenever you make changes to game logic or state structure
 // Format: YYYY.MM.DD
-export const GAME_VERSION = '2025.04.08';
+export const GAME_VERSION = '2025.04.09';
 
 // Updating this version will clear all existing game states and force a fresh start
 // for all users. Use this when making breaking changes to the game mechanics or

@@ -18,6 +18,10 @@ const apps = [
     name: 'Boss Bitch',
     path: '/bossbitch'
   },
+  {
+    name: '15 Puzzle',
+    path: '/15puzzle/daily'
+  },
 ];
 
 export default function Home() {
