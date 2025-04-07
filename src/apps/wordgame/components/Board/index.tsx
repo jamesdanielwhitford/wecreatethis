@@ -12,7 +12,7 @@ export const Board: React.FC<BoardProps> = ({
   gameWord,
   onTileMark
 }) => {
-  const { getCorrectLetterCount, getLetterColor } = useGameState({
+  const { getCorrectLetterCount } = useGameState({
     gameWord,
     cacheKey: '', // Not needed for board functionality
     validGuesses: [], // Not needed for board functionality
@@ -46,7 +46,7 @@ export const Board: React.FC<BoardProps> = ({
                   ${tileState.color === 'red' ? styles.red : ''}
                   ${tileState.mark ? styles[tileState.mark] : ''}
                   ${tileState.dot ? styles[tileState.dot] : ''}
-                  ${(correctLetterCount > 0 && correctLetterCount <= 4 && guess !== gameWord) ? styles.markable : ''}
+                  ${(typeof correctLetterCount === 'number' && correctLetterCount > 0 && correctLetterCount <= 4 && guess !== gameWord) ? styles.markable : ''}
                 `}
                 onClick={() => onTileMark(rowIndex, colIndex)}
               >

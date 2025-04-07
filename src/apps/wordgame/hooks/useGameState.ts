@@ -1,5 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { GameState, TileState, GameColor, GuessState, UseGameStateProps } from '../types/game.types';
+import { 
+  GameState, 
+  TileState, 
+  GameColor, 
+  GuessState, 
+  UseGameStateProps, 
+  TileMark, 
+  KeyboardState 
+} from '../types/game.types';
 import { GAME_VERSION } from '../utils';
 
 interface UseGameStateReturn extends GameState {
@@ -33,7 +41,7 @@ export const useGameState = ({
   const [gameOver, setGameOver] = useState(false);
   const [gameWon, setGameWon] = useState(false);
   const [finalAttempts, setFinalAttempts] = useState(0);
-  const [keyboardColors, setKeyboardColors] = useState<Record<string, GameColor>>({});
+  const [keyboardColors, setKeyboardColors] = useState<Record<string, KeyboardState>>({});
   const [showEndModal, setShowEndModal] = useState(false);
   const [knownCorrectLetters, setKnownCorrectLetters] = useState<Map<string, number>>(new Map());
   const [knownIncorrectLetters, setKnownIncorrectLetters] = useState<Set<string>>(new Set());
@@ -171,7 +179,7 @@ export const useGameState = ({
       } else {
         // If no marks, remove any outline
         if (newColors[letter] === 'green-outline' || newColors[letter] === 'red-outline') {
-          newColors[letter] = '';
+          newColors[letter] = '' as KeyboardState;
         }
       }
       
@@ -367,7 +375,7 @@ export const useGameState = ({
 
     // Update all state at once
     setTileStates(currentState.tileStates);
-    setKeyboardColors(currentState.keyboardColors);
+    setKeyboardColors(currentState.keyboardColors as Record<string, KeyboardState>);
     setKnownCorrectLetters(currentState.knownCorrectLetters);
     setKnownIncorrectLetters(currentState.knownIncorrectLetters);
     setKnownMaxFrequency(currentState.knownMaxFrequency);
