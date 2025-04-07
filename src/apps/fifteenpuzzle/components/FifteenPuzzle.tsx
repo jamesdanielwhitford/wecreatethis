@@ -114,7 +114,6 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
       
       <main className={styles.main}>
         <div className={styles.gameInfo}>
-          <h1 className={styles.title}>15 Puzzle</h1>
           <p className={styles.subtitle}>
             {gameState.gameMode === 'daily' 
               ? `Daily Puzzle - ${gameState.date}` 
