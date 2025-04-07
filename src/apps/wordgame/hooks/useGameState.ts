@@ -63,7 +63,8 @@ export const useGameState = ({
     if (!guess) return '';
     if (correctLetterCount === 0) return 'red';
     if (guess === gameWord) return 'green';
-    return 'orange';
+    // No longer return 'orange' for scores between 1-4
+    return '';
   }, [gameWord]);
 
   // Game actions
@@ -98,23 +99,85 @@ export const useGameState = ({
   }, [gameOver, guessHistory.length, isHardMode, handlePlayAgain]);
 
   const handleTileMark = useCallback((rowIndex: number, colIndex: number) => {
-    if (isHardMode && tileStates[rowIndex][colIndex].color !== 'orange') return;
+    // Remove the check for orange color, instead we'll check if there's a guess at this row
+    // and if the correctLetterCount is between 1-4
+    if (!isHardMode || !guessHistory[rowIndex]) return;
+    
+    // We'll check if this is a valid row to mark tiles for
+    const guess = guessHistory[rowIndex];
+    const correctLetterCount = getCorrectLetterCount(guess, gameWord);
+    
+    // Only allow marking if this is a partial match (not correct and not all wrong)
+    if (correctLetterCount === 0 || guess === gameWord) return;
     
     setTileStates(prev => {
       const newStates = [...prev];
       const currentMark = newStates[rowIndex][colIndex].mark;
+      const letter = newStates[rowIndex][colIndex].letter.toUpperCase();
       
+      // Set the new mark for the tile
+      let newMark: TileMark | undefined;
       if (!currentMark) {
-        newStates[rowIndex][colIndex].mark = 'red-mark';
+        newMark = 'red-mark';
       } else if (currentMark === 'red-mark') {
-        newStates[rowIndex][colIndex].mark = 'green-mark';
+        newMark = 'green-mark';
       } else {
-        newStates[rowIndex][colIndex].mark = undefined;
+        newMark = undefined;
       }
+      
+      newStates[rowIndex][colIndex].mark = newMark;
+      
+      // Update keyboard colors based on the new mark and the state of all instances of this letter
+      updateKeyboardMarkings(letter, newMark);
       
       return newStates;
     });
-  }, [isHardMode, tileStates]);
+  }, [isHardMode, tileStates, guessHistory, getCorrectLetterCount, gameWord]);
+
+  // Helper function to update keyboard color state based on tile markings
+  const updateKeyboardMarkings = useCallback((letter: string, currentMark?: TileMark) => {
+    // If the letter already has a solid color, don't change it
+    if (keyboardColors[letter] === 'green' || keyboardColors[letter] === 'red') {
+      return;
+    }
+    
+    // Count how many instances of this letter have red/green marks in all guesses
+    let redMarks = 0;
+    let greenMarks = 0;
+    
+    // Go through all tiles in all guesses
+    for (let i = 0; i < tileStates.length; i++) {
+      for (let j = 0; j < tileStates[i].length; j++) {
+        const tile = tileStates[i][j];
+        if (tile.letter.toUpperCase() === letter) {
+          if (tile.mark === 'red-mark') {
+            redMarks++;
+          } else if (tile.mark === 'green-mark') {
+            greenMarks++;
+          }
+        }
+      }
+    }
+    
+    // Update the keyboard color based on the counts
+    // The priority is: green outline > red outline > no outline
+    setKeyboardColors(prev => {
+      const newColors = { ...prev };
+      
+      if (greenMarks > 0) {
+        newColors[letter] = 'green-outline';
+      } else if (redMarks > 0) {
+        newColors[letter] = 'red-outline';
+      } else {
+        // If no marks, remove any outline
+        if (newColors[letter] === 'green-outline' || newColors[letter] === 'red-outline') {
+          newColors[letter] = '';
+        }
+      }
+      
+      return newColors;
+    });
+  }, [tileStates, keyboardColors]);
 
   const updateTileStates = useCallback((newGuess: string, rowIndex: number, correctLetterCount: number) => {
     // First, always set the basic tile state with letters and color, regardless of mode
@@ -321,44 +384,69 @@ export const useGameState = ({
     getLetterColor
   ]);
 
-const submitGuess = useCallback((guess: string) => {
-  if (gameOver) return;
+  const submitGuess = useCallback((guess: string) => {
+    if (gameOver) return;
+    
+    if (!validGuesses.includes(guess.toLowerCase())) {
+      alert('Not a valid word!');
+      return;
+    }
   
-  if (!validGuesses.includes(guess.toLowerCase())) {
-    alert('Not a valid word!');
-    return;
-  }
-
-  const correctLetterCount = getCorrectLetterCount(guess, gameWord);
-  const newGuessHistory = [...guessHistory, guess];
-  setGuessHistory(newGuessHistory);
-  setGuessesRemaining(prev => prev - 1);
-
-  const currentRowIndex = 8 - guessesRemaining;
-  updateTileStates(guess, currentRowIndex, correctLetterCount);
-
-  if (guess === gameWord) {
-    setGameOver(true);
-    setGameWon(true);
-    setFinalAttempts(8 - (guessesRemaining - 1));
-    setTimeout(() => setShowEndModal(true), 300);
-  } else if (guessesRemaining <= 1) {
-    setGameOver(true);
-    setGameWon(false);
-    setFinalAttempts(8);
-    setTimeout(() => setShowEndModal(true), 300);
-  }
-
-  setCurrentGuess('');
-}, [
-  gameOver,
-  gameWord,
-  guessHistory,
-  guessesRemaining,
-  validGuesses,
-  getCorrectLetterCount,
-  updateTileStates
-]);
+    const correctLetterCount = getCorrectLetterCount(guess, gameWord);
+    const newGuessHistory = [...guessHistory, guess];
+    setGuessHistory(newGuessHistory);
+    setGuessesRemaining(prev => prev - 1);
+  
+    const currentRowIndex = 8 - guessesRemaining;
+    updateTileStates(guess, currentRowIndex, correctLetterCount);
+  
+    // Update keyboard colors based on guess outcome
+    const newKeyboardColors = { ...keyboardColors };
+    
+    // Handle different cases:
+    // 1. Score of 0 - mark all letters red
+    if (correctLetterCount === 0) {
+      guess.split('').forEach(letter => {
+        const upperLetter = letter.toUpperCase();
+        // Only update if not already green (preserve green)
+        if (newKeyboardColors[upperLetter] !== 'green') {
+          newKeyboardColors[upperLetter] = 'red';
+        }
+      });
+    }
+    // 2. Correct guess - mark all letters green
+    else if (guess === gameWord) {
+      guess.split('').forEach(letter => {
+        newKeyboardColors[letter.toUpperCase()] = 'green';
+      });
+    }
+    // 3. Partial match - no color changes (just the score box turns yellow)
+    
+    setKeyboardColors(newKeyboardColors);
+  
+    if (guess === gameWord) {
+      setGameOver(true);
+      setGameWon(true);
+      setFinalAttempts(8 - (guessesRemaining - 1));
+      setTimeout(() => setShowEndModal(true), 300);
+    } else if (guessesRemaining <= 1) {
+      setGameOver(true);
+      setGameWon(false);
+      setFinalAttempts(8);
+      setTimeout(() => setShowEndModal(true), 300);
+    }
+  
+    setCurrentGuess('');
+  }, [
+    gameOver,
+    gameWord,
+    guessHistory,
+    guessesRemaining,
+    validGuesses,
+    getCorrectLetterCount,
+    updateTileStates,
+    keyboardColors
+  ]);
 
 // Load cache effect
 useEffect(() => {

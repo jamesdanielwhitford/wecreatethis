@@ -26,6 +26,9 @@ export const Board: React.FC<BoardProps> = ({
         const guess = guessHistory[rowIndex] || '';
         const correctLetterCount = guess ? getCorrectLetterCount(guess, gameWord) : '';
         
+        // Determine if we should apply the yellow class to the score square
+        const isPartialMatch = correctLetterCount > 0 && correctLetterCount <= 4 && guess !== gameWord;
+        
         return (
           <div 
             key={rowIndex} 
@@ -37,17 +40,20 @@ export const Board: React.FC<BoardProps> = ({
                 className={`
                   ${styles.letter} 
                   ${tileState.letter ? styles.guessed : ''} 
-                  ${tileState.color ? styles[tileState.color] : ''}
+                  ${tileState.color === 'green' ? styles.green : ''}
+                  ${tileState.color === 'red' ? styles.red : ''}
                   ${tileState.mark ? styles[tileState.mark] : ''}
                   ${tileState.dot ? styles[tileState.dot] : ''}
-                  ${tileState.color === 'orange' && isHardMode ? styles.markable : ''}
+                  ${(correctLetterCount > 0 && correctLetterCount <= 4 && guess !== gameWord) ? styles.markable : ''}
                 `}
                 onClick={() => onTileMark(rowIndex, colIndex)}
               >
                 {isCurrentRow ? currentGuess[colIndex] : tileState.letter}
               </div>
             ))}
-            <div className={styles.score}>{correctLetterCount}</div>
+            <div className={`${styles.score} ${isPartialMatch ? styles.yellow : ''}`}>
+              {correctLetterCount}
+            </div>
           </div>
         );
       })}

@@ -2,6 +2,7 @@
 export type GameColor = '' | 'orange' | 'red' | 'green';
 export type TileMark = 'red-mark' | 'green-mark';
 export type TileDot = 'red-dot' | 'green-dot';
+export type KeyboardState = GameColor | 'red-outline' | 'green-outline';
 
 export interface TileState {
   color: GameColor;
@@ -34,7 +35,7 @@ export interface BoardProps {
 
 export interface KeyboardProps {
   onKeyPress: (key: string) => void;
-  keyboardColors: Record<string, GameColor>;
+  keyboardColors: Record<string, KeyboardState>;
   isGameOver: boolean;
 }
 
@@ -74,7 +75,7 @@ export interface GameState {
   gameOver: boolean;
   gameWon: boolean;
   finalAttempts: number;
-  keyboardColors: Record<string, GameColor>;
+  keyboardColors: Record<string, KeyboardState>;
   showEndModal: boolean;
   knownCorrectLetters: Map<string, number>;
   knownIncorrectLetters: Set<string>;
@@ -97,7 +98,7 @@ export interface GuessState {
   knownIncorrectLetters: Set<string>;
   knownMaxFrequency: Map<string, number>;
   tileStates: TileState[][];
-  keyboardColors: Record<string, GameColor>;
+  keyboardColors: Record<string, KeyboardState>;
 }
 
 // Hook Props Types

@@ -38,19 +38,24 @@ export const Keyboard: React.FC<KeyboardProps> = ({
     <div className={styles.keyboard}>
       {rows.map((row, rowIndex) => (
         <div key={rowIndex} className={styles.keyboardRow}>
-          {row.map(key => (
-            <KeyboardButton
-              key={key}
-              dataKey={key}
-              onClick={handleKeyPress}
-              className={`
-                ${key === 'ENTER' || key === 'BACKSPACE' ? styles.wideButton : ''} 
-                ${keyboardColors[key] ? styles[keyboardColors[key]] : ''}
-              `}
-            >
-              {key === 'BACKSPACE' ? '⌫' : key}
-            </KeyboardButton>
-          ))}
+          {row.map(key => {
+            // Get the appropriate CSS class based on the color state
+            const colorClass = keyboardColors[key] ? styles[keyboardColors[key]] : '';
+            
+            return (
+              <KeyboardButton
+                key={key}
+                dataKey={key}
+                onClick={handleKeyPress}
+                className={`
+                  ${key === 'ENTER' || key === 'BACKSPACE' ? styles.wideButton : ''} 
+                  ${colorClass}
+                `}
+              >
+                {key === 'BACKSPACE' ? '⌫' : key}
+              </KeyboardButton>
+            );
+          })}
         </div>
       ))}
     </div>
