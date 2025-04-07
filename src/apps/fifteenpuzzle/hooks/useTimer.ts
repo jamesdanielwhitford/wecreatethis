@@ -71,7 +71,7 @@ export const useTimer = (
         elapsedTime: lastTimeRef.current
       }));
     }
-  }, [isPaused, isGameStarted, isGameComplete, timerState.isPaused, timerState.isRunning, pausedTime]);
+  }, [isPaused, isGameStarted, isGameComplete, timerState.isPaused, timerState.isRunning, timerState.startTime, pausedTime]);
 
   // Stop the timer when the game is complete
   useEffect(() => {

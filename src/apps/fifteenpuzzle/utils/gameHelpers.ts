@@ -64,7 +64,7 @@ export const isSolvable = (tiles: number[]): boolean => {
 // Generate a solvable puzzle
 export const generateSolvablePuzzle = (seed: string): Tile[] => {
   // Create array 0-15 representing the tiles
-  let numbers = Array.from({ length: 16 }, (_, i) => i);
+  const numbers = Array.from({ length: 16 }, (_, i) => i);
   
   // Shuffle until we get a solvable puzzle
   let shuffled;
