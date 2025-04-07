@@ -2,149 +2,156 @@
 
 import { Tile } from "../types/game.types";
 
-// The two possible solved states
-const SOLVED_STATE_1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]; // Empty first
-const SOLVED_STATE_2 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0]; // Empty last
+// --- Constants ---
+const N = 4; // Grid dimension
+const BLANK_TILE = 0; // Value representing the blank tile
+const GRID_SIZE = N * N;
+// Standard solved state (empty last) used as the starting point for shuffling
+const SOLVED_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0];
+// Define the two target solved states for checking completion
+const SOLVED_STATE_TARGET_1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]; // Empty first
+const SOLVED_STATE_TARGET_2 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0]; // Empty last
 
-// Fisher-Yates shuffle algorithm
-const shuffleArray = (array: number[], seed: string): number[] => {
-  const rng = seedRandom(seed);
-  const result = [...array];
-  
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  
-  return result;
-};
-
-// Simple seeded random number generator
+// --- Seeded RNG (Keep as is) ---
 function seedRandom(seed: string) {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
     hash = ((hash << 5) - hash) + seed.charCodeAt(i);
     hash = hash & hash; // Convert to 32bit integer
   }
-  
+  // Simple LCG: constants from Numerical Recipes
   return function() {
-    hash = (hash * 9301 + 49297) % 233280;
-    return hash / 233280;
+    hash = (hash * 1664525 + 1013904223) | 0; // Ensure 32bit integer arithmetic
+    return (hash >>> 0) / 4294967296; // Convert to positive float [0, 1)
   };
 }
 
-// Check if a puzzle is in either of the solved states
+// --- Helper Functions ---
+
+// Check if a puzzle state array matches either target solved state
 const isAlreadySolved = (tiles: number[]): boolean => {
-  // Check if it matches either solved state exactly
-  const matchesFirst = tiles.every((val, idx) => val === SOLVED_STATE_1[idx]);
-  const matchesSecond = tiles.every((val, idx) => val === SOLVED_STATE_2[idx]);
-  
+  if (tiles.length !== GRID_SIZE) return false;
+  const matchesFirst = tiles.every((val, idx) => val === SOLVED_STATE_TARGET_1[idx]);
+  const matchesSecond = tiles.every((val, idx) => val === SOLVED_STATE_TARGET_2[idx]);
   return matchesFirst || matchesSecond;
 };
 
-// Check if a puzzle is solvable
-export const isSolvable = (tiles: number[]): boolean => {
-  // For a 4x4 puzzle, a puzzle is solvable if:
-  // 1. If the empty tile is on an even row counting from the bottom and the number of inversions is odd
-  // 2. If the empty tile is on an odd row counting from the bottom and the number of inversions is even
-  
-  // Find the empty tile position (0)
-  const emptyTilePos = tiles.indexOf(0);
-  
-  // Calculate the row of the empty tile (counting from the bottom)
-  const emptyRow = 4 - Math.floor(emptyTilePos / 4);
-  
-  // Count inversions
-  let inversions = 0;
-  for (let i = 0; i < tiles.length; i++) {
-    if (tiles[i] === 0) continue;
-    
-    for (let j = i + 1; j < tiles.length; j++) {
-      if (tiles[j] === 0) continue;
-      if (tiles[i] > tiles[j]) {
-        inversions++;
-      }
-    }
-  }
-  
-  if (emptyRow % 2 === 0) {
-    return inversions % 2 === 1;
-  } else {
-    return inversions % 2 === 0;
-  }
+// Function to get valid move target indices for the blank tile
+const getValidBlankMoves = (emptyIndex: number): number[] => {
+    const validTargetIndices: number[] = [];
+    const emptyRow = Math.floor(emptyIndex / N);
+    const emptyCol = emptyIndex % N;
+
+    // Check move up (get index of tile above)
+    if (emptyRow > 0) validTargetIndices.push(emptyIndex - N);
+    // Check move down (get index of tile below)
+    if (emptyRow < N - 1) validTargetIndices.push(emptyIndex + N);
+    // Check move left (get index of tile left)
+    if (emptyCol > 0) validTargetIndices.push(emptyIndex - 1);
+    // Check move right (get index of tile right)
+    if (emptyCol < N - 1) validTargetIndices.push(emptyIndex + 1);
+
+    return validTargetIndices;
 };
 
-// Create a predefined set of known good starting positions
-// Each of these is solvable but requires multiple moves
-const PREDEFINED_PUZZLES = [
-  [1, 2, 3, 4, 5, 6, 0, 8, 9, 10, 7, 11, 13, 14, 15, 12],
-  [1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12],
-  [1, 3, 0, 4, 5, 2, 7, 8, 9, 6, 11, 12, 13, 10, 14, 15],
-  [0, 2, 3, 4, 1, 6, 7, 8, 5, 10, 11, 12, 9, 13, 14, 15]
-];
+// --- New Puzzle Generation Method ---
 
-// Generate a solvable puzzle that is not already solved
-export const generateSolvablePuzzle = (seed: string): Tile[] => {
-  // First, try to generate a random solvable puzzle
-  const numbers = Array.from({ length: 16 }, (_, i) => i);
-  
-  let shuffled: number[] = [];
-  let attempts = 0;
-  const maxAttempts = 50; // Limit attempts to avoid infinite loops
-  
-  do {
-    // Add the attempt number to the seed for variation
-    shuffled = shuffleArray(numbers, seed + attempts.toString());
-    attempts++;
-    
-    // Break after max attempts to avoid infinite loop
-    if (attempts >= maxAttempts) {
-      console.warn(`Hit max attempts (${maxAttempts}) trying to generate a valid puzzle.`);
-      
-      // Use a predefined puzzle based on the seed
-      const seedNumber = Array.from(seed).reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const puzzleIndex = seedNumber % PREDEFINED_PUZZLES.length;
-      shuffled = [...PREDEFINED_PUZZLES[puzzleIndex]];
-      break;
+/**
+ * Generates a solvable puzzle by starting from the solved state
+ * and performing a large number of random valid moves (shuffling the blank tile).
+ * Guarantees solvability without needing an isSolvable check.
+ *
+ * @param seed A string seed for the random number generator for reproducibility.
+ * @param shuffleMoves The number of random moves to perform. Default is 500.
+ * @returns An array of Tile objects representing the generated puzzle state.
+ */
+export const generateSolvablePuzzleByShufflingBlank = (seed: string, shuffleMoves: number = 500): Tile[] => {
+    console.log(`Generating puzzle with seed "${seed}" by shuffling blank ${shuffleMoves} times.`);
+    let currentTiles = [...SOLVED_STATE]; // Start with a copy of the solved state
+    let currentEmptyIndex = currentTiles.indexOf(BLANK_TILE); // Should be GRID_SIZE - 1 initially
+
+    if (currentEmptyIndex === -1) {
+        console.error("generateSolvablePuzzleByShufflingBlank: Could not find blank tile in initial state!");
+        // Fallback to returning solved state tiles if something is fundamentally wrong
+         return SOLVED_STATE.map((value, index) => ({
+             value: value,
+             position: index
+         }));
     }
-  } while (!isSolvable(shuffled) || isAlreadySolved(shuffled));
-  
-  // If we somehow still ended up with a solved puzzle, force a swap
-  if (isAlreadySolved(shuffled)) {
-    console.warn("Generated a solved puzzle despite checks! Forcing a non-solved state.");
-    // Swap some positions to make it unsolved but still solvable
-    [shuffled[13], shuffled[14]] = [shuffled[14], shuffled[13]];
-    
-    // If that made it unsolvable, swap another pair to restore solvability
-    if (!isSolvable(shuffled)) {
-      [shuffled[11], shuffled[12]] = [shuffled[12], shuffled[11]];
+
+    const rng = seedRandom(seed); // Initialize seeded random number generator
+
+    for (let i = 0; i < shuffleMoves; i++) {
+        const possibleTargetIndices = getValidBlankMoves(currentEmptyIndex); // Gets adjacent INDICES
+        if (possibleTargetIndices.length === 0) continue; // Should not happen in a connected 4x4 grid
+
+        // Choose a random adjacent index using the seeded RNG
+        const targetIndex = possibleTargetIndices[Math.floor(rng() * possibleTargetIndices.length)];
+
+        // Swap the elements at the current empty index and the target index
+        [currentTiles[currentEmptyIndex], currentTiles[targetIndex]] = [currentTiles[targetIndex], currentTiles[currentEmptyIndex]];
+
+        // Update the index of the blank tile
+        currentEmptyIndex = targetIndex;
     }
-  }
-  
-  // Create tiles with positions
-  return shuffled.map((value, position) => ({ value, position }));
+
+     // Check if it somehow ended up solved after shuffling (very unlikely but possible)
+     if (isAlreadySolved(currentTiles)) {
+          console.warn("Puzzle ended up in a solved state after shuffling, performing one extra forced move.");
+          // Perform one more random valid swap if solved
+          const possibleTargetIndices = getValidBlankMoves(currentEmptyIndex);
+           if (possibleTargetIndices.length > 0) {
+                // Use the RNG again to ensure deterministic final step if needed
+                const targetIndex = possibleTargetIndices[Math.floor(rng() * possibleTargetIndices.length)];
+               [currentTiles[currentEmptyIndex], currentTiles[targetIndex]] = [currentTiles[targetIndex], currentTiles[currentEmptyIndex]];
+                currentEmptyIndex = targetIndex; // Update index just in case (though not strictly needed here)
+           }
+     }
+
+    // Map the final tile values array to the Tile[] structure
+    // The 'position' in the Tile object represents its current index in the flat array (0-15)
+    return currentTiles.map((value, index) => ({
+        value: value,
+        position: index
+    }));
 };
 
-// Check if the puzzle is complete
+
+// --- Utility functions (Keep the ones still needed) ---
+
+// The old generateSolvablePuzzle and isSolvable are no longer needed.
+// You can remove them or comment them out.
+/*
+// Fisher-Yates shuffle algorithm (No longer needed for generation)
+const shuffleArray = (array: number[], seed: string): number[] => { ... };
+
+// Check if a puzzle is solvable (No longer needed for generation)
+export const isSolvable = (tiles: number[]): boolean => { ... };
+
+// Generate a solvable puzzle that is not already solved (Old method - remove or comment out)
+export const generateSolvablePuzzle = (seed: string): Tile[] => { ... };
+*/
+
+
+// Check if the puzzle is complete (based on the tile objects)
 export const isPuzzleComplete = (tiles: Tile[]): boolean => {
-  // Check if tiles are in order (either starting or ending with empty)
-  const values = tiles.map(tile => tile.value);
-  
-  // Check if it starts with empty (0) and then 1-15 in order
-  const startsWithEmpty = values[0] === 0 && 
-    values.slice(1).every((val, idx) => val === idx + 1);
-  
-  // Check if it ends with empty (0) and 1-15 in order
-  const endsWithEmpty = values[15] === 0 && 
-    values.slice(0, 15).every((val, idx) => val === idx + 1);
-  
-  return startsWithEmpty || endsWithEmpty;
+  // Get the values in their current display order
+  const currentValues = [...tiles]
+      .sort((a, b) => a.position - b.position) // Sort by position index
+      .map(tile => tile.value); // Get the values in order
+
+  // Check if it matches either target solved state exactly
+  const matchesFirst = currentValues.every((val, idx) => val === SOLVED_STATE_TARGET_1[idx]);
+  const matchesSecond = currentValues.every((val, idx) => val === SOLVED_STATE_TARGET_2[idx]);
+
+  return matchesFirst || matchesSecond;
 };
 
 // Generate a daily seed based on the date
 export const getDailySeed = (): string => {
   const date = new Date();
-  return `fifteenpuzzle-${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  // Use UTC date to ensure consistency across time zones
+  return `fifteenpuzzle-${date.getUTCFullYear()}-${date.getUTCMonth() + 1}-${date.getUTCDate()}`;
 };
 
 // Format time in minutes and seconds
@@ -152,35 +159,34 @@ export const formatTime = (milliseconds: number): string => {
   const totalSeconds = Math.floor(milliseconds / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
 // Prepare share text
 export const prepareShareText = (time: number, moves: number, date: string): string => {
-  return `I solved the 15-Puzzle for ${date} in ${formatTime(time)} with ${moves} moves! Try it at wecreatethis.com/15puzzle`;
+    // Use the current date for sharing, regardless of the puzzle date
+    const shareDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format
+    return `I solved the 15-Puzzle for ${shareDate} in ${formatTime(time)} with ${moves} moves! Try it at wecreatethis.com/15puzzle`;
+    // Note: You might want the puzzle's date (gameState.date) instead of today's date here
+    // return `I solved the 15-Puzzle (${date}) in ${formatTime(time)} with ${moves} moves! Try it at wecreatethis.com/15puzzle`;
 };
 
-// Get current date in YYYY-MM-DD format
+// Get current date in YYYY-MM-DD format (UTC)
 export const getCurrentDate = (): string => {
   const date = new Date();
-  return date.toISOString().split('T')[0];
+  const year = date.getUTCFullYear();
+  const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+  const day = date.getUTCDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
-// Check if a move is valid (tile is adjacent to empty space)
+// Check if a move is valid (tile's position is adjacent to empty tile's position)
 export const isValidMove = (tilePosition: number, emptyPosition: number): boolean => {
-  // On a 4x4 grid, valid moves are tiles that are
-  // directly above, below, left, or right of the empty space
-  
-  const tileRow = Math.floor(tilePosition / 4);
-  const tileCol = tilePosition % 4;
-  
-  const emptyRow = Math.floor(emptyPosition / 4);
-  const emptyCol = emptyPosition % 4;
-  
-  // Check if the tile is adjacent to the empty space
-  return (
-    (Math.abs(tileRow - emptyRow) === 1 && tileCol === emptyCol) ||
-    (Math.abs(tileCol - emptyCol) === 1 && tileRow === emptyRow)
-  );
+  const tileRow = Math.floor(tilePosition / N);
+  const tileCol = tilePosition % N;
+  const emptyRow = Math.floor(emptyPosition / N);
+  const emptyCol = emptyPosition % N;
+
+  // Check Manhattan distance == 1
+  return Math.abs(tileRow - emptyRow) + Math.abs(tileCol - emptyCol) === 1;
 };

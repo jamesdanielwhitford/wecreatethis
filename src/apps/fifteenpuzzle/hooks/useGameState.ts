@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GameState, GameMode } from '../types/game.types';
 import { 
-  generateSolvablePuzzle, 
+  generateSolvablePuzzleByShufflingBlank, 
   isPuzzleComplete, 
   isValidMove, 
   getDailySeed,
@@ -21,7 +21,7 @@ const createNewGame = (mode: GameMode): GameState => {
   const seed = mode === 'daily' ? getDailySeed() : `infinite-${Date.now()}-${Math.random()}`;
   
   // Generate the tile arrangement
-  const tiles = generateSolvablePuzzle(seed);
+  const tiles = generateSolvablePuzzleByShufflingBlank(seed);
   
   // Ensure we have the empty tile position
   const emptyTile = tiles.find(tile => tile.value === 0);
