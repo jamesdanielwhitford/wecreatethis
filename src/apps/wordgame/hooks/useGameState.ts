@@ -127,15 +127,60 @@ export const useGameState = ({
       
       newStates[rowIndex][colIndex].mark = newMark;
       
-      // Update keyboard colors based on the new mark and the state of all instances of this letter
-      updateKeyboardMarkings(letter, newMark);
+      // Update keyboard colors based on the state of all instances of this letter
+      updateKeyboardMarkings(letter);
       
       return newStates;
     });
   }, [isHardMode, tileStates, guessHistory, getCorrectLetterCount, gameWord]);
 
   // Helper function to update keyboard color state based on tile markings
-  const updateKeyboardMarkings = useCallback((letter: string, currentMark?: TileMark) => {
+  const updateKeyboardMarkings = useCallback((letter: string) => {
+    // If the letter already has a solid color, don't change it
+    if (keyboardColors[letter] === 'green' || keyboardColors[letter] === 'red') {
+      return;
+    }
+    
+    // Count how many instances of this letter have red/green marks in all guesses
+    let redMarks = 0;
+    let greenMarks = 0;
+    
+    // Go through all tiles in all guesses
+    for (let i = 0; i < tileStates.length; i++) {
+      for (let j = 0; j < tileStates[i].length; j++) {
+        const tile = tileStates[i][j];
+        if (tile.letter.toUpperCase() === letter) {
+          if (tile.mark === 'red-mark') {
+            redMarks++;
+          } else if (tile.mark === 'green-mark') {
+            greenMarks++;
+          }
+        }
+      }
+    }
+    
+    // Update the keyboard color based on the counts
+    // The priority is: green outline > red outline > no outline
+    setKeyboardColors(prev => {
+      const newColors = { ...prev };
+      
+      if (greenMarks > 0) {
+        newColors[letter] = 'green-outline';
+      } else if (redMarks > 0) {
+        newColors[letter] = 'red-outline';
+      } else {
+        // If no marks, remove any outline
+        if (newColors[letter] === 'green-outline' || newColors[letter] === 'red-outline') {
+          newColors[letter] = '';
+        }
+      }
+      
+      return newColors;
+    });
+  }, [tileStates, keyboardColors]);
+
+  // Helper function to update keyboard color state based on tile markings
+  const updateKeyboardMarkings = useCallback((letter: string) => {
     // If the letter already has a solid color, don't change it
     if (keyboardColors[letter] === 'green' || keyboardColors[letter] === 'red') {
       return;

@@ -10,7 +10,7 @@ export const Board: React.FC<BoardProps> = ({
   guessesRemaining,
   guessHistory,
   gameWord,
-  isHardMode,
+  // isHardMode,
   onTileMark
 }) => {
   const { getCorrectLetterCount } = useGameState({
