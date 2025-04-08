@@ -231,18 +231,11 @@ export const useGameState = (initialMode: GameMode = 'daily') => {
       // Create a copy of the tiles array to modify
       let updatedTiles = [...prevState.tiles];
       
-      // Track where the empty space will end up
-      let newEmptyPosition = position; // By default, empty moves to clicked position
-
       // Handle row movement
       if (isInSameRow) {
         // Determine move direction
         const moveRight = position < prevState.emptyTilePosition;
-        
-        // Get all positions that will move (between clicked and empty, inclusive)
-        const minCol = Math.min(clickedCol, emptyCol);
-        const maxCol = Math.max(clickedCol, emptyCol);
-        
+                
         // Move all tiles in this range
         if (moveRight) {
           // Moving tiles right (empty moves left)
