@@ -17,6 +17,8 @@
     max-width: 500px;
     margin: 0 auto;
     width: 100%;
+    /* Use padding to create some vertical centering without going too low */
+    padding-top: calc(10vh);
   }
   
   .gameControls {
@@ -146,8 +148,8 @@
     position: relative;
     width: 100%;
     max-width: 400px;
-    /* Fix position using a top margin to compensate for any potential layout shifts */
-    margin-top: 0;
+    /* Center the board in the available space */
+    margin: 0 auto;
   }
   
   .pauseOverlay {
