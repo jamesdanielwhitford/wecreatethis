@@ -19,6 +19,8 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
   // Use refs or state for modals instead of setting in render cycle
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   const [isWinModalOpen, setIsWinModalOpen] = useState(false);
+  // Add a state to track whether the user has manually dismissed the win modal
+  const [hasUserDismissedWinModal, setHasUserDismissedWinModal] = useState(false);
   
   const {
     gameState,
@@ -41,10 +43,11 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
 
   // Show win modal when win animation is complete
   useEffect(() => {
-    if (gameState.isComplete && gameState.winAnimationComplete && !isWinModalOpen) {
+    // Only show the win modal if the win animation is complete AND the user hasn't dismissed it
+    if (gameState.isComplete && gameState.winAnimationComplete && !isWinModalOpen && !hasUserDismissedWinModal) {
       setIsWinModalOpen(true);
     }
-  }, [gameState.isComplete, gameState.winAnimationComplete, isWinModalOpen]);
+  }, [gameState.isComplete, gameState.winAnimationComplete, isWinModalOpen, hasUserDismissedWinModal]);
 
   // Handle mode change
   const handleModeChange = (mode: GameMode) => {
@@ -62,6 +65,7 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
     changeGameMode(mode);
     resetTimer();
     setIsWinModalOpen(false);
+    setHasUserDismissedWinModal(false); // Reset the dismissed state when changing modes
   };
 
   // Handle sharing results
@@ -90,6 +94,7 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
     resetGame();
     resetTimer();
     setIsWinModalOpen(false);
+    setHasUserDismissedWinModal(false); // Reset the dismissed state for a new game
   };
 
   // Handle pause overlay click (to resume)
@@ -97,6 +102,12 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
     if (gameState.isPaused) {
       togglePause();
     }
+  };
+
+  // Handle closing the win modal
+  const handleCloseWinModal = () => {
+    setIsWinModalOpen(false);
+    setHasUserDismissedWinModal(true); // Mark that the user has dismissed the modal
   };
 
   return (
@@ -172,7 +183,7 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
       
       <EndGameModal
         isOpen={isWinModalOpen}
-        onClose={() => setIsWinModalOpen(false)}
+        onClose={handleCloseWinModal} // Use the new handler that tracks user dismissal
         time={timerState.elapsedTime}
         moves={gameState.moves}
         date={gameState.date}
