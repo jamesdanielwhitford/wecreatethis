@@ -272,10 +272,6 @@ export const useGameState = (initialMode: GameMode = 'daily') => {
         // Determine move direction
         const moveDown = position < prevState.emptyTilePosition;
         
-        // Get all positions that will move (between clicked and empty, inclusive)
-        const minRow = Math.min(clickedRow, emptyRow);
-        const maxRow = Math.max(clickedRow, emptyRow);
-        
         // Move all tiles in this range
         if (moveDown) {
           // Moving tiles down (empty moves up)
