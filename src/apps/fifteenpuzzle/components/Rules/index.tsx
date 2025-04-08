@@ -124,7 +124,7 @@ const Rules: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
           
           <div className={styles.miniGameContainer}>
             <h3 className={styles.sectionTitle}>Try it yourself!</h3>
-            <p className={styles.text}>Tap a tile that's adjacent to the empty space to move it.</p>
+            <p className={styles.text}>Tap a tile that&apos;s adjacent to the empty space to move it.</p>
             
             <div className={styles.miniBoard}>
               {[0, 1, 2, 3].map(position => {
