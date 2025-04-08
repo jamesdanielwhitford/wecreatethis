@@ -32,16 +32,16 @@ export interface TimerState {
 }
 
 export interface WinModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    time: number;
-    moves: number;
-    date: string;
-    onPlayInfinite: () => void;
-    onShare: () => void;
-    onNewGame?: () => void;
-    gameMode: GameMode;
-  }
+  isOpen: boolean;
+  onClose: () => void;
+  time: number;
+  moves: number;
+  date: string;
+  onPlayInfinite: () => void;
+  onShare: () => void;
+  onNewGame?: () => void;
+  gameMode: GameMode;
+}
 
 export interface RulesModalProps {
   isOpen: boolean;
@@ -67,8 +67,4 @@ export interface NavbarProps {
   gameMode: GameMode;
   onModeChange: (mode: GameMode) => void;
   onRulesClick: () => void;
-  elapsedTime: number;
-  isRunning: boolean;
-  isPaused: boolean;
-  onTimerClick: () => void;
 }

@@ -105,20 +105,43 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
         gameMode={gameState.gameMode}
         onModeChange={handleModeChange}
         onRulesClick={() => setIsRulesOpen(true)}
-        elapsedTime={timerState.elapsedTime}
-        isRunning={timerState.isRunning}
-        isPaused={gameState.isPaused}
-        onTimerClick={togglePause}
       />
       
       <main className={styles.main}>
-        <div className={styles.gameInfo}>
-          <p className={styles.subtitle}>
-            {gameState.gameMode === 'daily' 
-              ? `Daily Puzzle - ${gameState.date}` 
-              : 'Infinite Mode'}
-          </p>
-          <p className={styles.movesCounter}>Moves: {gameState.moves}</p>
+        <div className={styles.gameControls}>
+          <div className={styles.timerAndMoves}>
+            <div 
+              className={`
+                ${styles.timer} 
+                ${timerState.isRunning ? styles.running : ''} 
+                ${gameState.isPaused ? styles.paused : ''}
+              `}
+              onClick={togglePause}
+            >
+              {gameState.isPaused ? (
+                <span className={styles.pauseIcon}>⏵</span>
+              ) : timerState.isRunning ? (
+                <span className={styles.pauseIcon}>⏸</span>
+              ) : null}
+              <span className={styles.timeDisplay}>{formatTime(timerState.elapsedTime)}</span>
+            </div>
+            
+            <div className={styles.movesCounter}>
+              <span>{gameState.moves + " moves"}</span>
+            </div>
+            
+            {gameState.gameMode === 'infinite' && !gameState.isComplete && (
+              <div className={styles.resetContainer}>
+                <button 
+                  className={styles.resetButton}
+                  onClick={handleNewGame}
+                  title="New Puzzle"
+                >
+                  <span className={styles.resetIcon}>↻</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         
         <div className={styles.boardContainer}>
@@ -140,15 +163,6 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
             </div>
           )}
         </div>
-        
-        {gameState.gameMode === 'infinite' && !gameState.isComplete && (
-          <button 
-            className={styles.resetButton}
-            onClick={handleNewGame}
-          >
-            New Puzzle
-          </button>
-        )}
       </main>
       
       <Rules
@@ -169,6 +183,14 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
       />
     </div>
   );
+};
+
+// Helper function for formatting time
+const formatTime = (milliseconds: number): string => {
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
 export default FifteenPuzzle;

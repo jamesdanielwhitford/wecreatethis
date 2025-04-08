@@ -3,17 +3,12 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { NavbarProps } from '../../types/game.types';
-import Timer from '../Timer';
 import styles from './styles.module.css';
 
 const Navbar: React.FC<NavbarProps> = ({
   gameMode,
   onModeChange,
-  onRulesClick,
-  elapsedTime,
-  isRunning,
-  isPaused,
-  onTimerClick
+  onRulesClick
 }) => {
   const router = useRouter();
 
@@ -29,38 +24,50 @@ const Navbar: React.FC<NavbarProps> = ({
     router.push(`/15puzzle/${mode}`);
   };
 
+  // Handle home click
+  const handleHomeClick = () => {
+    window.location.href = 'https://www.wecreatethis.com';
+  };
+
   return (
     <nav className={styles.navbar}>
-      <div className={styles.modeToggleContainer}>
-        <div className={styles.modeToggle}>
+      <div className={styles.homeContainer}>
+        <button 
+          className={styles.homeButton} 
+          onClick={handleHomeClick}
+          title="Go to Home"
+        >
+          <span className={styles.iconHome}>🏠</span>
+        </button>
+      </div>
+      
+      <div className={styles.logo}>
+        <span className={styles.logoText}>15 Puzzle</span>
+      </div>
+      
+      <div className={styles.navControls}>
+      <div className={styles.modeToggle}>
           <button
             className={`${styles.modeButton} ${gameMode === 'daily' ? styles.active : ''}`}
             onClick={() => handleModeChange('daily')}
+            title="Daily Mode"
           >
-            Daily
+            <span className={styles.iconSun}>☀</span>
           </button>
           <button
             className={`${styles.modeButton} ${gameMode === 'infinite' ? styles.active : ''}`}
             onClick={() => handleModeChange('infinite')}
+            title="Infinite Mode"
           >
-            Infinite
+            <span className={styles.iconInfinity}>∞</span>
           </button>
-          {/* The active indicator is added via CSS ::after pseudo-element */}
         </div>
-      </div>
-      
-      <div className={styles.timerContainer}>
-        <Timer 
-          elapsedTime={elapsedTime} 
-          isRunning={isRunning} 
-          isPaused={isPaused}
-          onTimerClick={onTimerClick}
-        />
-      </div>
-      
-      <div className={styles.rulesContainer}>
-        <button className={styles.rulesButton} onClick={onRulesClick}>
-          Rules
+        <button 
+          className={styles.iconButton} 
+          onClick={onRulesClick}
+          title="Rules"
+        >
+          <span className={styles.iconQuestion}>?</span>
         </button>
       </div>
     </nav>
