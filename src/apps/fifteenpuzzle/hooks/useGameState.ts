@@ -199,7 +199,7 @@ export const useGameState = (initialMode: GameMode = 'daily') => {
     setGameState(createNewGame(mode));
   }, [gameState.gameMode]);
 
-  // Handle tile clicks
+  // Handle tile clicks with multi-tile move support
   const handleTileClick = useCallback((position: number) => {
     setGameState(prevState => {
       // Don't allow moves if the game is already complete or paused
@@ -207,40 +207,132 @@ export const useGameState = (initialMode: GameMode = 'daily') => {
         return prevState;
       }
 
-      // Check if the clicked tile is adjacent to the empty space
-      if (!isValidMove(position, prevState.emptyTilePosition)) {
-        return prevState;
+      // Check if the clicked tile is in the same row or column as the empty space
+      const clickedRow = Math.floor(position / 4);
+      const clickedCol = position % 4;
+      const emptyRow = Math.floor(prevState.emptyTilePosition / 4);
+      const emptyCol = prevState.emptyTilePosition % 4;
+
+      const isInSameRow = clickedRow === emptyRow;
+      const isInSameCol = clickedCol === emptyCol;
+
+      // If not in the same row or column, check if it's a direct adjacent move
+      if (!isInSameRow && !isInSameCol) {
+        // If it's not a valid direct move, ignore
+        if (!isValidMove(position, prevState.emptyTilePosition)) {
+          return prevState;
+        }
       }
 
       // If this is the first move, set the start time
       const now = Date.now();
       const startTime = prevState.startTime || now;
 
-      // Find the tile at the clicked position
-      const clickedTile = prevState.tiles.find(tile => tile.position === position);
-      if (!clickedTile) {
-        console.error('No tile found at position:', position);
-        return prevState;
-      }
+      // Create a copy of the tiles array to modify
+      let updatedTiles = [...prevState.tiles];
+      
+      // Track where the empty space will end up
+      let newEmptyPosition = position; // By default, empty moves to clicked position
 
-      // Find the empty tile
-      const emptyTile = prevState.tiles.find(tile => tile.value === 0);
-      if (!emptyTile) {
-        console.error('No empty tile found');
-        return prevState;
-      }
-
-      // Swap the clicked tile with the empty space
-      const updatedTiles = prevState.tiles.map(tile => {
-        if (tile.position === position) {
-          return { ...tile, position: prevState.emptyTilePosition };
+      // Handle row movement
+      if (isInSameRow) {
+        // Determine move direction
+        const moveRight = position < prevState.emptyTilePosition;
+        
+        // Get all positions that will move (between clicked and empty, inclusive)
+        const minCol = Math.min(clickedCol, emptyCol);
+        const maxCol = Math.max(clickedCol, emptyCol);
+        
+        // Move all tiles in this range
+        if (moveRight) {
+          // Moving tiles right (empty moves left)
+          for (let col = emptyCol - 1; col >= clickedCol; col--) {
+            const currentPos = clickedRow * 4 + col;
+            const targetPos = currentPos + 1;
+            
+            // Find and move each tile
+            const tile = updatedTiles.find(t => t.position === currentPos);
+            if (tile) {
+              updatedTiles = updatedTiles.map(t => 
+                t.position === currentPos ? {...t, position: targetPos} : t
+              );
+            }
+          }
+        } else {
+          // Moving tiles left (empty moves right)
+          for (let col = emptyCol + 1; col <= clickedCol; col++) {
+            const currentPos = clickedRow * 4 + col;
+            const targetPos = currentPos - 1;
+            
+            // Find and move each tile
+            const tile = updatedTiles.find(t => t.position === currentPos);
+            if (tile) {
+              updatedTiles = updatedTiles.map(t => 
+                t.position === currentPos ? {...t, position: targetPos} : t
+              );
+            }
+          }
         }
-        if (tile.position === prevState.emptyTilePosition) {
-          return { ...tile, position };
+      }
+      // Handle column movement
+      else if (isInSameCol) {
+        // Determine move direction
+        const moveDown = position < prevState.emptyTilePosition;
+        
+        // Get all positions that will move (between clicked and empty, inclusive)
+        const minRow = Math.min(clickedRow, emptyRow);
+        const maxRow = Math.max(clickedRow, emptyRow);
+        
+        // Move all tiles in this range
+        if (moveDown) {
+          // Moving tiles down (empty moves up)
+          for (let row = emptyRow - 1; row >= clickedRow; row--) {
+            const currentPos = row * 4 + clickedCol;
+            const targetPos = currentPos + 4;
+            
+            // Find and move each tile
+            const tile = updatedTiles.find(t => t.position === currentPos);
+            if (tile) {
+              updatedTiles = updatedTiles.map(t => 
+                t.position === currentPos ? {...t, position: targetPos} : t
+              );
+            }
+          }
+        } else {
+          // Moving tiles up (empty moves down)
+          for (let row = emptyRow + 1; row <= clickedRow; row++) {
+            const currentPos = row * 4 + clickedCol;
+            const targetPos = currentPos - 4;
+            
+            // Find and move each tile
+            const tile = updatedTiles.find(t => t.position === currentPos);
+            if (tile) {
+              updatedTiles = updatedTiles.map(t => 
+                t.position === currentPos ? {...t, position: targetPos} : t
+              );
+            }
+          }
         }
-        return tile;
-      });
-
+      }
+      // Direct adjacent move
+      else {
+        // Just swap the clicked tile with the empty space
+        updatedTiles = updatedTiles.map(tile => {
+          if (tile.position === position) {
+            return {...tile, position: prevState.emptyTilePosition};
+          }
+          if (tile.position === prevState.emptyTilePosition) {
+            return {...tile, position};
+          }
+          return tile;
+        });
+      }
+      
+      // Move the empty tile to the clicked position
+      updatedTiles = updatedTiles.map(tile => 
+        tile.value === 0 ? {...tile, position: position} : tile
+      );
+      
       // Check if the puzzle is complete after this move
       const isComplete = isPuzzleComplete(updatedTiles);
       const endTime = isComplete ? now : null;
@@ -249,7 +341,7 @@ export const useGameState = (initialMode: GameMode = 'daily') => {
         ...prevState,
         tiles: updatedTiles,
         emptyTilePosition: position,
-        moves: prevState.moves + 1,
+        moves: prevState.moves + 1, // Count as a single move regardless of how many tiles moved
         startTime,
         endTime,
         isComplete,
