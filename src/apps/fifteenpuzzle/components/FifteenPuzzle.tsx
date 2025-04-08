@@ -8,7 +8,6 @@ import Navbar from './Navbar';
 import Rules from './Rules';
 import EndGameModal from './EndGameModal';
 import { GameMode } from '../types/game.types';
-import { prepareShareText } from '../utils/generatePuzzle';
 import styles from './FifteenPuzzle.module.css';
 
 interface FifteenPuzzleProps {
@@ -68,20 +67,9 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
     setHasUserDismissedWinModal(false); // Reset the dismissed state when changing modes
   };
 
-  // Handle sharing results
+  // Handle sharing results - now using Web Share API in EndGameModal
   const handleShare = () => {
-    const shareText = prepareShareText(
-      timerState.elapsedTime,
-      gameState.moves,
-    );
-    
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(shareText)
-        .then(() => alert("Results copied to clipboard!"))
-        .catch(() => alert("Failed to copy results. Please manually copy the following:\n\n" + shareText));
-    } else {
-      alert("Please manually copy the following:\n\n" + shareText);
-    }
+    // This is now just a placeholder that delegates to EndGameModal
   };
 
   // Handle playing infinite mode after completing daily

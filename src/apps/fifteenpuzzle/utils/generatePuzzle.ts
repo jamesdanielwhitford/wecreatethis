@@ -116,23 +116,6 @@ export const generateSolvablePuzzleByShufflingBlank = (seed: string, shuffleMove
     }));
 };
 
-
-// --- Utility functions (Keep the ones still needed) ---
-
-// The old generateSolvablePuzzle and isSolvable are no longer needed.
-// You can remove them or comment them out.
-/*
-// Fisher-Yates shuffle algorithm (No longer needed for generation)
-const shuffleArray = (array: number[], seed: string): number[] => { ... };
-
-// Check if a puzzle is solvable (No longer needed for generation)
-export const isSolvable = (tiles: number[]): boolean => { ... };
-
-// Generate a solvable puzzle that is not already solved (Old method - remove or comment out)
-export const generateSolvablePuzzle = (seed: string): Tile[] => { ... };
-*/
-
-
 // Check if the puzzle is complete (based on the tile objects)
 export const isPuzzleComplete = (tiles: Tile[]): boolean => {
   // Get the values in their current display order
@@ -160,15 +143,6 @@ export const formatTime = (milliseconds: number): string => {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-};
-
-// Prepare share text
-export const prepareShareText = (time: number, moves: number): string => {
-    // Use the current date for sharing, regardless of the puzzle date
-    const shareDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format
-    return `I solved the 15-Puzzle for ${shareDate} in ${formatTime(time)} with ${moves} moves! Try it at wecreatethis.com/15puzzle`;
-    // Note: You might want the puzzle's date (gameState.date) instead of today's date here
-    // return `I solved the 15-Puzzle (${date}) in ${formatTime(time)} with ${moves} moves! Try it at wecreatethis.com/15puzzle`;
 };
 
 // Get current date in YYYY-MM-DD format (UTC)
