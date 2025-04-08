@@ -1,3 +1,5 @@
+/* src/apps/fifteenpuzzle/components/FifteenPuzzle.module.css - Updated */
+
 .container {
     display: flex;
     flex-direction: column;
@@ -22,6 +24,8 @@
     display: flex;
     justify-content: center;
     margin-bottom: 24px;
+    /* Add a fixed height to prevent layout shifts */
+    height: 40px;
   }
   
   .timerAndMoves {
@@ -31,6 +35,8 @@
     position: relative;
     flex-wrap: nowrap; /* Prevent wrapping on small screens */
     justify-content: center; /* Center all elements */
+    /* Add a min-height to ensure consistent height */
+    min-height: 40px;
   }
   
   .timer {
@@ -49,6 +55,9 @@
     transition: all 0.2s ease;
     user-select: none;
     margin-right: var(--control-spacing); /* Use the variable from the container */
+    /* Add fixed height and min-width to prevent layout shifts */
+    height: 40px;
+    min-width: 120px;
   }
   
   .timer:hover {
@@ -61,15 +70,22 @@
   
   .running {
     color: #4a90e2;
+    /* Remove any size transformation */
+    transform: none;
   }
   
   .paused {
     color: #e74c3c;
+    /* Remove any size transformation */
+    transform: none;
   }
   
   .pauseIcon {
     font-size: 24px;
     margin-right: 4px;
+    /* Use fixed width to prevent layout shifts */
+    width: 18px;
+    text-align: center;
   }
   
   .timeDisplay {
@@ -89,10 +105,15 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     white-space: nowrap; /* Prevent wrapping of the text */
     margin-right: var(--control-spacing); /* Use the variable from the container */
+    /* Add fixed height and min-width to prevent layout shifts */
+    height: 40px;
+    min-width: 90px;
   }
   
   .resetContainer {
     display: flex;
+    /* Add fixed height for consistency */
+    height: 40px;
   }
   
   .resetButton {
@@ -125,6 +146,8 @@
     position: relative;
     width: 100%;
     max-width: 400px;
+    /* Fix position using a top margin to compensate for any potential layout shifts */
+    margin-top: 0;
   }
   
   .pauseOverlay {
@@ -157,6 +180,8 @@
   .pauseMessage .pauseIcon {
     font-size: 36px;
     margin-bottom: 8px;
+    /* Reset width to prevent conflicts with timer pause icon */
+    width: auto;
   }
   
   .pauseInstructions {
@@ -174,6 +199,7 @@
     .timer {
       font-size: 20px; /* Slightly smaller font on mobile */
       padding: 6px 12px; /* Slightly smaller padding */
+      height: 36px; /* Slightly smaller height on mobile */
     }
     
     .timeDisplay {
@@ -183,6 +209,7 @@
     .movesCounter {
       font-size: 16px; /* Slightly smaller font on mobile */
       padding: 6px 12px; /* Slightly smaller padding */
+      height: 36px; /* Slightly smaller height on mobile */
     }
     
     .resetButton {
@@ -193,5 +220,18 @@
     /* Make the board container fill available width */
     .boardContainer {
       width: 100%;
+    }
+    
+    /* Adjust control elements' height for mobile */
+    .gameControls {
+      height: 36px;
+    }
+    
+    .timerAndMoves {
+      min-height: 36px;
+    }
+    
+    .resetContainer {
+      height: 36px;
     }
   }
