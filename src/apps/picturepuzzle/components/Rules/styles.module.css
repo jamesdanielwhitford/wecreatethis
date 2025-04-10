@@ -1,0 +1,163 @@
+/* src/apps/picturepuzzle/components/Rules/styles.module.css */
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modalContent {
+    background-color: white;
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .rulesSection {
+    margin: 20px 0;
+  }
+  
+  .modalTitle {
+    text-align: center;
+    margin-bottom: 16px;
+    color: #333;
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+  
+  .sectionTitle {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    color: #4a90e2;
+    font-size: 1.17rem;
+    font-weight: bold;
+  }
+  
+  .sectionSubtitle {
+    margin-top: 12px;
+    margin-bottom: 4px;
+    color: #555;
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+  
+  .text {
+    margin-bottom: 8px;
+    line-height: 1.5;
+    color: #555;
+  }
+  
+  .rulesList {
+    padding-left: 20px;
+    margin-bottom: 16px;
+  }
+  
+  .secondaryList {
+    padding-left: 20px;
+    margin: 4px 0 8px 0;
+  }
+  
+  .closeButton {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 16px;
+    transition: background-color 0.2s;
+  }
+  
+  .closeButton:hover {
+    background-color: #3a7bc8;
+  }
+  
+  .demoContainer {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    border: 1px solid #e9ecef;
+  }
+  
+  .demoImage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  
+  .demoImg {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .demoArrow {
+    font-size: 24px;
+    color: #4a90e2;
+    font-weight: bold;
+  }
+  
+  .demoGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    width: 120px;
+    height: 120px;
+    gap: 2px;
+    background-color: #ddd;
+    padding: 2px;
+    border-radius: 4px;
+  }
+  
+  .demoGridCell {
+    background-color: rgba(74, 144, 226, 0.3);
+    border-radius: 2px;
+  }
+  
+  .demoEmptyCell {
+    background-color: transparent;
+    border-radius: 2px;
+    border: 1px dashed #999;
+  }
+  
+  .demoCaption {
+    font-size: 14px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+  }
+  
+  /* Media query for small screens */
+  @media (max-width: 500px) {
+    .modalContent {
+      padding: 16px;
+    }
+    
+    .demoImage {
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .demoArrow {
+      transform: rotate(90deg);
+    }
+  }
