@@ -68,15 +68,8 @@ const createNewGame = (mode: GameMode, images: string[], currentImageSrc?: strin
   const imageWidth = 400;
   const imageHeight = 400;
   
-  // Set imageX and imageY for each tile to help with rendering
-  const tilesWithImageCoords = tiles.map(tile => ({
-    ...tile,
-    imageX: (tile.value % 4) * (imageWidth / 4),
-    imageY: Math.floor(tile.value / 4) * (imageHeight / 4)
-  }));
-  
   return {
-    tiles: tilesWithImageCoords,
+    tiles: tiles,
     emptyTilePosition,
     moves: 0,
     isComplete: false,

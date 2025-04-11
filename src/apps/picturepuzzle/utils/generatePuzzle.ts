@@ -108,15 +108,28 @@ export const generateSolvablePuzzleByShufflingBlank = (seed: string, shuffleMove
      }
 
     // Map the final tile values array to the Tile[] structure
-    // For the picture puzzle, we also need to track the original position for rendering
-    return currentTiles.map((value, index) => ({
-        value: value,
-        position: index,
-        // For the picture puzzle, we need to add imageX and imageY properties
-        // based on the value (not the position)
-        imageX: value > 0 ? ((value - 1) % N) * 100 : 0, // Default to 100px tiles
-        imageY: value > 0 ? Math.floor((value - 1) / N) * 100 : 0
-    }));
+    // For the picture puzzle, we correctly map the tiles to the image
+    return currentTiles.map((value, index) => {
+        if (value === 0) {
+            // The empty tile (value 0) should always show the bottom-right of the image
+            return {
+                value: value,
+                position: index,
+                imageX: 3 * 100, // Bottom right X (3 is the last column index in a 4x4 grid)
+                imageY: 3 * 100  // Bottom right Y (3 is the last row index in a 4x4 grid)
+            };
+        } else {
+            // For numbered tiles 1-15, calculate image position based on value
+            // Subtract 1 because tile values start at 1 but coordinates at 0
+            const valueIndex = value - 1;
+            return {
+                value: value,
+                position: index,
+                imageX: (valueIndex % N) * 100, // Default to 100px tiles
+                imageY: Math.floor(valueIndex / N) * 100
+            };
+        }
+    });
 };
 
 // Check if the puzzle is complete (based on the tile objects)
