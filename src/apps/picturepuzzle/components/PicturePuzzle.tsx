@@ -7,7 +7,7 @@ import Board from './Board';
 import Navbar from './Navbar';
 import Rules from './Rules';
 import EndGameModal from './EndGameModal';
-import ImageSelect from './ImageSelect'; // New component for image selection
+import ImageSelect from './ImageSelect';
 import { GameMode } from '../types/games.types';
 import { getImageDimensions } from '../utils/imageScaling';
 import styles from './PicturePuzzle.module.css';
@@ -30,18 +30,6 @@ const PicturePuzzle: React.FC<PicturePuzzleProps> = ({ initialMode = 'daily' }) 
   // Track image dimensions
   const [imageDimensions, setImageDimensions] = useState({ width: 400, height: 400 });
   
-  // Image gallery for infinite and impossible modes
-  const availableImages = [
-    '/images/picturepuzzle/image1.jpg',
-    '/images/picturepuzzle/image2.jpg',
-    '/images/picturepuzzle/image3.jpg',
-    '/images/picturepuzzle/image4.jpg',
-    '/images/picturepuzzle/image5.jpg',
-    '/images/picturepuzzle/image6.jpg',
-    '/images/picturepuzzle/image7.jpg',
-    '/images/picturepuzzle/image8.jpg'
-  ];
-  
   const {
     gameState,
     handleTileClick,
@@ -51,7 +39,7 @@ const PicturePuzzle: React.FC<PicturePuzzleProps> = ({ initialMode = 'daily' }) 
     togglePause,
     handleWinAnimationComplete,
     changeImage
-  } = useGameState(initialMode, availableImages);
+  } = useGameState(initialMode);
 
   const isGameStarted = gameState.moves > 0 || gameState.startTime !== null;
   
@@ -281,7 +269,6 @@ const PicturePuzzle: React.FC<PicturePuzzleProps> = ({ initialMode = 'daily' }) 
         <ImageSelect
           isOpen={isImageSelectOpen}
           onClose={() => setIsImageSelectOpen(false)}
-          images={availableImages}
           onSelectImage={handleImageSelect}
           currentImage={gameState.imageSrc}
         />

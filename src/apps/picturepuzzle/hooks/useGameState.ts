@@ -9,6 +9,7 @@ import {
   getDailySeed,
   getCurrentDate
 } from '../utils/generatePuzzle';
+import { getAllImages } from '../components/ImageSelect';
 
 const STORAGE_KEY_DAILY = 'picturepuzzle-daily-state';
 const STORAGE_KEY_INFINITE = 'picturepuzzle-infinite-state';
@@ -16,8 +17,9 @@ const STORAGE_KEY_IMPOSSIBLE = 'picturepuzzle-impossible-state';
 const STORAGE_KEY_PLAYED_DATE = 'picturepuzzle-played-date';
 
 // Helper to get a daily image based on the date
-const getDailyImage = (images: string[]): string => {
-  if (images.length === 0) return '';
+const getDailyImage = (): string => {
+  const availableImages = getAllImages();
+  if (availableImages.length === 0) return '';
   
   const date = new Date();
   // Fix: Use proper date difference calculation for TypeScript
@@ -26,36 +28,37 @@ const getDailyImage = (images: string[]): string => {
   const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
   
   // Use the day of year to pick an image, wrapping around if needed
-  return images[dayOfYear % images.length];
+  return availableImages[dayOfYear % availableImages.length];
 };
 
 // Helper to get a random image for infinite/impossible mode
-const getRandomImage = (images: string[], excludedImage?: string): string => {
-  if (images.length === 0) return '';
-  if (images.length === 1) return images[0];
+const getRandomImage = (excludedImage?: string): string => {
+  const availableImages = getAllImages();
+  if (availableImages.length === 0) return '';
+  if (availableImages.length === 1) return availableImages[0];
   
   // If we need to exclude an image (e.g., current image), filter it out
-  const availableImages = excludedImage 
-    ? images.filter(img => img !== excludedImage) 
-    : images;
+  const filteredImages = excludedImage 
+    ? availableImages.filter(img => img !== excludedImage) 
+    : availableImages;
   
   // Pick a random image from the available ones
-  const randomIndex = Math.floor(Math.random() * availableImages.length);
-  return availableImages[randomIndex];
+  const randomIndex = Math.floor(Math.random() * filteredImages.length);
+  return filteredImages[randomIndex];
 };
 
 // Create a new game state with the specified mode
-const createNewGame = (mode: GameMode, images: string[], currentImageSrc?: string): GameState => {
+const createNewGame = (mode: GameMode, currentImageSrc?: string): GameState => {
   const date = getCurrentDate();
   const seed = mode === 'daily' ? getDailySeed() : `${mode}-${Date.now()}-${Math.random()}`;
   
   // Determine which image to use
   let imageSrc = '';
   if (mode === 'daily') {
-    imageSrc = getDailyImage(images);
+    imageSrc = getDailyImage();
   } else {
     // For infinite and impossible modes, use a random image or the specified current image
-    imageSrc = currentImageSrc || getRandomImage(images);
+    imageSrc = currentImageSrc || getRandomImage();
   }
   
   // Generate the tile arrangement, passing the game mode
@@ -89,7 +92,7 @@ const createNewGame = (mode: GameMode, images: string[], currentImageSrc?: strin
   };
 };
 
-export const useGameState = (initialMode: GameMode = 'daily', availableImages: string[] = []) => {
+export const useGameState = (initialMode: GameMode = 'daily') => {
   // Get initial state (from localStorage or create new)
   const getInitialState = (): GameState => {
     if (typeof window !== 'undefined') {
@@ -109,7 +112,7 @@ export const useGameState = (initialMode: GameMode = 'daily', availableImages: s
             const playedDate = localStorage.getItem(STORAGE_KEY_PLAYED_DATE);
             if (playedDate !== getCurrentDate()) {
               // It's a new day, create a new daily puzzle
-              return createNewGame('daily', availableImages);
+              return createNewGame('daily');
             }
           }
           
@@ -119,6 +122,14 @@ export const useGameState = (initialMode: GameMode = 'daily', availableImages: s
             if (parsedState.isComplete) {
               parsedState.winAnimationComplete = false;
             }
+            
+            // Check if the image still exists in our categories
+            const allImages = getAllImages();
+            if (!allImages.includes(parsedState.imageSrc)) {
+              // Image no longer exists, create a new game with a valid image
+              return createNewGame(initialMode);
+            }
+            
             return parsedState;
           }
         }
@@ -128,7 +139,7 @@ export const useGameState = (initialMode: GameMode = 'daily', availableImages: s
     }
     
     // Create a new game as fallback
-    return createNewGame(initialMode, availableImages);
+    return createNewGame(initialMode);
   };
 
   const [gameState, setGameState] = useState<GameState>(getInitialState);
@@ -231,7 +242,7 @@ export const useGameState = (initialMode: GameMode = 'daily', availableImages: s
             const playedDate = localStorage.getItem(STORAGE_KEY_PLAYED_DATE);
             if (playedDate !== getCurrentDate()) {
               // It's a new day, create a new daily puzzle
-              setGameState(createNewGame('daily', availableImages));
+              setGameState(createNewGame('daily'));
               return;
             }
           }
@@ -242,6 +253,15 @@ export const useGameState = (initialMode: GameMode = 'daily', availableImages: s
             if (parsedState.isComplete) {
               parsedState.winAnimationComplete = false;
             }
+            
+            // Check if the image still exists in our categories
+            const allImages = getAllImages();
+            if (!allImages.includes(parsedState.imageSrc)) {
+              // Image no longer exists, create a new game with a valid image
+              setGameState(createNewGame(mode));
+              return;
+            }
+            
             setGameState(parsedState);
             return;
           }
@@ -252,8 +272,8 @@ export const useGameState = (initialMode: GameMode = 'daily', availableImages: s
     }
     
     // Create a new game if no saved state exists
-    setGameState(createNewGame(mode, availableImages));
-  }, [gameState.gameMode, availableImages]);
+    setGameState(createNewGame(mode));
+  }, [gameState.gameMode]);
 
   // Handle changing the image (for infinite mode)
   const changeImage = useCallback((imageSrc: string) => {
@@ -264,9 +284,9 @@ export const useGameState = (initialMode: GameMode = 'daily', availableImages: s
       }
       
       // Create a new game with the selected image
-      return createNewGame(prevState.gameMode, availableImages, imageSrc);
+      return createNewGame(prevState.gameMode, imageSrc);
     });
-  }, [availableImages]);
+  }, []);
 
   // Handle tile clicks with multi-tile move support
   const handleTileClick = useCallback((position: number) => {
@@ -412,9 +432,9 @@ export const useGameState = (initialMode: GameMode = 'daily', availableImages: s
   // Reset the game with the current mode
   const resetGame = useCallback(() => {
     setGameState(prevState => 
-      createNewGame(prevState.gameMode, availableImages, prevState.imageSrc)
+      createNewGame(prevState.gameMode, prevState.imageSrc)
     );
-  }, [availableImages]);
+  }, []);
 
   // Check if the daily puzzle has been completed today
   const hasDailyBeenCompleted = useCallback((): boolean => {

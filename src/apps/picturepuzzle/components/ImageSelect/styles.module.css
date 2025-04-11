@@ -1,100 +1,183 @@
 /* src/apps/picturepuzzle/components/ImageSelect/styles.module.css */
 
 .modalOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  
-  .modalContent {
-    background-color: white;
-    border-radius: 8px;
-    padding: 24px;
-    max-width: 500px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-  
-  .modalTitle {
-    text-align: center;
-    margin-bottom: 24px;
-    color: #333;
-    font-size: 1.5rem;
-    font-weight: bold;
-  }
-  
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background-color: white;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: #4a90e2;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px;
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+}
+
+.backButton:hover {
+  color: #3a7bc8;
+}
+
+.modalTitle {
+  text-align: center;
+  flex: 1;
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.categoriesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.categoryItem {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  border: 2px solid transparent;
+}
+
+.categoryItem:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.currentCategory {
+  border-color: #4a90e2;
+  background-color: rgba(74, 144, 226, 0.1);
+}
+
+.categoryIcon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.categoryName {
+  font-weight: bold;
+  color: #333;
+  font-size: 18px;
+}
+
+.currentCategoryIndicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: #4a90e2;
+  color: white;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.imagesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.imageItem {
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.imageItem:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.imageThumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.selected .imageThumb {
+  border-color: #4a90e2;
+}
+
+.currentIndicator {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background-color: #4a90e2;
+  color: white;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.closeButton {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: #3a7bc8;
+}
+
+@media (max-width: 500px) {
   .imagesGrid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
+    grid-template-columns: 1fr;
   }
   
-  .imageItem {
-    cursor: pointer;
-    border-radius: 8px;
-    overflow: hidden;
-    position: relative;
-    transition: transform 0.2s ease;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  .categoriesGrid {
+    grid-template-columns: 1fr;
   }
-  
-  .imageItem:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-  }
-  
-  .imageThumb {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: 8px;
-    border: 2px solid transparent;
-    transition: border-color 0.2s ease;
-  }
-  
-  .selected .imageThumb {
-    border-color: #4a90e2;
-  }
-  
-  .currentIndicator {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    background-color: #4a90e2;
-    color: white;
-    font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-weight: bold;
-  }
-  
-  .closeButton {
-    display: block;
-    width: 100%;
-    padding: 12px;
-    background-color: #4a90e2;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.2s;
-  }
-  
-  .closeButton:hover {
-    background-color: #3a7bc8;
-  }
-  
-  @media (max-width: 500px) {
-    .imagesGrid {
-      grid-template-columns: 1fr;
-    }
-  }
+}
