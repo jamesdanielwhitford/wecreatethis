@@ -81,11 +81,18 @@ export interface NavbarProps {
   onRulesClick: () => void;
 }
 
-// New interface for image selection (used in infinite mode)
+// New interface for the preview modal
+export interface PreviewModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  imageSrc: string;
+  isImpossibleMode?: boolean;
+}
+
+// Interface for image selection (used in infinite mode)
 export interface ImageSelectProps {
   isOpen: boolean;
   onClose: () => void;
-  images: string[];
   onSelectImage: (imageSrc: string) => void;
   currentImage: string;
 }

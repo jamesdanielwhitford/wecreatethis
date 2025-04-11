@@ -1,11 +1,34 @@
-/* src/apps/picturepuzzle/components/PicturePuzzle.module.css */
+.gameContent {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.boardWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 400px;
+  z-index: 5;
+}/* src/apps/picturepuzzle/components/PicturePuzzle.module.css */
 
 .container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  height: 100vh; /* Ensure it doesn't exceed viewport height */
   background-color: #f8f9fa;
   --control-spacing: 12px;
+  overflow: hidden; /* Prevent scrolling */
 }
 
 .main {
@@ -13,18 +36,20 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px;
+  padding: 16px 24px;
   max-width: 500px;
   margin: 0 auto;
   width: 100%;
-  padding-top: calc(5vh);
+  overflow: hidden; /* Prevent scrolling */
+  position: relative; /* For absolute positioning of controls */
+  justify-content: flex-start; /* Start from top, don't center everything */
 }
 
 .gameControls {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   height: 40px;
 }
 
@@ -102,40 +127,51 @@
   min-width: 90px;
 }
 
-.controlButtons {
+.belowBoardControls {
   display: flex;
-  gap: 8px;
-  height: 40px;
+  justify-content: center;
+  gap: 16px;
+  position: fixed; /* Using fixed position instead of absolute */
+  left: 0;
+  right: 0;
+  bottom: 15vh; /* Use viewport height instead of percentage of container */
+  margin: 0 auto;
+  width: fit-content;
+  z-index: 50; /* Ensure buttons appear above other elements */
 }
 
-.resetButton, .imageButton {
+.resetButton, .imageButton, .previewButton {
   border: none;
   background: none;
   color: #4a90e2;
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
   background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.resetButton:hover, .imageButton:hover {
+.resetButton:hover, .imageButton:hover, .previewButton:hover {
   background-color: #f0f0f0;
-  transform: rotate(20deg);
+  transform: scale(1.1);
 }
 
 .resetIcon {
-  font-size: 18px;
+  font-size: 22px;
 }
 
 .imageIcon {
-  font-size: 16px;
+  font-size: 20px;
+}
+
+.previewIcon {
+  font-size: 22px;
 }
 
 .boardContainer {
@@ -143,6 +179,7 @@
   width: 100%;
   max-width: 400px;
   margin: 0 auto;
+  aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
 }
 
 .pauseOverlay {
@@ -183,58 +220,16 @@
   margin-top: 16px;
 }
 
-.previewContainer {
-  width: 100%;
-  max-width: 400px;
-  margin: 20px auto 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.previewLabel {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 8px;
-  align-self: flex-start;
-}
-
-.previewImage {
-  width: 120px;
-  height: 120px;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: 2px solid white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f8f9fa;
-}
-
-.previewImg {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.impossibleLabel {
-  font-size: 14px;
-  color: #e74c3c;
-  font-weight: bold;
-  margin-top: 8px;
-  background-color: rgba(231, 76, 60, 0.1);
-  padding: 4px 10px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+/* Remove the always-visible preview container and related styles */
 
 /* Media query for small screens */
 @media (max-width: 500px) {
   .container {
     --control-spacing: 8px;
+  }
+  
+  .main {
+    padding: 8px 16px; /* Reduce padding to maximize space */
   }
   
   .timer {
@@ -253,9 +248,14 @@
     height: 36px;
   }
   
-  .resetButton, .imageButton {
-    width: 28px;
-    height: 28px;
+  .resetButton, .imageButton, .previewButton {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+  
+  .resetIcon, .imageIcon, .previewIcon {
+    font-size: 18px;
   }
   
   .boardContainer {
@@ -264,23 +264,19 @@
   
   .gameControls {
     height: 36px;
+    top: 100px; /* Less space on mobile */
   }
   
   .timerAndMoves {
     min-height: 36px;
   }
   
-  .controlButtons {
-    height: 36px;
+  .belowBoardControls {
+    gap: 12px;
+    bottom: 10vh; /* Adjusted for smaller screens */
   }
   
-  .previewImage {
-    width: 100px;
-    height: 100px;
-  }
-  
-  .previewImg {
-    max-width: 100%;
-    max-height: 100%;
+  .boardWrapper {
+    max-width: 90%;
   }
 }

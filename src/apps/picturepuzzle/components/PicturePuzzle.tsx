@@ -8,6 +8,7 @@ import Navbar from './Navbar';
 import Rules from './Rules';
 import EndGameModal from './EndGameModal';
 import ImageSelect from './ImageSelect';
+import PreviewModal from './PreviewModal'; // New component for preview modal
 import { GameMode } from '../types/games.types';
 import { getImageDimensions } from '../utils/imageScaling';
 import styles from './PicturePuzzle.module.css';
@@ -21,6 +22,7 @@ const PicturePuzzle: React.FC<PicturePuzzleProps> = ({ initialMode = 'daily' }) 
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   const [isWinModalOpen, setIsWinModalOpen] = useState(false);
   const [isImageSelectOpen, setIsImageSelectOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false); // New state for preview modal
   const [hasUserDismissedWinModal, setHasUserDismissedWinModal] = useState(false);
   
   // Reference to track board size for responsive design
@@ -144,6 +146,11 @@ const PicturePuzzle: React.FC<PicturePuzzleProps> = ({ initialMode = 'daily' }) 
     setHasUserDismissedWinModal(true);
   };
 
+  // Toggle preview modal
+  const togglePreviewModal = () => {
+    setIsPreviewModalOpen(!isPreviewModalOpen);
+  };
+
   // Format time helper function
   const formatTime = (milliseconds: number): string => {
     const totalSeconds = Math.floor(milliseconds / 1000);
@@ -161,88 +168,90 @@ const PicturePuzzle: React.FC<PicturePuzzleProps> = ({ initialMode = 'daily' }) 
       />
       
       <main className={styles.main}>
-        <div className={styles.gameControls}>
-          <div className={styles.timerAndMoves}>
-            <div 
-              className={`
-                ${styles.timer} 
-                ${timerState.isRunning ? styles.running : ''} 
-                ${gameState.isPaused ? styles.paused : ''}
-              `}
-              onClick={togglePause}
-            >
-              {gameState.isPaused ? (
-                <span className={styles.pauseIcon}>⏵</span>
-              ) : timerState.isRunning ? (
-                <span className={styles.pauseIcon}>⏸</span>
-              ) : null}
-              <span className={styles.timeDisplay}>{formatTime(timerState.elapsedTime)}</span>
+        <div className={styles.gameContent}>
+          {/* Empty game controls container since we moved the controls to the board wrapper */}
+        </div>
+        
+        {/* Board container is separate to allow for precise centering */}
+        <div className={styles.boardWrapper}>
+          <div className={styles.gameControls}>
+            <div className={styles.timerAndMoves}>
+              <div 
+                className={`
+                  ${styles.timer} 
+                  ${timerState.isRunning ? styles.running : ''} 
+                  ${gameState.isPaused ? styles.paused : ''}
+                `}
+                onClick={togglePause}
+              >
+                {gameState.isPaused ? (
+                  <span className={styles.pauseIcon}>⏵</span>
+                ) : timerState.isRunning ? (
+                  <span className={styles.pauseIcon}>⏸</span>
+                ) : null}
+                <span className={styles.timeDisplay}>{formatTime(timerState.elapsedTime)}</span>
+              </div>
+              
+              <div className={styles.movesCounter}>
+                <span>{gameState.moves + " moves"}</span>
+              </div>
             </div>
+          </div>
+
+          <div className={styles.boardContainer} ref={boardContainerRef}>
+            <Board
+              tiles={gameState.tiles}
+              onTileClick={handleTileClick}
+              isComplete={gameState.isComplete}
+              isPaused={gameState.isPaused}
+              onWinAnimationComplete={handleWinAnimationComplete}
+              imageSrc={gameState.imageSrc}
+              tileSize={tileSize}
+              imageWidth={imageDimensions.width}
+              imageHeight={imageDimensions.height}
+            />
             
-            <div className={styles.movesCounter}>
-              <span>{gameState.moves + " moves"}</span>
-            </div>
-            
-            {(gameState.gameMode === 'infinite' || gameState.gameMode === 'impossible') && (
-              <div className={styles.controlButtons}>
-                <button 
-                  className={styles.imageButton}
-                  onClick={() => setIsImageSelectOpen(true)}
-                  title="Change Image"
-                >
-                  <span className={styles.imageIcon}>🖼️</span>
-                </button>
-                
-                <button 
-                  className={styles.resetButton}
-                  onClick={handleNewGame}
-                  title="New Puzzle"
-                >
-                  <span className={styles.resetIcon}>↻</span>
-                </button>
+            {gameState.isPaused && (
+              <div className={styles.pauseOverlay} onClick={handlePauseOverlayClick}>
+                <div className={styles.pauseMessage}>
+                  <span className={styles.pauseIcon}>⏵</span>
+                  <span>PAUSED</span>
+                  <p className={styles.pauseInstructions}>Tap to resume</p>
+                </div>
               </div>
             )}
           </div>
         </div>
         
-        <div className={styles.boardContainer} ref={boardContainerRef}>
-          <Board
-            tiles={gameState.tiles}
-            onTileClick={handleTileClick}
-            isComplete={gameState.isComplete}
-            isPaused={gameState.isPaused}
-            onWinAnimationComplete={handleWinAnimationComplete}
-            imageSrc={gameState.imageSrc}
-            tileSize={tileSize}
-            imageWidth={imageDimensions.width}
-            imageHeight={imageDimensions.height}
-          />
+        {/* Control buttons below the board */}
+        <div className={styles.belowBoardControls}>
+          {/* Preview button */}
+          <button 
+            className={styles.previewButton}
+            onClick={togglePreviewModal}
+            title="Show Preview"
+          >
+            <span className={styles.previewIcon}>👁️</span>
+          </button>
           
-          {gameState.isPaused && (
-            <div className={styles.pauseOverlay} onClick={handlePauseOverlayClick}>
-              <div className={styles.pauseMessage}>
-                <span className={styles.pauseIcon}>⏵</span>
-                <span>PAUSED</span>
-                <p className={styles.pauseInstructions}>Tap to resume</p>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        <div className={styles.previewContainer}>
-          <div className={styles.previewLabel}>Preview:</div>
-          <div className={styles.previewImage}>
-            <img 
-              src={gameState.imageSrc} 
-              alt="Puzzle preview" 
-              className={styles.previewImg}
-            />
-          </div>
-          
-          {gameState.gameMode === 'impossible' && (
-            <div className={styles.impossibleLabel}>
-              <span role="img" aria-label="Skull">💀</span> Impossible Mode <span role="img" aria-label="Skull">💀</span>
-            </div>
+          {(gameState.gameMode === 'infinite' || gameState.gameMode === 'impossible') && (
+            <>
+              <button 
+                className={styles.imageButton}
+                onClick={() => setIsImageSelectOpen(true)}
+                title="Change Image"
+              >
+                <span className={styles.imageIcon}>🖼️</span>
+              </button>
+              
+              <button 
+                className={styles.resetButton}
+                onClick={handleNewGame}
+                title="New Puzzle"
+              >
+                <span className={styles.resetIcon}>↻</span>
+              </button>
+            </>
           )}
         </div>
       </main>
@@ -273,6 +282,14 @@ const PicturePuzzle: React.FC<PicturePuzzleProps> = ({ initialMode = 'daily' }) 
           currentImage={gameState.imageSrc}
         />
       )}
+      
+      {/* New Preview Modal */}
+      <PreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={togglePreviewModal}
+        imageSrc={gameState.imageSrc}
+        isImpossibleMode={gameState.gameMode === 'impossible'}
+      />
     </div>
   );
 };
