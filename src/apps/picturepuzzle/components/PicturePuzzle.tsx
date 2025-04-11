@@ -52,6 +52,23 @@ const PicturePuzzle: React.FC<PicturePuzzleProps> = ({ initialMode = 'daily' }) 
     gameState.pausedTime
   );
 
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    const originalTouchAction = document.body.style.touchAction;
+  
+    // Just lock scroll
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none'; // helps on iOS
+  
+    return () => {
+      // Restore scroll
+      document.body.style.overflow = originalOverflow;
+      document.body.style.touchAction = originalTouchAction;
+    };
+  }, []);
+  
+  
+
   // Show win modal when win animation is complete
   useEffect(() => {
     if (gameState.isComplete && gameState.winAnimationComplete && !isWinModalOpen && !hasUserDismissedWinModal) {
