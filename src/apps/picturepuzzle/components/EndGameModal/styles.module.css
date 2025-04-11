@@ -1,128 +1,151 @@
 /* src/apps/picturepuzzle/components/EndGameModal/styles.module.css */
 
 .modalOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  
-  .modalContent {
-    background-color: white;
-    border-radius: 8px;
-    padding: 24px;
-    max-width: 400px;
-    width: 90%;
-    text-align: center;
-  }
-  
-  .modalTitle {
-    font-size: 24px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 16px;
-  }
-  
-  .completedImageContainer {
-    width: 100%;
-    margin: 0 auto 24px;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border: 2px solid #fff;
-  }
-  
-  .completedImage {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-  }
-  
-  .statsContainer {
-    margin: 24px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .date {
-    font-size: 18px;
-    color: #666;
-  }
-  
-  .time {
-    font-size: 48px;
-    font-weight: bold;
-    color: #4a90e2;
-    font-family: monospace;
-  }
-  
-  .moves {
-    font-size: 18px;
-    color: #666;
-  }
-  
-  .buttonGroup {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  
-  .shareButton, .infiniteButton, .newGameButton {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.2s;
-  }
-  
-  .shareButton {
-    background-color: #4a90e2;
-    color: white;
-  }
-  
-  .infiniteButton {
-    background-color: #e9ecef;
-    color: #333;
-  }
-  
-  .newGameButton {
-    background-color: #2ecc71;
-    color: white;
-  }
-  
-  .shareButton:hover {
-    background-color: #3a7bc8;
-  }
-  
-  .infiniteButton:hover {
-    background-color: #dee2e6;
-  }
-  
-  .newGameButton:hover {
-    background-color: #27ae60;
-  }
-  
-  .closeButton {
-    display: block;
-    width: 100%;
-    padding: 12px;
-    background-color: transparent;
-    color: #666;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.2s;
-  }
-  
-  .closeButton:hover {
-    background-color: #f8f9fa;
-  }
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background-color: white;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.modalTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.completedImageContainer {
+  width: 100%;
+  margin: 0 auto 24px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 2px solid #fff;
+}
+
+.completedImage {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.statsContainer {
+  margin: 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.date {
+  font-size: 18px;
+  color: #666;
+}
+
+.time {
+  font-size: 48px;
+  font-weight: bold;
+  color: #4a90e2;
+  font-family: monospace;
+}
+
+.moves {
+  font-size: 18px;
+  color: #666;
+}
+
+.impossibleBadge {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background-color: #2c3e50;
+  color: white;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 14px;
+  letter-spacing: 1px;
+  display: inline-block;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.shareButton, .infiniteButton, .newGameButton, .impossibleButton {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s;
+  min-width: 100px;
+}
+
+.shareButton {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.infiniteButton {
+  background-color: #e9ecef;
+  color: #333;
+}
+
+.newGameButton {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.impossibleButton {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.shareButton:hover {
+  background-color: #3a7bc8;
+}
+
+.infiniteButton:hover {
+  background-color: #dee2e6;
+}
+
+.newGameButton:hover {
+  background-color: #27ae60;
+}
+
+.impossibleButton:hover {
+  background-color: #c0392b;
+}
+
+.closeButton {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background-color: transparent;
+  color: #666;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: #f8f9fa;
+}

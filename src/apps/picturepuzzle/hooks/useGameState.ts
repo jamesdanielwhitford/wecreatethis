@@ -12,6 +12,7 @@ import {
 
 const STORAGE_KEY_DAILY = 'picturepuzzle-daily-state';
 const STORAGE_KEY_INFINITE = 'picturepuzzle-infinite-state';
+const STORAGE_KEY_IMPOSSIBLE = 'picturepuzzle-impossible-state';
 const STORAGE_KEY_PLAYED_DATE = 'picturepuzzle-played-date';
 
 // Helper to get a daily image based on the date
@@ -28,7 +29,7 @@ const getDailyImage = (images: string[]): string => {
   return images[dayOfYear % images.length];
 };
 
-// Helper to get a random image for infinite mode
+// Helper to get a random image for infinite/impossible mode
 const getRandomImage = (images: string[], excludedImage?: string): string => {
   if (images.length === 0) return '';
   if (images.length === 1) return images[0];
@@ -46,19 +47,19 @@ const getRandomImage = (images: string[], excludedImage?: string): string => {
 // Create a new game state with the specified mode
 const createNewGame = (mode: GameMode, images: string[], currentImageSrc?: string): GameState => {
   const date = getCurrentDate();
-  const seed = mode === 'daily' ? getDailySeed() : `infinite-${Date.now()}-${Math.random()}`;
+  const seed = mode === 'daily' ? getDailySeed() : `${mode}-${Date.now()}-${Math.random()}`;
   
   // Determine which image to use
   let imageSrc = '';
   if (mode === 'daily') {
     imageSrc = getDailyImage(images);
   } else {
-    // For infinite mode, use a random image or the specified current image
+    // For infinite and impossible modes, use a random image or the specified current image
     imageSrc = currentImageSrc || getRandomImage(images);
   }
   
-  // Generate the tile arrangement
-  const tiles = generateSolvablePuzzleByShufflingBlank(seed);
+  // Generate the tile arrangement, passing the game mode
+  const tiles = generateSolvablePuzzleByShufflingBlank(seed, 500, mode);
   
   // Find the empty tile position
   const emptyTile = tiles.find(tile => tile.value === 0);
@@ -93,7 +94,11 @@ export const useGameState = (initialMode: GameMode = 'daily', availableImages: s
   const getInitialState = (): GameState => {
     if (typeof window !== 'undefined') {
       try {
-        const storageKey = initialMode === 'daily' ? STORAGE_KEY_DAILY : STORAGE_KEY_INFINITE;
+        let storageKey;
+        if (initialMode === 'daily') storageKey = STORAGE_KEY_DAILY;
+        else if (initialMode === 'infinite') storageKey = STORAGE_KEY_INFINITE;
+        else storageKey = STORAGE_KEY_IMPOSSIBLE;
+        
         const savedState = localStorage.getItem(storageKey);
         
         if (savedState) {
@@ -132,7 +137,11 @@ export const useGameState = (initialMode: GameMode = 'daily', availableImages: s
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        const storageKey = gameState.gameMode === 'daily' ? STORAGE_KEY_DAILY : STORAGE_KEY_INFINITE;
+        let storageKey;
+        if (gameState.gameMode === 'daily') storageKey = STORAGE_KEY_DAILY;
+        else if (gameState.gameMode === 'infinite') storageKey = STORAGE_KEY_INFINITE;
+        else storageKey = STORAGE_KEY_IMPOSSIBLE;
+        
         localStorage.setItem(storageKey, JSON.stringify(gameState));
         
         if (gameState.gameMode === 'daily') {
@@ -207,7 +216,11 @@ export const useGameState = (initialMode: GameMode = 'daily', availableImages: s
     // Load the saved state for the selected mode if it exists
     if (typeof window !== 'undefined') {
       try {
-        const storageKey = mode === 'daily' ? STORAGE_KEY_DAILY : STORAGE_KEY_INFINITE;
+        let storageKey;
+        if (mode === 'daily') storageKey = STORAGE_KEY_DAILY;
+        else if (mode === 'infinite') storageKey = STORAGE_KEY_INFINITE;
+        else storageKey = STORAGE_KEY_IMPOSSIBLE;
+        
         const savedState = localStorage.getItem(storageKey);
         
         if (savedState) {

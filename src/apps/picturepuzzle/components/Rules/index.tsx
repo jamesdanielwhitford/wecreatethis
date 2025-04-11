@@ -59,6 +59,16 @@ const Rules: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
             and create new puzzles anytime.
           </p>
           
+          <h4 className={styles.sectionSubtitle}>Impossible Mode</h4>
+          <p className={styles.text}>
+            A truly challenging version where the image pieces are scrambled in a special way! 
+            Even when you arrange the numbers 1-15 in order with the blank space at position 16, 
+            the image will appear distorted. Can you solve the puzzle while visualizing how the pieces should connect?
+          </p>
+          <p className={styles.text}>
+            <strong>Hint:</strong> In Impossible Mode, the blank piece is mapped to the top-left of the image instead of the bottom-right.
+          </p>
+          
           <h3 className={styles.sectionTitle}>How to Play</h3>
           <ul className={styles.rulesList}>
             <li className={styles.text}>Tap on a piece adjacent to the empty space to move it.</li>
@@ -79,6 +89,7 @@ const Rules: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
             <li className={styles.text}>Focus on completing one row or column at a time.</li>
             <li className={styles.text}>Pay attention to distinctive features in the image to identify where pieces belong.</li>
             <li className={styles.text}>The last few pieces are often the trickiest - take your time!</li>
+            <li className={styles.text}>For Impossible Mode, you&apos;ll need to mentally remap the pieces to solve the puzzle.</li>
           </ul>
         </div>
         
