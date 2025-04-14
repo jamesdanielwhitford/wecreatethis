@@ -30,10 +30,6 @@ const appCategories = [
     description: 'Tools to help you work smarter',
     apps: [
       {
-        name: 'Boss Bitch',
-        path: '/bossbitch'
-      },
-      {
         name: 'Beautiful Mind',
         path: '/beautifulmind'
       },
