@@ -13,7 +13,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const router = useRouter();
 
   // Handle mode changes with URL updates
-  const handleModeChange = (mode: 'daily' | 'infinite' | 'impossible') => {
+  const handleModeChange = (mode: 'daily' | 'infinite') => {
     // Only proceed if it's a different mode
     if (mode === gameMode) return;
     
@@ -60,13 +60,6 @@ const Navbar: React.FC<NavbarProps> = ({
             title="Infinite Mode"
           >
             <span className={styles.iconInfinity}>∞</span>
-          </button>
-          <button
-            className={`${styles.modeButton} ${gameMode === 'impossible' ? styles.active : ''}`}
-            onClick={() => handleModeChange('impossible')}
-            title="Impossible Mode"
-          >
-            <span className={styles.iconImpossible}>💀</span>
           </button>
         </div>
         <button 

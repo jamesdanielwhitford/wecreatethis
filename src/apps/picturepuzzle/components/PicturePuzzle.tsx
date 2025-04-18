@@ -129,7 +129,7 @@ const PicturePuzzle: React.FC<PicturePuzzleProps> = ({ initialMode = 'daily' }) 
     setHasUserDismissedWinModal(false);
   };
 
-  // Handle image selection for infinite/impossible modes
+  // Handle image selection for infinite mode
   const handleImageSelect = (imageSrc: string) => {
     changeImage(imageSrc);
     setIsImageSelectOpen(false);
@@ -142,7 +142,7 @@ const PicturePuzzle: React.FC<PicturePuzzleProps> = ({ initialMode = 'daily' }) 
     handleModeChange('infinite');
   };
 
-  // Handle starting a new game (used in infinite/impossible modes)
+  // Handle starting a new game (used in infinite mode)
   const handleNewGame = () => {
     resetGame();
     resetTimer();
@@ -251,7 +251,7 @@ const PicturePuzzle: React.FC<PicturePuzzleProps> = ({ initialMode = 'daily' }) 
             <span className={styles.previewIcon}>👁️</span>
           </button>
           
-          {(gameState.gameMode === 'infinite' || gameState.gameMode === 'impossible') && (
+          {gameState.gameMode === 'infinite' && (
             <>
               <button 
                 className={styles.imageButton}
@@ -291,7 +291,7 @@ const PicturePuzzle: React.FC<PicturePuzzleProps> = ({ initialMode = 'daily' }) 
         imageSrc={gameState.imageSrc}
       />
       
-      {(gameState.gameMode === 'infinite' || gameState.gameMode === 'impossible') && (
+      {gameState.gameMode === 'infinite' && (
         <ImageSelect
           isOpen={isImageSelectOpen}
           onClose={() => setIsImageSelectOpen(false)}
@@ -305,7 +305,7 @@ const PicturePuzzle: React.FC<PicturePuzzleProps> = ({ initialMode = 'daily' }) 
         isOpen={isPreviewModalOpen}
         onClose={togglePreviewModal}
         imageSrc={gameState.imageSrc}
-        isImpossibleMode={gameState.gameMode === 'impossible'}
+        isImpossibleMode={false}
       />
     </div>
   );

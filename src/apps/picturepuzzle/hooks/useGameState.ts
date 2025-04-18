@@ -13,7 +13,6 @@ import { getAllImages } from '../components/ImageSelect';
 
 const STORAGE_KEY_DAILY = 'picturepuzzle-daily-state';
 const STORAGE_KEY_INFINITE = 'picturepuzzle-infinite-state';
-const STORAGE_KEY_IMPOSSIBLE = 'picturepuzzle-impossible-state';
 const STORAGE_KEY_PLAYED_DATE = 'picturepuzzle-played-date';
 
 // Helper to get a daily image based on the date
@@ -31,7 +30,7 @@ const getDailyImage = (): string => {
   return availableImages[dayOfYear % availableImages.length];
 };
 
-// Helper to get a random image for infinite/impossible mode
+// Helper to get a random image for infinite mode
 const getRandomImage = (excludedImage?: string): string => {
   const availableImages = getAllImages();
   if (availableImages.length === 0) return '';
@@ -57,12 +56,12 @@ const createNewGame = (mode: GameMode, currentImageSrc?: string): GameState => {
   if (mode === 'daily') {
     imageSrc = getDailyImage();
   } else {
-    // For infinite and impossible modes, use a random image or the specified current image
+    // For infinite mode, use a random image or the specified current image
     imageSrc = currentImageSrc || getRandomImage();
   }
   
   // Generate the tile arrangement, passing the game mode
-  const tiles = generateSolvablePuzzleByShufflingBlank(seed, 500, mode);
+  const tiles = generateSolvablePuzzleByShufflingBlank(seed, 500);
   
   // Find the empty tile position
   const emptyTile = tiles.find(tile => tile.value === 0);
@@ -99,8 +98,7 @@ export const useGameState = (initialMode: GameMode = 'daily') => {
       try {
         let storageKey;
         if (initialMode === 'daily') storageKey = STORAGE_KEY_DAILY;
-        else if (initialMode === 'infinite') storageKey = STORAGE_KEY_INFINITE;
-        else storageKey = STORAGE_KEY_IMPOSSIBLE;
+        else storageKey = STORAGE_KEY_INFINITE;
         
         const savedState = localStorage.getItem(storageKey);
         
@@ -150,8 +148,7 @@ export const useGameState = (initialMode: GameMode = 'daily') => {
       try {
         let storageKey;
         if (gameState.gameMode === 'daily') storageKey = STORAGE_KEY_DAILY;
-        else if (gameState.gameMode === 'infinite') storageKey = STORAGE_KEY_INFINITE;
-        else storageKey = STORAGE_KEY_IMPOSSIBLE;
+        else storageKey = STORAGE_KEY_INFINITE;
         
         localStorage.setItem(storageKey, JSON.stringify(gameState));
         
@@ -229,8 +226,7 @@ export const useGameState = (initialMode: GameMode = 'daily') => {
       try {
         let storageKey;
         if (mode === 'daily') storageKey = STORAGE_KEY_DAILY;
-        else if (mode === 'infinite') storageKey = STORAGE_KEY_INFINITE;
-        else storageKey = STORAGE_KEY_IMPOSSIBLE;
+        else storageKey = STORAGE_KEY_INFINITE;
         
         const savedState = localStorage.getItem(storageKey);
         

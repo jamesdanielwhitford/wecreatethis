@@ -36,14 +36,8 @@ const EndGameModal: React.FC<WinModalProps> = ({
     // Update the URL
     router.push('/picturepuzzle/infinite');
   };
-  
-  // Handle "Play Impossible" with URL update
-  const handlePlayImpossible = () => {
-    // Update the URL
-    router.push('/picturepuzzle/impossible');
-  };
 
-  // Handle "New Game" for infinite/impossible mode
+  // Handle "New Game" for infinite mode
   const handleNewGame = () => {
     if (onNewGame) {
       onNewGame();
@@ -56,9 +50,6 @@ const EndGameModal: React.FC<WinModalProps> = ({
     // Create emoji grade based on moves and time
     const getPerformanceEmoji = () => {
       const totalSeconds = Math.floor(time / 1000);
-      
-      // Special emoji for impossible mode
-      if (gameMode === 'impossible') return '🧠'; // Brain emoji
       
       // Simplified grading system based on moves and time
       if (moves < 100 && totalSeconds < 60) return '🏆'; // Trophy for excellent performance
@@ -81,8 +72,6 @@ const EndGameModal: React.FC<WinModalProps> = ({
     let modeText;
     if (gameMode === 'daily') {
       modeText = `Daily Picture Puzzle (${formattedDate})`;
-    } else if (gameMode === 'impossible') {
-      modeText = `IMPOSSIBLE Picture Puzzle 💀`;
     } else {
       modeText = 'Infinite Picture Puzzle';
     }
@@ -127,28 +116,12 @@ const EndGameModal: React.FC<WinModalProps> = ({
   const renderActionButton = () => {
     if (gameMode === 'daily') {
       return (
-        <>
-          <button className={styles.infiniteButton} onClick={handlePlayInfinite}>
-            Play Infinite
-          </button>
-          <button className={styles.impossibleButton} onClick={handlePlayImpossible}>
-            Try Impossible
-          </button>
-        </>
-      );
-    } else if (gameMode === 'infinite') {
-      return (
-        <>
-          <button className={styles.impossibleButton} onClick={handlePlayImpossible}>
-            Try Impossible
-          </button>
-          <button className={styles.newGameButton} onClick={handleNewGame}>
-            New Puzzle
-          </button>
-        </>
+        <button className={styles.infiniteButton} onClick={handlePlayInfinite}>
+          Play Infinite
+        </button>
       );
     } else {
-      // Impossible mode
+      // Infinite mode
       return (
         <button className={styles.newGameButton} onClick={handleNewGame}>
           New Puzzle
@@ -161,11 +134,7 @@ const EndGameModal: React.FC<WinModalProps> = ({
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
         <h2 className={styles.modalTitle}>
-          {gameMode === 'impossible' ? (
-            <>Impossible Puzzle Solved! <span role="img" aria-label="skull">💀</span></>
-          ) : (
-            'Puzzle Solved!'
-          )}
+          Puzzle Solved!
         </h2>
         
         <div className={styles.completedImageContainer}>
@@ -188,12 +157,6 @@ const EndGameModal: React.FC<WinModalProps> = ({
           })}</div>
           <div className={styles.time}>{formatTime(time)}</div>
           <div className={styles.moves}>{moves} moves</div>
-          
-          {gameMode === 'impossible' && (
-            <div className={styles.impossibleBadge}>
-              IMPOSSIBLE MODE COMPLETED
-            </div>
-          )}
         </div>
         
         <div className={styles.buttonGroup}>

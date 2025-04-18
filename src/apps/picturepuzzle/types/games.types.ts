@@ -1,6 +1,6 @@
 // src/apps/picturepuzzle/types/games.types.ts
 
-export type GameMode = 'daily' | 'infinite' | 'impossible';
+export type GameMode = 'daily' | 'infinite';
 
 export interface Tile {
   value: number; // 0 represents the empty tile
