@@ -9,6 +9,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  /* iOS Safari fixes */
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
 }
 
 .modalContent {
@@ -19,9 +22,13 @@
   width: 500px;
   position: relative;
   text-align: left;
-  max-height: 90vh;
+  max-height: 85vh; /* Slightly reduced from 90vh for better visibility */
   overflow-y: auto;
-  margin: 2rem;
+  /* Add margins to prevent touching edges on iOS */
+  margin-top: 5vh;
+  margin-bottom: 5vh;
+  margin-left: 2rem;
+  margin-right: 2rem;
 }
 
 [data-theme="dark"] .modalContent {
@@ -91,5 +98,16 @@
   .modalContent {
     padding: 2.5rem;
     max-width: 600px;
+  }
+}
+
+/* Small screen adjustments for iOS */
+@media (max-width: 480px) {
+  .modalContent {
+    margin-top: 3vh;
+    margin-bottom: 3vh;
+    margin-left: 1rem;
+    margin-right: 1rem;
+    padding: 1.5rem;
   }
 }
