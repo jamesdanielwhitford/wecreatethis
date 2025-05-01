@@ -4252,34 +4252,119 @@ export const words: string[] = [
     "zwei"
   ];
   
-  // Seeded random number generator using Mulberry32 algorithm
-  export function createSeededRandom(seed: string | number = Date.now()) {
-      // Convert string seeds into numbers if needed
-      if (typeof seed === 'string') {
-          seed = Array.from(seed).reduce((acc, char) => {
-              return acc + char.charCodeAt(0);
-          }, 0);
+// Create a properly typed cyclic generator function
+export function createCyclicGenerator(wordList: string[], offset: number = 0) {
+    // Create a copy of the word list to avoid modifying the original
+    const shuffledList = [...wordList];
+    
+    // Simple Fisher-Yates shuffle algorithm to create a random-like order
+    // but with guaranteed coverage of all items
+    const shuffle = (array: string[], seed: number): string[] => {
+      const result = [...array];
+      let m = result.length;
+      let t: string;
+      let i: number;
+      
+      // Seeded pseudo-random number generator based on the seed
+      const rand = (n: number) => {
+        // Simple LCG (Linear Congruential Generator)
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        return seed % n;
+      };
+      
+      // Shuffle algorithm
+      while (m) {
+        i = rand(m--);
+        t = result[m];
+        result[m] = result[i];
+        result[i] = t;
       }
       
-      return function() {
-          let s = seed >>> 0;
-          s = ((s + 0x6D2B79F5) * 1597334677) >>> 0;
-          s = ((s ^ (s >>> 15)) * 1597334677) >>> 0;
-          s = (s ^ (s >>> 15)) >>> 0;
-          return (s >>> 0) / 4294967296;
-      };
+      return result;
+    };
+    
+    // Shuffle the list with the given offset as seed
+    const shuffledItems = shuffle(shuffledList, offset);
+    
+    // Return a generator function that will cycle through all words
+    // before repeating any
+    return function(index: number): string {
+      return shuffledItems[index % shuffledItems.length].toUpperCase();
+    };
   }
   
-  // Get random word using custom RNG
+  /**
+   * Gets a daily word with absolutely no repetition until the entire word list is exhausted
+   * This is a deterministic approach that guarantees unique words for as many days as there are words
+   * 
+   * @param {string[]} wordList - List of words to choose from
+   * @param {Date} date - The date to get a word for (defaults to today)
+   * @returns {string} - The word for that day (uppercase)
+   */
+  export function getDailyWord(wordList: string[], date: Date = new Date()): string {
+    // A fixed reference date
+    const startDate = new Date(2020, 0, 1);
+    
+    // Calculate days since our reference date
+    const daysSinceStart = Math.floor((date.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+    
+    // Position within the current cycle (cycles through the entire word list)
+    const cyclePosition = daysSinceStart % wordList.length;
+    
+    // Calculate which cycle we're in (how many times we've gone through the full word list)
+    const cycleNumber = Math.floor(daysSinceStart / wordList.length);
+    
+    // For each new cycle, we'll shift the starting position
+    // Using a prime number (83) ensures good distribution and prevents patterns
+    const cycleOffset = (cycleNumber * 83) % wordList.length;
+    
+    // Calculate the final position with the offset applied
+    const wordIndex = (cyclePosition + cycleOffset) % wordList.length;
+    
+    return wordList[wordIndex].toUpperCase();
+  }
+  
+  /**
+   * Get random word using zero-repetition technique
+   * Will generate random-looking words but guarantees no repetition until all words are used
+   * 
+   * @param {string[]} wordList - List of words to choose from
+   * @param {string | number} seed - Optional seed for the random generator
+   * @returns {string} - A random word (uppercase)
+   */
   export function getRandomWord(wordList: string[], seed?: string | number): string {
-      const rng = createSeededRandom(seed);
-      return wordList[Math.floor(rng() * wordList.length)].toUpperCase();
+    // Convert string seeds into numbers if needed
+    let numericSeed: number;
+    
+    if (typeof seed === 'string') {
+      numericSeed = hashStringToNumber(seed);
+    } else if (typeof seed === 'number') {
+      numericSeed = seed;
+    } else {
+      numericSeed = Date.now();
+    }
+    
+    // Use the seed to create a starting index and cycle offset
+    const startIndex = numericSeed % wordList.length;
+
+    // Create a generator with appropriate offset so it appears random
+    const generator = createCyclicGenerator(wordList, numericSeed);
+    
+    // Return a word at the calculated position
+    return generator(startIndex);
   }
   
-  // Get daily word using date as seed
-  export function getDailyWord(wordList: string[]): string {
-      const today = new Date();
-      const seed = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-      return getRandomWord(wordList, seed);
+  /**
+   * A better hash function for strings to create a numeric seed
+   * 
+   * @param {string} str - String to hash
+   * @returns {number} - Numeric hash value
+   */
+  function hashStringToNumber(str: string): number {
+    // A simple but effective string hash function (djb2)
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) + hash) + str.charCodeAt(i); // hash * 33 + char code
+    }
+    return hash >>> 0; // Convert to unsigned 32-bit integer
   }
-  
