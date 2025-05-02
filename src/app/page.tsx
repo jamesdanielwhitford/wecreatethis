@@ -23,6 +23,10 @@ const appCategories = [
         name: 'Picture Puzzle',
         path: '/picturepuzzle/daily'
       },
+      {
+        name: 'Survivor Puzzle',
+        path: '/survivorpuzzle'
+      },
     ]
   },
   {

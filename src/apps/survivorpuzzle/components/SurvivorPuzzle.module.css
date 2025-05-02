@@ -1,0 +1,24 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+  }
+  
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    max-width: 500px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  
+  @media (max-width: 500px) {
+    .main {
+      padding: 16px;
+    }
+  }
