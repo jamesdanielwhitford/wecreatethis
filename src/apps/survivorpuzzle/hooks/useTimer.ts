@@ -1,3 +1,4 @@
+// src/apps/survivorpuzzle/hooks/useTimer.ts
 import { useState, useEffect, useCallback } from 'react';
 import { TimerState } from '../types/game.types';
 
@@ -6,39 +7,61 @@ export const useTimer = (
   isComplete: boolean,
   isPaused: boolean,
   pausedTime: number,
-  timeLimit: number,
+  timeLimit: number | null,
   onTimeout: () => void
 ) => {
   const [timerState, setTimerState] = useState<TimerState>({
     elapsedTime: 0,
-    isRunning: false
+    isRunning: false,
+    isCountUp: timeLimit === null
   });
 
   // Update timer every 100ms
   useEffect(() => {
-    if (!startTime || isComplete || isPaused) {
+    if (!startTime || isComplete) {
+      return;
+    }
+
+    // If paused, don't setup the timer
+    if (isPaused) {
+      setTimerState(prev => ({
+        ...prev,
+        isRunning: false
+      }));
       return;
     }
 
     const intervalId = setInterval(() => {
       const now = Date.now();
       const elapsedSinceStart = now - startTime;
-      const totalPauseTime = isPaused ? now - pausedTime : 0;
+      const totalPauseTime = pausedTime > 0 ? now - pausedTime : 0;
       const actualElapsed = elapsedSinceStart - totalPauseTime;
       
-      setTimerState({
-        elapsedTime: actualElapsed,
-        isRunning: true
-      });
+      // For 'none' difficulty, always count up
+      if (timeLimit === null) {
+        setTimerState({
+          elapsedTime: actualElapsed,
+          isRunning: true,
+          isCountUp: true
+        });
+      } else {
+        // For timed difficulties, count down
+        const remaining = Math.max(0, timeLimit - actualElapsed);
+        setTimerState({
+          elapsedTime: remaining,
+          isRunning: true,
+          isCountUp: false
+        });
 
-      // Check if time limit has been reached
-      if (actualElapsed >= timeLimit) {
-        clearInterval(intervalId);
-        onTimeout();
-        setTimerState(prev => ({
-          ...prev,
-          isRunning: false
-        }));
+        // Check if time limit has been reached
+        if (actualElapsed >= timeLimit) {
+          clearInterval(intervalId);
+          onTimeout();
+          setTimerState(prev => ({
+            ...prev,
+            isRunning: false
+          }));
+        }
       }
     }, 100);
 
@@ -49,18 +72,13 @@ export const useTimer = (
   const resetTimer = useCallback(() => {
     setTimerState({
       elapsedTime: 0,
-      isRunning: false
+      isRunning: false,
+      isCountUp: timeLimit === null
     });
-  }, []);
-
-  // Return time remaining instead of elapsed time
-  const timeRemaining = Math.max(0, timeLimit - timerState.elapsedTime);
+  }, [timeLimit]);
 
   return {
-    timerState: {
-      ...timerState,
-      elapsedTime: timeRemaining
-    },
+    timerState,
     resetTimer
   };
 };

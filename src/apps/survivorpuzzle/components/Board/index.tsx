@@ -1,3 +1,4 @@
+// src/apps/survivorpuzzle/components/Board/index.tsx
 import React from 'react';
 import styles from './styles.module.css';
 
@@ -8,6 +9,7 @@ interface BoardProps {
   timeRemaining: number;
   isComplete: boolean;
   isTimeout: boolean;
+  isCountUp: boolean;
 }
 
 const Board: React.FC<BoardProps> = ({
@@ -16,9 +18,10 @@ const Board: React.FC<BoardProps> = ({
   onRowClick,
   timeRemaining,
   isComplete,
-  isTimeout
+  isTimeout,
+  isCountUp
 }) => {
-  // Format time remaining as MM:SS
+  // Format time as MM:SS
   const formatTime = (milliseconds: number): string => {
     const totalSeconds = Math.floor(milliseconds / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -28,8 +31,8 @@ const Board: React.FC<BoardProps> = ({
 
   return (
     <div className={styles.boardContainer}>
-      <div className={`${styles.timer} ${isTimeout ? styles.timeout : ''} ${isComplete ? styles.complete : ''}`}>
-        {formatTime(timeRemaining)}
+      <div className={`${styles.timer} ${isTimeout ? styles.timeout : ''} ${isComplete ? styles.complete : ''} ${isCountUp ? styles.countUp : ''}`}>
+        {isCountUp ? `⏱️ ${formatTime(timeRemaining)}` : `⏳ ${formatTime(timeRemaining)}`}
       </div>
       
       <div className={styles.board}>

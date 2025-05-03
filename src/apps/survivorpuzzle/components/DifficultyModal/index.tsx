@@ -1,3 +1,4 @@
+// src/apps/survivorpuzzle/components/DifficultyModal/index.tsx
 import React from 'react';
 import { Difficulty } from '../../types/game.types';
 import styles from './styles.module.css';
@@ -24,24 +25,31 @@ const DifficultyModal: React.FC<DifficultyModalProps> = ({
         
         <div className={styles.difficultyOptions}>
           <button 
+            className={`${styles.difficultyButton} ${currentDifficulty === 'none' ? styles.selected : ''}`}
+            onClick={() => onSelectDifficulty('none')}
+          >
+            No Time Limit ⏱️
+          </button>
+          
+          <button 
             className={`${styles.difficultyButton} ${currentDifficulty === 'easy' ? styles.selected : ''}`}
             onClick={() => onSelectDifficulty('easy')}
           >
-            Easy (5 minutes)
+            Easy (5 minutes) 😀
           </button>
           
           <button 
             className={`${styles.difficultyButton} ${currentDifficulty === 'medium' ? styles.selected : ''}`}
             onClick={() => onSelectDifficulty('medium')}
           >
-            Medium (3 minutes)
+            Medium (3 minutes) 😐
           </button>
           
           <button 
             className={`${styles.difficultyButton} ${currentDifficulty === 'difficult' ? styles.selected : ''}`}
             onClick={() => onSelectDifficulty('difficult')}
           >
-            Difficult (1 minute)
+            Difficult (1 minute) 😰
           </button>
         </div>
         

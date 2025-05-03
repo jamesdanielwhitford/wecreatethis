@@ -1,3 +1,4 @@
+// src/apps/survivorpuzzle/hooks/useGameState.ts
 import { useState, useCallback } from 'react';
 import { GameState, Difficulty } from '../types/game.types';
 import { generatePuzzle, isPuzzleSolved, getTimeLimit } from '../utils/generatePuzzle';

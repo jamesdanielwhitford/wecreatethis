@@ -1,152 +1,157 @@
+/* src/apps/survivorpuzzle/components/Board/styles.module.css */
 .boardContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    max-width: 400px;
-    position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+}
+
+.timer {
+  font-size: 28px;
+  font-family: monospace;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  padding: 8px 16px;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.timer.timeout {
+  color: #e74c3c;
+  animation: pulse 1s infinite;
+}
+
+.timer.complete {
+  color: #27ae60;
+}
+
+.timer.countUp {
+  color: #3498db;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
   }
-  
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.row:hover {
+  transform: translateX(4px);
+}
+
+.row:active {
+  transform: translateX(2px);
+}
+
+.cell {
+  width: calc(20% - 6.4px);
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #3498db;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.emptyCell {
+  background-color: #ecf0f1;
+  box-shadow: none;
+}
+
+.currentNumberContainer {
+  margin-top: 20px;
+  width: 60px;
+  height: 60px;
+}
+
+.currentNumber {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e74c3c;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  border-radius: 50%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.currentNumber.empty {
+  background-color: #ecf0f1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.completeBanner, .timeoutBanner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 16px 24px;
+  border-radius: 8px;
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.completeBanner {
+  background-color: #27ae60;
+}
+
+.timeoutBanner {
+  background-color: #e74c3c;
+}
+
+@media (max-width: 500px) {
   .timer {
-    font-size: 28px;
-    font-family: monospace;
-    font-weight: bold;
-    color: #2c3e50;
-    margin-bottom: 20px;
-    padding: 8px 16px;
-    background-color: white;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .timer.timeout {
-    color: #e74c3c;
-    animation: pulse 1s infinite;
-  }
-  
-  .timer.complete {
-    color: #27ae60;
-  }
-  
-  @keyframes pulse {
-    0% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.6;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
-  
-  .board {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-  }
-  
-  .row {
-    display: flex;
-    gap: 8px;
-    cursor: pointer;
-    transition: transform 0.1s ease;
-  }
-  
-  .row:hover {
-    transform: translateX(4px);
-  }
-  
-  .row:active {
-    transform: translateX(2px);
+    font-size: 24px;
+    margin-bottom: 16px;
   }
   
   .cell {
-    width: calc(20% - 6.4px);
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #3498db;
-    color: white;
-    font-size: 20px;
-    font-weight: bold;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .emptyCell {
-    background-color: #ecf0f1;
-    box-shadow: none;
-  }
-  
-  .currentNumberContainer {
-    margin-top: 20px;
-    width: 60px;
-    height: 60px;
+    font-size: 18px;
   }
   
   .currentNumber {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #e74c3c;
-    color: white;
-    font-size: 24px;
-    font-weight: bold;
-    border-radius: 50%;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-  
-  .currentNumber.empty {
-    background-color: #ecf0f1;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 20px;
+    width: 50px;
+    height: 50px;
   }
   
   .completeBanner, .timeoutBanner {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 16px 24px;
-    border-radius: 8px;
-    font-size: 24px;
-    font-weight: bold;
-    color: white;
-    text-align: center;
-    z-index: 10;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    font-size: 20px;
+    padding: 12px 20px;
   }
-  
-  .completeBanner {
-    background-color: #27ae60;
-  }
-  
-  .timeoutBanner {
-    background-color: #e74c3c;
-  }
-  
-  @media (max-width: 500px) {
-    .timer {
-      font-size: 24px;
-      margin-bottom: 16px;
-    }
-    
-    .cell {
-      font-size: 18px;
-    }
-    
-    .currentNumber {
-      font-size: 20px;
-      width: 50px;
-      height: 50px;
-    }
-    
-    .completeBanner, .timeoutBanner {
-      font-size: 20px;
-      padding: 12px 20px;
-    }
-  }
+}

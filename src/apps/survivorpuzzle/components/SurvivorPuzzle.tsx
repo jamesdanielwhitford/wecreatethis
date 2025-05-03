@@ -1,3 +1,4 @@
+// src/apps/survivorpuzzle/components/SurvivorPuzzle.tsx
 import React, { useState, useEffect } from 'react';
 import { useGameState } from '../hooks/useGameState';
 import { useTimer } from '../hooks/useTimer';
@@ -18,7 +19,7 @@ const SurvivorPuzzle: React.FC = () => {
     changeDifficulty,
     handleRowClick,
     handleTimeout
-  } = useGameState();
+  } = useGameState('none'); // Default to 'none' difficulty (no time limit)
   
   const { timerState, resetTimer } = useTimer(
     gameState.startTime,
@@ -57,6 +58,11 @@ const SurvivorPuzzle: React.FC = () => {
     setIsEndGameModalOpen(false);
   };
   
+  // Handle end game modal close
+  const handleEndGameModalClose = () => {
+    setIsEndGameModalOpen(false);
+  };
+  
   return (
     <div className={styles.container}>
       <Navbar
@@ -74,6 +80,7 @@ const SurvivorPuzzle: React.FC = () => {
           timeRemaining={timerState.elapsedTime}
           isComplete={gameState.isComplete}
           isTimeout={gameState.isTimeout}
+          isCountUp={timerState.isCountUp}
         />
       </main>
       
@@ -86,11 +93,12 @@ const SurvivorPuzzle: React.FC = () => {
       
       <EndGameModal
         isOpen={isEndGameModalOpen}
-        onClose={() => setIsEndGameModalOpen(false)}
+        onClose={handleEndGameModalClose}
         onReset={handleReset}
         isWin={gameState.isComplete}
         timeRemaining={timerState.elapsedTime}
         moves={gameState.moves}
+        isCountUp={timerState.isCountUp}
       />
     </div>
   );
