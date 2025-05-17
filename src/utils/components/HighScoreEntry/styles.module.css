@@ -1,18 +1,43 @@
-/* src/utils/components/HighScoreEntry/styles.module.css */
+/* src/utils/components/HighScoreEntry/styles.module.css (Updated with theme support) */
 .container {
-  padding: 24px;
-  background-color: #1a1a1a;
+  padding: 16px;
+  /* Use theme variables instead of hardcoded colors */
+  background-color: var(--entry-bg, #1a1a1a);
+  color: var(--entry-text, white);
   border-radius: 8px;
   text-align: center;
-  color: white;
-  max-width: 400px;
   margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Dark theme variables (original dark design) */
+:global(.dark) .container {
+  --entry-bg: #1a1a1a;
+  --entry-text: white;
+  --subtitle-color: #f0f0f0;
+  --input-border: #444;
+  --input-bg: #222;
+  --input-color: white;
+  --input-focus-border: #ffd700;
+}
+
+/* Light theme variables */
+:global(.light) .container {
+  --entry-bg: #f5f5f5;
+  --entry-text: #333;
+  --subtitle-color: #555;
+  --input-border: #ccc;
+  --input-bg: white;
+  --input-color: #333;
+  --input-focus-border: #3498db;
 }
 
 .title {
-  font-size: 28px;
+  font-size: 24px;
   margin: 0 0 8px 0;
-  color: #ffd700; /* Gold color for high score */
+  color: #ffd700; /* Gold color works well in both themes */
   text-transform: uppercase;
   font-weight: bold;
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
@@ -20,48 +45,48 @@
 
 .subtitle {
   font-size: 18px;
-  margin-bottom: 24px;
-  color: #f0f0f0;
+  margin-bottom: 20px;
+  color: var(--subtitle-color, #f0f0f0);
 }
 
 .inputContainer {
   display: flex;
   justify-content: center;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .letterInput {
-  width: 60px;
-  height: 60px;
-  font-size: 36px;
+  width: 54px;
+  height: 54px;
+  font-size: 32px;
   text-align: center;
-  border: 2px solid #444;
-  background-color: #222;
-  color: white;
+  border: 2px solid var(--input-border, #444);
+  background-color: var(--input-bg, #222);
+  color: var(--input-color, white);
   border-radius: 8px;
   text-transform: uppercase;
   transition: all 0.2s ease;
 }
 
 .letterInput.active {
-  border-color: #ffd700;
+  border-color: var(--input-focus-border, #ffd700);
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 .letterInput:focus {
   outline: none;
-  border-color: #ffd700;
+  border-color: var(--input-focus-border, #ffd700);
 }
 
 .buttonContainer {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .submitButton, .cancelButton {
-  padding: 12px 24px;
+  padding: 10px 20px;
   font-size: 16px;
   font-weight: bold;
   text-transform: uppercase;
@@ -72,7 +97,7 @@
 }
 
 .submitButton {
-  background-color: #4caf50; /* Green */
+  background-color: #4caf50; /* Green works in both themes */
   color: white;
 }
 
@@ -81,7 +106,7 @@
 }
 
 .cancelButton {
-  background-color: #f44336; /* Red */
+  background-color: #f44336; /* Red works in both themes */
   color: white;
 }
 
@@ -91,26 +116,61 @@
 
 @media (max-width: 500px) {
   .container {
-    padding: 16px;
+    padding: 12px;
   }
   
   .title {
-    font-size: 24px;
+    font-size: 20px;
   }
   
   .subtitle {
-    font-size: 16px;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  
+  .inputContainer {
+    gap: 8px;
     margin-bottom: 16px;
   }
   
   .letterInput {
-    width: 50px;
-    height: 50px;
-    font-size: 28px;
+    width: 45px;
+    height: 45px;
+    font-size: 24px;
   }
   
   .submitButton, .cancelButton {
-    padding: 10px 20px;
-    font-size: 14px;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .container {
+    padding: 10px;
+  }
+  
+  .title {
+    font-size: 18px;
+  }
+  
+  .subtitle {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  
+  .letterInput {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+  }
+  
+  .buttonContainer {
+    gap: 8px;
+  }
+  
+  .submitButton, .cancelButton {
+    padding: 7px 14px;
+    font-size: 12px;
   }
 }

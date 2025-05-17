@@ -1,4 +1,4 @@
-/* src/app/rankings/page.module.css */
+/* src/app/rankings/page.module.css (Updated with theme support) */
 .container {
   max-width: 1000px;
   margin: 0 auto;
@@ -6,13 +6,48 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  /* Add background and text color variables */
+  background-color: var(--page-bg, transparent);
+  color: var(--page-text, #333);
+}
+
+/* Dark mode variables */
+:global(.dark) .container {
+  --page-bg: transparent;
+  --page-text: #f0f0f0;
+  --title-color: #f0f0f0;
+  --label-color: #b0b0b0;
+  --border-color: #444;
+  --footer-color: #999;
+  --select-border: #444;
+  --select-bg: #222;
+  --select-text: #f0f0f0;
+  --select-focus-border: #3498db;
+  --link-color: #64b5f6;
+  --link-hover: #90caf9;
+}
+
+/* Light mode variables */
+:global(.light) .container {
+  --page-bg: transparent;
+  --page-text: #333;
+  --title-color: #333;
+  --label-color: #555;
+  --border-color: #eee;
+  --footer-color: #777;
+  --select-border: #ddd;
+  --select-bg: white;
+  --select-text: #333;
+  --select-focus-border: #3498db;
+  --link-color: #3498db;
+  --link-hover: #2980b9;
 }
 
 .title {
   text-align: center;
   font-size: 32px;
   margin-bottom: 24px;
-  color: #333;
+  color: var(--title-color, #333);
 }
 
 .selectors {
@@ -33,22 +68,23 @@
 .label {
   font-size: 14px;
   margin-bottom: 8px;
-  color: #555;
+  color: var(--label-color, #555);
   font-weight: bold;
 }
 
 .select {
   padding: 10px;
   font-size: 16px;
-  border: 2px solid #ddd;
+  border: 2px solid var(--select-border, #ddd);
   border-radius: 4px;
-  background-color: white;
+  background-color: var(--select-bg, white);
+  color: var(--select-text, #333);
   transition: all 0.2s ease;
 }
 
 .select:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: var(--select-focus-border, #3498db);
   box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
 }
 
@@ -61,21 +97,21 @@
   text-align: center;
   margin-top: auto;
   padding: 16px 0;
-  border-top: 1px solid #eee;
-  color: #777;
+  border-top: 1px solid var(--border-color, #eee);
+  color: var(--footer-color, #777);
 }
 
 .backLink {
   display: inline-block;
   margin-top: 8px;
-  color: #3498db;
+  color: var(--link-color, #3498db);
   text-decoration: none;
   font-weight: bold;
   transition: color 0.2s ease;
 }
 
 .backLink:hover {
-  color: #2980b9;
+  color: var(--link-hover, #2980b9);
   text-decoration: underline;
 }
 

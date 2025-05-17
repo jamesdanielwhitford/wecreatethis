@@ -1,16 +1,15 @@
-/* src/utils/components/HighScoreBoard/styles.module.css */
+/* src/utils/components/HighScoreBoard/styles.module.css (Updated with theme support) */
 .container {
   width: 100%;
-  max-width: 500px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 8px 0;
 }
 
 .title {
   text-align: center;
   font-size: 24px;
   margin: 0 0 16px 0;
-  color: #ffd700; /* Gold color */
+  color: #ffd700; /* Gold color good for both light and dark */
   text-transform: uppercase;
   font-weight: bold;
   text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
@@ -19,20 +18,47 @@
 .scoreTable {
   width: 100%;
   border-collapse: collapse;
-  background-color: rgba(34, 34, 34, 0.9);
+  /* Use theme-aware colors */
+  background-color: var(--table-bg, rgba(34, 34, 34, 0.9));
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  table-layout: fixed; /* This helps with responsive layout */
+}
+
+/* Dark theme (default for this component) */
+:global(.dark) .scoreTable {
+  --table-bg: rgba(34, 34, 34, 0.9);
+  --header-bg: #333;
+  --row-color: #fff;
+  --row-border: #444;
+  --row-hover: rgba(255, 255, 255, 0.05);
+  --moves-color: #ddd;
+  --date-color: #ccc;
+}
+
+/* Light theme variables */
+:global(.light) .scoreTable {
+  --table-bg: rgba(245, 245, 245, 0.9);
+  --header-bg: #3498db;
+  --row-color: #333;
+  --row-border: #ddd;
+  --row-hover: rgba(0, 0, 0, 0.03);
+  --moves-color: #555;
+  --date-color: #777;
 }
 
 .scoreTable th,
 .scoreTable td {
-  padding: 12px 8px;
+  padding: 10px 4px;
   text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .scoreTable th {
-  background-color: #333;
+  background-color: var(--header-bg, #333);
   color: #fff;
   font-weight: bold;
   text-transform: uppercase;
@@ -40,46 +66,46 @@
 }
 
 .scoreRow {
-  border-bottom: 1px solid #444;
+  border-bottom: 1px solid var(--row-border, #444);
   transition: background-color 0.2s ease;
-  color: #fff;
+  color: var(--row-color, #fff);
 }
 
 .scoreRow:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--row-hover, rgba(255, 255, 255, 0.05));
 }
 
 .rankColumn {
-  width: 40px;
-  font-weight: bold;
+  width: 15%;
 }
 
 .nameColumn {
-  width: 100px;
+  width: 25%;
   font-family: monospace;
   font-size: 18px;
   font-weight: bold;
 }
 
 .scoreColumn {
-  width: 120px;
+  width: 25%;
   font-family: monospace;
   font-size: 18px;
 }
 
 .movesColumn {
-  width: 60px;
+  width: 15%;
   font-family: monospace;
   font-size: 16px;
-  color: #ddd;
+  color: var(--moves-color, #ddd);
 }
 
 .dateColumn {
-  width: 100px;
+  width: 20%;
   font-size: 14px;
-  color: #ccc;
+  color: var(--date-color, #ccc);
 }
 
+/* Special styling for top ranks - works in both themes */
 .allTimeHigh {
   background-color: rgba(255, 215, 0, 0.1);
   border-left: 4px solid #ffd700;
@@ -101,37 +127,105 @@
 .noScores {
   text-align: center;
   padding: 24px;
-  color: #ccc;
+  /* Theme-aware colors */
+  color: var(--message-color, #ccc);
   font-style: italic;
-  background-color: rgba(34, 34, 34, 0.9);
+  background-color: var(--message-bg, rgba(34, 34, 34, 0.9));
   border-radius: 8px;
+}
+
+:global(.dark) .loading,
+:global(.dark) .noScores {
+  --message-color: #ccc;
+  --message-bg: rgba(34, 34, 34, 0.9);
+}
+
+:global(.light) .loading,
+:global(.light) .noScores {
+  --message-color: #777;
+  --message-bg: rgba(245, 245, 245, 0.9);
 }
 
 @media (max-width: 500px) {
   .container {
-    padding: 12px;
+    padding: 0;
   }
   
   .title {
-    font-size: 20px;
+    font-size: 18px;
+    margin-bottom: 12px;
   }
   
   .scoreTable th,
   .scoreTable td {
-    padding: 8px 4px;
+    padding: 8px 2px;
+    font-size: 12px;
+  }
+  
+  .nameColumn {
     font-size: 14px;
   }
   
-  .nameColumn,
   .scoreColumn {
-    font-size: 16px;
+    font-size: 14px;
   }
   
   .movesColumn {
-    font-size: 14px;
+    font-size: 12px;
   }
   
   .dateColumn {
-    font-size: 12px;
+    font-size: 10px;
+  }
+  
+  /* Adjust column widths for mobile */
+  .rankColumn {
+    width: 15%;
+  }
+  
+  .nameColumn {
+    width: 25%;
+  }
+  
+  .scoreColumn {
+    width: 25%;
+  }
+  
+  .movesColumn {
+    width: 15%;
+  }
+  
+  .dateColumn {
+    width: 20%;
+  }
+}
+
+@media (max-width: 360px) {
+  /* For very small screens, hide the date column */
+  .dateColumn {
+    display: none;
+  }
+  
+  /* Redistribute the space */
+  .rankColumn {
+    width: 15%;
+  }
+  
+  .nameColumn {
+    width: 35%;
+  }
+  
+  .scoreColumn {
+    width: 30%;
+  }
+  
+  .movesColumn {
+    width: 20%;
+  }
+  
+  .scoreTable th,
+  .scoreTable td {
+    padding: 6px 2px;
+    font-size: 11px;
   }
 }
