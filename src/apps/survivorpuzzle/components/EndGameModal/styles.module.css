@@ -10,6 +10,10 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  /* Add these properties to improve mobile handling */
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+  padding: 20px 0;
 }
 
 .modalContent {
@@ -21,9 +25,15 @@
   max-width: 90%;
   width: 400px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  max-height: 90vh;
+  /* Fix for mobile viewport issues */
+  max-height: 80vh; /* Reduced from 90vh */
   overflow-y: auto;
   transition: all 0.3s ease;
+  /* Improve iOS scrolling behavior */
+  -webkit-overflow-scrolling: touch;
+  /* Ensure content fits properly */
+  margin: auto;
+  position: relative;
 }
 
 /* Define dark mode variables */
@@ -173,11 +183,43 @@
   100% { opacity: 0.6; }
 }
 
+/* iPhone-specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .modalOverlay {
+    /* Specific iOS fix for viewport issues */
+    height: -webkit-fill-available;
+    padding: 20px 0;
+  }
+  
+  .modalContent {
+    /* Lower max-height specifically for iOS */
+    max-height: 65vh;
+    /* Ensure proper momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* iPhone X, 11, 12, 13, etc. with notch */
+  @media screen and (min-device-width: 375px) and (max-device-height: 812px) {
+    .modalContent {
+      /* Account for notch & home indicator */
+      max-height: 60vh;
+    }
+  }
+}
+
 @media (max-width: 600px) {
   .modalContent {
     padding: 16px;
     width: 85%;
     max-width: 400px;
+    /* Reduce max height on small screens */
+    max-height: 75vh;
+  }
+  
+  .modalOverlay {
+    /* Ensure overlay covers the entire screen on mobile */
+    padding: 15px 0;
+    align-items: center;
   }
   
   .modalContent.expanded {
@@ -215,5 +257,18 @@
   .modalContent {
     padding: 12px;
     width: 95%;
+    /* Further reduce height on very small screens */
+    max-height: 70vh;
+  }
+  
+  /* Reduce content size to fit better */
+  .highScoreSection {
+    margin-bottom: 16px;
+    padding-top: 16px;
+  }
+  
+  /* Improve scrolling on small iOS devices */
+  .modalOverlay {
+    padding: 10px 0;
   }
 }

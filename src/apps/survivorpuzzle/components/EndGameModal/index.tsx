@@ -1,4 +1,4 @@
-// src/apps/survivorpuzzle/components/EndGameModal/index.tsx (Updated for top 10 only)
+// src/apps/survivorpuzzle/components/EndGameModal/index.tsx (Updated with new score highlighting)
 import React, { useState, useEffect } from 'react';
 import styles from './styles.module.css';
 import HighScoreEntry from '../../../../utils/components/HighScoreEntry';
@@ -25,6 +25,8 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
   const [isSubmittingScore, setIsSubmittingScore] = useState<boolean>(false);
   const [showHighScores, setShowHighScores] = useState<boolean>(false);
   const [scoreSubmitted, setScoreSubmitted] = useState<boolean>(false);
+  // New state to store the ID of the submitted score
+  const [submittedScoreId, setSubmittedScoreId] = useState<string | undefined>(undefined);
   
   // Effect to reset state when modal opens/closes - depends ONLY on isOpen
   useEffect(() => {
@@ -34,6 +36,7 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
       setShowHighScores(false);
       setScoreSubmitted(false);
       setIsSubmittingScore(false);
+      setSubmittedScoreId(undefined);
       console.log('🔄 Resetting all modal state variables (modal closed)');
     }
   }, [isOpen]); // This will ONLY run when isOpen changes
@@ -117,6 +120,8 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
       
       if (result) {
         console.log(`✅ High score submitted successfully with ID: ${result}`);
+        // Store the submitted score ID for highlighting
+        setSubmittedScoreId(result);
         setScoreSubmitted(true);
         setIsHighScore(false); // No longer need to show form
         setShowHighScores(true); // Now show high scores
@@ -194,7 +199,7 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
           </div>
         )}
         
-        {/* High Score Board - Make condition more explicit */}
+        {/* High Score Board - Pass submittedScoreId for highlighting */}
         {showHighScores && (
           <div className={styles.highScoreSection}>
             <HighScoreBoard 
@@ -203,6 +208,7 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
                 scoreOrder: 'asc' // Lower time is better
               }}
               title="HIGH SCORES"
+              newScoreId={submittedScoreId} // Pass the ID of the newly submitted score
             />
           </div>
         )}

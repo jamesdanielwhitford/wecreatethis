@@ -1,4 +1,4 @@
-// src/utils/components/HighScoreBoard/index.tsx
+// src/utils/components/HighScoreBoard/index.tsx (Updated)
 import React, { useEffect, useState } from 'react';
 import styles from './styles.module.css';
 import { highScoreService } from '../../firebase/highScoreService';
@@ -12,12 +12,15 @@ interface HighScoreBoardProps {
     wordGameType?: string;
   };
   title?: string;
+  // Add new prop for the newly submitted score ID
+  newScoreId?: string;
 }
 
 const HighScoreBoard: React.FC<HighScoreBoardProps> = ({ 
   gameType, 
   options = {}, 
-  title = 'HIGH SCORES'
+  title = 'HIGH SCORES',
+  newScoreId 
 }) => {
   const [highScores, setHighScores] = useState<HighScore[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,13 +78,18 @@ const HighScoreBoard: React.FC<HighScoreBoardProps> = ({
     return (index + 1).toString();
   };
   
-  // Get CSS class for the row based on rank
+  // Get CSS class for the row based on rank and if it's the newly submitted score
   const getRowClass = (index: number, score: HighScore, prevScore?: HighScore): string => {
     let rowClass = styles.scoreRow;
     
     // Add all-time high class if applicable
     if (score.isAllTimeHigh) {
       rowClass += ` ${styles.allTimeHigh}`;
+    }
+    
+    // Add newly submitted score class if this is the user's newly submitted score
+    if (score.id === newScoreId) {
+      rowClass += ` ${styles.newScore}`;
     }
     
     // Add place classes for top 3
