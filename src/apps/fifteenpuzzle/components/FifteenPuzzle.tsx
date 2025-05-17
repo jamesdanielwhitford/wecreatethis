@@ -31,9 +31,7 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
   // Pass gameState.startTime directly to useTimer
   const { timerState, resetTimer } = useTimer(
     gameState.startTime,
-    gameState.isComplete,
-    false, // isPaused is always false since we're removing pause functionality
-    0      // no pausedTime anymore
+    gameState.isComplete,    
   );
 
   // Show win modal when win animation is complete
