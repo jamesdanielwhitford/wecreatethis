@@ -1,4 +1,4 @@
-// src/apps/survivorpuzzle/components/EndGameModal/index.tsx (Updated)
+// src/apps/survivorpuzzle/components/EndGameModal/index.tsx (Fixed Effect Dependencies)
 import React, { useState, useEffect } from 'react';
 import styles from './styles.module.css';
 import HighScoreEntry from '../../../../utils/components/HighScoreEntry';
@@ -26,10 +26,27 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
   const [showHighScores, setShowHighScores] = useState<boolean>(false);
   const [scoreSubmitted, setScoreSubmitted] = useState<boolean>(false);
   
+  // Effect to reset state when modal opens/closes - depends ONLY on isOpen
   useEffect(() => {
+    if (!isOpen) {
+      // Reset all state when modal closes
+      setIsHighScore(false);
+      setShowHighScores(false);
+      setScoreSubmitted(false);
+      setIsSubmittingScore(false);
+      console.log('🔄 Resetting all modal state variables (modal closed)');
+    }
+  }, [isOpen]); // This will ONLY run when isOpen changes
+
+  // Separate effect for high score checking - only runs when modal is open
+  useEffect(() => {
+    // Skip if modal is not open
+    if (!isOpen) return;
+    
     // Check if this is a high score when the game is won
     const checkHighScore = async () => {
       if (isWin) {
+        console.log('🔍 Checking high score with time:', timeTaken, 'ms (', formatTime(timeTaken), ') and moves:', moves);
         try {
           // Now passing moves for the tiebreaker
           const isHighScore = await highScoreService.checkHighScore(
@@ -39,24 +56,41 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
             moves // Pass moves for proper checking
           );
           
+          console.log('🏆 High score check result:', isHighScore);
+          
+          // Update both states in a more predictable way
           setIsHighScore(isHighScore);
-          setShowHighScores(!isHighScore); // Show high scores immediately if not a high score
+          
+          // Only show high scores if NOT a high score
+          if (!isHighScore) {
+            setShowHighScores(true);
+            console.log('📋 Showing high scores (not a high score)');
+          } else {
+            setShowHighScores(false);
+            console.log('🏆 Showing high score entry form');
+          }
+          
+          setScoreSubmitted(false);
         } catch (error) {
-          console.error('Error checking high score:', error);
+          console.error('❌ Error checking high score:', error);
           setIsHighScore(false);
-          setShowHighScores(false); // Don't show high scores on error
+          setShowHighScores(true); // Show high scores on error
+          setScoreSubmitted(false);
         }
       } else {
         // Always show high scores for non-win
+        console.log('📋 Always showing high scores for non-win');
         setIsHighScore(false);
         setShowHighScores(true);
+        setScoreSubmitted(false);
       }
     };
     
-    if (isOpen && isWin) {
+    if (isWin) {
+      // Make sure state is reset properly before checking
       checkHighScore();
     }
-  }, [isOpen, isWin, timeTaken, moves]); // Added moves as a dependency
+  }, [isOpen, isWin, timeTaken, moves]); // This will run when any of these change, but only if isOpen is true
 
   if (!isOpen) return null;
 
@@ -72,6 +106,7 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
   // Handle high score submission
   const handleHighScoreSubmit = async (name: string) => {
     setIsSubmittingScore(true);
+    console.log(`📝 Submitting high score for ${name} with time ${timeTaken} and moves ${moves}`);
     
     try {
       const result = await highScoreService.addSurvivorPuzzleHighScore(
@@ -81,16 +116,18 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
       );
       
       if (result) {
+        console.log(`✅ High score submitted successfully with ID: ${result}`);
         setScoreSubmitted(true);
-        setShowHighScores(true);
+        setIsHighScore(false); // No longer need to show form
+        setShowHighScores(true); // Now show high scores
       } else {
         // Score didn't qualify or there was an issue
-        console.log('Score was not high enough to be added to leaderboard');
+        console.log('❌ Score was not high enough to be added to leaderboard');
         setIsHighScore(false);
         setShowHighScores(true);
       }
     } catch (error) {
-      console.error('Error submitting high score:', error);
+      console.error('❌ Error submitting high score:', error);
       // Show an error message to the user
       alert('There was an error submitting your high score. Please try again later.');
       setIsHighScore(false);
@@ -108,6 +145,7 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
   
   // Cancel high score submission
   const handleCancelHighScore = () => {
+    console.log('❌ High score entry canceled by user');
     setIsHighScore(false);
     setShowHighScores(true);
   };
@@ -129,6 +167,12 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
               <span className={styles.statLabel}>Moves:</span>
               <span className={styles.statValue}>{moves}</span>
             </div>
+            {/* Add a high score indicator */}
+            {isHighScore && (
+              <div className={styles.highScoreIndicator}>
+                🏆 New High Score! 🏆
+              </div>
+            )}
           </div>
         ) : (
           <p className={styles.lossMessage}>
@@ -136,9 +180,10 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
           </p>
         )}
         
-        {/* High Score Entry Form */}
+        {/* High Score Entry Form - Make condition more explicit */}
         {isHighScore && !scoreSubmitted && (
           <div className={styles.highScoreSection}>
+            <h3>You&apos;ve earned a spot on the leaderboard!</h3>
             <HighScoreEntry 
               onSubmit={handleHighScoreSubmit} 
               onCancel={handleCancelHighScore} 
@@ -149,7 +194,7 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
           </div>
         )}
         
-        {/* High Score Board */}
+        {/* High Score Board - Make condition more explicit */}
         {showHighScores && (
           <div className={styles.highScoreSection}>
             <HighScoreBoard 
