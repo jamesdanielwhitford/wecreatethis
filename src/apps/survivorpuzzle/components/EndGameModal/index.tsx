@@ -31,9 +31,13 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
     const checkHighScore = async () => {
       if (isWin) {
         try {
-          const isHighScore = await highScoreService.checkHighScore('survivorPuzzle', timeTaken, { 
-            scoreOrder: 'asc' // Lower time is better 
-          });
+          // Now passing moves for the tiebreaker
+          const isHighScore = await highScoreService.checkHighScore(
+            'survivorPuzzle', 
+            timeTaken, 
+            { scoreOrder: 'asc' }, // Lower time is better
+            moves // Pass moves for proper checking
+          );
           
           setIsHighScore(isHighScore);
           setShowHighScores(!isHighScore); // Show high scores immediately if not a high score
@@ -52,7 +56,7 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
     if (isOpen && isWin) {
       checkHighScore();
     }
-  }, [isOpen, isWin, timeTaken]);
+  }, [isOpen, isWin, timeTaken, moves]); // Added moves as a dependency
 
   if (!isOpen) return null;
 

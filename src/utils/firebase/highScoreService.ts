@@ -1,4 +1,4 @@
-// src/utils/firebase/highScoreService.ts (Updated for SurvivorPuzzle)
+// src/utils/firebase/highScoreService.ts (Updated for SurvivorPuzzle with time + moves ranking)
 import { 
   collection, 
   doc, 
@@ -17,10 +17,7 @@ import {
   HighScore, 
   GameType, 
   WeekData,
-  // SurvivorPuzzleHighScore,
-  // FifteenPuzzleHighScore,
-  // PicturePuzzleHighScore,
-  // WordGameHighScore
+  SurvivorPuzzleHighScore
 } from './types';
 
 // Define new types for options and high score data
@@ -107,12 +104,13 @@ class HighScoreService {
       // If we have specific options, use a more complex query (requires index)
       if (gameType === 'survivorPuzzle') {
         // For survivorPuzzle, always sort by time (lower is better)
+        // We'll fetch more scores to account for ties and sort by moves later
         highScoresQuery = query(
           highScoresCollection,
           where('gameType', '==', gameType),
           where('weekNumber', 'in', [weekNumber, 0]), // 0 for all-time high scores
           orderBy('score', 'asc'), // Lower time is better
-          limit(10)
+          limit(20) // Get more scores to handle secondary sorting by moves
         );
       } else if (options?.category && gameType === 'picturePuzzle') {
         // For picturePuzzle, filter by category
@@ -154,6 +152,23 @@ class HighScoreService {
           highScores.push({ id: doc.id, ...doc.data() } as HighScore);
         });
         
+        // For SurvivorPuzzle, implement secondary sorting by moves
+        if (gameType === 'survivorPuzzle') {
+          // Sort by time (already done by Firestore), then by moves for same times
+          highScores.sort((a, b) => {
+            // If times are different, maintain the time-based sort
+            if (a.score !== b.score) return a.score - b.score;
+            
+            // If times are the same, sort by moves (lower is better)
+            const movesA = (a as SurvivorPuzzleHighScore).moves || 0;
+            const movesB = (b as SurvivorPuzzleHighScore).moves || 0;
+            return movesA - movesB;
+          });
+          
+          // Limit to top 10 after secondary sorting
+          return highScores.slice(0, 10);
+        }
+        
         return highScores;
       } catch (indexError) {
         console.error("Index error, using simpler query:", indexError);
@@ -181,7 +196,12 @@ class HighScoreService {
   }
 
   // Check if a score qualifies for the high score list
-  async checkHighScore(gameType: GameType, score: number, options?: HighScoreOptions): Promise<boolean> {
+  async checkHighScore(
+    gameType: GameType, 
+    score: number, 
+    options?: HighScoreOptions, 
+    moves?: number
+  ): Promise<boolean> {
     try {
       const highScores = await this.getHighScores(gameType, options);
       
@@ -195,8 +215,24 @@ class HighScoreService {
         return true;
       }
       
+      // For SurvivorPuzzle with moves as a tiebreaker
+      if (gameType === 'survivorPuzzle' && moves !== undefined) {
+        const worstScore = highScores[highScores.length - 1] as SurvivorPuzzleHighScore;
+        
+        // Better time always qualifies
+        if (score < worstScore.score) {
+          return true;
+        }
+        
+        // Equal time but fewer moves qualifies
+        if (score === worstScore.score && moves < worstScore.moves) {
+          return true;
+        }
+        
+        return false;
+      } 
       // For time-based scores where lower is better
-      if (options?.scoreOrder === 'asc' || gameType === 'survivorPuzzle') {
+      else if (options?.scoreOrder === 'asc' || gameType === 'survivorPuzzle') {
         // Check if this score is better than the worst score
         const worstScore = highScores[highScores.length - 1];
         return score < worstScore.score;
@@ -222,87 +258,158 @@ class HighScoreService {
       // Get the collection reference
       const highScoresCollection = this.getHighScoresCollection();
       
-      // Check for all-time high scores of this game type
-      const allTimeHighQuery = query(
-        highScoresCollection,
-        where('gameType', '==', gameType),
-        where('isAllTimeHigh', '==', true),
-        limit(1)
-      );
-      
-      // Get current all-time high score
-      let isNewAllTimeHigh = false;
-      let oldAllTimeHighId: string | null = null;
-      
-      try {
-        const allTimeHighSnapshot = await getDocs(allTimeHighQuery);
+      // For SurvivorPuzzle, determine all-time high based on time and moves
+      if (gameType === 'survivorPuzzle') {
+        const allTimeHighQuery = query(
+          highScoresCollection,
+          where('gameType', '==', gameType),
+          where('isAllTimeHigh', '==', true),
+          limit(1)
+        );
         
-        // Check if this is a new all-time high score
-        if (allTimeHighSnapshot.empty) {
-          // No existing all-time high, this is automatically the all-time high
-          isNewAllTimeHigh = true;
-        } else {
-          const currentAllTimeHigh = allTimeHighSnapshot.docs[0].data() as HighScore;
-          oldAllTimeHighId = allTimeHighSnapshot.docs[0].id;
+        // Get current all-time high score
+        let isNewAllTimeHigh = false;
+        let oldAllTimeHighId: string | null = null;
+        
+        try {
+          const allTimeHighSnapshot = await getDocs(allTimeHighQuery);
           
-          // Check if new score is better than current all-time high
-          // For time-based scores (lower is better)
-          if (highScore.scoreOrder === 'asc' || gameType === 'survivorPuzzle') {
-            isNewAllTimeHigh = highScore.score < currentAllTimeHigh.score;
-          } 
-          // For regular scores (higher is better)
-          else {
-            isNewAllTimeHigh = highScore.score > currentAllTimeHigh.score;
+          // Check if this is a new all-time high score
+          if (allTimeHighSnapshot.empty) {
+            // No existing all-time high, this is automatically the all-time high
+            isNewAllTimeHigh = true;
+          } else {
+            const currentAllTimeHigh = allTimeHighSnapshot.docs[0].data() as SurvivorPuzzleHighScore;
+            oldAllTimeHighId = allTimeHighSnapshot.docs[0].id;
+            
+            // Better time is always a new all-time high
+            if (highScore.score < currentAllTimeHigh.score) {
+              isNewAllTimeHigh = true;
+            } 
+            // Equal time but fewer moves is also a new all-time high
+            else if (
+              highScore.score === currentAllTimeHigh.score && 
+              highScore.moves !== undefined && 
+              highScore.moves < currentAllTimeHigh.moves
+            ) {
+              isNewAllTimeHigh = true;
+            }
+          }
+        } catch (error) {
+          console.error("Error checking all-time high, treating as new all-time high:", error);
+          isNewAllTimeHigh = true;
+        }
+        
+        // Set the appropriate properties for this high score
+        highScore.isAllTimeHigh = isNewAllTimeHigh;
+        highScore.weekNumber = isNewAllTimeHigh ? 0 : weekNumber;
+        
+        // Add the new high score
+        const docRef = await addDoc(highScoresCollection, {
+          ...highScore,
+          gameType, // Always include the game type
+          timestamp: Date.now()
+        });
+        
+        // If this is a new all-time high, update the old all-time high
+        if (isNewAllTimeHigh && oldAllTimeHighId) {
+          try {
+            const oldDocRef = doc(highScoresCollection, oldAllTimeHighId);
+            await updateDoc(oldDocRef, { 
+              isAllTimeHigh: false,
+              weekNumber: weekNumber // Move to current week
+            });
+          } catch (error) {
+            console.error("Error updating old all-time high:", error);
           }
         }
-      } catch (error) {
-        console.error("Error checking all-time high, treating as new all-time high:", error);
-        isNewAllTimeHigh = true;
-      }
-      
-      // Clean up the highScore object to remove any undefined values
-      const cleanHighScore: Record<string, unknown> = {
-        ...highScore,
-        gameType, // Always include the game type
-        timestamp: Date.now(),
-        weekNumber: isNewAllTimeHigh ? 0 : weekNumber, // 0 means all-time high
-        isAllTimeHigh: isNewAllTimeHigh
-      };
-      
-      // Remove any properties with undefined values
-      Object.keys(cleanHighScore).forEach(key => {
-        if (cleanHighScore[key] === undefined) {
-          delete cleanHighScore[key];
-        }
-      });
-      
-      // Remove any extra properties that aren't needed in Firestore
-      delete cleanHighScore.scoreOrder;
-      
-      // Add the new high score
-      const docRef = await addDoc(highScoresCollection, cleanHighScore);
-      
-      // If this is a new all-time high, update the old all-time high
-      if (isNewAllTimeHigh && oldAllTimeHighId) {
+        
+        return docRef.id;
+      } 
+      // For other game types, use the original logic
+      else {
+        // Check for all-time high scores of this game type
+        const allTimeHighQuery = query(
+          highScoresCollection,
+          where('gameType', '==', gameType),
+          where('isAllTimeHigh', '==', true),
+          limit(1)
+        );
+        
+        // Get current all-time high score
+        let isNewAllTimeHigh = false;
+        let oldAllTimeHighId: string | null = null;
+        
         try {
-          const oldDocRef = doc(highScoresCollection, oldAllTimeHighId);
-          await updateDoc(oldDocRef, { 
-            isAllTimeHigh: false,
-            weekNumber: weekNumber // Move to current week
-          });
+          const allTimeHighSnapshot = await getDocs(allTimeHighQuery);
+          
+          // Check if this is a new all-time high score
+          if (allTimeHighSnapshot.empty) {
+            // No existing all-time high, this is automatically the all-time high
+            isNewAllTimeHigh = true;
+          } else {
+            const currentAllTimeHigh = allTimeHighSnapshot.docs[0].data() as HighScore;
+            oldAllTimeHighId = allTimeHighSnapshot.docs[0].id;
+            
+            // Check if new score is better than current all-time high
+            // For time-based scores (lower is better)
+            if (highScore.scoreOrder === 'asc') {
+              isNewAllTimeHigh = highScore.score < currentAllTimeHigh.score;
+            } 
+            // For regular scores (higher is better)
+            else {
+              isNewAllTimeHigh = highScore.score > currentAllTimeHigh.score;
+            }
+          }
         } catch (error) {
-          console.error("Error updating old all-time high:", error);
+          console.error("Error checking all-time high, treating as new all-time high:", error);
+          isNewAllTimeHigh = true;
         }
+        
+        // Clean up the highScore object to remove any undefined values
+        const cleanHighScore: Record<string, unknown> = {
+          ...highScore,
+          gameType, // Always include the game type
+          timestamp: Date.now(),
+          weekNumber: isNewAllTimeHigh ? 0 : weekNumber, // 0 means all-time high
+          isAllTimeHigh: isNewAllTimeHigh
+        };
+        
+        // Remove any properties with undefined values
+        Object.keys(cleanHighScore).forEach(key => {
+          if (cleanHighScore[key] === undefined) {
+            delete cleanHighScore[key];
+          }
+        });
+        
+        // Remove any extra properties that aren't needed in Firestore
+        delete cleanHighScore.scoreOrder;
+        
+        // Add the new high score
+        const docRef = await addDoc(highScoresCollection, cleanHighScore);
+        
+        // If this is a new all-time high, update the old all-time high
+        if (isNewAllTimeHigh && oldAllTimeHighId) {
+          try {
+            const oldDocRef = doc(highScoresCollection, oldAllTimeHighId);
+            await updateDoc(oldDocRef, { 
+              isAllTimeHigh: false,
+              weekNumber: weekNumber // Move to current week
+            });
+          } catch (error) {
+            console.error("Error updating old all-time high:", error);
+          }
+        }
+        
+        return docRef.id;
       }
-      
-      return docRef.id;
     } catch (error) {
       console.error("Error adding high score:", error);
       return null;
     }
   }
 
-  // Add a survivor puzzle high score - updated for time-based scoring only
+  // Add a survivor puzzle high score - updated to use the new time+moves ranking
   async addSurvivorPuzzleHighScore(
     name: string,
     timeTaken: number,
@@ -318,10 +425,13 @@ class HighScoreService {
     };
     
     try {
-      // Check if this score qualifies for the high score list
-      const qualifies = await this.checkHighScore('survivorPuzzle', timeTaken, { 
-        scoreOrder: 'asc' // Lower time is better
-      });
+      // Check if this score qualifies for the high score list using both time and moves
+      const qualifies = await this.checkHighScore(
+        'survivorPuzzle', 
+        timeTaken, 
+        { scoreOrder: 'asc' }, // Lower time is better
+        moves // Pass moves for tiebreaker
+      );
       
       if (!qualifies) return null;
       

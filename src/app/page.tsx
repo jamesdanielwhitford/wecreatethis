@@ -33,16 +33,16 @@ const appCategories = [
       },
     ]
   },
-  {
-    title: 'Productivity Apps',
-    description: 'Tools to help you work smarter',
-    apps: [
-      {
-        name: 'Beautiful Mind',
-        path: '/beautifulmind'
-      },
-    ]
-  }
+  // {
+  //   title: 'Productivity Apps',
+  //   description: 'Tools to help you work smarter',
+  //   apps: [
+  //     {
+  //       name: 'Beautiful Mind',
+  //       path: '/beautifulmind'
+  //     },
+  //   ]
+  // }
 ];
 
 export default function Home() {

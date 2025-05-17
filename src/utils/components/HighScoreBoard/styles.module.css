@@ -67,6 +67,13 @@
   font-size: 18px;
 }
 
+.movesColumn {
+  width: 60px;
+  font-family: monospace;
+  font-size: 16px;
+  color: #ddd;
+}
+
 .dateColumn {
   width: 100px;
   font-size: 14px;
@@ -118,6 +125,10 @@
   .nameColumn,
   .scoreColumn {
     font-size: 16px;
+  }
+  
+  .movesColumn {
+    font-size: 14px;
   }
   
   .dateColumn {
