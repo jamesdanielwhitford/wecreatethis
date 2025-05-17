@@ -27,6 +27,10 @@ const appCategories = [
         name: 'Survivor Puzzle',
         path: '/survivorpuzzle'
       },
+      {
+        name: 'Rankings',
+        path: '/rankings'
+      },
     ]
   },
   {

@@ -1,4 +1,4 @@
-// src/apps/survivorpuzzle/utils/generatePuzzle.ts
+// src/apps/survivorpuzzle/utils/generatePuzzle.ts (Updated)
 // Function to generate a random puzzle of numbers 1-15 distributed in 3 rows
 export const generatePuzzle = (): number[][] => {
   // Create an array of numbers 1-15
@@ -22,20 +22,4 @@ export const generatePuzzle = (): number[][] => {
 export const isPuzzleSolved = (rows: number[][]): boolean => {
   const flattened = rows.flat();
   return flattened.length === 15 && flattened.every((num, index) => num === index + 1);
-};
-
-// Get time limit in milliseconds based on difficulty
-export const getTimeLimit = (difficulty: 'none' | 'easy' | 'medium' | 'difficult'): number | null => {
-  switch (difficulty) {
-    case 'none':
-      return null; // No time limit
-    case 'easy':
-      return 5 * 60 * 1000; // 5 minutes
-    case 'medium':
-      return 3 * 60 * 1000; // 3 minutes
-    case 'difficult':
-      return 1 * 60 * 1000; // 1 minute
-    default:
-      return 5 * 60 * 1000; // Default to easy
-  }
 };

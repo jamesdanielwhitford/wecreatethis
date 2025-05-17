@@ -1,9 +1,9 @@
-// src/apps/survivorpuzzle/hooks/useGameState.ts
+// src/apps/survivorpuzzle/hooks/useGameState.ts (Updated)
 import { useState, useCallback } from 'react';
-import { GameState, Difficulty } from '../types/game.types';
-import { generatePuzzle, isPuzzleSolved, getTimeLimit } from '../utils/generatePuzzle';
+import { GameState } from '../types/game.types';
+import { generatePuzzle, isPuzzleSolved } from '../utils/generatePuzzle';
 
-export const useGameState = (initialDifficulty: Difficulty = 'easy') => {
+export const useGameState = () => {
   const [gameState, setGameState] = useState<GameState>({
     rows: generatePuzzle(),
     currentNumber: null,
@@ -11,8 +11,6 @@ export const useGameState = (initialDifficulty: Difficulty = 'easy') => {
     startTime: null,
     isPaused: false,
     pausedTime: 0,
-    difficulty: initialDifficulty,
-    timeLimit: getTimeLimit(initialDifficulty),
     moves: 0,
     isTimeout: false
   });
@@ -26,27 +24,16 @@ export const useGameState = (initialDifficulty: Difficulty = 'easy') => {
       startTime: null,
       isPaused: false,
       pausedTime: 0,
-      difficulty: gameState.difficulty,
-      timeLimit: getTimeLimit(gameState.difficulty),
       moves: 0,
       isTimeout: false
     });
-  }, [gameState.difficulty]);
-
-  // Change difficulty
-  const changeDifficulty = useCallback((difficulty: Difficulty) => {
-    setGameState(prevState => ({
-      ...prevState,
-      difficulty,
-      timeLimit: getTimeLimit(difficulty)
-    }));
   }, []);
 
   // Handle row click
   const handleRowClick = useCallback((rowIndex: number) => {
     setGameState(prevState => {
-      // If game is complete or timed out, do nothing
-      if (prevState.isComplete || prevState.isTimeout) {
+      // If game is complete, do nothing
+      if (prevState.isComplete) {
         return prevState;
       }
 
@@ -106,7 +93,7 @@ export const useGameState = (initialDifficulty: Difficulty = 'easy') => {
   const togglePause = useCallback(() => {
     setGameState(prevState => {
       // If game hasn't started or is complete, don't toggle
-      if (prevState.startTime === null || prevState.isComplete || prevState.isTimeout) {
+      if (prevState.startTime === null || prevState.isComplete) {
         return prevState;
       }
       
@@ -118,20 +105,10 @@ export const useGameState = (initialDifficulty: Difficulty = 'easy') => {
     });
   }, []);
 
-  // Handle timeout
-  const handleTimeout = useCallback(() => {
-    setGameState(prevState => ({
-      ...prevState,
-      isTimeout: true
-    }));
-  }, []);
-
   return {
     gameState,
     resetGame,
-    changeDifficulty,
     handleRowClick,
-    togglePause,
-    handleTimeout
+    togglePause
   };
 };

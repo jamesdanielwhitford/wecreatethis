@@ -1,0 +1,116 @@
+/* src/utils/components/HighScoreEntry/styles.module.css */
+.container {
+  padding: 24px;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  text-align: center;
+  color: white;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 28px;
+  margin: 0 0 8px 0;
+  color: #ffd700; /* Gold color for high score */
+  text-transform: uppercase;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.subtitle {
+  font-size: 18px;
+  margin-bottom: 24px;
+  color: #f0f0f0;
+}
+
+.inputContainer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.letterInput {
+  width: 60px;
+  height: 60px;
+  font-size: 36px;
+  text-align: center;
+  border: 2px solid #444;
+  background-color: #222;
+  color: white;
+  border-radius: 8px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.letterInput.active {
+  border-color: #ffd700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.letterInput:focus {
+  outline: none;
+  border-color: #ffd700;
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.submitButton, .cancelButton {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submitButton {
+  background-color: #4caf50; /* Green */
+  color: white;
+}
+
+.submitButton:hover {
+  background-color: #45a049;
+}
+
+.cancelButton {
+  background-color: #f44336; /* Red */
+  color: white;
+}
+
+.cancelButton:hover {
+  background-color: #d32f2f;
+}
+
+@media (max-width: 500px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .title {
+    font-size: 24px;
+  }
+  
+  .subtitle {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .letterInput {
+    width: 50px;
+    height: 50px;
+    font-size: 28px;
+  }
+  
+  .submitButton, .cancelButton {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}

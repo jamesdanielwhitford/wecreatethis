@@ -1,0 +1,126 @@
+/* src/utils/components/HighScoreBoard/styles.module.css */
+.container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.title {
+  text-align: center;
+  font-size: 24px;
+  margin: 0 0 16px 0;
+  color: #ffd700; /* Gold color */
+  text-transform: uppercase;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+}
+
+.scoreTable {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: rgba(34, 34, 34, 0.9);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.scoreTable th,
+.scoreTable td {
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.scoreTable th {
+  background-color: #333;
+  color: #fff;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+.scoreRow {
+  border-bottom: 1px solid #444;
+  transition: background-color 0.2s ease;
+  color: #fff;
+}
+
+.scoreRow:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.rankColumn {
+  width: 40px;
+  font-weight: bold;
+}
+
+.nameColumn {
+  width: 100px;
+  font-family: monospace;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.scoreColumn {
+  width: 120px;
+  font-family: monospace;
+  font-size: 18px;
+}
+
+.dateColumn {
+  width: 100px;
+  font-size: 14px;
+  color: #ccc;
+}
+
+.allTimeHigh {
+  background-color: rgba(255, 215, 0, 0.1);
+  border-left: 4px solid #ffd700;
+}
+
+.firstPlace {
+  background-color: rgba(255, 215, 0, 0.15);
+}
+
+.secondPlace {
+  background-color: rgba(192, 192, 192, 0.1);
+}
+
+.thirdPlace {
+  background-color: rgba(205, 127, 50, 0.1);
+}
+
+.loading,
+.noScores {
+  text-align: center;
+  padding: 24px;
+  color: #ccc;
+  font-style: italic;
+  background-color: rgba(34, 34, 34, 0.9);
+  border-radius: 8px;
+}
+
+@media (max-width: 500px) {
+  .container {
+    padding: 12px;
+  }
+  
+  .title {
+    font-size: 20px;
+  }
+  
+  .scoreTable th,
+  .scoreTable td {
+    padding: 8px 4px;
+    font-size: 14px;
+  }
+  
+  .nameColumn,
+  .scoreColumn {
+    font-size: 16px;
+  }
+  
+  .dateColumn {
+    font-size: 12px;
+  }
+}

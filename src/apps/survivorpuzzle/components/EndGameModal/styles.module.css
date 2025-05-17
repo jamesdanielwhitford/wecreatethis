@@ -1,4 +1,4 @@
-/* src/apps/survivorpuzzle/components/EndGameModal/styles.module.css */
+/* src/apps/survivorpuzzle/components/EndGameModal/styles.module.css (Updated) */
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -19,6 +19,13 @@
   max-width: 90%;
   width: 400px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 90vh;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+.modalContent.expanded {
+  width: 500px;
 }
 
 .modalTitle {
@@ -63,6 +70,19 @@
   color: #7f8c8d;
 }
 
+.highScoreSection {
+  margin-bottom: 24px;
+  border-top: 1px solid #eee;
+  padding-top: 24px;
+}
+
+.submitting {
+  text-align: center;
+  font-style: italic;
+  color: #7f8c8d;
+  margin-top: 12px;
+}
+
 .buttons {
   display: flex;
   justify-content: center;
@@ -88,6 +108,10 @@
 @media (max-width: 500px) {
   .modalContent {
     padding: 16px;
+    width: 320px;
+  }
+  
+  .modalContent.expanded {
     width: 320px;
   }
   

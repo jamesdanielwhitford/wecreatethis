@@ -1,4 +1,4 @@
-// src/apps/survivorpuzzle/components/Board/index.tsx
+// src/apps/survivorpuzzle/components/Board/index.tsx (Updated)
 import React from 'react';
 import styles from './styles.module.css';
 
@@ -6,33 +6,30 @@ interface BoardProps {
   rows: number[][];
   currentNumber: number | null;
   onRowClick: (rowIndex: number) => void;
-  timeRemaining: number;
+  timeElapsed: number;
   isComplete: boolean;
-  isTimeout: boolean;
-  isCountUp: boolean;
 }
 
 const Board: React.FC<BoardProps> = ({
   rows,
   currentNumber,
   onRowClick,
-  timeRemaining,
-  isComplete,
-  isTimeout,
-  isCountUp
+  timeElapsed,
+  isComplete
 }) => {
-  // Format time as MM:SS
+  // Format time as MM:SS.MS
   const formatTime = (milliseconds: number): string => {
     const totalSeconds = Math.floor(milliseconds / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    const ms = Math.floor((milliseconds % 1000) / 10); // Get hundredths of a second
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
   };
 
   return (
     <div className={styles.boardContainer}>
-      <div className={`${styles.timer} ${isTimeout ? styles.timeout : ''} ${isComplete ? styles.complete : ''} ${isCountUp ? styles.countUp : ''}`}>
-        {isCountUp ? `⏱️ ${formatTime(timeRemaining)}` : `⏳ ${formatTime(timeRemaining)}`}
+      <div className={`${styles.timer} ${isComplete ? styles.complete : ''}`}>
+        ⏱️ {formatTime(timeElapsed)}
       </div>
       
       <div className={styles.board}>
@@ -64,12 +61,6 @@ const Board: React.FC<BoardProps> = ({
       {isComplete && (
         <div className={styles.completeBanner}>
           Puzzle Solved!
-        </div>
-      )}
-      
-      {isTimeout && (
-        <div className={styles.timeoutBanner}>
-          Time&apos;s Up!
         </div>
       )}
     </div>

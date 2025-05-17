@@ -1,5 +1,4 @@
-// src/apps/survivorpuzzle/types/game.types.ts
-export type Difficulty = 'none' | 'easy' | 'medium' | 'difficult';
+// src/apps/survivorpuzzle/types/game.types.ts (Updated)
 
 export interface GameState {
   rows: number[][];
@@ -8,8 +7,6 @@ export interface GameState {
   startTime: number | null;
   isPaused: boolean;
   pausedTime: number;
-  difficulty: Difficulty;
-  timeLimit: number | null; // null for 'none' difficulty
   moves: number;
   isTimeout: boolean;
 }
@@ -17,5 +14,4 @@ export interface GameState {
 export interface TimerState {
   elapsedTime: number;
   isRunning: boolean;
-  isCountUp: boolean; // Added for 'none' difficulty
 }

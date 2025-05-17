@@ -1,55 +1,36 @@
-// src/apps/survivorpuzzle/components/SurvivorPuzzle.tsx
+// src/apps/survivorpuzzle/components/SurvivorPuzzle.tsx (Updated)
 import React, { useState, useEffect } from 'react';
 import { useGameState } from '../hooks/useGameState';
 import { useTimer } from '../hooks/useTimer';
-import { Difficulty } from '../types/game.types';
 import Navbar from './Navbar';
 import Board from './Board';
-import DifficultyModal from './DifficultyModal';
 import EndGameModal from './EndGameModal';
 import styles from './SurvivorPuzzle.module.css';
 
 const SurvivorPuzzle: React.FC = () => {
-  const [isDifficultyModalOpen, setIsDifficultyModalOpen] = useState(false);
   const [isEndGameModalOpen, setIsEndGameModalOpen] = useState(false);
   
   const {
     gameState,
     resetGame,
-    changeDifficulty,
-    handleRowClick,
-    handleTimeout
-  } = useGameState('none'); // Default to 'none' difficulty (no time limit)
+    handleRowClick
+  } = useGameState();
   
   const { timerState, resetTimer } = useTimer(
     gameState.startTime,
     gameState.isComplete,
     gameState.isPaused,
-    gameState.pausedTime,
-    gameState.timeLimit,
-    handleTimeout
+    gameState.pausedTime
   );
   
   const hasGameStarted = gameState.startTime !== null;
   
-  // Show end game modal when game is complete or timed out
+  // Show end game modal when game is complete
   useEffect(() => {
-    if ((gameState.isComplete || gameState.isTimeout) && !isEndGameModalOpen) {
+    if (gameState.isComplete && !isEndGameModalOpen) {
       setIsEndGameModalOpen(true);
     }
-  }, [gameState.isComplete, gameState.isTimeout, isEndGameModalOpen]);
-  
-  // Handle difficulty change
-  const handleDifficultyChange = (difficulty: Difficulty) => {
-    changeDifficulty(difficulty);
-    setIsDifficultyModalOpen(false);
-    
-    // If game has started, reset it with the new difficulty
-    if (hasGameStarted) {
-      resetGame();
-      resetTimer();
-    }
-  };
+  }, [gameState.isComplete, isEndGameModalOpen]);
   
   // Handle reset
   const handleReset = () => {
@@ -66,8 +47,6 @@ const SurvivorPuzzle: React.FC = () => {
   return (
     <div className={styles.container}>
       <Navbar
-        difficulty={gameState.difficulty}
-        onDifficultyClick={() => setIsDifficultyModalOpen(true)}
         onReset={handleReset}
         hasGameStarted={hasGameStarted}
       />
@@ -77,28 +56,18 @@ const SurvivorPuzzle: React.FC = () => {
           rows={gameState.rows}
           currentNumber={gameState.currentNumber}
           onRowClick={handleRowClick}
-          timeRemaining={timerState.elapsedTime}
+          timeElapsed={timerState.elapsedTime}
           isComplete={gameState.isComplete}
-          isTimeout={gameState.isTimeout}
-          isCountUp={timerState.isCountUp}
         />
       </main>
-      
-      <DifficultyModal
-        isOpen={isDifficultyModalOpen}
-        onClose={() => setIsDifficultyModalOpen(false)}
-        onSelectDifficulty={handleDifficultyChange}
-        currentDifficulty={gameState.difficulty}
-      />
       
       <EndGameModal
         isOpen={isEndGameModalOpen}
         onClose={handleEndGameModalClose}
         onReset={handleReset}
         isWin={gameState.isComplete}
-        timeRemaining={timerState.elapsedTime}
+        timeTaken={timerState.elapsedTime}
         moves={gameState.moves}
-        isCountUp={timerState.isCountUp}
       />
     </div>
   );
