@@ -1,7 +1,6 @@
-/* src/utils/components/HighScoreEntry/styles.module.css (Updated with theme support) */
+/* src/utils/components/HighScoreEntry/styles.module.css */
 .container {
   padding: 16px;
-  /* Use theme variables instead of hardcoded colors */
   background-color: var(--entry-bg, #1a1a1a);
   color: var(--entry-text, white);
   border-radius: 8px;
@@ -12,7 +11,7 @@
   box-sizing: border-box;
 }
 
-/* Dark theme variables (original dark design) */
+/* Dark theme variables */
 :global(.dark) .container {
   --entry-bg: #1a1a1a;
   --entry-text: white;
@@ -37,7 +36,7 @@
 .title {
   font-size: 24px;
   margin: 0 0 8px 0;
-  color: #ffd700; /* Gold color works well in both themes */
+  color: #ffd700;
   text-transform: uppercase;
   font-weight: bold;
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
@@ -56,6 +55,51 @@
   margin-bottom: 20px;
 }
 
+.singleInputContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+/* Hide the actual input for mobile but keep it focusable */
+.singleLetterInput {
+  width: 0;
+  height: 0;
+  opacity: 0;
+  position: absolute;
+  z-index: -1;
+  background: transparent;
+  border: none;
+  caret-color: transparent;
+}
+
+/* Visual representation of the letters */
+.visualLetters {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.visualLetter {
+  width: 54px;
+  height: 54px;
+  font-size: 32px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--input-border, #444);
+  background-color: var(--input-bg, #222);
+  color: var(--input-color, white);
+  border-radius: 8px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
 .letterInput {
   width: 54px;
   height: 54px;
@@ -67,6 +111,9 @@
   border-radius: 8px;
   text-transform: uppercase;
   transition: all 0.2s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  font-family: inherit;
 }
 
 .letterInput.active {
@@ -97,7 +144,7 @@
 }
 
 .submitButton {
-  background-color: #4caf50; /* Green works in both themes */
+  background-color: #4caf50;
   color: white;
 }
 
@@ -106,7 +153,7 @@
 }
 
 .cancelButton {
-  background-color: #f44336; /* Red works in both themes */
+  background-color: #f44336;
   color: white;
 }
 
@@ -128,12 +175,14 @@
     margin-bottom: 12px;
   }
   
-  .inputContainer {
+  .inputContainer,
+  .visualLetters {
     gap: 8px;
     margin-bottom: 16px;
   }
   
-  .letterInput {
+  .letterInput,
+  .visualLetter {
     width: 45px;
     height: 45px;
     font-size: 24px;
@@ -159,7 +208,8 @@
     margin-bottom: 10px;
   }
   
-  .letterInput {
+  .letterInput,
+  .visualLetter {
     width: 40px;
     height: 40px;
     font-size: 22px;
