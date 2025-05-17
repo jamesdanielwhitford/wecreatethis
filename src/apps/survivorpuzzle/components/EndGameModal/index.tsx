@@ -1,4 +1,4 @@
-// src/apps/survivorpuzzle/components/EndGameModal/index.tsx (Updated with new score highlighting)
+// src/apps/survivorpuzzle/components/EndGameModal/index.tsx (Updated with button delay)
 import React, { useState, useEffect } from 'react';
 import styles from './styles.module.css';
 import HighScoreEntry from '../../../../utils/components/HighScoreEntry';
@@ -25,8 +25,10 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
   const [isSubmittingScore, setIsSubmittingScore] = useState<boolean>(false);
   const [showHighScores, setShowHighScores] = useState<boolean>(false);
   const [scoreSubmitted, setScoreSubmitted] = useState<boolean>(false);
-  // New state to store the ID of the submitted score
   const [submittedScoreId, setSubmittedScoreId] = useState<string | undefined>(undefined);
+  
+  // New state to control when "Play Again" button is enabled
+  const [playAgainEnabled, setPlayAgainEnabled] = useState<boolean>(false);
   
   // Effect to reset state when modal opens/closes - depends ONLY on isOpen
   useEffect(() => {
@@ -37,7 +39,20 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
       setScoreSubmitted(false);
       setIsSubmittingScore(false);
       setSubmittedScoreId(undefined);
+      setPlayAgainEnabled(false); // Reset the button state
       console.log('🔄 Resetting all modal state variables (modal closed)');
+    } else {
+      // When modal opens, disable the button initially
+      setPlayAgainEnabled(false);
+      
+      // Create a minimum delay before enabling the Play Again button
+      // This helps prevent accidental clicks from frantic gameplay
+      const buttonDelay = setTimeout(() => {
+        console.log('⏱️ Minimum button delay elapsed');
+        setPlayAgainEnabled(true);
+      }, 1500); // 1.5 second delay
+      
+      return () => clearTimeout(buttonDelay);
     }
   }, [isOpen]); // This will ONLY run when isOpen changes
 
@@ -68,9 +83,13 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
           if (!isHighScore) {
             setShowHighScores(true);
             console.log('📋 Showing high scores (not a high score)');
+            // Enable button when high scores are shown
+            setPlayAgainEnabled(true);
           } else {
             setShowHighScores(false);
             console.log('🏆 Showing high score entry form');
+            // Keep button disabled during score entry
+            setPlayAgainEnabled(false);
           }
           
           setScoreSubmitted(false);
@@ -79,6 +98,8 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
           setIsHighScore(false);
           setShowHighScores(true); // Show high scores on error
           setScoreSubmitted(false);
+          // Enable button on error
+          setPlayAgainEnabled(true);
         }
       } else {
         // Always show high scores for non-win
@@ -86,6 +107,10 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
         setIsHighScore(false);
         setShowHighScores(true);
         setScoreSubmitted(false);
+        // Enable button for non-win scenario after a short delay
+        setTimeout(() => {
+          setPlayAgainEnabled(true);
+        }, 800); // Shorter delay for game loss
       }
     };
     
@@ -94,6 +119,14 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
       checkHighScore();
     }
   }, [isOpen, isWin, timeTaken, moves]); // This will run when any of these change, but only if isOpen is true
+
+  // Effect to enable the button when high scores are loaded or score is submitted
+  useEffect(() => {
+    if (showHighScores || scoreSubmitted) {
+      // Enable the play again button when high scores are shown or score is submitted
+      setPlayAgainEnabled(true);
+    }
+  }, [showHighScores, scoreSubmitted]);
 
   if (!isOpen) return null;
 
@@ -125,11 +158,13 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
         setScoreSubmitted(true);
         setIsHighScore(false); // No longer need to show form
         setShowHighScores(true); // Now show high scores
+        setPlayAgainEnabled(true); // Enable button after submission
       } else {
         // Score didn't qualify or there was an issue
         console.log('❌ Score was not high enough to be added to leaderboard');
         setIsHighScore(false);
         setShowHighScores(true);
+        setPlayAgainEnabled(true); // Enable button if there's an issue
       }
     } catch (error) {
       console.error('❌ Error submitting high score:', error);
@@ -137,6 +172,7 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
       alert('There was an error submitting your high score. Please try again later.');
       setIsHighScore(false);
       setShowHighScores(true);
+      setPlayAgainEnabled(true); // Enable button on error
     } finally {
       setIsSubmittingScore(false);
     }
@@ -153,6 +189,7 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
     console.log('❌ High score entry canceled by user');
     setIsHighScore(false);
     setShowHighScores(true);
+    setPlayAgainEnabled(true); // Enable button when user cancels score entry
   };
 
   return (
@@ -215,10 +252,12 @@ const EndGameModal: React.FC<EndGameModalProps> = ({
         
         <div className={styles.buttons}>
           <button 
-            className={styles.resetButton}
+            className={`${styles.resetButton} ${!playAgainEnabled ? styles.disabled : ''}`}
             onClick={handlePlayAgain}
+            disabled={!playAgainEnabled}
+            aria-label={playAgainEnabled ? "Play Again" : "Please wait..."}
           >
-            Play Again
+            {playAgainEnabled ? 'Play Again' : 'Please wait...'}
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-/* src/apps/survivorpuzzle/components/EndGameModal/styles.module.css (Updated with dark mode) */
+/* src/apps/survivorpuzzle/components/EndGameModal/styles.module.css (Updated with disabled button styling) */
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -40,12 +40,16 @@
 :global(.dark) .modalContent {
   --modal-background: #1a1a1a;
   --modal-text: #f0f0f0;
+  --disabled-button-bg: #1f3543;
+  --disabled-button-text: #5d7b8c;
 }
 
 /* Define light mode variables */
 :global(.light) .modalContent {
   --modal-background: white;
   --modal-text: #333;
+  --disabled-button-bg: #cce0ec;
+  --disabled-button-text: #7fa5be;
 }
 
 .modalContent.expanded {
@@ -159,13 +163,45 @@
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   background-color: #3498db;
   color: white;
+  position: relative;
+  overflow: hidden;
 }
 
 .resetButton:hover {
   background-color: #2980b9;
+}
+
+/* Styling for disabled button */
+.resetButton.disabled {
+  background-color: var(--disabled-button-bg, #1f3543);
+  color: var(--disabled-button-text, #5d7b8c);
+  cursor: not-allowed;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Add loading indicator for disabled button */
+.resetButton.disabled:after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(to right, transparent, #3498db, transparent);
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { 
+    transform: translateX(-100%);
+  }
+  100% { 
+    transform: translateX(100%); 
+  }
 }
 
 .highScoreIndicator {
