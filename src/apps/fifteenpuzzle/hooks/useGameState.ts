@@ -37,9 +37,9 @@ const createNewGame = (mode: GameMode): GameState => {
     gameMode: mode,
     seed,
     date,
-    isPaused: false,
-    pausedTime: 0,
-    lastPausedAt: null,
+    isPaused: false, // Keep this for type compatibility but never use it
+    pausedTime: 0,   // Keep this for type compatibility but never use it
+    lastPausedAt: null, // Keep this for type compatibility but never use it
     winAnimationComplete: false
   };
 };
@@ -65,12 +65,13 @@ export const useGameState = (initialMode: GameMode = 'daily') => {
             }
           }
           
+          // If game is complete, start a new game (as requested by user)
+          if (parsedState.isComplete) {
+            return createNewGame(initialMode);
+          }
+          
           // Validate the loaded state
           if (parsedState.tiles.length === 16) {
-            // If we had a completed game, reset win animation state on reload
-            if (parsedState.isComplete) {
-              parsedState.winAnimationComplete = false;
-            }
             return parsedState;
           }
         }
@@ -109,101 +110,19 @@ export const useGameState = (initialMode: GameMode = 'daily') => {
     }));
   }, []);
 
-  // Handle pausing the game
-  const togglePause = useCallback(() => {
-    setGameState(prevState => {
-      // Can't pause if the game is complete or not started
-      if (prevState.isComplete || prevState.moves === 0) {
-        return prevState;
-      }
-      
-      const now = Date.now();
-      
-      if (prevState.isPaused) {
-        // Unpause: add the time spent paused to pausedTime
-        const additionalPausedTime = prevState.lastPausedAt 
-          ? now - prevState.lastPausedAt 
-          : 0;
-          
-        return {
-          ...prevState,
-          isPaused: false,
-          pausedTime: prevState.pausedTime + additionalPausedTime,
-          lastPausedAt: null
-        };
-      } else {
-        // Pause the game
-        return {
-          ...prevState,
-          isPaused: true,
-          lastPausedAt: now
-        };
-      }
-    });
-  }, []);
-
-  // Handle page visibility changes to auto-pause when page is hidden
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && !gameState.isPaused && !gameState.isComplete && gameState.moves > 0) {
-        togglePause();
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [gameState.isPaused, gameState.isComplete, gameState.moves, togglePause]);
-
   // Handle changing game mode
   const changeGameMode = useCallback((mode: GameMode) => {
     if (mode === gameState.gameMode) return;
     
-    // Load the saved state for the selected mode if it exists
-    if (typeof window !== 'undefined') {
-      try {
-        const storageKey = mode === 'daily' ? STORAGE_KEY_DAILY : STORAGE_KEY_INFINITE;
-        const savedState = localStorage.getItem(storageKey);
-        
-        if (savedState) {
-          const parsedState = JSON.parse(savedState) as GameState;
-          
-          // For daily mode, check if it's today's puzzle
-          if (mode === 'daily') {
-            const playedDate = localStorage.getItem(STORAGE_KEY_PLAYED_DATE);
-            if (playedDate !== getCurrentDate()) {
-              // It's a new day, create a new daily puzzle
-              setGameState(createNewGame('daily'));
-              return;
-            }
-          }
-          
-          // Validate the loaded state
-          if (parsedState.tiles.length === 16) {
-            // If we had a completed game, reset win animation state on reload
-            if (parsedState.isComplete) {
-              parsedState.winAnimationComplete = false;
-            }
-            setGameState(parsedState);
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Error accessing localStorage:', error);
-      }
-    }
-    
-    // Create a new game if no saved state exists
+    // Create a new game for the selected mode
     setGameState(createNewGame(mode));
   }, [gameState.gameMode]);
 
   // Handle tile clicks with multi-tile move support
   const handleTileClick = useCallback((position: number) => {
     setGameState(prevState => {
-      // Don't allow moves if the game is already complete or paused
-      if (prevState.isComplete || prevState.isPaused) {
+      // Don't allow moves if the game is already complete
+      if (prevState.isComplete) {
         return prevState;
       }
 
@@ -369,7 +288,6 @@ export const useGameState = (initialMode: GameMode = 'daily') => {
     resetGame,
     changeGameMode,
     hasDailyBeenCompleted,
-    togglePause,
     handleWinAnimationComplete
   };
 };

@@ -5,120 +5,251 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  /* iOS Safari fix - prevent content from extending beyond viewport */
-  height: 100%;
-  -webkit-overflow-scrolling: touch;
-  overflow-y: auto;
+  backdrop-filter: blur(4px);
 }
 
 .modalContent {
-  background-color: white;
-  border-radius: 8px;
+  background-color: var(--bg-color, #1f1f1f);
+  color: var(--text-color, #fff);
+  border-radius: 10px;
   padding: 24px;
-  max-width: 400px;
   width: 90%;
+  max-width: 500px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   text-align: center;
-  /* iOS Safari fix - ensure modal stays within viewport */
+  border: 1px solid rgba(255, 255, 255, 0.1);
   max-height: 90vh;
-  margin: auto;
   overflow-y: auto;
-  /* Prevent modal from sticking to the very top or bottom on iOS */
-  margin-top: 5vh;
-  margin-bottom: 5vh;
+  /* Support for expanded state with high scores */
+  transition: max-height 0.3s ease, width 0.3s ease;
+}
+
+/* Expanded state for high scores */
+.modalContent.expanded {
+  max-width: 600px;
+  max-height: 90vh;
+}
+
+/* Set theme-aware variables */
+:global(.dark) .modalContent {
+  --bg-color: #1f1f1f;
+  --text-color: #fff;
+  --title-color: #ffd700;
+  --date-color: #aaa;
+  --stat-bg: #333;
+  --button-bg: #333;
+  --button-hover: #444;
+  --button-text: #fff;
+  --share-button: #3498db;
+  --infinite-button: #2ecc71;
+  --new-game-button: #e67e22;
+  --close-button: #e74c3c;
+}
+
+:global(.light) .modalContent {
+  --bg-color: #f5f5f5;
+  --text-color: #333;
+  --title-color: #e67e22;
+  --date-color: #666;
+  --stat-bg: #eee;
+  --button-bg: #eee;
+  --button-hover: #ddd;
+  --button-text: #333;
+  --share-button: #3498db;
+  --infinite-button: #2ecc71;
+  --new-game-button: #e67e22;
+  --close-button: #e74c3c;
 }
 
 .modalTitle {
-  font-size: 24px;
+  color: var(--title-color, #ffd700);
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 28px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   font-weight: bold;
-  color: #333;
-  margin-bottom: 16px;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 }
 
 .statsContainer {
-  margin: 24px 0;
+  background-color: var(--stat-bg, #333);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .date {
-  font-size: 18px;
-  color: #666;
+  font-size: 16px;
+  color: var(--date-color, #aaa);
+  margin-bottom: 5px;
 }
 
 .time {
-  font-size: 48px;
+  font-size: 32px;
   font-weight: bold;
-  color: #4a90e2;
+  color: #3498db;
   font-family: monospace;
+  margin-bottom: 5px;
 }
 
 .moves {
-  font-size: 18px;
-  color: #666;
+  font-size: 24px;
+  color: #2ecc71;
+  font-weight: bold;
 }
 
 .buttonGroup {
   display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0;
 }
 
-.shareButton, .infiniteButton, .newGameButton {
-  flex: 1;
-  padding: 12px;
+.shareButton,
+.infiniteButton,
+.newGameButton {
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  padding: 12px 24px;
+  border-radius: 6px;
   font-size: 16px;
-  transition: background-color 0.2s;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .shareButton {
-  background-color: #4a90e2;
-  color: white;
-}
-
-.infiniteButton, .newGameButton {
-  background-color: #e9ecef;
-  color: #333;
-}
-
-.newGameButton {
-  background-color: #2ecc71;
+  background-color: var(--share-button, #3498db);
   color: white;
 }
 
 .shareButton:hover {
-  background-color: #3a7bc8;
+  background-color: #2980b9;
+  transform: translateY(-2px);
 }
 
-.infiniteButton:hover {
-  background-color: #dee2e6;
+.infiniteButton,
+.newGameButton {
+  background-color: var(--infinite-button, #2ecc71);
+  color: white;
+}
+
+.infiniteButton:hover,
+.newGameButton:hover {
+  background-color: #27ae60;
+  transform: translateY(-2px);
+}
+
+.newGameButton {
+  background-color: var(--new-game-button, #e67e22);
 }
 
 .newGameButton:hover {
-  background-color: #27ae60;
+  background-color: #d35400;
 }
 
 .closeButton {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  background-color: transparent;
-  color: #666;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
+  background: none;
+  border: none;
+  color: var(--button-text, #fff);
+  margin-top: 10px;
+  padding: 8px 16px;
+  font-size: 14px;
   cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.2s;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  text-transform: uppercase;
 }
 
 .closeButton:hover {
-  background-color: #f8f9fa;
+  opacity: 1;
+}
+
+/* High score indicator styling */
+.highScoreIndicator {
+  color: #ffd700;
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 10px;
+  text-transform: uppercase;
+  animation: pulse 1.5s infinite;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
+/* High score section styling */
+.highScoreSection {
+  margin: 15px 0;
+  width: 100%;
+}
+
+.highScoreSection h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #ffd700;
+  font-size: 18px;
+}
+
+.submitting {
+  margin-top: 10px;
+  font-style: italic;
+  color: var(--date-color, #aaa);
+}
+
+/* Mobile styles */
+@media (max-width: 500px) {
+  .modalContent {
+    padding: 16px;
+    width: 95%;
+  }
+  
+  .modalTitle {
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+  
+  .statsContainer {
+    padding: 12px;
+  }
+  
+  .date {
+    font-size: 14px;
+  }
+  
+  .time {
+    font-size: 26px;
+  }
+  
+  .moves {
+    font-size: 20px;
+  }
+  
+  .buttonGroup {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .shareButton,
+  .infiniteButton,
+  .newGameButton {
+    padding: 10px 16px;
+    font-size: 14px;
+    width: 100%;
+  }
 }

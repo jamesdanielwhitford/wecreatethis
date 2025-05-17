@@ -17,18 +17,15 @@ export interface GameState {
   gameMode: GameMode;
   seed: string;
   date: string;
-  isPaused: boolean;
-  pausedTime: number;
-  lastPausedAt: number | null;
+  isPaused: boolean; // Kept for compatibility
+  pausedTime: number; // Kept for compatibility
+  lastPausedAt: number | null; // Kept for compatibility
   winAnimationComplete: boolean;
 }
 
 export interface TimerState {
   isRunning: boolean;
-  startTime: number | null;
-  currentTime: number;
   elapsedTime: number;
-  isPaused: boolean;
 }
 
 export interface WinModalProps {
@@ -52,15 +49,13 @@ export interface BoardProps {
   tiles: Tile[];
   onTileClick: (position: number) => void;
   isComplete: boolean;
-  isPaused?: boolean;
+  isPaused?: boolean; // Kept for compatibility but not used
   onWinAnimationComplete?: () => void;
 }
 
 export interface TimerProps {
   elapsedTime: number;
   isRunning: boolean;
-  isPaused: boolean;
-  onTimerClick: () => void;
 }
 
 export interface NavbarProps {

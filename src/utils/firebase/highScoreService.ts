@@ -1,4 +1,4 @@
-// src/utils/firebase/highScoreService.ts (Updated for top 10 only with auto-deletion)
+// src/utils/firebase/highScoreService.ts
 import { 
   collection, 
   doc, 
@@ -18,7 +18,8 @@ import {
   HighScore, 
   GameType, 
   // WeekData,
-  SurvivorPuzzleHighScore
+  SurvivorPuzzleHighScore,
+  FifteenPuzzleHighScore
 } from './types';
 
 // Define new types for options and high score data
@@ -65,6 +66,15 @@ class HighScoreService {
           orderBy('score', 'asc'), // Lower time is better
           limit(20) // Get more scores to handle secondary sorting by moves
         );
+      } else if (gameType === 'fifteenPuzzle' && options?.category) {
+        // For fifteenPuzzle, filter by category (daily/infinite)
+        highScoresQuery = query(
+          highScoresCollection,
+          where('gameType', '==', gameType),
+          where('category', '==', options.category),
+          orderBy('score', 'asc'), // Lower time is better for puzzle games
+          limit(20) // Get more scores to handle secondary sorting by moves
+        );
       } else if (options?.category && gameType === 'picturePuzzle') {
         // For picturePuzzle, filter by category
         highScoresQuery = query(
@@ -102,16 +112,22 @@ class HighScoreService {
           highScores.push({ id: doc.id, ...doc.data() } as HighScore);
         });
         
-        // For SurvivorPuzzle, implement secondary sorting by moves
-        if (gameType === 'survivorPuzzle') {
+        // For SurvivorPuzzle and FifteenPuzzle, implement secondary sorting by moves
+        if (gameType === 'survivorPuzzle' || gameType === 'fifteenPuzzle') {
           // Sort by time (already done by Firestore), then by moves for same times
           highScores.sort((a, b) => {
             // If times are different, maintain the time-based sort
             if (a.score !== b.score) return a.score - b.score;
             
             // If times are the same, sort by moves (lower is better)
-            const movesA = (a as SurvivorPuzzleHighScore).moves || 0;
-            const movesB = (b as SurvivorPuzzleHighScore).moves || 0;
+            const movesA = (gameType === 'survivorPuzzle') 
+              ? (a as SurvivorPuzzleHighScore).moves || 0
+              : (a as FifteenPuzzleHighScore).moves || 0;
+              
+            const movesB = (gameType === 'survivorPuzzle')
+              ? (b as SurvivorPuzzleHighScore).moves || 0
+              : (b as FifteenPuzzleHighScore).moves || 0;
+              
             return movesA - movesB;
           });
           
@@ -160,9 +176,12 @@ class HighScoreService {
         return true;
       }
       
-      // For SurvivorPuzzle with moves as a tiebreaker
-      if (gameType === 'survivorPuzzle' && moves !== undefined) {
-        const worstScore = highScores[highScores.length - 1] as SurvivorPuzzleHighScore;
+      // For SurvivorPuzzle or FifteenPuzzle with moves as a tiebreaker
+      if ((gameType === 'survivorPuzzle' || gameType === 'fifteenPuzzle') && moves !== undefined) {
+        const worstScore = highScores[highScores.length - 1];
+        const worstScoreMoves = gameType === 'survivorPuzzle' 
+          ? (worstScore as SurvivorPuzzleHighScore).moves
+          : (worstScore as FifteenPuzzleHighScore).moves;
         
         // Better time always qualifies
         if (score < worstScore.score) {
@@ -170,14 +189,14 @@ class HighScoreService {
         }
         
         // Equal time but fewer moves qualifies
-        if (score === worstScore.score && moves < worstScore.moves) {
+        if (score === worstScore.score && moves < worstScoreMoves) {
           return true;
         }
         
         return false;
       } 
       // For time-based scores where lower is better
-      else if (options?.scoreOrder === 'asc' || gameType === 'survivorPuzzle') {
+      else if (options?.scoreOrder === 'asc' || gameType === 'survivorPuzzle' || gameType === 'fifteenPuzzle') {
         // Check if this score is better than the worst score
         const worstScore = highScores[highScores.length - 1];
         return score < worstScore.score;
@@ -223,14 +242,27 @@ class HighScoreService {
       // Get the collection reference
       const highScoresCollection = this.getHighScoresCollection();
       
-      // For SurvivorPuzzle, determine all-time high based on time and moves
-      if (gameType === 'survivorPuzzle') {
-        const allTimeHighQuery = query(
-          highScoresCollection,
-          where('gameType', '==', gameType),
-          where('isAllTimeHigh', '==', true),
-          limit(1)
-        );
+      // For SurvivorPuzzle and FifteenPuzzle, determine all-time high based on time and moves
+      if (gameType === 'survivorPuzzle' || gameType === 'fifteenPuzzle') {
+        let allTimeHighQuery;
+        
+        // For FifteenPuzzle, we need to filter by category too
+        if (gameType === 'fifteenPuzzle' && highScore.category) {
+          allTimeHighQuery = query(
+            highScoresCollection,
+            where('gameType', '==', gameType),
+            where('category', '==', highScore.category),
+            where('isAllTimeHigh', '==', true),
+            limit(1)
+          );
+        } else {
+          allTimeHighQuery = query(
+            highScoresCollection,
+            where('gameType', '==', gameType),
+            where('isAllTimeHigh', '==', true),
+            limit(1)
+          );
+        }
         
         // Get current all-time high score
         let isNewAllTimeHigh = false;
@@ -244,7 +276,7 @@ class HighScoreService {
             // No existing all-time high, this is automatically the all-time high
             isNewAllTimeHigh = true;
           } else {
-            const currentAllTimeHigh = allTimeHighSnapshot.docs[0].data() as SurvivorPuzzleHighScore;
+            const currentAllTimeHigh = allTimeHighSnapshot.docs[0].data() as (SurvivorPuzzleHighScore | FifteenPuzzleHighScore);
             oldAllTimeHighId = allTimeHighSnapshot.docs[0].id;
             
             // Better time is always a new all-time high
@@ -267,7 +299,15 @@ class HighScoreService {
         
         // Before adding the new score, delete the lowest score if needed
         if (!isNewAllTimeHigh) {
-          await this.deleteLowestScoreIfNeeded(gameType, { scoreOrder: 'asc' });
+          // Pass category for FifteenPuzzle
+          if (gameType === 'fifteenPuzzle' && highScore.category) {
+            await this.deleteLowestScoreIfNeeded(gameType, { 
+              scoreOrder: 'asc',
+              category: highScore.category
+            });
+          } else {
+            await this.deleteLowestScoreIfNeeded(gameType, { scoreOrder: 'asc' });
+          }
         }
         
         // Set the appropriate properties for this high score
@@ -295,12 +335,33 @@ class HighScoreService {
       // For other game types, use similar logic
       else {
         // Check for all-time high scores of this game type
-        const allTimeHighQuery = query(
-          highScoresCollection,
-          where('gameType', '==', gameType),
-          where('isAllTimeHigh', '==', true),
-          limit(1)
-        );
+        let allTimeHighQuery;
+        
+        // For category-specific high scores
+        if (highScore.category) {
+          allTimeHighQuery = query(
+            highScoresCollection,
+            where('gameType', '==', gameType),
+            where('category', '==', highScore.category),
+            where('isAllTimeHigh', '==', true),
+            limit(1)
+          );
+        } else if (gameType === 'wordGame' && highScore.wordGameType) {
+          allTimeHighQuery = query(
+            highScoresCollection,
+            where('gameType', '==', gameType),
+            where('wordGameType', '==', highScore.wordGameType),
+            where('isAllTimeHigh', '==', true),
+            limit(1)
+          );
+        } else {
+          allTimeHighQuery = query(
+            highScoresCollection,
+            where('gameType', '==', gameType),
+            where('isAllTimeHigh', '==', true),
+            limit(1)
+          );
+        }
         
         // Get current all-time high score
         let isNewAllTimeHigh = false;
@@ -334,7 +395,11 @@ class HighScoreService {
         
         // Before adding the new score, delete the lowest score if needed
         if (!isNewAllTimeHigh) {
-          await this.deleteLowestScoreIfNeeded(gameType, { scoreOrder: highScore.scoreOrder });
+          await this.deleteLowestScoreIfNeeded(gameType, { 
+            scoreOrder: highScore.scoreOrder,
+            category: highScore.category,
+            wordGameType: highScore.wordGameType
+          });
         }
         
         // Clean up the highScore object to remove any undefined values
@@ -418,6 +483,60 @@ class HighScoreService {
       return this.addHighScore('survivorPuzzle', highScore);
     } catch (error) {
       console.error("Error adding survivor puzzle high score:", error);
+      return null;
+    }
+  }
+
+  // Add a fifteen puzzle high score - with category for daily/infinite and moves tiebreaker
+  async addFifteenPuzzleHighScore(
+    name: string,
+    timeTaken: number,
+    moves: number,
+    gameMode: 'daily' | 'infinite'
+  ): Promise<string | null> {
+    // Format time for display - now with hundredths of a second to match Survivor Puzzle
+    const formatTime = (ms: number): string => {
+      const totalSeconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      const hundredths = Math.floor((ms % 1000) / 10);
+      return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${hundredths.toString().padStart(2, '0')}`;
+    };
+    
+    try {
+      // Create category based on game mode
+      const category = `fifteenPuzzle-${gameMode}`;
+      
+      // Check if this score qualifies for the high score list using both time and moves
+      const qualifies = await this.checkHighScore(
+        'fifteenPuzzle', 
+        timeTaken, 
+        { 
+          scoreOrder: 'asc', // Lower time is better
+          category: category
+        }, 
+        moves // Pass moves for tiebreaker
+      );
+      
+      if (!qualifies) return null;
+      
+      // Create the high score object
+      const highScore: HighScoreData = {
+        name,
+        score: timeTaken, // Raw score is the time in milliseconds
+        formattedScore: formatTime(timeTaken),
+        timestamp: Date.now(),
+        isAllTimeHigh: false, // Will be set in addHighScore
+        moves,
+        timeTaken,
+        category: category, // Store the category for filtering
+        scoreOrder: 'asc' // This will be removed before saving to Firestore
+      };
+      
+      // Add the high score and return the ID
+      return this.addHighScore('fifteenPuzzle', highScore);
+    } catch (error) {
+      console.error("Error adding fifteen puzzle high score:", error);
       return null;
     }
   }

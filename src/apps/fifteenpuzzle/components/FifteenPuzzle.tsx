@@ -18,8 +18,6 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
   // Use refs or state for modals instead of setting in render cycle
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   const [isWinModalOpen, setIsWinModalOpen] = useState(false);
-  // Add a state to track whether the user has manually dismissed the win modal
-  const [hasUserDismissedWinModal, setHasUserDismissedWinModal] = useState(false);
   
   const {
     gameState,
@@ -27,26 +25,23 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
     resetGame,
     changeGameMode,
     hasDailyBeenCompleted,
-    togglePause,
     handleWinAnimationComplete
   } = useGameState(initialMode);
 
-  const isGameStarted = gameState.moves > 0 || gameState.startTime !== null;
-  
+  // Pass gameState.startTime directly to useTimer
   const { timerState, resetTimer } = useTimer(
-    isGameStarted,
+    gameState.startTime,
     gameState.isComplete,
-    gameState.isPaused,
-    gameState.pausedTime
+    false, // isPaused is always false since we're removing pause functionality
+    0      // no pausedTime anymore
   );
 
   // Show win modal when win animation is complete
   useEffect(() => {
-    // Only show the win modal if the win animation is complete AND the user hasn't dismissed it
-    if (gameState.isComplete && gameState.winAnimationComplete && !isWinModalOpen && !hasUserDismissedWinModal) {
+    if (gameState.isComplete && gameState.winAnimationComplete && !isWinModalOpen) {
       setIsWinModalOpen(true);
     }
-  }, [gameState.isComplete, gameState.winAnimationComplete, isWinModalOpen, hasUserDismissedWinModal]);
+  }, [gameState.isComplete, gameState.winAnimationComplete, isWinModalOpen]);
 
   // Handle mode change
   const handleModeChange = (mode: GameMode) => {
@@ -64,12 +59,6 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
     changeGameMode(mode);
     resetTimer();
     setIsWinModalOpen(false);
-    setHasUserDismissedWinModal(false); // Reset the dismissed state when changing modes
-  };
-
-  // Handle sharing results - now using Web Share API in EndGameModal
-  const handleShare = () => {
-    // This is now just a placeholder that delegates to EndGameModal
   };
 
   // Handle playing infinite mode after completing daily
@@ -82,20 +71,11 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
     resetGame();
     resetTimer();
     setIsWinModalOpen(false);
-    setHasUserDismissedWinModal(false); // Reset the dismissed state for a new game
-  };
-
-  // Handle pause overlay click (to resume)
-  const handlePauseOverlayClick = () => {
-    if (gameState.isPaused) {
-      togglePause();
-    }
   };
 
   // Handle closing the win modal
   const handleCloseWinModal = () => {
     setIsWinModalOpen(false);
-    setHasUserDismissedWinModal(true); // Mark that the user has dismissed the modal
   };
 
   return (
@@ -109,19 +89,7 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
       <main className={styles.main}>
         <div className={styles.gameControls}>
           <div className={styles.timerAndMoves}>
-            <div 
-              className={`
-                ${styles.timer} 
-                ${timerState.isRunning ? styles.running : ''} 
-                ${gameState.isPaused ? styles.paused : ''}
-              `}
-              onClick={togglePause}
-            >
-              {gameState.isPaused ? (
-                <span className={styles.pauseIcon}>⏵</span>
-              ) : timerState.isRunning ? (
-                <span className={styles.pauseIcon}>⏸</span>
-              ) : null}
+            <div className={styles.timer}>
               <span className={styles.timeDisplay}>{formatTime(timerState.elapsedTime)}</span>
             </div>
             
@@ -148,19 +116,9 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
             tiles={gameState.tiles}
             onTileClick={handleTileClick}
             isComplete={gameState.isComplete}
-            isPaused={gameState.isPaused}
+            isPaused={false} // Always false since we're removing pause functionality
             onWinAnimationComplete={handleWinAnimationComplete}
           />
-          
-          {gameState.isPaused && (
-            <div className={styles.pauseOverlay} onClick={handlePauseOverlayClick}>
-              <div className={styles.pauseMessage}>
-                <span className={styles.pauseIcon}>⏵</span>
-                <span>PAUSED</span>
-                <p className={styles.pauseInstructions}>Tap to resume</p>
-              </div>
-            </div>
-          )}
         </div>
       </main>
       
@@ -171,12 +129,12 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
       
       <EndGameModal
         isOpen={isWinModalOpen}
-        onClose={handleCloseWinModal} // Use the new handler that tracks user dismissal
+        onClose={handleCloseWinModal}
         time={timerState.elapsedTime}
         moves={gameState.moves}
         date={gameState.date}
         onPlayInfinite={handlePlayInfinite}
-        onShare={handleShare}
+        onShare={() => {}} // Placeholder function since handleShare is delegated to EndGameModal
         onNewGame={handleNewGame}
         gameMode={gameState.gameMode}
       />
@@ -184,12 +142,13 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
   );
 };
 
-// Helper function for formatting time
+// Helper function for formatting time - now including hundredths of a second to match Survivor Puzzle
 const formatTime = (milliseconds: number): string => {
   const totalSeconds = Math.floor(milliseconds / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  const hundredths = Math.floor((milliseconds % 1000) / 10); // Get hundredths of a second
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${hundredths.toString().padStart(2, '0')}`;
 };
 
 export default FifteenPuzzle;

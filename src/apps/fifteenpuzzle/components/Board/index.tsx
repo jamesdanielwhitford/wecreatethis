@@ -7,8 +7,7 @@ import styles from './styles.module.css';
 const Board: React.FC<BoardProps> = ({ 
   tiles, 
   onTileClick, 
-  isComplete, 
-  isPaused,
+  isComplete,
   onWinAnimationComplete 
 }) => {
   // Track which tiles have completed their "win" animation
@@ -106,7 +105,7 @@ const Board: React.FC<BoardProps> = ({
               gridRow: Math.floor(position / 4) + 1,
               gridColumn: (position % 4) + 1,
             }}
-            onClick={() => !isEmpty && !isPaused && onTileClick(position)}
+            onClick={() => !isEmpty && onTileClick(position)}
           >
             {!isEmpty && (
               <div 

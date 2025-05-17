@@ -36,7 +36,8 @@ const games: Game[] = [
     id: 'fifteenPuzzle', 
     name: '15 Puzzle', 
     options: [
-      { id: 'daily', name: 'Daily Puzzle', options: {} }
+      { id: 'daily', name: 'Daily Puzzle', options: { scoreOrder: 'asc', category: 'fifteenPuzzle-daily' } },
+      { id: 'infinite', name: 'Infinite Mode', options: { scoreOrder: 'asc', category: 'fifteenPuzzle-infinite' } }
     ]
   },
   { 
