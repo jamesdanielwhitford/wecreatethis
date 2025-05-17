@@ -8,6 +8,7 @@ import Navbar from './Navbar';
 import Rules from './Rules';
 import EndGameModal from './EndGameModal';
 import { GameMode } from '../types/game.types';
+import { formatTime } from '../utils/generatePuzzle';
 import styles from './FifteenPuzzle.module.css';
 
 interface FifteenPuzzleProps {
@@ -28,10 +29,10 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
     handleWinAnimationComplete
   } = useGameState(initialMode);
 
-  // Pass gameState.startTime directly to useTimer
+  // Pass gameState.startTime directly to useTimer with only two parameters
   const { timerState, resetTimer } = useTimer(
     gameState.startTime,
-    gameState.isComplete,    
+    gameState.isComplete
   );
 
   // Show win modal when win animation is complete
@@ -114,7 +115,6 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
             tiles={gameState.tiles}
             onTileClick={handleTileClick}
             isComplete={gameState.isComplete}
-            isPaused={false} // Always false since we're removing pause functionality
             onWinAnimationComplete={handleWinAnimationComplete}
           />
         </div>
@@ -138,15 +138,6 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
       />
     </div>
   );
-};
-
-// Helper function for formatting time - now including hundredths of a second to match Survivor Puzzle
-const formatTime = (milliseconds: number): string => {
-  const totalSeconds = Math.floor(milliseconds / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  const hundredths = Math.floor((milliseconds % 1000) / 10); // Get hundredths of a second
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${hundredths.toString().padStart(2, '0')}`;
 };
 
 export default FifteenPuzzle;

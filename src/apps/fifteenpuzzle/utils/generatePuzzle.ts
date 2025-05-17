@@ -137,12 +137,13 @@ export const getDailySeed = (): string => {
   return `fifteenpuzzle-${date.getUTCFullYear()}-${date.getUTCMonth() + 1}-${date.getUTCDate()}`;
 };
 
-// Format time in minutes and seconds
+// Format time in minutes, seconds, and hundredths of a second to match Survivor Puzzle
 export const formatTime = (milliseconds: number): string => {
   const totalSeconds = Math.floor(milliseconds / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  const hundredths = Math.floor((milliseconds % 1000) / 10); // Get hundredths of a second
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${hundredths.toString().padStart(2, '0')}`;
 };
 
 // Get current date in YYYY-MM-DD format (UTC)
