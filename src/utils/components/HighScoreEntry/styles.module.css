@@ -48,63 +48,19 @@
   color: var(--subtitle-color, #f0f0f0);
 }
 
-.inputContainer {
+.nameInputContainer {
   display: flex;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 36px; /* Increased margin between input and buttons */
 }
 
-.singleInputContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  position: relative;
-}
-
-/* Hide the actual input for mobile but keep it focusable */
-.singleLetterInput {
-  width: 0;
-  height: 0;
-  opacity: 0;
-  position: absolute;
-  z-index: -1;
-  background: transparent;
-  border: none;
-  caret-color: transparent;
-}
-
-/* Visual representation of the letters */
-.visualLetters {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.visualLetter {
-  width: 54px;
-  height: 54px;
-  font-size: 32px;
+.nameInput {
+  width: 180px;
+  height: 70px;
+  font-size: 42px; /* Increased font size */
+  font-weight: bold;
   text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--input-border, #444);
-  background-color: var(--input-bg, #222);
-  color: var(--input-color, white);
-  border-radius: 8px;
-  text-transform: uppercase;
-  transition: all 0.2s ease;
-}
-
-.letterInput {
-  width: 54px;
-  height: 54px;
-  font-size: 32px;
-  text-align: center;
+  letter-spacing: 12px;
   border: 2px solid var(--input-border, #444);
   background-color: var(--input-bg, #222);
   color: var(--input-color, white);
@@ -114,16 +70,13 @@
   -webkit-appearance: none;
   appearance: none;
   font-family: inherit;
+  padding: 0 10px;
 }
 
-.letterInput.active {
-  border-color: var(--input-focus-border, #ffd700);
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-}
-
-.letterInput:focus {
+.nameInput:focus {
   outline: none;
   border-color: var(--input-focus-border, #ffd700);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 .buttonContainer {
@@ -175,17 +128,15 @@
     margin-bottom: 12px;
   }
   
-  .inputContainer,
-  .visualLetters {
-    gap: 8px;
-    margin-bottom: 16px;
+  .nameInputContainer {
+    margin-bottom: 30px; /* Still more space on mobile */
   }
   
-  .letterInput,
-  .visualLetter {
-    width: 45px;
-    height: 45px;
-    font-size: 24px;
+  .nameInput {
+    width: 160px;
+    height: 60px;
+    font-size: 34px; /* Still larger on mobile */
+    letter-spacing: 10px;
   }
   
   .submitButton, .cancelButton {
@@ -208,11 +159,15 @@
     margin-bottom: 10px;
   }
   
-  .letterInput,
-  .visualLetter {
-    width: 40px;
-    height: 40px;
-    font-size: 22px;
+  .nameInputContainer {
+    margin-bottom: 24px; /* Still more space on smaller mobile */
+  }
+  
+  .nameInput {
+    width: 140px;
+    height: 50px;
+    font-size: 30px; /* Still larger on smaller mobile */
+    letter-spacing: 8px;
   }
   
   .buttonContainer {
