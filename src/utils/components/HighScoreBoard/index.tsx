@@ -80,7 +80,7 @@ const HighScoreBoard: React.FC<HighScoreBoardProps> = ({
     let rowClass = styles.scoreRow;
     
     // Add all-time high class if applicable
-    if (score.isAllTimeHigh || score.weekNumber === 0) {
+    if (score.isAllTimeHigh) {
       rowClass += ` ${styles.allTimeHigh}`;
     }
     

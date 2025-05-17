@@ -1,22 +1,23 @@
-// src/utils/firebase/highScoreService.ts (Updated for SurvivorPuzzle with time + moves ranking)
+// src/utils/firebase/highScoreService.ts (Updated for top 10 only with auto-deletion)
 import { 
   collection, 
   doc, 
-  getDoc, 
+  // getDoc, 
   getDocs, 
-  setDoc, 
+  // setDoc, 
   addDoc, 
   query, 
   where, 
   orderBy, 
   limit,
-  updateDoc
+  updateDoc,
+  deleteDoc
 } from 'firebase/firestore';
 import { db } from './config';
 import { 
   HighScore, 
   GameType, 
-  WeekData,
+  // WeekData,
   SurvivorPuzzleHighScore
 } from './types';
 
@@ -32,7 +33,6 @@ interface HighScoreData {
   score: number;
   formattedScore?: string;
   timestamp?: number;
-  weekNumber?: number;
   isAllTimeHigh?: boolean;
   moves?: number;
   timeTaken?: number;
@@ -43,60 +43,14 @@ interface HighScoreData {
 }
 
 class HighScoreService {
-  private readonly WEEK_DOC_ID = 'current-week';
-
   // Get the collection reference for all high scores
   private getHighScoresCollection() {
     return collection(db, 'highScores');
   }
 
-  // Get the current week number
-  async getCurrentWeekNumber(): Promise<number> {
-    const weekDocRef = doc(db, 'weekData', this.WEEK_DOC_ID);
-    
-    try {
-      const weekDoc = await getDoc(weekDocRef);
-      
-      if (weekDoc.exists()) {
-        const weekData = weekDoc.data() as WeekData;
-        
-        // Check if we need to update the week
-        const now = Date.now();
-        const lastUpdated = weekData.lastUpdated;
-        const daysSinceUpdate = (now - lastUpdated) / (1000 * 60 * 60 * 24);
-        
-        // If it's been more than 7 days, update the week number
-        if (daysSinceUpdate >= 7) {
-          const newWeekNumber = weekData.currentWeekNumber + 1;
-          await updateDoc(weekDocRef, { 
-            currentWeekNumber: newWeekNumber,
-            lastUpdated: now
-          });
-          return newWeekNumber;
-        }
-        
-        return weekData.currentWeekNumber;
-      } else {
-        // Initialize week data if it doesn't exist
-        const initialWeekData: WeekData = {
-          currentWeekNumber: 1,
-          lastUpdated: Date.now()
-        };
-        await setDoc(weekDocRef, initialWeekData);
-        return 1;
-      }
-    } catch (error) {
-      console.error("Error getting current week number:", error);
-      // Return a default week number if there's an error
-      return 1;
-    }
-  }
-
   // Get high scores for a specific game
   async getHighScores(gameType: GameType, options?: HighScoreOptions): Promise<HighScore[]> {
     try {
-      const weekNumber = await this.getCurrentWeekNumber();
-      
       // Start with a simple query to avoid index issues initially
       const highScoresCollection = this.getHighScoresCollection();
       let highScoresQuery;
@@ -108,7 +62,6 @@ class HighScoreService {
         highScoresQuery = query(
           highScoresCollection,
           where('gameType', '==', gameType),
-          where('weekNumber', 'in', [weekNumber, 0]), // 0 for all-time high scores
           orderBy('score', 'asc'), // Lower time is better
           limit(20) // Get more scores to handle secondary sorting by moves
         );
@@ -118,7 +71,6 @@ class HighScoreService {
           highScoresCollection,
           where('gameType', '==', gameType),
           where('category', '==', options.category),
-          where('weekNumber', 'in', [weekNumber, 0]),
           orderBy('score', options?.scoreOrder || 'desc'),
           limit(10)
         );
@@ -128,7 +80,6 @@ class HighScoreService {
           highScoresCollection,
           where('gameType', '==', gameType),
           where('wordGameType', '==', options.wordGameType),
-          where('weekNumber', 'in', [weekNumber, 0]),
           orderBy('score', options?.scoreOrder || 'desc'),
           limit(10)
         );
@@ -137,7 +88,6 @@ class HighScoreService {
         highScoresQuery = query(
           highScoresCollection,
           where('gameType', '==', gameType),
-          where('weekNumber', 'in', [weekNumber, 0]),
           orderBy('score', options?.scoreOrder || 'desc'),
           limit(10)
         );
@@ -165,7 +115,7 @@ class HighScoreService {
             return movesA - movesB;
           });
           
-          // Limit to top 10 after secondary sorting
+          // Limit to top 10
           return highScores.slice(0, 10);
         }
         
@@ -204,11 +154,6 @@ class HighScoreService {
   ): Promise<boolean> {
     try {
       const highScores = await this.getHighScores(gameType, options);
-      
-      // If there are no scores yet, any score qualifies
-      if (highScores.length === 0) {
-        return true;
-      }
       
       // If there are fewer than 10 scores, any score qualifies
       if (highScores.length < 10) {
@@ -250,11 +195,31 @@ class HighScoreService {
     }
   }
 
+  // Helper function to delete the lowest score if there are already 10 scores
+  private async deleteLowestScoreIfNeeded(gameType: GameType, options?: HighScoreOptions): Promise<void> {
+    try {
+      const highScores = await this.getHighScores(gameType, options);
+      
+      // If we already have 10 scores, delete the lowest one
+      if (highScores.length >= 10) {
+        // The lowest score is the last one in the array after sorting
+        const lowestScore = highScores[highScores.length - 1];
+        
+        if (lowestScore.id) {
+          // Delete the document from Firestore
+          const docRef = doc(this.getHighScoresCollection(), lowestScore.id);
+          await deleteDoc(docRef);
+          console.log(`Deleted lowest score ID: ${lowestScore.id} with score: ${lowestScore.score}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting lowest score:", error);
+    }
+  }
+
   // Add a new high score
   async addHighScore(gameType: GameType, highScore: HighScoreData): Promise<string | null> {
     try {
-      const weekNumber = await this.getCurrentWeekNumber();
-      
       // Get the collection reference
       const highScoresCollection = this.getHighScoresCollection();
       
@@ -300,9 +265,13 @@ class HighScoreService {
           isNewAllTimeHigh = true;
         }
         
+        // Before adding the new score, delete the lowest score if needed
+        if (!isNewAllTimeHigh) {
+          await this.deleteLowestScoreIfNeeded(gameType, { scoreOrder: 'asc' });
+        }
+        
         // Set the appropriate properties for this high score
         highScore.isAllTimeHigh = isNewAllTimeHigh;
-        highScore.weekNumber = isNewAllTimeHigh ? 0 : weekNumber;
         
         // Add the new high score
         const docRef = await addDoc(highScoresCollection, {
@@ -315,10 +284,7 @@ class HighScoreService {
         if (isNewAllTimeHigh && oldAllTimeHighId) {
           try {
             const oldDocRef = doc(highScoresCollection, oldAllTimeHighId);
-            await updateDoc(oldDocRef, { 
-              isAllTimeHigh: false,
-              weekNumber: weekNumber // Move to current week
-            });
+            await updateDoc(oldDocRef, { isAllTimeHigh: false });
           } catch (error) {
             console.error("Error updating old all-time high:", error);
           }
@@ -326,7 +292,7 @@ class HighScoreService {
         
         return docRef.id;
       } 
-      // For other game types, use the original logic
+      // For other game types, use similar logic
       else {
         // Check for all-time high scores of this game type
         const allTimeHighQuery = query(
@@ -366,12 +332,16 @@ class HighScoreService {
           isNewAllTimeHigh = true;
         }
         
+        // Before adding the new score, delete the lowest score if needed
+        if (!isNewAllTimeHigh) {
+          await this.deleteLowestScoreIfNeeded(gameType, { scoreOrder: highScore.scoreOrder });
+        }
+        
         // Clean up the highScore object to remove any undefined values
         const cleanHighScore: Record<string, unknown> = {
           ...highScore,
           gameType, // Always include the game type
           timestamp: Date.now(),
-          weekNumber: isNewAllTimeHigh ? 0 : weekNumber, // 0 means all-time high
           isAllTimeHigh: isNewAllTimeHigh
         };
         
@@ -392,10 +362,7 @@ class HighScoreService {
         if (isNewAllTimeHigh && oldAllTimeHighId) {
           try {
             const oldDocRef = doc(highScoresCollection, oldAllTimeHighId);
-            await updateDoc(oldDocRef, { 
-              isAllTimeHigh: false,
-              weekNumber: weekNumber // Move to current week
-            });
+            await updateDoc(oldDocRef, { isAllTimeHigh: false });
           } catch (error) {
             console.error("Error updating old all-time high:", error);
           }
@@ -441,7 +408,6 @@ class HighScoreService {
         score: timeTaken, // Raw score is the time in milliseconds
         formattedScore: formatTime(timeTaken),
         timestamp: Date.now(),
-        weekNumber: 0, // Will be set in addHighScore
         isAllTimeHigh: false, // Will be set in addHighScore
         moves,
         timeTaken,

@@ -1,4 +1,4 @@
-// src/apps/survivorpuzzle/components/EndGameModal/index.tsx (Fixed Effect Dependencies)
+// src/apps/survivorpuzzle/components/EndGameModal/index.tsx (Updated for top 10 only)
 import React, { useState, useEffect } from 'react';
 import styles from './styles.module.css';
 import HighScoreEntry from '../../../../utils/components/HighScoreEntry';
