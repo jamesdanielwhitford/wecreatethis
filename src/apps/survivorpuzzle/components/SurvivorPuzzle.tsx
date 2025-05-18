@@ -4,7 +4,7 @@ import { useTimer } from '../hooks/useTimer';
 import Navbar from './Navbar';
 import Board from './Board';
 import EndGameModal from './EndGameModal';
-import LeaderboardModal from '../../../utils/components/LeaderboardModal'; // Import the new component
+import LeaderboardModal from "@/utils/components/LeaderBoardModal"; 
 import styles from './SurvivorPuzzle.module.css';
 
 const SurvivorPuzzle: React.FC = () => {
