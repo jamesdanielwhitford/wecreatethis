@@ -5,7 +5,7 @@ import Board from './Board';
 import Navbar from './Navbar';
 import Rules from './Rules';
 import EndGameModal from './EndGameModal';
-import LeaderboardModal from '../../../utils/components/LeaderboardModal'; // Import the new component
+import LeaderboardModal from "@/utils/components/LeaderBoardModal"; 
 import { GameMode } from '../types/game.types';
 import { formatTime } from '../utils/generatePuzzle';
 import styles from './FifteenPuzzle.module.css';
