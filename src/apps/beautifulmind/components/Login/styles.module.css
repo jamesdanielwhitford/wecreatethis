@@ -1,0 +1,133 @@
+/**
+ * File: src/apps/beautifulmind/components/Login/styles.module.css
+ * Styles for the Login component
+ */
+
+.loginContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 400px;
+  padding: 32px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  margin: 0 0 24px;
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
+}
+
+.input {
+  padding: 10px 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.error {
+  padding: 10px;
+  background-color: #ffebee;
+  color: #c62828;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.submitButton {
+  margin-top: 8px;
+  padding: 12px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #1565c0;
+}
+
+.submitButton:disabled {
+  background-color: #90caf9;
+  cursor: not-allowed;
+}
+
+.toggleMode {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+}
+
+.toggleButton {
+  background: none;
+  border: none;
+  color: #1976d2;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.toggleButton:hover {
+  color: #1565c0;
+}
+
+@media (max-width: 480px) {
+  .loginCard {
+    padding: 24px;
+  }
+  
+  .title {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .input {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+  
+  .submitButton {
+    padding: 10px;
+    font-size: 14px;
+  }
+}

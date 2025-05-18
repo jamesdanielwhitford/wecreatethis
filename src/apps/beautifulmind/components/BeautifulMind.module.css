@@ -1,0 +1,517 @@
+/**
+ * File: src/apps/beautifulmind/components/BeautifulMind.module.css
+ * Styles for the main Beautiful Mind component
+ */
+
+.beautifulMind {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background-color: #f5f5f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  height: 64px;
+  background-color: #1976d2;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.appTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-right: 32px;
+}
+
+.searchBar {
+  position: relative;
+  flex-grow: 1;
+  max-width: 600px;
+  margin: 0 24px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  font-size: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.searchInput:focus {
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.searchingIndicator {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #666;
+}
+
+.suggestButton {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.suggestButton:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.mainContainer {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.sidebarLeft {
+  width: 250px;
+  border-right: 1px solid #e0e0e0;
+  overflow-y: auto;
+  background-color: #f7f7f7;
+  flex-shrink: 0;
+}
+
+.contentWrapper {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.contentSplit {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.sidebarRight {
+  width: 300px;
+  border-right: 1px solid #e0e0e0;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.contentArea {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background-color: #ffffff;
+}
+
+/* Note Viewer Styles */
+.noteViewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.viewerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.noteTitle {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+}
+
+.editButton {
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.editButton:hover {
+  background-color: #1565c0;
+}
+
+.noteContent {
+  flex-grow: 1;
+  line-height: 1.6;
+}
+
+.noteText {
+  font-size: 16px;
+  color: #333;
+  white-space: pre-wrap;
+}
+
+.emptyNote {
+  font-style: italic;
+  color: #999;
+}
+
+.viewerFooter {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid #eaeaea;
+  text-align: right;
+}
+
+.timestamp {
+  font-size: 13px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Welcome State Styles */
+.welcomeState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  padding: 0 32px;
+}
+
+.welcomeTitle {
+  margin: 0 0 16px;
+  font-size: 28px;
+  font-weight: 600;
+  color: #333;
+}
+
+.welcomeText {
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 32px;
+  max-width: 500px;
+}
+
+.createWelcomeButton {
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 12px 24px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.createWelcomeButton:hover {
+  background-color: #1565c0;
+  transform: translateY(-2px);
+}
+
+.createWelcomeButton:active {
+  transform: translateY(0);
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.modalContent {
+  padding: 24px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.noSuggestions {
+  text-align: center;
+  color: #666;
+  padding: 24px 0;
+}
+
+.suggestionsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.suggestionItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #eaeaea;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  transition: box-shadow 0.2s;
+}
+
+.suggestionItem:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.suggestionInfo {
+  flex-grow: 1;
+}
+
+.suggestionName {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+}
+
+.suggestionNotes {
+  font-size: 14px;
+  color: #666;
+}
+
+.acceptButton {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+  margin-left: 16px;
+}
+
+.acceptButton:hover {
+  background-color: #388e3c;
+}
+
+.modalFooter {
+  padding: 16px 24px;
+  border-top: 1px solid #eaeaea;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.closeModalButton {
+  background-color: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.closeModalButton:hover {
+  background-color: #e5e5e5;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.signOutButton {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.signOutButton:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+}
+
+.userName {
+  font-size: 14px;
+  color: white;
+  font-weight: 500;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100%;
+  background-color: #f5f5f5;
+}
+
+.loadingText {
+  font-size: 18px;
+  color: #666;
+}
+
+/* Responsive Layout */
+@media (max-width: 1200px) {
+  .sidebarLeft {
+    width: 220px;
+  }
+
+  .sidebarRight {
+    width: 280px;
+  }
+}
+
+@media (max-width: 900px) {
+  .mainContainer {
+    flex-direction: column;
+  }
+
+  .sidebarLeft {
+    width: 100%;
+    height: 250px;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .contentWrapper {
+    flex-grow: 1;
+    overflow: auto;
+  }
+
+  .contentSplit {
+    flex-direction: column;
+  }
+
+  .sidebarRight {
+    width: 100%;
+    height: 300px;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .contentArea {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .header {
+    flex-direction: column;
+    height: auto;
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .appTitle {
+    margin-right: 0;
+  }
+
+  .searchBar {
+    width: 100%;
+    margin: 0;
+  }
+
+  .suggestButton {
+    width: 100%;
+  }
+
+  .sidebarLeft, .sidebarRight {
+    height: 200px;
+  }
+
+  .viewerHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .suggestionItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .acceptButton {
+    margin-left: 0;
+    width: 100%;
+  }
+}

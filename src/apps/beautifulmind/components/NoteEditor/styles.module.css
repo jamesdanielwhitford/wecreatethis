@@ -1,0 +1,153 @@
+/**
+ * File: src/apps/beautifulmind/components/NoteEditor/styles.module.css
+ * Styles for the Note Editor component
+ */
+
+.noteEditor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.editorHeader {
+  padding: 16px;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.titleInput {
+  width: 100%;
+  font-size: 20px;
+  font-weight: 500;
+  border: none;
+  outline: none;
+  padding: 8px 0;
+  background: transparent;
+}
+
+.titleInput::placeholder {
+  color: #999;
+  opacity: 0.7;
+}
+
+.contentTextarea {
+  flex-grow: 1;
+  padding: 16px;
+  font-size: 16px;
+  line-height: 1.6;
+  border: none;
+  resize: none;
+  outline: none;
+  background: transparent;
+  min-height: 300px;
+  font-family: inherit;
+}
+
+.contentTextarea::placeholder {
+  color: #999;
+  opacity: 0.7;
+}
+
+.editorFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid #eaeaea;
+  background-color: #fafafa;
+  border-radius: 0 0 8px 8px;
+}
+
+.footerLeft {
+  display: flex;
+  align-items: center;
+}
+
+.unsavedIndicator {
+  font-size: 13px;
+  color: #f57c00;
+  font-style: italic;
+}
+
+.footerRight {
+  display: flex;
+  gap: 12px;
+}
+
+.saveButton, .cancelButton {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.saveButton {
+  background-color: #1976d2;
+  color: white;
+}
+
+.saveButton:hover:not(:disabled) {
+  background-color: #1565c0;
+  transform: translateY(-1px);
+}
+
+.saveButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.saveButton:disabled {
+  background-color: #90caf9;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  background-color: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background-color: #e5e5e5;
+}
+
+.cancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  margin: 0 16px 16px;
+  padding: 10px;
+  background-color: #ffebee;
+  color: #c62828;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  .titleInput {
+    font-size: 18px;
+  }
+  
+  .contentTextarea {
+    font-size: 15px;
+  }
+  
+  .editorFooter {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .footerRight {
+    justify-content: space-between;
+  }
+  
+  .saveButton, .cancelButton {
+    flex: 1;
+  }
+}

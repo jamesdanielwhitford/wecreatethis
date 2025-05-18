@@ -1,0 +1,76 @@
+/**
+ * File: src/apps/beautifulmind/components/BreadcrumbNav/styles.module.css
+ * Styles for the Breadcrumb Navigation component
+ */
+
+.breadcrumbNav {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #eaeaea;
+  overflow-x: auto;
+  white-space: nowrap;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.breadcrumbNav::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}
+
+.rootBreadcrumb {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.breadcrumbItem {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  color: #1976d2;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.breadcrumbItem:hover {
+  text-decoration: underline;
+}
+
+.currentBreadcrumb {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.separator {
+  margin: 0 8px;
+  color: #999;
+  font-size: 14px;
+}
+
+.loading {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #999;
+  font-style: italic;
+}
+
+@media (max-width: 600px) {
+  .breadcrumbNav {
+    padding: 6px 12px;
+  }
+  
+  .rootBreadcrumb,
+  .breadcrumbItem,
+  .currentBreadcrumb,
+  .separator {
+    font-size: 12px;
+  }
+  
+  .separator {
+    margin: 0 4px;
+  }
+}
