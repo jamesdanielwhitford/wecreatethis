@@ -1,14 +1,20 @@
-// src/apps/fifteenpuzzle/components/Navbar/index.tsx
-
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { NavbarProps } from '../../types/game.types';
+import { GameMode } from '../../types/game.types';
 import styles from './styles.module.css';
+
+interface NavbarProps {
+  gameMode: GameMode;
+  onModeChange: (mode: GameMode) => void;
+  onRulesClick: () => void;
+  onLeaderboardClick: () => void; // Add this prop
+}
 
 const Navbar: React.FC<NavbarProps> = ({
   gameMode,
   onModeChange,
-  onRulesClick
+  onRulesClick,
+  onLeaderboardClick // Add this prop
 }) => {
   const router = useRouter();
 
@@ -26,7 +32,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
   // Handle home click
   const handleHomeClick = () => {
-    window.location.href = 'https://www.wecreatethis.com';
+    router.push('/');
   };
 
   return (
@@ -62,6 +68,14 @@ const Navbar: React.FC<NavbarProps> = ({
             <span className={styles.iconInfinity}>∞</span>
           </button>
         </div>
+        {/* Add Leaderboard button */}
+        <button 
+          className={styles.iconButton} 
+          onClick={onLeaderboardClick}
+          title="Leaderboard"
+        >
+          <span className={styles.iconTrophy}>🏆</span>
+        </button>
         <button 
           className={styles.iconButton} 
           onClick={onRulesClick}

@@ -1,5 +1,3 @@
-// src/apps/fifteenpuzzle/components/FifteenPuzzle.tsx
-
 import React, { useState, useEffect } from 'react';
 import { useGameState } from '../hooks/useGameState';
 import { useTimer } from '../hooks/useTimer';
@@ -7,6 +5,7 @@ import Board from './Board';
 import Navbar from './Navbar';
 import Rules from './Rules';
 import EndGameModal from './EndGameModal';
+import LeaderboardModal from '../../../utils/components/LeaderboardModal'; // Import the new component
 import { GameMode } from '../types/game.types';
 import { formatTime } from '../utils/generatePuzzle';
 import styles from './FifteenPuzzle.module.css';
@@ -19,6 +18,7 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
   // Use refs or state for modals instead of setting in render cycle
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   const [isWinModalOpen, setIsWinModalOpen] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false); // Add this state
   
   const {
     gameState,
@@ -76,6 +76,11 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
   const handleCloseWinModal = () => {
     setIsWinModalOpen(false);
   };
+  
+  // Handle leaderboard toggle
+  const handleLeaderboardToggle = () => {
+    setIsLeaderboardOpen(prev => !prev);
+  };
 
   return (
     <div className={styles.container}>
@@ -83,6 +88,7 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
         gameMode={gameState.gameMode}
         onModeChange={handleModeChange}
         onRulesClick={() => setIsRulesOpen(true)}
+        onLeaderboardClick={handleLeaderboardToggle} // Add this prop
       />
       
       <main className={styles.main}>
@@ -135,6 +141,18 @@ const FifteenPuzzle: React.FC<FifteenPuzzleProps> = ({ initialMode = 'daily' }) 
         onShare={() => {}} // Placeholder function since handleShare is delegated to EndGameModal
         onNewGame={handleNewGame}
         gameMode={gameState.gameMode}
+      />
+      
+      {/* Add the Leaderboard Modal with the correct game type and category */}
+      <LeaderboardModal
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
+        gameType="fifteenPuzzle"
+        title={`15 Puzzle ${gameState.gameMode.charAt(0).toUpperCase() + gameState.gameMode.slice(1)} Leaderboard`}
+        options={{ 
+          scoreOrder: 'asc', // Lower time is better
+          category: gameState.gameMode // Pass the current game mode as category
+        }}
       />
     </div>
   );

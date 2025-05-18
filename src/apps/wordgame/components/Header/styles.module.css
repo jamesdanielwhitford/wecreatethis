@@ -20,6 +20,24 @@
   border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
+.leftSection {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Small gap to keep title reasonably close to home button */
+}
+
+.leftSection .iconButton {
+  margin-right: -4px; /* Move title even closer to home button */
+}
+
+.leftSection h1 {
+  margin: 0;
+  font-size: 24px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .headerButtons {
   display: flex;
   gap: 6px;
@@ -104,5 +122,13 @@
   
   .headerButtons {
     gap: 16px;
+  }
+  
+  .leftSection {
+    gap: 12px;
+  }
+  
+  .leftSection h1 {
+    font-size: 32px;
   }
 }

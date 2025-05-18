@@ -26,7 +26,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
   // Handle home click
   const handleHomeClick = () => {
-    window.location.href = 'https://www.wecreatethis.com';
+    router.push('/');
   };
 
   return (

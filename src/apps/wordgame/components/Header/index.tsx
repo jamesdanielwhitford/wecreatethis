@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Coffee, Sun, Infinity, Brain, Sparkles } from 'lucide-react';
+import { Coffee, Sun, Infinity, Brain, Sparkles, Home } from 'lucide-react';
 import { SettingsButton } from '../Settings';
 import { RulesButton } from '../Rules';
 import styles from './styles.module.css';
@@ -32,7 +32,17 @@ export function Header({
 
   return (
     <header className={styles.headerContainer}>
-      <h1>{gameTitle}</h1>
+      <div className={styles.leftSection}>
+        <Link
+          href="/"
+          className={styles.iconButton}
+          aria-label="Go to Home"
+          role="button"
+        >
+          <Home size={24} />
+        </Link>
+        <h1>{gameTitle}</h1>
+      </div>
       <div className={styles.headerButtons}>
         <RulesButton isDaily={isDaily} />
         <button

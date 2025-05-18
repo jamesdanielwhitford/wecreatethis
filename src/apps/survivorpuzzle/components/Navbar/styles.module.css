@@ -25,7 +25,7 @@
   gap: 12px;
 }
 
-.difficultyButton, .resetButton, .homeButton {
+.difficultyButton, .resetButton, .homeButton, .leaderboardButton {
   width: 40px;
   height: 40px;
   border: none;
@@ -66,6 +66,15 @@
   background-color: #27ae60;
 }
 
+.leaderboardButton {
+  background-color: #f1c40f;
+  color: white;
+}
+
+.leaderboardButton:hover {
+  background-color: #f39c12;
+}
+
 @media (max-width: 500px) {
   .navbar {
     padding: 12px 16px;
@@ -75,7 +84,7 @@
     font-size: 20px;
   }
   
-  .difficultyButton, .resetButton, .homeButton {
+  .difficultyButton, .resetButton, .homeButton, .leaderboardButton {
     width: 36px;
     height: 36px;
     font-size: 18px;
