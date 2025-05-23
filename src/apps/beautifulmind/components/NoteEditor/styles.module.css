@@ -1,0 +1,106 @@
+/* src/apps/beautifulmind/components/NoteEditor/styles.module.css */
+
+.editor {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 200px);
+}
+
+.titleInput {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-color, #333);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  padding: 1rem 0;
+  margin-bottom: 1.5rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.titleInput:focus {
+  border-bottom-color: var(--primary-color, #3b82f6);
+}
+
+.titleInput::placeholder {
+  color: var(--text-muted, #71717a);
+}
+
+.contentTextarea {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--border-color, #333);
+  border-radius: 0.5rem;
+  color: var(--text-primary, #fff);
+  font-size: 1rem;
+  line-height: 1.6;
+  padding: 1rem;
+  resize: none;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.contentTextarea:focus {
+  border-color: var(--primary-color, #3b82f6);
+}
+
+.contentTextarea::placeholder {
+  color: var(--text-muted, #71717a);
+}
+
+.error {
+  background-color: var(--danger-bg, rgba(239, 68, 68, 0.1));
+  color: var(--danger-color, #ef4444);
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.cancelButton,
+.saveButton {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton {
+  background-color: transparent;
+  color: var(--text-secondary, #a1a1aa);
+  border: 1px solid var(--border-color, #333);
+}
+
+.cancelButton:hover:not(:disabled) {
+  background-color: var(--hover-bg, #262626);
+  color: var(--text-primary, #fff);
+}
+
+.saveButton {
+  background-color: var(--primary-color, #3b82f6);
+  color: white;
+}
+
+.saveButton:hover:not(:disabled) {
+  background-color: var(--primary-hover, #2563eb);
+}
+
+.cancelButton:disabled,
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

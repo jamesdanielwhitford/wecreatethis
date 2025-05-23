@@ -1,0 +1,80 @@
+/* src/apps/beautifulmind/components/NoteView/styles.module.css */
+
+.noteView {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color, #333);
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  margin: 0 0 0.5rem 0;
+}
+
+.metadata {
+  color: var(--text-muted, #71717a);
+  font-size: 0.875rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.editButton,
+.deleteButton {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.editButton {
+  background-color: transparent;
+  color: var(--text-secondary, #a1a1aa);
+  border: 1px solid var(--border-color, #333);
+}
+
+.editButton:hover {
+  background-color: var(--hover-bg, #262626);
+  color: var(--text-primary, #fff);
+}
+
+.deleteButton {
+  background-color: transparent;
+  color: var(--danger-color, #ef4444);
+  border: 1px solid var(--danger-color, #ef4444);
+}
+
+.deleteButton:hover {
+  background-color: var(--danger-color, #ef4444);
+  color: white;
+}
+
+.content {
+  color: var(--text-primary, #fff);
+  line-height: 1.8;
+}
+
+.paragraph {
+  margin: 0 0 1rem 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.paragraph:last-child {
+  margin-bottom: 0;
+}
