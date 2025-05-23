@@ -1,12 +1,14 @@
 // src/apps/beautifulmind/components/NoteEditor/index.tsx
 
 import React, { useState, useEffect } from 'react';
-import { Note, NoteFormData } from '../../types/notes.types';
+import { Note, NoteFormData, MediaAttachment, UploadProgress } from '../../types/notes.types';
+import { mediaService } from '../../utils/supabase';
+import MediaUpload from '../MediaUpload';
 import styles from './styles.module.css';
 
 interface NoteEditorProps {
   note?: Note | null;
-  onSave: (data: NoteFormData) => Promise<void>;
+  onSave: (data: NoteFormData, keepMedia?: boolean) => Promise<Note>;
   onCancel: () => void;
   isCreating?: boolean;
 }
@@ -18,6 +20,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploads, setUploads] = useState<UploadProgress[]>([]);
+  const [attachedMedia, setAttachedMedia] = useState<MediaAttachment[]>([]);
+  const [deletedMediaIds, setDeletedMediaIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (note) {
@@ -25,8 +30,90 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
         title: note.title,
         content: note.content
       });
+      setAttachedMedia(note.media_attachments || []);
     }
   }, [note]);
+
+  const handleMediaUpload = async (files: File[]) => {
+    if (!note && !isCreating) return;
+    
+    // If creating, we'll save the note first
+    let noteId = note?.id;
+    if (!noteId && isCreating) {
+      try {
+        const newNote = await onSave(formData, true);
+        noteId = newNote.id;
+      } catch (err) {
+        setError('Please save the note before adding media');
+        return;
+      }
+    }
+    
+    if (!noteId) return;
+    
+    const newUploads: UploadProgress[] = files.map(file => ({
+      fileName: file.name,
+      progress: 0
+    }));
+    
+    setUploads(prev => [...prev, ...newUploads]);
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const uploadIndex = uploads.length + i;
+      
+      try {
+        // Update progress
+        setUploads(prev => prev.map((u, idx) => 
+          idx === uploadIndex ? { ...u, progress: 50 } : u
+        ));
+        
+        // Upload file
+        const attachment = await mediaService.uploadFile(noteId, file);
+        
+        // Update progress
+        setUploads(prev => prev.map((u, idx) => 
+          idx === uploadIndex ? { ...u, progress: 100 } : u
+        ));
+        
+        // Add to attached media
+        setAttachedMedia(prev => [...prev, attachment]);
+        
+        // Remove from uploads after a delay
+        setTimeout(() => {
+          setUploads(prev => prev.filter((_, idx) => idx !== uploadIndex));
+        }, 1000);
+        
+      } catch (err) {
+        setUploads(prev => prev.map((u, idx) => 
+          idx === uploadIndex 
+            ? { ...u, error: err instanceof Error ? err.message : 'Upload failed' } 
+            : u
+        ));
+      }
+    }
+  };
+
+  const handleDeleteMedia = async (attachment: MediaAttachment) => {
+    if (!window.confirm('Delete this media?')) return;
+    
+    try {
+      // If it's an existing attachment, mark for deletion
+      if (note?.media_attachments?.some(a => a.id === attachment.id)) {
+        setDeletedMediaIds(prev => [...prev, attachment.id]);
+      }
+      
+      // Remove from UI
+      setAttachedMedia(prev => prev.filter(a => a.id !== attachment.id));
+      
+      // Delete immediately if not part of original note
+      if (!note?.media_attachments?.some(a => a.id === attachment.id)) {
+        await mediaService.deleteAttachment(attachment.id, attachment.storage_path);
+      }
+    } catch (err) {
+      setError('Failed to delete media');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +126,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
     try {
       setSaving(true);
       setError(null);
+      
+      // Delete marked media
+      for (const id of deletedMediaIds) {
+        const attachment = note?.media_attachments?.find(a => a.id === id);
+        if (attachment) {
+          await mediaService.deleteAttachment(attachment.id, attachment.storage_path);
+        }
+      }
+      
       await onSave(formData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save note');
@@ -63,6 +159,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
         placeholder="Start writing..."
         value={formData.content}
         onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+      />
+      
+      <MediaUpload
+        onUpload={handleMediaUpload}
+        uploads={uploads}
+        existingMedia={attachedMedia}
+        onDeleteMedia={handleDeleteMedia}
+        disabled={saving || (!note && isCreating)}
       />
 
       {error && (

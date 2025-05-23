@@ -1,0 +1,244 @@
+/* src/apps/beautifulmind/components/MediaUpload/styles.module.css */
+
+.container {
+  margin: 1rem 0;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.uploadArea {
+  border: 2px dashed var(--border-color, #333);
+  border-radius: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.2s;
+  background-color: var(--upload-bg, rgba(255, 255, 255, 0.02));
+}
+
+.uploadArea.dragging {
+  border-color: var(--primary-color, #3b82f6);
+  background-color: var(--primary-bg, rgba(59, 130, 246, 0.1));
+}
+
+.uploadButtons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.uploadButton {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--border-color, #333);
+  border-radius: 0.375rem;
+  background-color: var(--button-bg, #1a1a1a);
+  color: var(--text-primary, #fff);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.uploadButton:hover:not(:disabled) {
+  background-color: var(--hover-bg, #262626);
+  border-color: var(--primary-color, #3b82f6);
+}
+
+.uploadButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dragText {
+  color: var(--text-muted, #71717a);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.uploadProgress {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.progressItem {
+  background-color: var(--progress-bg, #1a1a1a);
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+}
+
+.fileName {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #a1a1aa);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progressBar {
+  height: 4px;
+  background-color: var(--progress-track, #333);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: var(--primary-color, #3b82f6);
+  transition: width 0.3s ease;
+}
+
+.error {
+  display: block;
+  color: var(--danger-color, #ef4444);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.mediaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.mediaItem {
+  position: relative;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background-color: var(--media-bg, #1a1a1a);
+  border: 1px solid var(--border-color, #333);
+  aspect-ratio: 1;
+}
+
+.mediaThumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.mediaThumbnail:hover {
+  transform: scale(1.05);
+}
+
+.videoThumbnail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  cursor: pointer;
+  padding: 1rem;
+  text-align: center;
+  transition: background-color 0.2s;
+}
+
+.videoThumbnail:hover {
+  background-color: var(--hover-bg, #262626);
+}
+
+.videoIcon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.deleteButton {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  opacity: 0;
+}
+
+.mediaItem:hover .deleteButton {
+  opacity: 1;
+}
+
+.deleteButton:hover {
+  background-color: var(--danger-color, #ef4444);
+}
+
+.previewModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+}
+
+.previewContent {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.previewImage,
+.previewVideo {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+}
+
+.closeButton {
+  position: absolute;
+  top: -2rem;
+  right: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+  .uploadButtons {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .uploadButton {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .mediaGrid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+}

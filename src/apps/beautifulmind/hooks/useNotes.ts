@@ -27,7 +27,8 @@ export const useNotes = () => {
   const createNote = async (noteData: NoteFormData) => {
     try {
       const newNote = await notesService.createNote(noteData);
-      setNotes(prev => [newNote, ...prev]);
+      // Fetch all notes to get updated media attachments
+      await fetchNotes();
       return newNote;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create note');
@@ -60,7 +61,7 @@ export const useNotes = () => {
     }
   };
 
-  // Get a single note by ID
+  // Get a single note by ID with fresh data
   const getNoteById = (id: string) => {
     return notes.find(note => note.id === id);
   };

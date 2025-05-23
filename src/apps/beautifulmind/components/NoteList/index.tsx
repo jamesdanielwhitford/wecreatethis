@@ -28,6 +28,15 @@ const NoteList: React.FC<NoteListProps> = ({ notes, onNoteClick, onNoteDelete })
     return content.substring(0, maxLength) + '...';
   };
 
+  const getMediaCount = (note: Note) => {
+    if (!note.media_attachments || note.media_attachments.length === 0) return null;
+    
+    const imageCount = note.media_attachments.filter(m => m.media_type === 'image').length;
+    const videoCount = note.media_attachments.filter(m => m.media_type === 'video').length;
+    
+    return { total: note.media_attachments.length, images: imageCount, videos: videoCount };
+  };
+
   if (notes.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -39,31 +48,51 @@ const NoteList: React.FC<NoteListProps> = ({ notes, onNoteClick, onNoteDelete })
 
   return (
     <div className={styles.noteList}>
-      {notes.map((note) => (
-        <div
-          key={note.id}
-          className={styles.noteCard}
-          onClick={() => onNoteClick(note)}
-        >
-          <div className={styles.noteContent}>
-            <h3 className={styles.noteTitle}>{note.title || 'Untitled'}</h3>
-            <p className={styles.notePreview}>{getPreview(note.content)}</p>
-            <span className={styles.noteDate}>{formatDate(note.created_at)}</span>
+      {notes.map((note) => {
+        const mediaCount = getMediaCount(note);
+        
+        return (
+          <div
+            key={note.id}
+            className={styles.noteCard}
+            onClick={() => onNoteClick(note)}
+          >
+            <div className={styles.noteContent}>
+              <h3 className={styles.noteTitle}>{note.title || 'Untitled'}</h3>
+              <p className={styles.notePreview}>{getPreview(note.content)}</p>
+              <div className={styles.noteMeta}>
+                <span className={styles.noteDate}>{formatDate(note.created_at)}</span>
+                {mediaCount && (
+                  <div className={styles.mediaIndicators}>
+                    {mediaCount.images > 0 && (
+                      <span className={styles.mediaIndicator}>
+                        🖼️ {mediaCount.images}
+                      </span>
+                    )}
+                    {mediaCount.videos > 0 && (
+                      <span className={styles.mediaIndicator}>
+                        🎥 {mediaCount.videos}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            {onNoteDelete && (
+              <button
+                className={styles.deleteButton}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNoteDelete(note.id);
+                }}
+                aria-label="Delete note"
+              >
+                ×
+              </button>
+            )}
           </div>
-          {onNoteDelete && (
-            <button
-              className={styles.deleteButton}
-              onClick={(e) => {
-                e.stopPropagation();
-                onNoteDelete(note.id);
-              }}
-              aria-label="Delete note"
-            >
-              ×
-            </button>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

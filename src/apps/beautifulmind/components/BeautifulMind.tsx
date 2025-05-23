@@ -12,7 +12,7 @@ import styles from './BeautifulMind.module.css';
 const BeautifulMind: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const { notes, loading, error, createNote, updateNote, deleteNote } = useNotes();
+  const { notes, loading, error, createNote, updateNote, deleteNote, getNoteById } = useNotes();
 
   const handleNewNote = () => {
     setSelectedNote(null);
@@ -42,16 +42,23 @@ const BeautifulMind: React.FC = () => {
     }
   };
 
-  const handleSave = async (data: { title: string; content: string }) => {
+  const handleSave = async (data: { title: string; content: string }, keepMedia?: boolean): Promise<Note> => {
     if (viewMode === 'create') {
       const newNote = await createNote(data);
-      setSelectedNote(newNote);
-      setViewMode('view');
+      if (!keepMedia) {
+        setSelectedNote(newNote);
+        setViewMode('view');
+      }
+      return newNote;
     } else if (viewMode === 'edit' && selectedNote) {
       const updatedNote = await updateNote(selectedNote.id, data);
       setSelectedNote(updatedNote);
-      setViewMode('view');
+      if (!keepMedia) {
+        setViewMode('view');
+      }
+      return updatedNote;
     }
+    throw new Error('Invalid state');
   };
 
   const handleCancel = () => {
@@ -112,7 +119,7 @@ const BeautifulMind: React.FC = () => {
         
         {viewMode === 'view' && selectedNote && (
           <NoteView
-            note={selectedNote}
+            note={getNoteById(selectedNote.id) || selectedNote}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
