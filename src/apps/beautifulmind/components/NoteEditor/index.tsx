@@ -166,7 +166,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
         uploads={uploads}
         existingMedia={attachedMedia}
         onDeleteMedia={handleDeleteMedia}
-        disabled={saving || (!note && isCreating)}
+        disabled={saving}
       />
 
       {error && (
