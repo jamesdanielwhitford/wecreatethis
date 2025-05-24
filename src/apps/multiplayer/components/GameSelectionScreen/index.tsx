@@ -181,7 +181,7 @@ export const GameSelectionScreen = ({
 
       {isHost && !room.selectedGame && (
         <div className={styles.hostInstructions}>
-          <p>👑 <strong>You're the host!</strong> Choose a game above to get started.</p>
+          <p>👑 <strong>You&apos;re the host!</strong> Choose a game above to get started.</p>
           <p className={styles.note}>
             Note: These games are placeholders for now. The lobby system is ready for when the games are implemented!
           </p>
