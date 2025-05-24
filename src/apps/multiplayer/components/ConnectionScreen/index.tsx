@@ -7,8 +7,11 @@ import styles from './styles.module.css';
 interface ConnectionScreenProps {
   playerName: string;
   onPlayerNameChange: (name: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onQuickMatch: (playerName: string) => Promise<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onCreateRoom: (playerName: string) => Promise<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onJoinRoom: (roomId: string, playerName: string) => Promise<any>;
   isLoading: boolean;
   error: string | null;
@@ -51,7 +54,7 @@ export const ConnectionScreen = ({
           break;
       }
     } catch (err) {
-      // Error is handled by the hook
+      console.log(err);
     }
   };
 

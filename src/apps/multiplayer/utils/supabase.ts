@@ -1,6 +1,8 @@
 // src/apps/multiplayer/utils/supabase.ts
 import { createClient } from '@supabase/supabase-js';
-import { Room, Player } from '../types/lobby.types';
+// import { Room, Player, Connect4GameState, PostGameDecision } from '../types/lobby.types';
+import { Room, Player, PostGameDecision } from '../types/lobby.types';
+
 
 // Note: You'll need to set up these environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -49,6 +51,7 @@ export class MultiplayerService {
       max_players: 2,
       status: 'waiting',
       type: roomType,
+      game_state: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -91,6 +94,7 @@ export class MultiplayerService {
       status: roomData.status,
       type: roomData.type,
       selectedGame: roomData.selected_game,
+      gameState: roomData.game_state,
       createdAt: roomData.created_at,
       updatedAt: roomData.updated_at,
     };
@@ -151,6 +155,7 @@ export class MultiplayerService {
       status: roomData.status,
       type: roomData.type,
       selectedGame: roomData.selected_game,
+      gameState: roomData.game_state,
       createdAt: roomData.created_at,
       updatedAt: roomData.updated_at,
     };
@@ -179,17 +184,75 @@ export class MultiplayerService {
 
   // Select a game for the room
   async selectGame(roomId: string, gameId: string): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (gameId) {
+      updateData.selected_game = gameId;
+      updateData.status = 'in-game';
+    } else {
+      // Clearing the game selection, go back to game selection
+      updateData.selected_game = null;
+      updateData.status = 'game-selection';
+      updateData.game_state = null;
+    }
+
+    const { error } = await supabase
+      .from('multiplayer_rooms')
+      .update(updateData)
+      .eq('id', roomId);
+
+    if (error) {
+      throw new Error('Failed to select game: ' + error.message);
+    }
+  }
+
+  // Update game state (for Connect 4 and other games)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async updateGameState(roomId: string, gameState: any): Promise<void> {
     const { error } = await supabase
       .from('multiplayer_rooms')
       .update({
-        selected_game: gameId,
-        status: 'game-selection',
+        game_state: gameState,
         updated_at: new Date().toISOString(),
       })
       .eq('id', roomId);
 
     if (error) {
-      throw new Error('Failed to select game: ' + error.message);
+      throw new Error('Failed to update game state: ' + error.message);
+    }
+  }
+
+  // Update post-game decisions
+  async updatePostGameDecisions(roomId: string, decisions: PostGameDecision[]): Promise<void> {
+    // Get current game state and update it with decisions
+    const { data: roomData, error: fetchError } = await supabase
+      .from('multiplayer_rooms')
+      .select('game_state')
+      .eq('id', roomId)
+      .single();
+
+    if (fetchError || !roomData) {
+      throw new Error('Room not found');
+    }
+
+    const updatedGameState = {
+      ...roomData.game_state,
+      postGameDecisions: decisions
+    };
+
+    const { error } = await supabase
+      .from('multiplayer_rooms')
+      .update({
+        game_state: updatedGameState,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', roomId);
+
+    if (error) {
+      throw new Error('Failed to update post-game decisions: ' + error.message);
     }
   }
 
@@ -214,6 +277,7 @@ export class MultiplayerService {
       status: roomData.status,
       type: roomData.type,
       selectedGame: roomData.selected_game,
+      gameState: roomData.game_state,
       createdAt: roomData.created_at,
       updatedAt: roomData.updated_at,
     };
@@ -264,6 +328,7 @@ export class MultiplayerService {
             callback(null);
           } else {
             // Convert snake_case to camelCase
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const roomData = payload.new as any;
             const room: Room = {
               id: roomData.id,
@@ -273,6 +338,7 @@ export class MultiplayerService {
               status: roomData.status,
               type: roomData.type,
               selectedGame: roomData.selected_game,
+              gameState: roomData.game_state,
               createdAt: roomData.created_at,
               updatedAt: roomData.updated_at,
             };

@@ -12,6 +12,7 @@ export const useMultiplayer = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const multiplayerService = useRef(MultiplayerService.getInstance());
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const subscriptionRef = useRef<any>(null);
 
   // Clean up subscription on unmount
@@ -41,7 +42,7 @@ export const useMultiplayer = () => {
           // Update lobby state based on room status
           if (room.status === 'waiting') {
             setLobbyState('in-room');
-          } else if (room.status === 'ready' || room.status === 'game-selection') {
+          } else if (room.status === 'ready') {
             setLobbyState('game-selection');
           } else if (room.status === 'in-game') {
             setLobbyState('in-game');

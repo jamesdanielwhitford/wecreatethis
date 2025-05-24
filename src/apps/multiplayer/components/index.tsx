@@ -4,3 +4,4 @@ export { Navbar } from './Navbar';
 export { ConnectionScreen } from './ConnectionScreen';
 export { RoomScreen } from './RoomScreen';
 export { GameSelectionScreen } from './GameSelectionScreen';
+export { Connect4Game } from './Connect4Game';

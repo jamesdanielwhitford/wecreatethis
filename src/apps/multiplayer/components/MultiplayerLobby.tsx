@@ -7,6 +7,7 @@ import { Navbar } from './Navbar';
 import { ConnectionScreen } from './ConnectionScreen';
 import { RoomScreen } from './RoomScreen';
 import { GameSelectionScreen } from './GameSelectionScreen';
+import { Connect4Game } from './Connect4Game';
 import styles from './MultiplayerLobby.module.css';
 
 export const MultiplayerLobby = () => {
@@ -31,6 +32,14 @@ export const MultiplayerLobby = () => {
   } = useMultiplayer();
 
   const [playerName, setPlayerName] = useState('');
+
+  const handleSelectNewGame = () => {
+    // Reset game state and go back to game selection
+    if (currentRoom) {
+      // Clear the game state and selected game
+      selectGame(''); // This will clear the selected game
+    }
+  };
 
   const renderCurrentScreen = () => {
     switch (lobbyState) {
@@ -77,6 +86,19 @@ export const MultiplayerLobby = () => {
         );
       
       case 'in-game':
+        // Check which game is selected and render the appropriate component
+        if (currentRoom?.selectedGame === 'connect4' && currentPlayer) {
+          return (
+            <Connect4Game
+              room={currentRoom}
+              currentPlayer={currentPlayer}
+              onLeaveRoom={leaveRoom}
+              onSelectNewGame={handleSelectNewGame}
+            />
+          );
+        }
+        
+        // Default fallback for other games
         return (
           <div className={styles.gameScreen}>
             <h2>Game Starting Soon...</h2>

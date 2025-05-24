@@ -14,7 +14,7 @@ interface NavbarProps {
 export const Navbar = ({
   currentRoom,
   connectionStatus,
-  onLeaveRoom,
+//   onLeaveRoom,
 }: NavbarProps) => {
   const getConnectionStatusColor = (status: ConnectionStatus) => {
     switch (status) {

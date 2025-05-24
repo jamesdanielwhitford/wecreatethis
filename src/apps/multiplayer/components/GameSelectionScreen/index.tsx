@@ -12,8 +12,17 @@ interface GameSelectionScreenProps {
   onLeaveRoom: () => void;
 }
 
-// Mock game options - you can move this to a separate file later
+// Game options with Connect 4 as the first available game
 const GAME_OPTIONS: GameOption[] = [
+  {
+    id: 'connect4',
+    name: 'Connect 4',
+    description: 'Drop colored discs and get four in a row to win!',
+    minPlayers: 2,
+    maxPlayers: 2,
+    estimatedDuration: '5-15 mins',
+    icon: '🔴',
+  },
   {
     id: 'wordgame',
     name: 'Word Battle',
@@ -58,15 +67,6 @@ const GAME_OPTIONS: GameOption[] = [
     maxPlayers: 2,
     estimatedDuration: '3-7 mins',
     icon: '🃏',
-  },
-  {
-    id: 'chess',
-    name: 'Quick Chess',
-    description: 'Classic chess with faster time controls',
-    minPlayers: 2,
-    maxPlayers: 2,
-    estimatedDuration: '10-20 mins',
-    icon: '♟️',
   },
 ];
 
@@ -134,7 +134,7 @@ export const GameSelectionScreen = ({
         {GAME_OPTIONS.map((game) => (
           <div
             key={game.id}
-            className={`${styles.gameCard} ${!isHost ? styles.disabled : ''} ${room.selectedGame === game.id ? styles.selected : ''}`}
+            className={`${styles.gameCard} ${!isHost && game.id !== 'connect4' ? styles.disabled : ''} ${room.selectedGame === game.id ? styles.selected : ''}`}
             onClick={() => handleGameSelect(game.id)}
           >
             <div className={styles.gameIcon}>{game.icon}</div>
@@ -155,9 +155,14 @@ export const GameSelectionScreen = ({
                 ✅ Selected
               </div>
             )}
-            {!isHost && (
+            {!isHost && game.id !== 'connect4' && (
               <div className={styles.comingSoonBadge}>
                 Coming Soon
+              </div>
+            )}
+            {game.id === 'connect4' && (
+              <div className={styles.availableBadge}>
+                ✨ Available
               </div>
             )}
           </div>
@@ -183,7 +188,7 @@ export const GameSelectionScreen = ({
         <div className={styles.hostInstructions}>
           <p>👑 <strong>You&apos;re the host!</strong> Choose a game above to get started.</p>
           <p className={styles.note}>
-            Note: These games are placeholders for now. The lobby system is ready for when the games are implemented!
+            Connect 4 is ready to play! Other games are coming soon.
           </p>
         </div>
       )}

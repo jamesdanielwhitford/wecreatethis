@@ -19,7 +19,7 @@ interface RoomScreenProps {
 export const RoomScreen = ({
   room,
   currentPlayer,
-  isHost,
+//   isHost,
   isReady,
   allPlayersReady,
   roomFull,
