@@ -1,0 +1,385 @@
+/* src/apps/multiplayer/components/RoomScreen/styles.module.css */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.roomHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.roomInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.roomTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(45deg, #fff, #e0e7ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+
+.connectionStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.statusText {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.roomActions {
+  display: flex;
+  gap: 1rem;
+}
+
+.copyButton,
+.leaveButton {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.copyButton {
+  background: linear-gradient(45deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.copyButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.leaveButton {
+  background: linear-gradient(45deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.leaveButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+.playersSection {
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #e0e7ff;
+}
+
+.playersList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.playerCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.playerCard:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.currentPlayer {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.emptySlot {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.emptySlot:hover {
+  transform: none;
+}
+
+.playerInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.playerAvatar,
+.emptyAvatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: white;
+}
+
+.playerAvatar {
+  background: linear-gradient(45deg, #6366f1, #8b5cf6);
+}
+
+.emptyAvatar {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.playerDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.playerName {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.hostBadge {
+  background: linear-gradient(45deg, #f59e0b, #d97706);
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.youBadge {
+  background: linear-gradient(45deg, #6366f1, #8b5cf6);
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.playerMeta {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.emptySlotContent {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.emptyText {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.playerStatus {
+  display: flex;
+  align-items: center;
+}
+
+.readyIndicator {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.ready {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+.notReady {
+  background: rgba(251, 191, 36, 0.2);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #fde68a;
+}
+
+.gameControls {
+  text-align: center;
+}
+
+.waitingMessage {
+  padding: 2rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+}
+
+.waitingMessage p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.waitingMessage strong {
+  color: #93c5fd;
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.readySection {
+  margin-bottom: 2rem;
+}
+
+.readyButton {
+  padding: 1.25rem 3rem;
+  border: none;
+  border-radius: 1rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.readyButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.readyActive {
+  background: linear-gradient(45deg, #10b981, #059669);
+  border-color: #10b981;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+}
+
+.readyActive:hover {
+  box-shadow: 0 12px 35px rgba(16, 185, 129, 0.4);
+}
+
+.allReadyMessage {
+  padding: 2rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 1rem;
+  animation: celebrate 2s ease-in-out;
+}
+
+@keyframes celebrate {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.allReadyMessage h3 {
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem 0;
+  color: #6ee7b7;
+}
+
+.allReadyMessage p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .roomHeader {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .roomActions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .copyButton,
+  .leaveButton {
+    width: 100%;
+  }
+  
+  .playerCard {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .playerInfo {
+    flex-direction: column;
+    text-align: center;
+  }
+}
