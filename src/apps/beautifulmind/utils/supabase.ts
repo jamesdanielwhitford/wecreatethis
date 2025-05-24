@@ -15,6 +15,54 @@ const getMediaUrl = (path: string): string => {
   return data.publicUrl;
 };
 
+// Helper function to get audio duration
+async function getAudioDuration(file: File): Promise<number | undefined> {
+  return new Promise((resolve) => {
+    const audio = new Audio();
+    audio.onloadedmetadata = () => {
+      resolve(audio.duration);
+      URL.revokeObjectURL(audio.src);
+    };
+    audio.onerror = () => {
+      resolve(undefined);
+      URL.revokeObjectURL(audio.src);
+    };
+    audio.src = URL.createObjectURL(file);
+  });
+}
+
+// Helper function to get video duration
+async function getVideoDuration(file: File): Promise<number | undefined> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.onloadedmetadata = () => {
+      resolve(video.duration);
+      URL.revokeObjectURL(video.src);
+    };
+    video.onerror = () => {
+      resolve(undefined);
+      URL.revokeObjectURL(video.src);
+    };
+    video.src = URL.createObjectURL(file);
+  });
+}
+
+// Helper function to get image dimensions
+async function getImageDimensions(file: File): Promise<{ width?: number; height?: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.width, height: img.height });
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => {
+      resolve({});
+      URL.revokeObjectURL(img.src);
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 // Media service
 export const mediaService = {
   async uploadFile(noteId: string, file: File): Promise<MediaAttachment> {
@@ -30,12 +78,30 @@ export const mediaService = {
     if (uploadError) throw uploadError;
     
     // Determine media type
-    const mediaType = file.type.startsWith('video/') ? 'video' : 'image';
+    let mediaType: 'image' | 'video' | 'audio';
+    if (file.type.startsWith('video/')) {
+      mediaType = 'video';
+    } else if (file.type.startsWith('audio/')) {
+      mediaType = 'audio';
+    } else {
+      mediaType = 'image';
+    }
     
-    // Get file dimensions if it's an image
-    let dimensions = {};
+    // Get media-specific metadata
+    let metadata = {};
+    
     if (mediaType === 'image') {
-      dimensions = await getImageDimensions(file);
+      metadata = await getImageDimensions(file);
+    } else if (mediaType === 'video') {
+      const duration = await getVideoDuration(file);
+      if (duration) {
+        metadata = { duration };
+      }
+    } else if (mediaType === 'audio') {
+      const duration = await getAudioDuration(file);
+      if (duration) {
+        metadata = { duration };
+      }
     }
     
     // Create media attachment record
@@ -46,7 +112,7 @@ export const mediaService = {
       mime_type: file.type,
       storage_path: uploadData.path,
       media_type: mediaType,
-      ...dimensions
+      ...metadata
     };
     
     const { data, error } = await supabase
@@ -195,19 +261,3 @@ export const notesService = {
     if (error) throw error;
   }
 };
-
-// Helper function to get image dimensions
-async function getImageDimensions(file: File): Promise<{ width?: number; height?: number }> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      resolve({ width: img.width, height: img.height });
-      URL.revokeObjectURL(img.src);
-    };
-    img.onerror = () => {
-      resolve({});
-      URL.revokeObjectURL(img.src);
-    };
-    img.src = URL.createObjectURL(file);
-  });
-}

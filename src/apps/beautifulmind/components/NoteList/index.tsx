@@ -33,8 +33,14 @@ const NoteList: React.FC<NoteListProps> = ({ notes, onNoteClick, onNoteDelete })
     
     const imageCount = note.media_attachments.filter(m => m.media_type === 'image').length;
     const videoCount = note.media_attachments.filter(m => m.media_type === 'video').length;
+    const audioCount = note.media_attachments.filter(m => m.media_type === 'audio').length;
     
-    return { total: note.media_attachments.length, images: imageCount, videos: videoCount };
+    return { 
+      total: note.media_attachments.length, 
+      images: imageCount, 
+      videos: videoCount,
+      audio: audioCount
+    };
   };
 
   if (notes.length === 0) {
@@ -72,6 +78,11 @@ const NoteList: React.FC<NoteListProps> = ({ notes, onNoteClick, onNoteDelete })
                     {mediaCount.videos > 0 && (
                       <span className={styles.mediaIndicator}>
                         🎥 {mediaCount.videos}
+                      </span>
+                    )}
+                    {mediaCount.audio > 0 && (
+                      <span className={styles.mediaIndicator}>
+                        🎵 {mediaCount.audio}
                       </span>
                     )}
                   </div>

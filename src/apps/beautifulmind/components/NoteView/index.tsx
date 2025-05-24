@@ -31,6 +31,12 @@ const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const handleMediaClick = (url: string, type: string) => {
     setPreviewMedia({ url, type });
   };
@@ -103,7 +109,7 @@ const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
                       <span className={styles.mediaSize}>{formatFileSize(attachment.file_size)}</span>
                     </div>
                   </div>
-                ) : (
+                ) : attachment.media_type === 'video' ? (
                   <div 
                     className={styles.videoContainer}
                     onClick={() => handleMediaClick(attachment.url!, attachment.media_type)}
@@ -116,7 +122,39 @@ const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
                       <span className={styles.mediaSize}>{formatFileSize(attachment.file_size)}</span>
                       {attachment.duration && (
                         <span className={styles.mediaDuration}>
-                          {Math.floor(attachment.duration / 60)}:{String(Math.floor(attachment.duration % 60)).padStart(2, '0')}
+                          {formatDuration(attachment.duration)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className={styles.audioContainer}>
+                    <div className={styles.audioHeader}>
+                      <div className={styles.audioIcon}>🎵</div>
+                      <div className={styles.audioControls}>
+                        <button
+                          className={styles.audioPreviewButton}
+                          onClick={() => handleMediaClick(attachment.url!, attachment.media_type)}
+                          aria-label="Preview audio in modal"
+                        >
+                          🔍
+                        </button>
+                      </div>
+                    </div>
+                    <div className={styles.audioPlayer}>
+                      <audio
+                        src={attachment.url}
+                        controls
+                        preload="metadata"
+                        className={styles.audioControl}
+                      />
+                    </div>
+                    <div className={styles.mediaInfo}>
+                      <span className={styles.mediaName}>{attachment.file_name}</span>
+                      <span className={styles.mediaSize}>{formatFileSize(attachment.file_size)}</span>
+                      {attachment.duration && (
+                        <span className={styles.mediaDuration}>
+                          {formatDuration(attachment.duration)}
                         </span>
                       )}
                     </div>
@@ -139,6 +177,16 @@ const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
                 autoPlay
                 className={styles.previewVideo} 
               />
+            ) : previewMedia.type === 'audio' ? (
+              <div className={styles.audioPreview}>
+                <div className={styles.audioPreviewIcon}>🎵</div>
+                <audio 
+                  src={previewMedia.url} 
+                  controls 
+                  autoPlay
+                  className={styles.previewAudio} 
+                />
+              </div>
             ) : (
               <img 
                 src={previewMedia.url} 

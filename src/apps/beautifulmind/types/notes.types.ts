@@ -7,7 +7,7 @@ export interface MediaAttachment {
   file_size: number;
   mime_type: string;
   storage_path: string;
-  media_type: 'image' | 'video';
+  media_type: 'image' | 'video' | 'audio';
   thumbnail_path?: string;
   width?: number;
   height?: number;
@@ -38,4 +38,11 @@ export interface UploadProgress {
   fileName: string;
   progress: number;
   error?: string;
+}
+
+export interface AudioRecording {
+  isRecording: boolean;
+  duration: number;
+  audioUrl?: string;
+  mediaRecorder?: MediaRecorder;
 }
