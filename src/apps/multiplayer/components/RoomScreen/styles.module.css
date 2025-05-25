@@ -87,8 +87,10 @@
 .roomActions {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
+.shareButton,
 .copyButton,
 .leaveButton {
   padding: 0.75rem 1.5rem;
@@ -97,6 +99,17 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+}
+
+.shareButton {
+  background: linear-gradient(45deg, #6366f1, #8b5cf6);
+  color: white;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.shareButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
 }
 
 .copyButton {
@@ -367,6 +380,7 @@
     width: 100%;
   }
   
+  .shareButton,
   .copyButton,
   .leaveButton {
     width: 100%;

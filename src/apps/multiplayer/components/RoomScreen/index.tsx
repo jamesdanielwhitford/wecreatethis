@@ -43,6 +43,37 @@ export const RoomScreen = ({
     // You could add a toast notification here
   };
 
+  const handleShareRoom = async () => {
+    const shareUrl = `${window.location.origin}/multiplayer?room=${room.id}`;
+    const shareData = {
+      title: 'Join my game room!',
+      text: `Hey! Join me in my multiplayer game room. Room code: ${room.id}`,
+      url: shareUrl,
+    };
+
+    try {
+      // Check if Web Share API is supported
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: copy link to clipboard
+        await navigator.clipboard.writeText(shareUrl);
+        // You could show a toast notification here saying "Link copied to clipboard!"
+        alert('Share link copied to clipboard!');
+      }
+    } catch (error) {
+      // If sharing was cancelled or failed, try copying to clipboard as fallback
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        alert('Share link copied to clipboard!');
+      } catch (clipboardError) {
+        console.error('Failed to share or copy:', error, clipboardError);
+        // Final fallback - show the link
+        alert(`Share this link: ${shareUrl}`);
+      }
+    }
+  };
+
   const getConnectionStatusColor = (status: ConnectionStatus) => {
     switch (status) {
       case 'connected': return '#10b981';
@@ -73,6 +104,9 @@ export const RoomScreen = ({
         </div>
         
         <div className={styles.roomActions}>
+          <button onClick={handleShareRoom} className={styles.shareButton}>
+            📤 Share Room
+          </button>
           <button onClick={handleCopyRoomCode} className={styles.copyButton}>
             📋 Copy Code
           </button>
@@ -136,7 +170,7 @@ export const RoomScreen = ({
       <div className={styles.gameControls}>
         {!roomFull && (
           <div className={styles.waitingMessage}>
-            <p>🔗 Share the room code <strong>{room.id}</strong> with your friend to get started!</p>
+            <p>🔗 Share the room with your friend using the <strong>Share Room</strong> button above!</p>
           </div>
         )}
         
