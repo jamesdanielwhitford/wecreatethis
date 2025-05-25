@@ -14,7 +14,7 @@ interface NavbarProps {
 export const Navbar = ({
   currentRoom,
   connectionStatus,
-//   onLeaveRoom,
+  onLeaveRoom,
 }: NavbarProps) => {
   const getConnectionStatusColor = (status: ConnectionStatus) => {
     switch (status) {
@@ -33,38 +33,34 @@ export const Navbar = ({
           <Link href="/" className={styles.homeLink}>
             🏠 Home
           </Link>
-          <div className={styles.breadcrumb}>
-            <span className={styles.breadcrumbItem}>Multiplayer</span>
-            {currentRoom && (
-              <>
-                <span className={styles.breadcrumbSeparator}>→</span>
-                <span className={styles.breadcrumbItem}>Room {currentRoom.id}</span>
-              </>
-            )}
-          </div>
         </div>
 
         <div className={styles.right}>
           {currentRoom && (
-            <div className={styles.roomStatus}>
-              <div className={styles.statusInfo}>
-                <div 
-                  className={styles.statusDot}
-                  style={{ backgroundColor: getConnectionStatusColor(connectionStatus) }}
-                ></div>
-                <span className={styles.statusText}>
-                  {connectionStatus === 'connected' && 'Connected'}
-                  {connectionStatus === 'connecting' && 'Connecting...'}
-                  {connectionStatus === 'disconnected' && 'Disconnected'}
-                  {connectionStatus === 'error' && 'Error'}
-                </span>
+            <>
+              <div className={styles.roomStatus}>
+                <div className={styles.statusInfo}>
+                  <div 
+                    className={styles.statusDot}
+                    style={{ backgroundColor: getConnectionStatusColor(connectionStatus) }}
+                  ></div>
+                  <span className={styles.statusText}>
+                    {connectionStatus === 'connected' && 'Connected'}
+                    {connectionStatus === 'connecting' && 'Connecting...'}
+                    {connectionStatus === 'disconnected' && 'Disconnected'}
+                    {connectionStatus === 'error' && 'Error'}
+                  </span>
+                </div>
+                <div className={styles.roomInfo}>
+                  <span className={styles.playersCount}>
+                    {currentRoom.players.length}/{currentRoom.maxPlayers} players
+                  </span>
+                </div>
               </div>
-              <div className={styles.roomInfo}>
-                <span className={styles.playersCount}>
-                  {currentRoom.players.length}/{currentRoom.maxPlayers} players
-                </span>
-              </div>
-            </div>
+              <button onClick={onLeaveRoom} className={styles.leaveButton}>
+                🚪 Leave Room
+              </button>
+            </>
           )}
         </div>
       </div>
