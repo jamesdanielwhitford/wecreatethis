@@ -193,9 +193,9 @@ export class MultiplayerService {
       updateData.selected_game = gameId;
       updateData.status = 'in-game';
     } else {
-      // Clearing the game selection, go back to game selection
+      // Clearing the game selection, go back to ready state for game selection
       updateData.selected_game = null;
-      updateData.status = 'game-selection';
+      updateData.status = 'ready'; // Changed from 'game-selection' to 'ready'
       updateData.game_state = null;
     }
 
