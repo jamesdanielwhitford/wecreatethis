@@ -43,7 +43,12 @@ export const useMultiplayer = () => {
           if (room.status === 'waiting') {
             setLobbyState('in-room');
           } else if (room.status === 'ready') {
-            setLobbyState('game-selection');
+            // Check if a game is selected to determine the correct state
+            if (room.selectedGame) {
+              setLobbyState('in-game');
+            } else {
+              setLobbyState('game-selection');
+            }
           } else if (room.status === 'in-game') {
             setLobbyState('in-game');
           }
