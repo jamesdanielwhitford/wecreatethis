@@ -241,37 +241,6 @@ export const Connect4Game = ({ room, currentPlayer, onLeaveRoom, onSelectNewGame
 
   return (
     <div className={styles.container}>
-      <div className={styles.gameHeader}>
-        <div className={styles.playerInfo}>
-          <div className={`${styles.playerCard} ${gameState.currentPlayer === 'player1' ? styles.activePlayer : ''}`}>
-            <div className={`${styles.playerDisc} ${styles.player1Disc}`}></div>
-            <div className={styles.playerDetails}>
-              <span className={styles.playerName}>
-                {player1?.name}
-                {player1?.id === currentPlayer.id && ' (You)'}
-              </span>
-              <span className={styles.playerColor}>Red</span>
-            </div>
-          </div>
-          
-          <div className={styles.vsText}>VS</div>
-          
-          <div className={`${styles.playerCard} ${gameState.currentPlayer === 'player2' ? styles.activePlayer : ''}`}>
-            <div className={`${styles.playerDisc} ${styles.player2Disc}`}></div>
-            <div className={styles.playerDetails}>
-              <span className={styles.playerName}>
-                {player2?.name}
-                {player2?.id === currentPlayer.id && ' (You)'}
-              </span>
-              <span className={styles.playerColor}>Yellow</span>
-            </div>
-          </div>
-        </div>
-        
-        <button onClick={onLeaveRoom} className={styles.leaveButton}>
-          🚪 Leave Game
-        </button>
-      </div>
 
       <div className={styles.gameStatus}>
         {gameState.gameStatus === 'playing' && (
