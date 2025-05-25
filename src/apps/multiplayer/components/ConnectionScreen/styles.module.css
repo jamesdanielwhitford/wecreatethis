@@ -35,6 +35,47 @@
   margin-bottom: 2.5rem;
 }
 
+.sharedRoomAlert {
+  background: rgba(16, 185, 129, 0.15);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.sharedRoomAlert h3 {
+  margin: 0 0 0.5rem 0;
+  color: #6ee7b7;
+  font-size: 1.3rem;
+}
+
+.sharedRoomAlert p {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.sharedRoomAlert p:last-child {
+  margin-bottom: 0;
+}
+
+.sharedRoomAlert strong {
+  color: #6ee7b7;
+  font-weight: 700;
+}
+
 .form {
   display: flex;
   flex-direction: column;
@@ -72,6 +113,20 @@
 
 .input::placeholder {
   color: rgba(255, 255, 255, 0.5);
+}
+
+.prefilled {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.prefilledHint {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #6ee7b7;
+  opacity: 0.9;
+  font-style: italic;
 }
 
 .modeSelector {
@@ -213,6 +268,14 @@
   
   .title {
     font-size: 2.5rem;
+  }
+  
+  .sharedRoomAlert {
+    padding: 1rem;
+  }
+  
+  .sharedRoomAlert h3 {
+    font-size: 1.1rem;
   }
   
   .modeSelector {

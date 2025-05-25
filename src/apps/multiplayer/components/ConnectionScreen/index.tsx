@@ -1,7 +1,7 @@
 // src/apps/multiplayer/components/ConnectionScreen/index.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './styles.module.css';
 
 interface ConnectionScreenProps {
@@ -30,6 +30,27 @@ export const ConnectionScreen = ({
 }: ConnectionScreenProps) => {
   const [roomId, setRoomId] = useState('');
   const [mode, setMode] = useState<'quick' | 'create' | 'join'>('quick');
+  const [sharedRoomDetected, setSharedRoomDetected] = useState(false);
+
+  // Check for room parameter in URL on component mount
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomParam = urlParams.get('room');
+      
+      if (roomParam && roomParam.length === 6) {
+        // Valid room code found in URL
+        setRoomId(roomParam.toUpperCase());
+        setMode('join');
+        setSharedRoomDetected(true);
+        
+        // Clean up the URL without reloading the page
+        const newUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,11 +79,27 @@ export const ConnectionScreen = ({
     }
   };
 
+  const handleModeChange = (newMode: 'quick' | 'create' | 'join') => {
+    setMode(newMode);
+    // Clear the shared room detection flag when manually changing modes
+    if (newMode !== 'join') {
+      setSharedRoomDetected(false);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
         <h1 className={styles.title}>Multiplayer Lobby</h1>
         <p className={styles.subtitle}>Connect with friends and play games together!</p>
+
+        {sharedRoomDetected && (
+          <div className={styles.sharedRoomAlert}>
+            <h3>🎉 Ready to join!</h3>
+            <p>You&apos;ve been invited to room <strong>{roomId}</strong></p>
+            <p>Just enter your name below and hit join!</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
@@ -84,21 +121,21 @@ export const ConnectionScreen = ({
           <div className={styles.modeSelector}>
             <button
               type="button"
-              onClick={() => setMode('quick')}
+              onClick={() => handleModeChange('quick')}
               className={`${styles.modeButton} ${mode === 'quick' ? styles.active : ''}`}
             >
               Quick Match
             </button>
             <button
               type="button"
-              onClick={() => setMode('create')}
+              onClick={() => handleModeChange('create')}
               className={`${styles.modeButton} ${mode === 'create' ? styles.active : ''}`}
             >
               Create Room
             </button>
             <button
               type="button"
-              onClick={() => setMode('join')}
+              onClick={() => handleModeChange('join')}
               className={`${styles.modeButton} ${mode === 'join' ? styles.active : ''}`}
             >
               Join Room
@@ -116,10 +153,15 @@ export const ConnectionScreen = ({
                 value={roomId}
                 onChange={(e) => setRoomId(e.target.value.toUpperCase())}
                 placeholder="Enter 6-letter room code"
-                className={styles.input}
+                className={`${styles.input} ${sharedRoomDetected ? styles.prefilled : ''}`}
                 maxLength={6}
                 required
               />
+              {sharedRoomDetected && (
+                <p className={styles.prefilledHint}>
+                  ✨ Room code automatically filled from shared link
+                </p>
+              )}
             </div>
           )}
 
@@ -151,7 +193,7 @@ export const ConnectionScreen = ({
               <>
                 {mode === 'quick' && '🎮 Find Match'}
                 {mode === 'create' && '🏠 Create Room'}
-                {mode === 'join' && '🚪 Join Room'}
+                {mode === 'join' && (sharedRoomDetected ? '🚀 Join Room' : '🚪 Join Room')}
               </>
             )}
           </button>
