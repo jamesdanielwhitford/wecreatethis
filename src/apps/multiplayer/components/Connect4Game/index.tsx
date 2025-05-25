@@ -71,6 +71,7 @@ export const Connect4Game = ({ room, currentPlayer, onLeaveRoom, onSelectNewGame
   const [myDecision, setMyDecision] = useState<string | null>(null);
 
   const multiplayerService = MultiplayerService.getInstance();
+  const isHost = currentPlayer.id === room.hostId;
 
   // Initialize game state
   useEffect(() => {
@@ -87,12 +88,12 @@ export const Connect4Game = ({ room, currentPlayer, onLeaveRoom, onSelectNewGame
         player2Id: player2.id,
       };
 
-      if (currentPlayer.id === room.hostId) {
+      if (isHost) {
         // Only host initializes the game state
         multiplayerService.updateGameState(room.id, initialGameState);
       }
     }
-  }, [room, currentPlayer, gameState]);
+  }, [room, currentPlayer, gameState, isHost]);
 
   // Subscribe to game state changes
   useEffect(() => {
@@ -114,8 +115,15 @@ export const Connect4Game = ({ room, currentPlayer, onLeaveRoom, onSelectNewGame
       if (state.gameStatus !== 'playing' && !showPostGame) {
         setTimeout(() => setShowPostGame(true), 1500); // Delay to show winning animation
       }
+
+      // Hide post-game screen if game is playing (for new games)
+      if (state.gameStatus === 'playing') {
+        setShowPostGame(false);
+        setMyDecision(null);
+        setPostGameDecisions([]); // Clear decisions when new game starts
+      }
     }
-  }, [room.gameState, currentPlayer.id, showPostGame]);
+  }, [room.gameState, currentPlayer.id]);
 
   const makeMove = useCallback(async (column: number) => {
     if (!gameState || !isMyTurn || gameState.gameStatus !== 'playing') return;
@@ -170,7 +178,7 @@ export const Connect4Game = ({ room, currentPlayer, onLeaveRoom, onSelectNewGame
       return;
     }
 
-    // For play-again, we need to wait for both players
+    // For play-again, record the decision
     const newDecision: PostGameDecision = {
       playerId: currentPlayer.id,
       decision
@@ -180,28 +188,32 @@ export const Connect4Game = ({ room, currentPlayer, onLeaveRoom, onSelectNewGame
     
     await multiplayerService.updatePostGameDecisions(room.id, updatedDecisions);
     
-    // Check if both players want to play again
-    if (updatedDecisions.length === 2 && updatedDecisions.every(d => d.decision === 'play-again')) {
-      // Reset game for new round
-      const player1 = room.players[0];
-      const player2 = room.players[1];
-      
-      // Alternate who goes first
-      const previousFirstPlayer = gameState?.player1Id === player1.id ? player2.id : player1.id;
-      
-      const newGameState: Connect4GameState = {
-        grid: createEmptyGrid(),
-        currentPlayer: previousFirstPlayer === player1.id ? 'player1' : 'player2',
-        gameStatus: 'playing',
-        moveHistory: [],
-        player1Id: previousFirstPlayer,
-        player2Id: previousFirstPlayer === player1.id ? player2.id : player1.id,
-      };
+    // Only the host should reset the game when both players are ready
+    if (isHost && updatedDecisions.length === 2 && updatedDecisions.every(d => d.decision === 'play-again')) {
+      // Small delay to ensure decisions are saved before reset
+      setTimeout(async () => {
+        // Reset game for new round - keep player assignments consistent
+        const player1 = room.players.find(p => p.id === gameState?.player1Id);
+        const player2 = room.players.find(p => p.id === gameState?.player2Id);
+        
+        if (!player1 || !player2) return;
+        
+        // Alternate who goes first, but keep player1Id and player2Id consistent
+        const lastWinner = gameState?.winner;
+        const newStartingPlayer = lastWinner === 'player1' ? 'player2' : 'player1';
+        
+        const newGameState: Connect4GameState = {
+          grid: createEmptyGrid(),
+          currentPlayer: newStartingPlayer,
+          gameStatus: 'playing',
+          moveHistory: [],
+          player1Id: gameState?.player1Id || player1.id,
+          player2Id: gameState?.player2Id || player2.id,
+        };
 
-      await multiplayerService.updateGameState(room.id, newGameState);
-      await multiplayerService.updatePostGameDecisions(room.id, []);
-      setShowPostGame(false);
-      setMyDecision(null);
+        // Update the game state (this will automatically clear post-game decisions since we're not including them)
+        await multiplayerService.updateGameState(room.id, newGameState);
+      }, 100);
     }
   };
 
