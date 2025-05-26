@@ -31,20 +31,30 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
         content: note.content
       });
       setAttachedMedia(note.media_attachments || []);
+    } else if (!isCreating) {
+      // Reset form when note is null but not creating (shouldn't happen, but safety)
+      setFormData({ title: '', content: '' });
+      setAttachedMedia([]);
     }
-  }, [note]);
+  }, [note, isCreating]);
 
   const handleMediaUpload = async (files: File[]) => {
     if (!note && !isCreating) return;
     
     // If creating, we'll save the note first
     let noteId = note?.id;
+    let currentNote = note;
+    
     if (!noteId && isCreating) {
       try {
         const newNote = await onSave(formData, true);
         noteId = newNote.id;
+        currentNote = newNote;
+        // Note: The parent component should update the note prop, 
+        // but we'll use the returned note for immediate operations
       } catch (err) {
         setError('Please save the note before adding media');
+        console.log(err);
         return;
       }
     }
@@ -112,6 +122,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
       }
     } catch (err) {
       setError('Failed to delete media');
+      console.log(err);
     }
   };
 

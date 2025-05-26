@@ -45,9 +45,15 @@ const BeautifulMind: React.FC = () => {
   const handleSave = async (data: { title: string; content: string }, keepMedia?: boolean): Promise<Note> => {
     if (viewMode === 'create') {
       const newNote = await createNote(data);
+      // Always set the selected note when creating
+      setSelectedNote(newNote);
+      
       if (!keepMedia) {
-        setSelectedNote(newNote);
+        // Normal save - go to view mode
         setViewMode('view');
+      } else {
+        // Media is being added - transition to edit mode so user can continue editing
+        setViewMode('edit');
       }
       return newNote;
     } else if (viewMode === 'edit' && selectedNote) {
