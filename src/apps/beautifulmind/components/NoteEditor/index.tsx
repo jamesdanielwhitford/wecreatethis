@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Note, NoteFormData, MediaAttachment, UploadProgress } from '../../types/notes.types';
-import { mediaService } from '../../utils/supabase';
+import { mediaService } from '../../utils/api';
 import MediaUpload from '../MediaUpload';
 import styles from './styles.module.css';
 
@@ -68,39 +68,44 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
     
     setUploads(prev => [...prev, ...newUploads]);
     
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const uploadIndex = uploads.length + i;
+    try {
+      // Update progress
+      const startIndex = uploads.length;
+      files.forEach((_, index) => {
+        setUploads(prev => prev.map((u, idx) => 
+          idx === startIndex + index ? { ...u, progress: 50 } : u
+        ));
+      });
       
-      try {
-        // Update progress
+      // Upload files via API
+      const attachments = await mediaService.uploadFiles(noteId, files);
+      
+      // Update progress to complete
+      files.forEach((_, index) => {
         setUploads(prev => prev.map((u, idx) => 
-          idx === uploadIndex ? { ...u, progress: 50 } : u
+          idx === startIndex + index ? { ...u, progress: 100 } : u
         ));
-        
-        // Upload file
-        const attachment = await mediaService.uploadFile(noteId, file);
-        
-        // Update progress
-        setUploads(prev => prev.map((u, idx) => 
-          idx === uploadIndex ? { ...u, progress: 100 } : u
+      });
+      
+      // Add to attached media
+      setAttachedMedia(prev => [...prev, ...attachments]);
+      
+      // Remove from uploads after a delay
+      setTimeout(() => {
+        setUploads(prev => prev.filter((_, idx) => 
+          idx < startIndex || idx >= startIndex + files.length
         ));
-        
-        // Add to attached media
-        setAttachedMedia(prev => [...prev, attachment]);
-        
-        // Remove from uploads after a delay
-        setTimeout(() => {
-          setUploads(prev => prev.filter((_, idx) => idx !== uploadIndex));
-        }, 1000);
-        
-      } catch (err) {
+      }, 1000);
+      
+    } catch (err) {
+      // Update uploads with error
+      files.forEach((file, index) => {
         setUploads(prev => prev.map((u, idx) => 
-          idx === uploadIndex 
+          idx === uploads.length + index 
             ? { ...u, error: err instanceof Error ? err.message : 'Upload failed' } 
             : u
         ));
-      }
+      });
     }
   };
 
@@ -118,7 +123,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
       
       // Delete immediately if not part of original note
       if (!note?.media_attachments?.some(a => a.id === attachment.id)) {
-        await mediaService.deleteAttachment(attachment.id, attachment.storage_path);
+        await mediaService.deleteAttachment(attachment.id);
       }
     } catch (err) {
       setError('Failed to delete media');
@@ -142,7 +147,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
       for (const id of deletedMediaIds) {
         const attachment = note?.media_attachments?.find(a => a.id === id);
         if (attachment) {
-          await mediaService.deleteAttachment(attachment.id, attachment.storage_path);
+          await mediaService.deleteAttachment(attachment.id);
         }
       }
       

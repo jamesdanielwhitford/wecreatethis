@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Note, NoteFormData } from '../types/notes.types';
-import { notesService } from '../utils/supabase';
+import { notesService } from '../utils/api';
 
 export const useNotes = () => {
   const [notes, setNotes] = useState<Note[]>([]);
