@@ -11,18 +11,33 @@ interface NoteEditorProps {
   onSave: (data: NoteFormData, keepMedia?: boolean) => Promise<Note>;
   onCancel: () => void;
   isCreating?: boolean;
+  // Lifted media state from parent
+  pendingMedia: MediaAttachment[];
+  setPendingMedia: React.Dispatch<React.SetStateAction<MediaAttachment[]>>;
+  pendingUploads: UploadProgress[];
+  setPendingUploads: React.Dispatch<React.SetStateAction<UploadProgress[]>>;
+  deletedMediaIds: string[];
+  setDeletedMediaIds: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreating }) => {
+const NoteEditor: React.FC<NoteEditorProps> = ({ 
+  note, 
+  onSave, 
+  onCancel, 
+  isCreating,
+  pendingMedia,
+  setPendingMedia,
+  pendingUploads,
+  setPendingUploads,
+  deletedMediaIds,
+  setDeletedMediaIds
+}) => {
   const [formData, setFormData] = useState<NoteFormData>({
     title: '',
     content: ''
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [uploads, setUploads] = useState<UploadProgress[]>([]);
-  const [attachedMedia, setAttachedMedia] = useState<MediaAttachment[]>([]);
-  const [deletedMediaIds, setDeletedMediaIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (note) {
@@ -30,11 +45,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
         title: note.title,
         content: note.content
       });
-      setAttachedMedia(note.media_attachments || []);
     } else if (!isCreating) {
       // Reset form when note is null but not creating (shouldn't happen, but safety)
       setFormData({ title: '', content: '' });
-      setAttachedMedia([]);
     }
   }, [note, isCreating]);
 
@@ -54,7 +67,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
         // but we'll use the returned note for immediate operations
       } catch (err) {
         setError('Please save the note before adding media');
-        console.log(err);
         return;
       }
     }
@@ -66,13 +78,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
       progress: 0
     }));
     
-    setUploads(prev => [...prev, ...newUploads]);
+    setPendingUploads(prev => [...prev, ...newUploads]);
     
     try {
       // Update progress
-      const startIndex = uploads.length;
+      const startIndex = pendingUploads.length;
       files.forEach((_, index) => {
-        setUploads(prev => prev.map((u, idx) => 
+        setPendingUploads(prev => prev.map((u, idx) => 
           idx === startIndex + index ? { ...u, progress: 50 } : u
         ));
       });
@@ -82,17 +94,17 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
       
       // Update progress to complete
       files.forEach((_, index) => {
-        setUploads(prev => prev.map((u, idx) => 
+        setPendingUploads(prev => prev.map((u, idx) => 
           idx === startIndex + index ? { ...u, progress: 100 } : u
         ));
       });
       
-      // Add to attached media
-      setAttachedMedia(prev => [...prev, ...attachments]);
+      // Add to pending media (parent state)
+      setPendingMedia(prev => [...prev, ...attachments]);
       
       // Remove from uploads after a delay
       setTimeout(() => {
-        setUploads(prev => prev.filter((_, idx) => 
+        setPendingUploads(prev => prev.filter((_, idx) => 
           idx < startIndex || idx >= startIndex + files.length
         ));
       }, 1000);
@@ -100,8 +112,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
     } catch (err) {
       // Update uploads with error
       files.forEach((file, index) => {
-        setUploads(prev => prev.map((u, idx) => 
-          idx === uploads.length + index 
+        setPendingUploads(prev => prev.map((u, idx) => 
+          idx === pendingUploads.length + index 
             ? { ...u, error: err instanceof Error ? err.message : 'Upload failed' } 
             : u
         ));
@@ -118,8 +130,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
         setDeletedMediaIds(prev => [...prev, attachment.id]);
       }
       
-      // Remove from UI
-      setAttachedMedia(prev => prev.filter(a => a.id !== attachment.id));
+      // Remove from UI (parent state)
+      setPendingMedia(prev => prev.filter(a => a.id !== attachment.id));
       
       // Delete immediately if not part of original note
       if (!note?.media_attachments?.some(a => a.id === attachment.id)) {
@@ -127,7 +139,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
       }
     } catch (err) {
       setError('Failed to delete media');
-      console.log(err);
     }
   };
 
@@ -179,8 +190,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onSave, onCancel, isCreat
       
       <MediaUpload
         onUpload={handleMediaUpload}
-        uploads={uploads}
-        existingMedia={attachedMedia}
+        uploads={pendingUploads}
+        existingMedia={pendingMedia}
         onDeleteMedia={handleDeleteMedia}
         disabled={saving}
       />
