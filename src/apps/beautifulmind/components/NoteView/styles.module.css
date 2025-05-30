@@ -181,6 +181,7 @@
 .audioControls {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
 }
 
 .audioPreviewButton {
@@ -197,6 +198,10 @@
 .audioPreviewButton:hover {
   background-color: var(--hover-bg, #262626);
   color: var(--text-primary, #fff);
+}
+
+.transcriptionStatusBadge {
+  font-size: 1rem;
 }
 
 .audioPlayer {
@@ -216,7 +221,7 @@
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
   border-top: 1px solid var(--border-color, #333);
 }
 
@@ -229,6 +234,13 @@
   white-space: nowrap;
 }
 
+.mediaDetails {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
 .mediaSize {
   font-size: 0.75rem;
   color: var(--text-muted, #71717a);
@@ -237,6 +249,101 @@
 .mediaDuration {
   font-size: 0.75rem;
   color: var(--text-secondary, #a1a1aa);
+}
+
+/* Transcription Styles */
+.transcriptionSection {
+  border-top: 1px solid var(--border-color, #333);
+  background-color: var(--transcription-bg, rgba(255, 255, 255, 0.02));
+}
+
+.transcriptionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color, #333);
+}
+
+.transcriptionLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary, #fff);
+}
+
+.transcriptionActions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.copyButton,
+.expandButton {
+  background: transparent;
+  border: 1px solid var(--border-color, #333);
+  color: var(--text-secondary, #a1a1aa);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+
+.copyButton:hover,
+.expandButton:hover {
+  background-color: var(--hover-bg, #262626);
+  color: var(--text-primary, #fff);
+}
+
+.transcriptionContent {
+  padding: 1rem;
+}
+
+.transcriptionText {
+  color: var(--text-secondary, #a1a1aa);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0 0 0.5rem 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.transcriptionDate {
+  font-size: 0.75rem;
+  color: var(--text-muted, #71717a);
+  font-style: italic;
+}
+
+.transcriptionPending {
+  padding: 1rem;
+  text-align: center;
+  background-color: var(--warning-bg, rgba(251, 191, 36, 0.1));
+  border-top: 1px solid var(--border-color, #333);
+}
+
+.transcriptionPendingText {
+  color: var(--warning-color, #f59e0b);
+  font-size: 0.875rem;
+}
+
+.transcriptionError {
+  padding: 1rem;
+  background-color: var(--danger-bg, rgba(239, 68, 68, 0.1));
+  border-top: 1px solid var(--border-color, #333);
+}
+
+.transcriptionErrorText {
+  color: var(--danger-color, #ef4444);
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.transcriptionErrorMessage {
+  color: var(--danger-color, #ef4444);
+  font-size: 0.75rem;
+  opacity: 0.8;
 }
 
 /* Preview Modal */
@@ -347,5 +454,20 @@
   .closeButton {
     top: 1rem;
     right: 1rem;
+  }
+  
+  .transcriptionHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  
+  .transcriptionActions {
+    justify-content: center;
+  }
+  
+  .mediaDetails {
+    flex-direction: column;
+    gap: 0.25rem;
   }
 }

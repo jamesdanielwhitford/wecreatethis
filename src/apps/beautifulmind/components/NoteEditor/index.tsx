@@ -51,7 +51,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     }
   }, [note, isCreating]);
 
-  const handleMediaUpload = async (files: File[]) => {
+  const handleMediaUpload = async (files: File[], shouldTranscribe?: boolean[]) => {
     if (!note && !isCreating) return;
     
     // If creating, we'll save the note first
@@ -73,9 +73,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     
     if (!noteId) return;
     
-    const newUploads: UploadProgress[] = files.map(file => ({
+    const newUploads: UploadProgress[] = files.map((file, index) => ({
       fileName: file.name,
-      progress: 0
+      progress: 0,
+      shouldTranscribe: shouldTranscribe?.[index] || false,
+      transcriptionStatus: shouldTranscribe?.[index] ? 'not_started' : undefined
     }));
     
     setPendingUploads(prev => [...prev, ...newUploads]);
@@ -90,7 +92,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       });
       
       // Upload files via API
-      const attachments = await mediaService.uploadFiles(noteId, files);
+      const attachments = await mediaService.uploadFiles(noteId, files, shouldTranscribe);
       
       // Update progress to complete
       files.forEach((_, index) => {
@@ -139,6 +141,23 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       }
     } catch (err) {
       setError('Failed to delete media');
+    }
+  };
+
+  const handleRetryTranscription = async (attachmentId: string) => {
+    try {
+      await mediaService.retryTranscription(attachmentId);
+      
+      // Update the pending media to show pending status
+      setPendingMedia(prev => prev.map(attachment => 
+        attachment.id === attachmentId
+          ? { ...attachment, transcription_status: 'pending', transcription_error: undefined }
+          : attachment
+      ));
+      
+      setError(null);
+    } catch (err) {
+      setError('Failed to retry transcription');
     }
   };
 
@@ -193,6 +212,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         uploads={pendingUploads}
         existingMedia={pendingMedia}
         onDeleteMedia={handleDeleteMedia}
+        onRetryTranscription={handleRetryTranscription}
         disabled={saving}
       />
 

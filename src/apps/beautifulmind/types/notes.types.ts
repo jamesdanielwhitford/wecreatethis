@@ -15,6 +15,11 @@ export interface MediaAttachment {
   created_at: string;
   url?: string; // Added for frontend convenience
   thumbnailUrl?: string; // Added for frontend convenience
+  // New transcription fields
+  transcription_text?: string;
+  transcription_status?: 'not_started' | 'pending' | 'completed' | 'failed';
+  transcription_error?: string;
+  transcribed_at?: string;
 }
 
 export interface Note {
@@ -38,6 +43,9 @@ export interface UploadProgress {
   fileName: string;
   progress: number;
   error?: string;
+  // Add transcription options
+  shouldTranscribe?: boolean;
+  transcriptionStatus?: 'not_started' | 'pending' | 'completed' | 'failed';
 }
 
 export interface AudioRecording {
@@ -45,4 +53,5 @@ export interface AudioRecording {
   duration: number;
   audioUrl?: string;
   mediaRecorder?: MediaRecorder;
+  shouldTranscribe?: boolean; // Add option for recordings
 }

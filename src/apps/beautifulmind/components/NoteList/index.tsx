@@ -33,13 +33,16 @@ const NoteList: React.FC<NoteListProps> = ({ notes, onNoteClick, onNoteDelete })
     
     const imageCount = note.media_attachments.filter(m => m.media_type === 'image').length;
     const videoCount = note.media_attachments.filter(m => m.media_type === 'video').length;
-    const audioCount = note.media_attachments.filter(m => m.media_type === 'audio').length;
+    const audioAttachments = note.media_attachments.filter(m => m.media_type === 'audio');
+    const audioCount = audioAttachments.length;
+    const transcribedAudio = audioAttachments.filter(m => m.transcription_status === 'completed').length;
     
     return { 
       total: note.media_attachments.length, 
       images: imageCount, 
       videos: videoCount,
-      audio: audioCount
+      audio: audioCount,
+      transcribed: transcribedAudio
     };
   };
 
@@ -81,8 +84,13 @@ const NoteList: React.FC<NoteListProps> = ({ notes, onNoteClick, onNoteDelete })
                       </span>
                     )}
                     {mediaCount.audio > 0 && (
-                      <span className={styles.mediaIndicator}>
+                      <span className={`${styles.mediaIndicator} ${styles.audioIndicator}`}>
                         🎵 {mediaCount.audio}
+                        {mediaCount.transcribed > 0 && (
+                          <span className={styles.transcriptionBadge} title="Has transcription">
+                            📝
+                          </span>
+                        )}
                       </span>
                     )}
                   </div>

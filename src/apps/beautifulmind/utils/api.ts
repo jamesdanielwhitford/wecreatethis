@@ -16,11 +16,18 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 // Media service
 export const mediaService = {
-  async uploadFiles(noteId: string, files: File[]): Promise<MediaAttachment[]> {
+  async uploadFiles(noteId: string, files: File[], shouldTranscribe?: boolean[]): Promise<MediaAttachment[]> {
     const formData = new FormData();
     files.forEach(file => {
       formData.append('files', file);
     });
+    
+    // Add transcription flags if provided
+    if (shouldTranscribe) {
+      shouldTranscribe.forEach((flag, index) => {
+        formData.append(`transcribe_${index}`, flag.toString());
+      });
+    }
     
     const response = await fetch(`${API_BASE}/notes/${noteId}/media`, {
       method: 'POST',
@@ -36,6 +43,20 @@ export const mediaService = {
     });
     
     await handleResponse<{ message: string }>(response);
+  },
+
+  async retryTranscription(attachmentId: string): Promise<MediaAttachment> {
+    const response = await fetch(`${API_BASE}/media/${attachmentId}/transcribe`, {
+      method: 'POST'
+    });
+    
+    return handleResponse<MediaAttachment>(response);
+  },
+
+  async getTranscription(attachmentId: string): Promise<{ status: string; text?: string; error?: string }> {
+    const response = await fetch(`${API_BASE}/media/${attachmentId}/transcription`);
+    
+    return handleResponse<{ status: string; text?: string; error?: string }>(response);
   }
 };
 

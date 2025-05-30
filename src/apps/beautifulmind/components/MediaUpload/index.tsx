@@ -5,10 +5,11 @@ import { MediaAttachment, UploadProgress, AudioRecording } from '../../types/not
 import styles from './styles.module.css';
 
 interface MediaUploadProps {
-  onUpload: (files: File[]) => Promise<void>;
+  onUpload: (files: File[], shouldTranscribe?: boolean[]) => Promise<void>;
   uploads: UploadProgress[];
   existingMedia?: MediaAttachment[];
   onDeleteMedia?: (attachment: MediaAttachment) => void;
+  onRetryTranscription?: (attachmentId: string) => void;
   disabled?: boolean;
 }
 
@@ -17,6 +18,7 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
   uploads, 
   existingMedia = [],
   onDeleteMedia,
+  onRetryTranscription,
   disabled = false 
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -24,9 +26,12 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewType, setPreviewType] = useState<string>('');
+  const [shouldTranscribeFiles, setShouldTranscribeFiles] = useState<boolean>(true);
+  const [expandedTranscriptions, setExpandedTranscriptions] = useState<Set<string>>(new Set());
   const [audioRecording, setAudioRecording] = useState<AudioRecording>({
     isRecording: false,
-    duration: 0
+    duration: 0,
+    shouldTranscribe: true
   });
   const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
 
@@ -56,9 +61,13 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     });
     
     if (validFiles.length > 0) {
-      onUpload(validFiles);
+      // Create transcription flags for audio files
+      const transcriptionFlags = validFiles.map(file => 
+        file.type.startsWith('audio/') ? shouldTranscribeFiles : false
+      );
+      onUpload(validFiles, transcriptionFlags);
     }
-  }, [onUpload]);
+  }, [onUpload, shouldTranscribeFiles]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -127,11 +136,12 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
 
       mediaRecorder.start();
       
-      setAudioRecording({
+      setAudioRecording(prev => ({
+        ...prev,
         isRecording: true,
         duration: 0,
         mediaRecorder
-      });
+      }));
 
       // Start duration timer
       const timer = setInterval(() => {
@@ -168,18 +178,19 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
       const blob = await response.blob();
       const file = new File([blob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
       
-      await onUpload([file]);
+      await onUpload([file], [audioRecording.shouldTranscribe || false]);
       
       // Clean up
       URL.revokeObjectURL(audioRecording.audioUrl);
       setAudioRecording({
         isRecording: false,
-        duration: 0
+        duration: 0,
+        shouldTranscribe: true
       });
     } catch (err) {
       console.error('Failed to save recording:', err);
     }
-  }, [audioRecording.audioUrl, onUpload]);
+  }, [audioRecording.audioUrl, audioRecording.shouldTranscribe, onUpload]);
 
   const discardRecording = useCallback(() => {
     if (audioRecording.audioUrl) {
@@ -187,7 +198,8 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     }
     setAudioRecording({
       isRecording: false,
-      duration: 0
+      duration: 0,
+      shouldTranscribe: true
     });
   }, [audioRecording.audioUrl]);
 
@@ -201,10 +213,36 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     setPreviewType('');
   };
 
+  const toggleTranscriptionExpansion = (attachmentId: string) => {
+    setExpandedTranscriptions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(attachmentId)) {
+        newSet.delete(attachmentId);
+      } else {
+        newSet.add(attachmentId);
+      }
+      return newSet;
+    });
+  };
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getTranscriptionStatusIcon = (status?: string) => {
+    switch (status) {
+      case 'pending': return '⏳';
+      case 'completed': return '✅';
+      case 'failed': return '❌';
+      default: return '📝';
+    }
+  };
+
+  const truncateTranscription = (text: string, maxLength: number = 100) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
   };
 
   return (
@@ -261,20 +299,48 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
             🎵 Upload Audio
           </button>
         </div>
+        
+        {/* Transcription Option */}
+        <div className={styles.transcriptionOption}>
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={shouldTranscribeFiles}
+              onChange={(e) => setShouldTranscribeFiles(e.target.checked)}
+              className={styles.checkbox}
+            />
+            <span>Auto-transcribe audio files</span>
+          </label>
+        </div>
+        
         <p className={styles.dragText}>or drag and drop files here</p>
       </div>
 
       {/* Audio Recording Section */}
       <div className={styles.audioRecording}>
         {!audioRecording.isRecording && !audioRecording.audioUrl && (
-          <button
-            type="button"
-            onClick={startRecording}
-            className={`${styles.recordButton} ${styles.startRecord}`}
-            disabled={disabled}
-          >
-            🎤 Start Recording
-          </button>
+          <div className={styles.recordingStart}>
+            <button
+              type="button"
+              onClick={startRecording}
+              className={`${styles.recordButton} ${styles.startRecord}`}
+              disabled={disabled}
+            >
+              🎤 Start Recording
+            </button>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={audioRecording.shouldTranscribe || false}
+                onChange={(e) => setAudioRecording(prev => ({ 
+                  ...prev, 
+                  shouldTranscribe: e.target.checked 
+                }))}
+                className={styles.checkbox}
+              />
+              <span>Transcribe recording</span>
+            </label>
+          </div>
         )}
 
         {audioRecording.isRecording && (
@@ -321,7 +387,10 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
         <div className={styles.uploadProgress}>
           {uploads.map((upload, index) => (
             <div key={index} className={styles.progressItem}>
-              <span className={styles.fileName}>{upload.fileName}</span>
+              <span className={styles.fileName}>
+                {upload.fileName}
+                {upload.shouldTranscribe && <span className={styles.transcribeIndicator}> 📝</span>}
+              </span>
               <div className={styles.progressBar}>
                 <div 
                   className={styles.progressFill} 
@@ -330,6 +399,11 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
               </div>
               {upload.error && (
                 <span className={styles.error}>{upload.error}</span>
+              )}
+              {upload.transcriptionStatus && (
+                <span className={styles.transcriptionStatus}>
+                  {getTranscriptionStatusIcon(upload.transcriptionStatus)} Transcription: {upload.transcriptionStatus}
+                </span>
               )}
             </div>
           ))}
@@ -357,16 +431,65 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
                   <span className={styles.fileName}>{attachment.file_name}</span>
                 </div>
               ) : (
-                <div 
-                  className={styles.audioThumbnail}
-                  onClick={() => handlePreview(attachment.url!, attachment.media_type)}
-                >
-                  <span className={styles.audioIcon}>🎵</span>
-                  <span className={styles.fileName}>{attachment.file_name}</span>
+                <div className={styles.audioThumbnail}>
+                  <div className={styles.audioHeader}>
+                    <div 
+                      className={styles.audioPlayButton}
+                      onClick={() => handlePreview(attachment.url!, attachment.media_type)}
+                    >
+                      <span className={styles.audioIcon}>🎵</span>
+                      <span className={styles.fileName}>{attachment.file_name}</span>
+                    </div>
+                    {attachment.transcription_status && (
+                      <div className={styles.transcriptionControls}>
+                        <span className={styles.transcriptionStatus}>
+                          {getTranscriptionStatusIcon(attachment.transcription_status)}
+                        </span>
+                        {attachment.transcription_status === 'failed' && onRetryTranscription && (
+                          <button
+                            className={styles.retryButton}
+                            onClick={() => onRetryTranscription(attachment.id)}
+                            title="Retry transcription"
+                          >
+                            🔄
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
                   {attachment.duration && (
                     <span className={styles.audioDuration}>
                       {formatDuration(Math.floor(attachment.duration))}
                     </span>
+                  )}
+                  
+                  {/* Transcription Display */}
+                  {attachment.transcription_text && (
+                    <div className={styles.transcriptionSection}>
+                      <div className={styles.transcriptionPreview}>
+                        <p className={styles.transcriptionText}>
+                          {expandedTranscriptions.has(attachment.id) 
+                            ? attachment.transcription_text
+                            : truncateTranscription(attachment.transcription_text)
+                          }
+                        </p>
+                        {attachment.transcription_text.length > 100 && (
+                          <button
+                            className={styles.expandButton}
+                            onClick={() => toggleTranscriptionExpansion(attachment.id)}
+                          >
+                            {expandedTranscriptions.has(attachment.id) ? 'Show less' : 'Show more'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {attachment.transcription_error && (
+                    <div className={styles.transcriptionError}>
+                      Error: {attachment.transcription_error}
+                    </div>
                   )}
                 </div>
               )}

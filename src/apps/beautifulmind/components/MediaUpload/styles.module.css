@@ -55,6 +55,27 @@
   cursor: not-allowed;
 }
 
+/* Transcription UI Styles */
+.transcriptionOption {
+  margin: 1rem 0;
+  display: flex;
+  justify-content: center;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary, #a1a1aa);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.checkbox {
+  accent-color: var(--primary-color, #3b82f6);
+  cursor: pointer;
+}
+
 .dragText {
   color: var(--text-muted, #71717a);
   font-size: 0.875rem;
@@ -68,6 +89,13 @@
   background-color: var(--audio-recording-bg, rgba(255, 255, 255, 0.02));
   border: 1px solid var(--border-color, #333);
   border-radius: 0.5rem;
+}
+
+.recordingStart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 }
 
 .recordButton {
@@ -190,6 +218,11 @@
   white-space: nowrap;
 }
 
+.transcribeIndicator {
+  color: var(--primary-color, #3b82f6);
+  font-size: 0.875rem;
+}
+
 .progressBar {
   height: 4px;
   background-color: var(--progress-track, #333);
@@ -201,6 +234,13 @@
   height: 100%;
   background-color: var(--primary-color, #3b82f6);
   transition: width 0.3s ease;
+}
+
+.transcriptionStatus {
+  color: var(--text-muted, #71717a);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: block;
 }
 
 .error {
@@ -239,8 +279,7 @@
   transform: scale(1.05);
 }
 
-.videoThumbnail,
-.audioThumbnail {
+.videoThumbnail {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -252,9 +291,58 @@
   transition: background-color 0.2s;
 }
 
-.videoThumbnail:hover,
+.videoThumbnail:hover {
+  background-color: var(--hover-bg, #262626);
+}
+
+.audioThumbnail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-align: center;
+  transition: background-color 0.2s;
+}
+
 .audioThumbnail:hover {
   background-color: var(--hover-bg, #262626);
+}
+
+.audioHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color, #333);
+}
+
+.audioPlayButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  flex: 1;
+}
+
+.transcriptionControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.retryButton {
+  background: transparent;
+  border: 1px solid var(--border-color, #333);
+  color: var(--text-secondary, #a1a1aa);
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+
+.retryButton:hover {
+  background-color: var(--hover-bg, #262626);
+  color: var(--text-primary, #fff);
 }
 
 .videoIcon,
@@ -266,7 +354,52 @@
 .audioDuration {
   font-size: 0.75rem;
   color: var(--text-muted, #71717a);
-  margin-top: 0.25rem;
+  margin: 0.5rem;
+}
+
+.transcriptionSection {
+  border-top: 1px solid var(--border-color, #333);
+  padding: 0.75rem;
+  background-color: var(--transcription-bg, rgba(255, 255, 255, 0.02));
+}
+
+.transcriptionPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.transcriptionText {
+  color: var(--text-secondary, #a1a1aa);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.expandButton {
+  background: transparent;
+  border: none;
+  color: var(--primary-color, #3b82f6);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+}
+
+.expandButton:hover {
+  color: var(--primary-hover, #2563eb);
+}
+
+.transcriptionError {
+  background-color: var(--danger-bg, rgba(239, 68, 68, 0.1));
+  color: var(--danger-color, #ef4444);
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  margin: 0.5rem;
 }
 
 .deleteButton {
@@ -392,6 +525,10 @@
     justify-content: center;
   }
   
+  .recordingStart {
+    align-items: stretch;
+  }
+  
   .mediaGrid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
@@ -399,5 +536,19 @@
   .audioPreview {
     min-width: 250px;
     padding: 1.5rem;
+  }
+  
+  .transcriptionOption {
+    margin: 0.5rem 0;
+  }
+  
+  .audioHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  
+  .transcriptionControls {
+    justify-content: center;
   }
 }

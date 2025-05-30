@@ -82,6 +82,16 @@
   border: 1px solid var(--border-color, #333);
 }
 
+.audioIndicator {
+  position: relative;
+}
+
+.transcriptionBadge {
+  color: var(--primary-color, #3b82f6);
+  font-size: 0.7rem;
+  margin-left: 0.25rem;
+}
+
 .deleteButton {
   position: absolute;
   top: 1rem;

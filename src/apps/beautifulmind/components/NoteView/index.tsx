@@ -12,6 +12,7 @@ interface NoteViewProps {
 
 const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
   const [previewMedia, setPreviewMedia] = useState<{ url: string; type: string } | null>(null);
+  const [expandedTranscriptions, setExpandedTranscriptions] = useState<Set<string>>(new Set());
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -43,6 +44,41 @@ const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
 
   const closePreview = () => {
     setPreviewMedia(null);
+  };
+
+  const toggleTranscriptionExpansion = (attachmentId: string) => {
+    setExpandedTranscriptions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(attachmentId)) {
+        newSet.delete(attachmentId);
+      } else {
+        newSet.add(attachmentId);
+      }
+      return newSet;
+    });
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // Could add a toast notification here
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
+  };
+
+  const getTranscriptionStatusIcon = (status?: string) => {
+    switch (status) {
+      case 'pending': return '⏳';
+      case 'completed': return '✅';
+      case 'failed': return '❌';
+      default: return '📝';
+    }
+  };
+
+  const truncateTranscription = (text: string, maxLength: number = 150) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
   };
 
   return (
@@ -139,6 +175,11 @@ const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
                         >
                           🔍
                         </button>
+                        {attachment.transcription_status && (
+                          <span className={styles.transcriptionStatusBadge}>
+                            {getTranscriptionStatusIcon(attachment.transcription_status)}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className={styles.audioPlayer}>
@@ -151,13 +192,75 @@ const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
                     </div>
                     <div className={styles.mediaInfo}>
                       <span className={styles.mediaName}>{attachment.file_name}</span>
-                      <span className={styles.mediaSize}>{formatFileSize(attachment.file_size)}</span>
-                      {attachment.duration && (
-                        <span className={styles.mediaDuration}>
-                          {formatDuration(attachment.duration)}
-                        </span>
-                      )}
+                      <div className={styles.mediaDetails}>
+                        <span className={styles.mediaSize}>{formatFileSize(attachment.file_size)}</span>
+                        {attachment.duration && (
+                          <span className={styles.mediaDuration}>
+                            {formatDuration(attachment.duration)}
+                          </span>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Transcription Section */}
+                    {attachment.transcription_text && (
+                      <div className={styles.transcriptionSection}>
+                        <div className={styles.transcriptionHeader}>
+                          <span className={styles.transcriptionLabel}>Transcription</span>
+                          <div className={styles.transcriptionActions}>
+                            <button
+                              className={styles.copyButton}
+                              onClick={() => copyToClipboard(attachment.transcription_text!)}
+                              title="Copy transcription"
+                            >
+                              📋
+                            </button>
+                            {attachment.transcription_text.length > 150 && (
+                              <button
+                                className={styles.expandButton}
+                                onClick={() => toggleTranscriptionExpansion(attachment.id)}
+                              >
+                                {expandedTranscriptions.has(attachment.id) ? '▲' : '▼'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className={styles.transcriptionContent}>
+                          <p className={styles.transcriptionText}>
+                            {expandedTranscriptions.has(attachment.id) 
+                              ? attachment.transcription_text
+                              : truncateTranscription(attachment.transcription_text)
+                            }
+                          </p>
+                          {attachment.transcribed_at && (
+                            <span className={styles.transcriptionDate}>
+                              Transcribed {formatDate(attachment.transcribed_at)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {attachment.transcription_status === 'pending' && (
+                      <div className={styles.transcriptionPending}>
+                        <span className={styles.transcriptionPendingText}>
+                          ⏳ Transcription in progress...
+                        </span>
+                      </div>
+                    )}
+
+                    {attachment.transcription_status === 'failed' && (
+                      <div className={styles.transcriptionError}>
+                        <span className={styles.transcriptionErrorText}>
+                          ❌ Transcription failed
+                        </span>
+                        {attachment.transcription_error && (
+                          <span className={styles.transcriptionErrorMessage}>
+                            {attachment.transcription_error}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
