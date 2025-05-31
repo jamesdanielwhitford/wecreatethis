@@ -27,8 +27,8 @@ export const useNotes = () => {
   const createNote = async (noteData: NoteFormData) => {
     try {
       const newNote = await notesService.createNote(noteData);
-      // Fetch all notes to get updated media attachments
-      await fetchNotes();
+      // Add the new note to the list immediately
+      setNotes(prev => [newNote, ...prev]);
       return newNote;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create note');
@@ -61,9 +61,33 @@ export const useNotes = () => {
     }
   };
 
+  // Generate title for a note
+  const generateNoteTitle = async (id: string) => {
+    try {
+      const result = await notesService.generateTitle(id);
+      
+      // Update the specific note in the list
+      setNotes(prev => prev.map(note => 
+        note.id === id ? result.note : note
+      ));
+      
+      return result;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate title');
+      throw err;
+    }
+  };
+
   // Get a single note by ID with fresh data
   const getNoteById = (id: string) => {
     return notes.find(note => note.id === id);
+  };
+
+  // Update a specific note in the list (useful for real-time updates)
+  const updateNoteInList = (updatedNote: Note) => {
+    setNotes(prev => prev.map(note => 
+      note.id === updatedNote.id ? updatedNote : note
+    ));
   };
 
   useEffect(() => {
@@ -77,7 +101,9 @@ export const useNotes = () => {
     createNote,
     updateNote,
     deleteNote,
+    generateNoteTitle,
     getNoteById,
+    updateNoteInList,
     refreshNotes: fetchNotes
   };
 };

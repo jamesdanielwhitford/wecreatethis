@@ -22,7 +22,7 @@ const BeautifulMind: React.FC = () => {
   // New state for files during creation (before note exists)
   const [pendingFiles, setPendingFiles] = useState<PendingMediaFile[]>([]);
   
-  const { notes, loading, error, createNote, updateNote, deleteNote, getNoteById } = useNotes();
+  const { notes, loading, error, createNote, updateNote, deleteNote, getNoteById, updateNoteInList } = useNotes();
 
   const handleNewNote = () => {
     setSelectedNote(null);
@@ -80,7 +80,12 @@ const BeautifulMind: React.FC = () => {
     if (isCreating || !selectedNote) {
       // Creating new note
       const newNote = await createNote(data);
-      setSelectedNote(newNote);
+      
+      // After note creation and potential title generation, get the updated note
+      // The NoteEditor will handle title generation, so we should get the final note
+      const finalNote = getNoteById(newNote.id) || newNote;
+      
+      setSelectedNote(finalNote);
       setIsCreating(false);
       setViewMode('view');
       
@@ -90,17 +95,21 @@ const BeautifulMind: React.FC = () => {
       setDeletedMediaIds([]);
       setPendingFiles([]);
       
-      return newNote;
+      return finalNote;
     } else {
       // Updating existing note
       const updatedNote = await updateNote(selectedNote.id, data);
-      setSelectedNote(updatedNote);
+      
+      // After note update and potential title generation, get the updated note
+      const finalNote = getNoteById(updatedNote.id) || updatedNote;
+      
+      setSelectedNote(finalNote);
       setViewMode('view');
       setPendingMedia([]);
       setPendingUploads([]);
       setDeletedMediaIds([]);
       setPendingFiles([]);
-      return updatedNote;
+      return finalNote;
     }
   };
 
@@ -127,6 +136,23 @@ const BeautifulMind: React.FC = () => {
     setPendingUploads([]);
     setDeletedMediaIds([]);
     setPendingFiles([]);
+  };
+
+  // Custom save handler that includes title generation logic
+  const handleSaveWithTitleGeneration = async (data: { title: string; content: string }): Promise<Note> => {
+    let savedNote: Note;
+    
+    if (isCreating || !selectedNote) {
+      // Creating new note
+      savedNote = await createNote(data);
+    } else {
+      // Updating existing note
+      savedNote = await updateNote(selectedNote.id, data);
+    }
+    
+    // Update the note in our local state if title was generated
+    // This will be handled by the NoteEditor component
+    return savedNote;
   };
 
   if (loading) {

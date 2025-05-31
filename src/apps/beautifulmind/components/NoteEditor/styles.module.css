@@ -8,6 +8,11 @@
   height: calc(100vh - 200px);
 }
 
+.titleContainer {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
 .titleInput {
   background: transparent;
   border: none;
@@ -16,9 +21,9 @@
   font-weight: 600;
   color: var(--text-primary, #fff);
   padding: 1rem 0;
-  margin-bottom: 1.5rem;
   outline: none;
   transition: border-color 0.2s;
+  width: 100%;
 }
 
 .titleInput:focus {
@@ -27,6 +32,24 @@
 
 .titleInput::placeholder {
   color: var(--text-muted, #71717a);
+}
+
+.titleGeneratingIndicator {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  color: var(--primary-color, #3b82f6);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 .contentTextarea {

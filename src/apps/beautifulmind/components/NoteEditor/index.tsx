@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Note, NoteFormData, MediaAttachment, UploadProgress, PendingMediaFile } from '../../types/notes.types';
-import { mediaService } from '../../utils/api';
+import { mediaService, notesService } from '../../utils/api';
 import MediaUpload from '../MediaUpload';
 import styles from './styles.module.css';
 
@@ -42,6 +42,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     content: ''
   });
   const [saving, setSaving] = useState(false);
+  const [generatingTitle, setGeneratingTitle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -251,11 +252,41 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     }
   };
 
+  const shouldGenerateTitle = (title: string, content: string, hasMedia: boolean): boolean => {
+    const trimmedTitle = title.trim();
+    
+    // Don't generate if user provided a title
+    if (trimmedTitle && trimmedTitle !== 'Untitled Note') {
+      return false;
+    }
+    
+    // Generate if there's content or media that could provide context
+    return content.trim().length > 0 || hasMedia;
+  };
+
+  const generateTitleForNote = async (savedNote: Note): Promise<Note> => {
+    try {
+      setGeneratingTitle(true);
+      const result = await notesService.generateTitle(savedNote.id);
+      
+      // Update the form data with the generated title
+      setFormData(prev => ({ ...prev, title: result.title }));
+      
+      return result.note;
+    } catch (err) {
+      console.error('Failed to generate title:', err);
+      // Return the original note if title generation fails
+      return savedNote;
+    } finally {
+      setGeneratingTitle(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title.trim() && !formData.content.trim()) {
-      setError('Please add a title or content');
+    if (!formData.title.trim() && !formData.content.trim() && pendingFiles.length === 0 && pendingMedia.length === 0) {
+      setError('Please add a title, content, or media');
       return;
     }
 
@@ -263,13 +294,21 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       setSaving(true);
       setError(null);
       
+      let savedNote: Note;
+      
       if (isCreating) {
         // Save the note first
-        const savedNote = await onSave(formData);
+        savedNote = await onSave(formData);
         
-        // Then upload any pending files
+        // Upload any pending files
         if (pendingFiles.length > 0) {
           await uploadPendingFiles(savedNote.id);
+        }
+        
+        // Generate title if needed
+        const hasMediaForTitle = pendingFiles.length > 0;
+        if (shouldGenerateTitle(formData.title, formData.content, hasMediaForTitle)) {
+          savedNote = await generateTitleForNote(savedNote);
         }
       } else {
         // For existing notes, delete marked media first
@@ -280,8 +319,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           }
         }
         
-        await onSave(formData);
+        savedNote = await onSave(formData);
+        
+        // Generate title if needed (check for existing media attachments)
+        const hasExistingMedia = (savedNote.media_attachments?.length || 0) > 0;
+        if (shouldGenerateTitle(formData.title, formData.content, hasExistingMedia)) {
+          savedNote = await generateTitleForNote(savedNote);
+        }
       }
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save note');
     } finally {
@@ -309,14 +355,21 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
   return (
     <form className={styles.editor} onSubmit={handleSubmit}>
-      <input
-        type="text"
-        className={styles.titleInput}
-        placeholder="Note title..."
-        value={formData.title}
-        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-        autoFocus={isCreating}
-      />
+      <div className={styles.titleContainer}>
+        <input
+          type="text"
+          className={styles.titleInput}
+          placeholder="Note title... (leave blank for AI-generated title)"
+          value={formData.title}
+          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+          autoFocus={isCreating}
+        />
+        {generatingTitle && (
+          <div className={styles.titleGeneratingIndicator}>
+            🤖 Generating title...
+          </div>
+        )}
+      </div>
       
       <textarea
         className={styles.contentTextarea}
@@ -336,7 +389,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         onRetryTranscription={!isCreating ? handleRetryTranscription : undefined}
         onGenerateDescription={!isCreating ? handleGenerateDescription : undefined}
         onUpdateDescription={!isCreating ? handleUpdateDescription : undefined}
-        disabled={saving}
+        disabled={saving || generatingTitle}
       />
 
       {error && (
@@ -348,16 +401,16 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           type="button"
           className={styles.cancelButton}
           onClick={onCancel}
-          disabled={saving}
+          disabled={saving || generatingTitle}
         >
           Cancel
         </button>
         <button
           type="submit"
           className={styles.saveButton}
-          disabled={saving}
+          disabled={saving || generatingTitle}
         >
-          {saving ? 'Saving...' : (isCreating ? 'Create Note' : 'Save Changes')}
+          {saving ? 'Saving...' : generatingTitle ? 'Generating title...' : (isCreating ? 'Create Note' : 'Save Changes')}
         </button>
       </div>
     </form>

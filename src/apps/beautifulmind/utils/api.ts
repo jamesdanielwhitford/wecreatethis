@@ -144,5 +144,13 @@ export const notesService = {
     });
     
     await handleResponse<{ message: string }>(response);
+  },
+
+  async generateTitle(noteId: string): Promise<{ note: Note; title: string; message: string }> {
+    const response = await fetch(`${API_BASE}/notes/${noteId}/generate-title`, {
+      method: 'POST'
+    });
+    
+    return handleResponse<{ note: Note; title: string; message: string }>(response);
   }
 };
