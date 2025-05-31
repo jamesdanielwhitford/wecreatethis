@@ -64,6 +64,44 @@ async function transcribeAudioFile(file: File): Promise<string> {
   }
 }
 
+// Helper function to generate AI description for image
+async function generateImageDescription(file: File): Promise<string> {
+  try {
+    // Convert file to base64
+    const arrayBuffer = await file.arrayBuffer();
+    const base64Image = Buffer.from(arrayBuffer).toString('base64');
+    
+    // Call OpenAI Vision API
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Please provide a clear, concise description of this image. Focus on the main subjects, objects, setting, and any important details. Keep it informative but brief (1-3 sentences)."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:${file.type};base64,${base64Image}`,
+                detail: "low"
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 150
+    });
+
+    return response.choices[0]?.message?.content || '';
+  } catch (error) {
+    console.error('Failed to generate image description:', error);
+    throw error;
+  }
+}
+
 // POST /api/notes/[id]/media - Upload media to a note
 export async function POST(
   request: NextRequest,
@@ -87,6 +125,10 @@ export async function POST(
       
       // Check if transcription was requested for this file
       const shouldTranscribe = formData.get(`transcribe_${i}`) === 'true';
+      
+      // Check if description was requested for this file
+      const shouldDescribe = formData.get(`describe_${i}`) === 'true';
+      const manualDescription = formData.get(`description_${i}`) as string;
       
       // Generate unique file name
       const fileExt = file.name.split('.').pop();
@@ -131,6 +173,31 @@ export async function POST(
         }
       }
       
+      // Prepare description data
+      let descriptionData = {};
+      if (mediaType === 'image') {
+        if (manualDescription && manualDescription.trim()) {
+          // Manual description provided
+          descriptionData = {
+            description: manualDescription.trim(),
+            ai_generated_description: false,
+            description_status: 'completed',
+            described_at: new Date().toISOString()
+          };
+        } else if (shouldDescribe) {
+          // AI description requested
+          descriptionData = {
+            description_status: 'pending',
+            description_error: null
+          };
+        } else {
+          // No description requested
+          descriptionData = {
+            description_status: 'not_started'
+          };
+        }
+      }
+      
       // Prepare transcription data
       let transcriptionData = {};
       if (mediaType === 'audio' && shouldTranscribe) {
@@ -150,7 +217,8 @@ export async function POST(
             storage_path: uploadData.path,
             media_type: mediaType,
             ...metadata,
-            ...transcriptionData
+            ...transcriptionData,
+            ...descriptionData
           };
           
           const { data: attachment, error } = await supabase
@@ -183,11 +251,46 @@ export async function POST(
 
             if (updateError) throw updateError;
 
+            // Handle AI description for images
+            let finalAttachment = updatedAttachment;
+            if (mediaType === 'image' && shouldDescribe) {
+              try {
+                const description = await generateImageDescription(file);
+                
+                const { data: describedAttachment, error: describeError } = await supabase
+                  .from('media_attachments')
+                  .update({
+                    description: description,
+                    ai_generated_description: true,
+                    description_status: 'completed',
+                    described_at: new Date().toISOString()
+                  })
+                  .eq('id', attachment.id)
+                  .select()
+                  .single();
+
+                if (describeError) throw describeError;
+                finalAttachment = describedAttachment;
+              } catch (descriptionError) {
+                console.error('Description failed:', descriptionError);
+                
+                await supabase
+                  .from('media_attachments')
+                  .update({
+                    description_status: 'failed',
+                    description_error: descriptionError instanceof Error 
+                      ? descriptionError.message 
+                      : 'Unknown description error'
+                  })
+                  .eq('id', attachment.id);
+              }
+            }
+
             // Add URLs for convenience
             const attachmentWithUrls = {
-              ...updatedAttachment,
-              url: getMediaUrl(updatedAttachment.storage_path),
-              thumbnailUrl: updatedAttachment.thumbnail_path ? getMediaUrl(updatedAttachment.thumbnail_path) : undefined
+              ...finalAttachment,
+              url: getMediaUrl(finalAttachment.storage_path),
+              thumbnailUrl: finalAttachment.thumbnail_path ? getMediaUrl(finalAttachment.thumbnail_path) : undefined
             };
 
             uploadedAttachments.push(attachmentWithUrls);
@@ -245,7 +348,8 @@ export async function POST(
           storage_path: uploadData.path,
           media_type: mediaType,
           ...metadata,
-          ...transcriptionData
+          ...transcriptionData,
+          ...descriptionData
         };
         
         const { data, error } = await supabase
@@ -260,11 +364,46 @@ export async function POST(
           throw error;
         }
         
+        // Handle AI description for images
+        let finalAttachment = data;
+        if (mediaType === 'image' && shouldDescribe && !manualDescription?.trim()) {
+          try {
+            const description = await generateImageDescription(file);
+            
+            const { data: describedAttachment, error: describeError } = await supabase
+              .from('media_attachments')
+              .update({
+                description: description,
+                ai_generated_description: true,
+                description_status: 'completed',
+                described_at: new Date().toISOString()
+              })
+              .eq('id', data.id)
+              .select()
+              .single();
+
+            if (describeError) throw describeError;
+            finalAttachment = describedAttachment;
+          } catch (descriptionError) {
+            console.error('Description failed:', descriptionError);
+            
+            await supabase
+              .from('media_attachments')
+              .update({
+                description_status: 'failed',
+                description_error: descriptionError instanceof Error 
+                  ? descriptionError.message 
+                  : 'Unknown description error'
+              })
+              .eq('id', data.id);
+          }
+        }
+        
         // Add URLs for convenience
         const attachmentWithUrls = {
-          ...data,
-          url: getMediaUrl(data.storage_path),
-          thumbnailUrl: data.thumbnail_path ? getMediaUrl(data.thumbnail_path) : undefined
+          ...finalAttachment,
+          url: getMediaUrl(finalAttachment.storage_path),
+          thumbnailUrl: finalAttachment.thumbnail_path ? getMediaUrl(finalAttachment.thumbnail_path) : undefined
         };
         
         uploadedAttachments.push(attachmentWithUrls);

@@ -13,6 +13,7 @@ interface NoteViewProps {
 const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
   const [previewMedia, setPreviewMedia] = useState<{ url: string; type: string } | null>(null);
   const [expandedTranscriptions, setExpandedTranscriptions] = useState<Set<string>>(new Set());
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -58,6 +59,18 @@ const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
     });
   };
 
+  const toggleDescriptionExpansion = (attachmentId: string) => {
+    setExpandedDescriptions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(attachmentId)) {
+        newSet.delete(attachmentId);
+      } else {
+        newSet.add(attachmentId);
+      }
+      return newSet;
+    });
+  };
+
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -76,7 +89,21 @@ const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
     }
   };
 
+  const getDescriptionStatusIcon = (status?: string) => {
+    switch (status) {
+      case 'pending': return '⏳';
+      case 'completed': return '✅';
+      case 'failed': return '❌';
+      default: return '📝';
+    }
+  };
+
   const truncateTranscription = (text: string, maxLength: number = 150) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
+  const truncateDescription = (text: string, maxLength: number = 150) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
@@ -131,19 +158,84 @@ const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
             {note.media_attachments.map((attachment) => (
               <div key={attachment.id} className={styles.mediaItem}>
                 {attachment.media_type === 'image' ? (
-                  <div 
-                    className={styles.imageContainer}
-                    onClick={() => handleMediaClick(attachment.url!, attachment.media_type)}
-                  >
-                    <img
-                      src={attachment.url}
-                      alt={attachment.file_name}
-                      className={styles.mediaThumbnail}
-                    />
-                    <div className={styles.mediaOverlay}>
-                      <span className={styles.mediaName}>{attachment.file_name}</span>
-                      <span className={styles.mediaSize}>{formatFileSize(attachment.file_size)}</span>
+                  <div className={styles.imageContainer}>
+                    <div 
+                      className={styles.imageWrapper}
+                      onClick={() => handleMediaClick(attachment.url!, attachment.media_type)}
+                    >
+                      <img
+                        src={attachment.url}
+                        alt={attachment.description || attachment.file_name}
+                        className={styles.mediaThumbnail}
+                      />
+                      <div className={styles.mediaOverlay}>
+                        <span className={styles.mediaName}>{attachment.file_name}</span>
+                        <span className={styles.mediaSize}>{formatFileSize(attachment.file_size)}</span>
+                      </div>
                     </div>
+
+                    {/* Image Description Section */}
+                    {attachment.description && (
+                      <div className={styles.descriptionSection}>
+                        <div className={styles.descriptionHeader}>
+                          <span className={styles.descriptionLabel}>Description</span>
+                          <div className={styles.descriptionActions}>
+                            <button
+                              className={styles.copyButton}
+                              onClick={() => copyToClipboard(attachment.description!)}
+                              title="Copy description"
+                            >
+                              📋
+                            </button>
+                            {attachment.description.length > 150 && (
+                              <button
+                                className={styles.expandButton}
+                                onClick={() => toggleDescriptionExpansion(attachment.id)}
+                              >
+                                {expandedDescriptions.has(attachment.id) ? '▲' : '▼'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className={styles.descriptionContent}>
+                          <p className={styles.descriptionText}>
+                            {expandedDescriptions.has(attachment.id) 
+                              ? attachment.description
+                              : truncateDescription(attachment.description)
+                            }
+                          </p>
+                          {attachment.ai_generated_description && (
+                            <span className={styles.aiGeneratedBadge}>🤖 AI Generated</span>
+                          )}
+                          {attachment.described_at && (
+                            <span className={styles.descriptionDate}>
+                              Described {formatDate(attachment.described_at)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {attachment.description_status === 'pending' && (
+                      <div className={styles.descriptionPending}>
+                        <span className={styles.descriptionPendingText}>
+                          ⏳ Generating description...
+                        </span>
+                      </div>
+                    )}
+
+                    {attachment.description_status === 'failed' && (
+                      <div className={styles.descriptionError}>
+                        <span className={styles.descriptionErrorText}>
+                          ❌ Description generation failed
+                        </span>
+                        {attachment.description_error && (
+                          <span className={styles.descriptionErrorMessage}>
+                            {attachment.description_error}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : attachment.media_type === 'video' ? (
                   <div 

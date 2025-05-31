@@ -16,7 +16,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 // Media service
 export const mediaService = {
-  async uploadFiles(noteId: string, files: File[], shouldTranscribe?: boolean[]): Promise<MediaAttachment[]> {
+  async uploadFiles(noteId: string, files: File[], shouldTranscribe?: boolean[], shouldDescribe?: boolean[], descriptions?: string[]): Promise<MediaAttachment[]> {
     const formData = new FormData();
     files.forEach(file => {
       formData.append('files', file);
@@ -26,6 +26,21 @@ export const mediaService = {
     if (shouldTranscribe) {
       shouldTranscribe.forEach((flag, index) => {
         formData.append(`transcribe_${index}`, flag.toString());
+      });
+    }
+    
+    // Add description flags and manual descriptions if provided
+    if (shouldDescribe) {
+      shouldDescribe.forEach((flag, index) => {
+        formData.append(`describe_${index}`, flag.toString());
+      });
+    }
+    
+    if (descriptions) {
+      descriptions.forEach((description, index) => {
+        if (description && description.trim()) {
+          formData.append(`description_${index}`, description.trim());
+        }
       });
     }
     
@@ -57,6 +72,26 @@ export const mediaService = {
     const response = await fetch(`${API_BASE}/media/${attachmentId}/transcription`);
     
     return handleResponse<{ status: string; text?: string; error?: string }>(response);
+  },
+
+  async generateDescription(attachmentId: string): Promise<MediaAttachment> {
+    const response = await fetch(`${API_BASE}/media/${attachmentId}/describe`, {
+      method: 'POST'
+    });
+    
+    return handleResponse<MediaAttachment>(response);
+  },
+
+  async updateDescription(attachmentId: string, description: string): Promise<MediaAttachment> {
+    const response = await fetch(`${API_BASE}/media/${attachmentId}/describe`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ description })
+    });
+    
+    return handleResponse<MediaAttachment>(response);
   }
 };
 

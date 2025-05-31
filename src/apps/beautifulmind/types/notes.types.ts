@@ -15,11 +15,17 @@ export interface MediaAttachment {
   created_at: string;
   url?: string; // Added for frontend convenience
   thumbnailUrl?: string; // Added for frontend convenience
-  // New transcription fields
+  // Transcription fields
   transcription_text?: string;
   transcription_status?: 'not_started' | 'pending' | 'completed' | 'failed';
   transcription_error?: string;
   transcribed_at?: string;
+  // New description fields
+  description?: string; // User-provided or AI-generated description
+  ai_generated_description?: boolean; // Whether description was AI-generated
+  description_status?: 'not_started' | 'pending' | 'completed' | 'failed';
+  description_error?: string;
+  described_at?: string;
 }
 
 export interface Note {
@@ -46,6 +52,10 @@ export interface UploadProgress {
   // Add transcription options
   shouldTranscribe?: boolean;
   transcriptionStatus?: 'not_started' | 'pending' | 'completed' | 'failed';
+  // Add description options
+  shouldDescribe?: boolean;
+  description?: string;
+  descriptionStatus?: 'not_started' | 'pending' | 'completed' | 'failed';
 }
 
 export interface AudioRecording {
@@ -61,6 +71,8 @@ export interface PendingMediaFile {
   id: string; // temporary ID for React keys
   file: File;
   shouldTranscribe: boolean;
+  shouldDescribe: boolean; // Add description option
+  description?: string; // Manual description
   media_type: 'image' | 'video' | 'audio';
   preview_url?: string; // for images/videos
 }

@@ -56,7 +56,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     }
   }, [note, isCreating]);
 
-  const handleMediaUpload = async (files: File[], shouldTranscribe?: boolean[]) => {
+  const handleMediaUpload = async (files: File[], shouldTranscribe?: boolean[], shouldDescribe?: boolean[], descriptions?: string[]) => {
     if (isCreating) {
       // During creation, just store files locally without uploading
       const newPendingFiles: PendingMediaFile[] = files.map((file, index) => {
@@ -79,6 +79,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           id: `temp-${Date.now()}-${Math.random().toString(36).substring(7)}`,
           file,
           shouldTranscribe: shouldTranscribe?.[index] || false,
+          shouldDescribe: shouldDescribe?.[index] || false,
+          description: descriptions?.[index],
           media_type: mediaType,
           preview_url: previewUrl
         };
@@ -95,7 +97,10 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       fileName: file.name,
       progress: 0,
       shouldTranscribe: shouldTranscribe?.[index] || false,
-      transcriptionStatus: shouldTranscribe?.[index] ? 'not_started' : undefined
+      transcriptionStatus: shouldTranscribe?.[index] ? 'not_started' : undefined,
+      shouldDescribe: shouldDescribe?.[index] || false,
+      description: descriptions?.[index],
+      descriptionStatus: shouldDescribe?.[index] ? 'not_started' : undefined
     }));
     
     setPendingUploads(prev => [...prev, ...newUploads]);
@@ -110,7 +115,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       });
       
       // Upload files via API
-      const attachments = await mediaService.uploadFiles(note.id, files, shouldTranscribe);
+      const attachments = await mediaService.uploadFiles(note.id, files, shouldTranscribe, shouldDescribe, descriptions);
       
       // Update progress to complete
       files.forEach((_, index) => {
@@ -189,14 +194,48 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     }
   };
 
+  const handleGenerateDescription = async (attachmentId: string) => {
+    try {
+      await mediaService.generateDescription(attachmentId);
+      
+      // Update the pending media to show pending status
+      setPendingMedia(prev => prev.map(attachment => 
+        attachment.id === attachmentId
+          ? { ...attachment, description_status: 'pending', description_error: undefined }
+          : attachment
+      ));
+      
+      setError(null);
+    } catch (err) {
+      setError('Failed to generate description');
+    }
+  };
+
+  const handleUpdateDescription = async (attachmentId: string, description: string) => {
+    try {
+      const updatedAttachment = await mediaService.updateDescription(attachmentId, description);
+      
+      // Update the pending media with the new description
+      setPendingMedia(prev => prev.map(attachment => 
+        attachment.id === attachmentId ? updatedAttachment : attachment
+      ));
+      
+      setError(null);
+    } catch (err) {
+      setError('Failed to update description');
+    }
+  };
+
   const uploadPendingFiles = async (noteId: string): Promise<MediaAttachment[]> => {
     if (pendingFiles.length === 0) return [];
 
     const files = pendingFiles.map(pf => pf.file);
     const shouldTranscribe = pendingFiles.map(pf => pf.shouldTranscribe);
+    const shouldDescribe = pendingFiles.map(pf => pf.shouldDescribe);
+    const descriptions = pendingFiles.map(pf => pf.description);
 
     try {
-      const attachments = await mediaService.uploadFiles(noteId, files, shouldTranscribe);
+      const attachments = await mediaService.uploadFiles(noteId, files, shouldTranscribe, shouldDescribe, descriptions);
       
       // Clean up preview URLs
       pendingFiles.forEach(pf => {
@@ -261,7 +300,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     media_type: pf.media_type,
     created_at: new Date().toISOString(),
     url: pf.preview_url || '', // Use preview URL
-    transcription_status: pf.shouldTranscribe ? 'not_started' : undefined
+    transcription_status: pf.shouldTranscribe ? 'not_started' : undefined,
+    description: pf.description,
+    description_status: pf.shouldDescribe ? 'not_started' : undefined
   }));
 
   const displayMedia = isCreating ? pendingFilesAsMedia : pendingMedia;
@@ -293,6 +334,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           handleDeleteMedia
         }
         onRetryTranscription={!isCreating ? handleRetryTranscription : undefined}
+        onGenerateDescription={!isCreating ? handleGenerateDescription : undefined}
+        onUpdateDescription={!isCreating ? handleUpdateDescription : undefined}
         disabled={saving}
       />
 

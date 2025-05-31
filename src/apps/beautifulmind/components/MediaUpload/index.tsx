@@ -5,11 +5,13 @@ import { MediaAttachment, UploadProgress, AudioRecording } from '../../types/not
 import styles from './styles.module.css';
 
 interface MediaUploadProps {
-  onUpload: (files: File[], shouldTranscribe?: boolean[]) => Promise<void>;
+  onUpload: (files: File[], shouldTranscribe?: boolean[], shouldDescribe?: boolean[], descriptions?: string[]) => Promise<void>;
   uploads: UploadProgress[];
   existingMedia?: MediaAttachment[];
   onDeleteMedia?: (attachment: MediaAttachment) => void;
   onRetryTranscription?: (attachmentId: string) => void;
+  onGenerateDescription?: (attachmentId: string) => void;
+  onUpdateDescription?: (attachmentId: string, description: string) => void;
   disabled?: boolean;
 }
 
@@ -19,6 +21,8 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
   existingMedia = [],
   onDeleteMedia,
   onRetryTranscription,
+  onGenerateDescription,
+  onUpdateDescription,
   disabled = false 
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -27,7 +31,11 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewType, setPreviewType] = useState<string>('');
   const [shouldTranscribeFiles, setShouldTranscribeFiles] = useState<boolean>(true);
+  const [shouldDescribeImages, setShouldDescribeImages] = useState<boolean>(true);
   const [expandedTranscriptions, setExpandedTranscriptions] = useState<Set<string>>(new Set());
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
+  const [editingDescription, setEditingDescription] = useState<string | null>(null);
+  const [editDescriptionText, setEditDescriptionText] = useState<string>('');
   const [audioRecording, setAudioRecording] = useState<AudioRecording>({
     isRecording: false,
     duration: 0,
@@ -61,13 +69,17 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     });
     
     if (validFiles.length > 0) {
-      // Create transcription flags for audio files
+      // Create transcription flags for audio files and description flags for images
       const transcriptionFlags = validFiles.map(file => 
         file.type.startsWith('audio/') ? shouldTranscribeFiles : false
       );
-      onUpload(validFiles, transcriptionFlags);
+      const descriptionFlags = validFiles.map(file => 
+        file.type.startsWith('image/') ? shouldDescribeImages : false
+      );
+      
+      onUpload(validFiles, transcriptionFlags, descriptionFlags);
     }
-  }, [onUpload, shouldTranscribeFiles]);
+  }, [onUpload, shouldTranscribeFiles, shouldDescribeImages]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -178,7 +190,7 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
       const blob = await response.blob();
       const file = new File([blob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
       
-      await onUpload([file], [audioRecording.shouldTranscribe || false]);
+      await onUpload([file], [audioRecording.shouldTranscribe || false], [false]); // Audio files don't get descriptions
       
       // Clean up
       URL.revokeObjectURL(audioRecording.audioUrl);
@@ -225,6 +237,50 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     });
   };
 
+  const toggleDescriptionExpansion = (attachmentId: string) => {
+    setExpandedDescriptions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(attachmentId)) {
+        newSet.delete(attachmentId);
+      } else {
+        newSet.add(attachmentId);
+      }
+      return newSet;
+    });
+  };
+
+  const startEditingDescription = (attachment: MediaAttachment) => {
+    setEditingDescription(attachment.id);
+    setEditDescriptionText(attachment.description || '');
+  };
+
+  const saveDescription = async (attachmentId: string) => {
+    if (!onUpdateDescription) return;
+    
+    try {
+      await onUpdateDescription(attachmentId, editDescriptionText);
+      setEditingDescription(null);
+      setEditDescriptionText('');
+    } catch (err) {
+      console.error('Failed to save description:', err);
+    }
+  };
+
+  const cancelEditingDescription = () => {
+    setEditingDescription(null);
+    setEditDescriptionText('');
+  };
+
+  const generateDescription = async (attachmentId: string) => {
+    if (!onGenerateDescription) return;
+    
+    try {
+      await onGenerateDescription(attachmentId);
+    } catch (err) {
+      console.error('Failed to generate description:', err);
+    }
+  };
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -241,7 +297,22 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     }
   };
 
+  const getDescriptionStatusIcon = (status?: string) => {
+    switch (status) {
+      case 'pending': return '⏳';
+      case 'completed': return '✅';
+      case 'failed': return '❌';
+      case 'not_started': return '📝';
+      default: return '';
+    }
+  };
+
   const truncateTranscription = (text: string, maxLength: number = 100) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
+  const truncateDescription = (text: string, maxLength: number = 100) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
@@ -306,17 +377,31 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
           </button>
         </div>
         
-        {/* Transcription Option */}
-        <div className={styles.transcriptionOption}>
-          <label className={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              checked={shouldTranscribeFiles}
-              onChange={(e) => setShouldTranscribeFiles(e.target.checked)}
-              className={styles.checkbox}
-            />
-            <span>Auto-transcribe audio files</span>
-          </label>
+        {/* Upload Options */}
+        <div className={styles.uploadOptions}>
+          <div className={styles.transcriptionOption}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={shouldTranscribeFiles}
+                onChange={(e) => setShouldTranscribeFiles(e.target.checked)}
+                className={styles.checkbox}
+              />
+              <span>Auto-transcribe audio files</span>
+            </label>
+          </div>
+          
+          <div className={styles.descriptionOption}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={shouldDescribeImages}
+                onChange={(e) => setShouldDescribeImages(e.target.checked)}
+                className={styles.checkbox}
+              />
+              <span>Auto-describe images with AI</span>
+            </label>
+          </div>
         </div>
         
         <p className={styles.dragText}>or drag and drop files here</p>
@@ -396,6 +481,7 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
               <span className={styles.fileName}>
                 {upload.fileName}
                 {upload.shouldTranscribe && <span className={styles.transcribeIndicator}> 📝</span>}
+                {upload.shouldDescribe && <span className={styles.transcribeIndicator}> 🖼️</span>}
               </span>
               <div className={styles.progressBar}>
                 <div 
@@ -409,6 +495,11 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
               {upload.transcriptionStatus && (
                 <span className={styles.transcriptionStatus}>
                   {getTranscriptionStatusIcon(upload.transcriptionStatus)} Transcription: {upload.transcriptionStatus}
+                </span>
+              )}
+              {upload.descriptionStatus && (
+                <span className={styles.transcriptionStatus}>
+                  {getDescriptionStatusIcon(upload.descriptionStatus)} Description: {upload.descriptionStatus}
                 </span>
               )}
             </div>
@@ -425,12 +516,125 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
             return (
               <div key={attachment.id} className={styles.mediaItem}>
                 {attachment.media_type === 'image' ? (
-                  <img
-                    src={attachment.url}
-                    alt={attachment.file_name}
-                    onClick={() => attachment.url && handlePreview(attachment.url, attachment.media_type)}
-                    className={styles.mediaThumbnail}
-                  />
+                  <div className={styles.imageContainer}>
+                    <img
+                      src={attachment.url}
+                      alt={attachment.file_name}
+                      onClick={() => attachment.url && handlePreview(attachment.url, attachment.media_type)}
+                      className={styles.mediaThumbnail}
+                    />
+                    
+                    {/* Image Description Section */}
+                    {!isTemp && (
+                      <div className={styles.descriptionSection}>
+                        <div className={styles.descriptionHeader}>
+                          <span className={styles.descriptionLabel}>Description</span>
+                          <div className={styles.descriptionControls}>
+                            {attachment.description_status && (
+                              <span className={styles.descriptionStatus}>
+                                {getDescriptionStatusIcon(attachment.description_status)}
+                              </span>
+                            )}
+                            {!attachment.description && attachment.description_status !== 'pending' && onGenerateDescription && (
+                              <button
+                                className={styles.generateButton}
+                                onClick={() => generateDescription(attachment.id)}
+                                title="Generate AI description"
+                              >
+                                🤖
+                              </button>
+                            )}
+                            {attachment.description && onUpdateDescription && (
+                              <button
+                                className={styles.editButton}
+                                onClick={() => startEditingDescription(attachment)}
+                                title="Edit description"
+                              >
+                                ✏️
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {editingDescription === attachment.id ? (
+                          <div className={styles.descriptionEdit}>
+                            <textarea
+                              value={editDescriptionText}
+                              onChange={(e) => setEditDescriptionText(e.target.value)}
+                              className={styles.descriptionTextarea}
+                              placeholder="Enter image description..."
+                              rows={3}
+                            />
+                            <div className={styles.descriptionEditActions}>
+                              <button
+                                className={styles.saveDescriptionButton}
+                                onClick={() => saveDescription(attachment.id)}
+                              >
+                                Save
+                              </button>
+                              <button
+                                className={styles.cancelDescriptionButton}
+                                onClick={cancelEditingDescription}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : attachment.description ? (
+                          <div className={styles.descriptionDisplay}>
+                            <p className={styles.descriptionText}>
+                              {expandedDescriptions.has(attachment.id) 
+                                ? attachment.description
+                                : truncateDescription(attachment.description)
+                              }
+                            </p>
+                            {attachment.description.length > 100 && (
+                              <button
+                                className={styles.expandButton}
+                                onClick={() => toggleDescriptionExpansion(attachment.id)}
+                              >
+                                {expandedDescriptions.has(attachment.id) ? 'Show less' : 'Show more'}
+                              </button>
+                            )}
+                            {attachment.ai_generated_description && (
+                              <span className={styles.aiGeneratedBadge}>🤖 AI Generated</span>
+                            )}
+                          </div>
+                        ) : attachment.description_status === 'pending' ? (
+                          <div className={styles.descriptionPending}>
+                            <span className={styles.descriptionPendingText}>
+                              ⏳ Generating description...
+                            </span>
+                          </div>
+                        ) : attachment.description_status === 'failed' ? (
+                          <div className={styles.descriptionError}>
+                            <span className={styles.descriptionErrorText}>
+                              ❌ Description failed
+                            </span>
+                            {attachment.description_error && (
+                              <span className={styles.descriptionErrorMessage}>
+                                {attachment.description_error}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className={styles.noDescription}>
+                            <span className={styles.noDescriptionText}>No description</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {isTemp && attachment.description_status === 'not_started' && (
+                      <div className={styles.descriptionSection}>
+                        <div className={styles.descriptionPending}>
+                          <span className={styles.descriptionPendingText} title="Will be described when note is saved">
+                            📝 Will describe when saved
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ) : attachment.media_type === 'video' ? (
                   <div 
                     className={styles.videoThumbnail}

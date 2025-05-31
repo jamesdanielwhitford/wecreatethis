@@ -80,6 +80,11 @@
   border-radius: 0.25rem;
   font-size: 0.75rem;
   border: 1px solid var(--border-color, #333);
+  position: relative;
+}
+
+.imageIndicator {
+  position: relative;
 }
 
 .audioIndicator {
@@ -88,6 +93,12 @@
 
 .transcriptionBadge {
   color: var(--primary-color, #3b82f6);
+  font-size: 0.7rem;
+  margin-left: 0.25rem;
+}
+
+.descriptionBadge {
+  color: var(--success-color, #22c55e);
   font-size: 0.7rem;
   margin-left: 0.25rem;
 }

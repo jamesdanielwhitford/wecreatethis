@@ -31,18 +31,23 @@ const NoteList: React.FC<NoteListProps> = ({ notes, onNoteClick, onNoteDelete })
   const getMediaCount = (note: Note) => {
     if (!note.media_attachments || note.media_attachments.length === 0) return null;
     
-    const imageCount = note.media_attachments.filter(m => m.media_type === 'image').length;
+    const imageAttachments = note.media_attachments.filter(m => m.media_type === 'image');
     const videoCount = note.media_attachments.filter(m => m.media_type === 'video').length;
     const audioAttachments = note.media_attachments.filter(m => m.media_type === 'audio');
     const audioCount = audioAttachments.length;
     const transcribedAudio = audioAttachments.filter(m => m.transcription_status === 'completed').length;
+    
+    // Count images with descriptions
+    const imageCount = imageAttachments.length;
+    const describedImages = imageAttachments.filter(m => m.description_status === 'completed').length;
     
     return { 
       total: note.media_attachments.length, 
       images: imageCount, 
       videos: videoCount,
       audio: audioCount,
-      transcribed: transcribedAudio
+      transcribed: transcribedAudio,
+      described: describedImages
     };
   };
 
@@ -74,8 +79,13 @@ const NoteList: React.FC<NoteListProps> = ({ notes, onNoteClick, onNoteDelete })
                 {mediaCount && (
                   <div className={styles.mediaIndicators}>
                     {mediaCount.images > 0 && (
-                      <span className={styles.mediaIndicator}>
+                      <span className={`${styles.mediaIndicator} ${styles.imageIndicator}`}>
                         🖼️ {mediaCount.images}
+                        {mediaCount.described > 0 && (
+                          <span className={styles.descriptionBadge} title="Has AI descriptions">
+                            🤖
+                          </span>
+                        )}
                       </span>
                     )}
                     {mediaCount.videos > 0 && (

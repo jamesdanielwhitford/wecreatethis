@@ -55,11 +55,19 @@
   cursor: not-allowed;
 }
 
-/* Transcription UI Styles */
-.transcriptionOption {
-  margin: 1rem 0;
+/* Transcription and Description UI Styles */
+.transcriptionOption,
+.descriptionOption {
+  margin: 0.5rem 0;
   display: flex;
   justify-content: center;
+}
+
+.uploadOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
 }
 
 .checkboxLabel {
@@ -253,7 +261,7 @@
 /* Media Grid */
 .mediaGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1rem;
   margin-top: 1.5rem;
 }
@@ -264,12 +272,19 @@
   overflow: hidden;
   background-color: var(--media-bg, #1a1a1a);
   border: 1px solid var(--border-color, #333);
-  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.imageContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .mediaThumbnail {
   width: 100%;
-  height: 100%;
+  height: 200px;
   object-fit: cover;
   cursor: pointer;
   transition: transform 0.2s;
@@ -402,6 +417,176 @@
   margin: 0.5rem;
 }
 
+/* Description Section Styles */
+.descriptionSection {
+  border-top: 1px solid var(--border-color, #333);
+  background-color: var(--description-bg, rgba(255, 255, 255, 0.02));
+}
+
+.descriptionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color, #333);
+}
+
+.descriptionLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary, #fff);
+}
+
+.descriptionControls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.descriptionStatus {
+  font-size: 1rem;
+}
+
+.generateButton,
+.editButton {
+  background: transparent;
+  border: 1px solid var(--border-color, #333);
+  color: var(--text-secondary, #a1a1aa);
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+
+.generateButton:hover,
+.editButton:hover {
+  background-color: var(--hover-bg, #262626);
+  color: var(--text-primary, #fff);
+}
+
+.descriptionDisplay {
+  padding: 0.75rem;
+}
+
+.descriptionText {
+  color: var(--text-secondary, #a1a1aa);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin: 0 0 0.5rem 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.aiGeneratedBadge {
+  display: inline-block;
+  background-color: var(--primary-bg, rgba(59, 130, 246, 0.1));
+  color: var(--primary-color, #3b82f6);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.descriptionEdit {
+  padding: 0.75rem;
+}
+
+.descriptionTextarea {
+  width: 100%;
+  background: var(--input-bg, #1a1a1a);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 0.25rem;
+  color: var(--text-primary, #fff);
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 60px;
+  margin-bottom: 0.5rem;
+}
+
+.descriptionTextarea:focus {
+  outline: none;
+  border-color: var(--primary-color, #3b82f6);
+}
+
+.descriptionEditActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.saveDescriptionButton,
+.cancelDescriptionButton {
+  padding: 0.25rem 0.75rem;
+  border: none;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.saveDescriptionButton {
+  background-color: var(--primary-color, #3b82f6);
+  color: white;
+}
+
+.saveDescriptionButton:hover {
+  background-color: var(--primary-hover, #2563eb);
+}
+
+.cancelDescriptionButton {
+  background-color: transparent;
+  border: 1px solid var(--border-color, #333);
+  color: var(--text-secondary, #a1a1aa);
+}
+
+.cancelDescriptionButton:hover {
+  background-color: var(--hover-bg, #262626);
+  color: var(--text-primary, #fff);
+}
+
+.descriptionPending {
+  padding: 0.75rem;
+  text-align: center;
+  background-color: var(--warning-bg, rgba(251, 191, 36, 0.1));
+}
+
+.descriptionPendingText {
+  color: var(--warning-color, #f59e0b);
+  font-size: 0.875rem;
+}
+
+.descriptionError {
+  padding: 0.75rem;
+  background-color: var(--danger-bg, rgba(239, 68, 68, 0.1));
+}
+
+.descriptionErrorText {
+  color: var(--danger-color, #ef4444);
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.descriptionErrorMessage {
+  color: var(--danger-color, #ef4444);
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.noDescription {
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.noDescriptionText {
+  color: var(--text-muted, #71717a);
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
 .deleteButton {
   position: absolute;
   top: 0.5rem;
@@ -510,6 +695,10 @@
     justify-content: center;
   }
   
+  .uploadOptions {
+    align-items: center;
+  }
+  
   .recordingControls {
     flex-direction: column;
     text-align: center;
@@ -530,7 +719,7 @@
   }
   
   .mediaGrid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: 1fr;
   }
   
   .audioPreview {
@@ -538,7 +727,8 @@
     padding: 1.5rem;
   }
   
-  .transcriptionOption {
+  .transcriptionOption,
+  .descriptionOption {
     margin: 0.5rem 0;
   }
   
@@ -548,7 +738,23 @@
     gap: 0.5rem;
   }
   
-  .transcriptionControls {
+  .transcriptionControls,
+  .descriptionControls {
     justify-content: center;
+  }
+  
+  .descriptionHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  
+  .descriptionEditActions {
+    flex-direction: column;
+  }
+  
+  .saveDescriptionButton,
+  .cancelDescriptionButton {
+    width: 100%;
   }
 }
