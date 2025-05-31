@@ -1,14 +1,14 @@
 // src/apps/beautifulmind/components/NoteEditor/index.tsx
 
 import React, { useState, useEffect } from 'react';
-import { Note, NoteFormData, MediaAttachment, UploadProgress } from '../../types/notes.types';
+import { Note, NoteFormData, MediaAttachment, UploadProgress, PendingMediaFile } from '../../types/notes.types';
 import { mediaService } from '../../utils/api';
 import MediaUpload from '../MediaUpload';
 import styles from './styles.module.css';
 
 interface NoteEditorProps {
   note?: Note | null;
-  onSave: (data: NoteFormData, keepMedia?: boolean) => Promise<Note>;
+  onSave: (data: NoteFormData) => Promise<Note>;
   onCancel: () => void;
   isCreating?: boolean;
   // Lifted media state from parent
@@ -18,6 +18,9 @@ interface NoteEditorProps {
   setPendingUploads: React.Dispatch<React.SetStateAction<UploadProgress[]>>;
   deletedMediaIds: string[];
   setDeletedMediaIds: React.Dispatch<React.SetStateAction<string[]>>;
+  // New file state for creation mode
+  pendingFiles: PendingMediaFile[];
+  setPendingFiles: React.Dispatch<React.SetStateAction<PendingMediaFile[]>>;
 }
 
 const NoteEditor: React.FC<NoteEditorProps> = ({ 
@@ -30,7 +33,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   pendingUploads,
   setPendingUploads,
   deletedMediaIds,
-  setDeletedMediaIds
+  setDeletedMediaIds,
+  pendingFiles,
+  setPendingFiles
 }) => {
   const [formData, setFormData] = useState<NoteFormData>({
     title: '',
@@ -52,26 +57,39 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   }, [note, isCreating]);
 
   const handleMediaUpload = async (files: File[], shouldTranscribe?: boolean[]) => {
-    if (!note && !isCreating) return;
-    
-    // If creating, we'll save the note first
-    let noteId = note?.id;
-    let currentNote = note;
-    
-    if (!noteId && isCreating) {
-      try {
-        const newNote = await onSave(formData, true);
-        noteId = newNote.id;
-        currentNote = newNote;
-        // Note: The parent component should update the note prop, 
-        // but we'll use the returned note for immediate operations
-      } catch (err) {
-        setError('Please save the note before adding media');
-        return;
-      }
+    if (isCreating) {
+      // During creation, just store files locally without uploading
+      const newPendingFiles: PendingMediaFile[] = files.map((file, index) => {
+        let mediaType: 'image' | 'video' | 'audio';
+        if (file.type.startsWith('video/')) {
+          mediaType = 'video';
+        } else if (file.type.startsWith('audio/')) {
+          mediaType = 'audio';
+        } else {
+          mediaType = 'image';
+        }
+
+        // Create preview URL for images and videos
+        let previewUrl: string | undefined;
+        if (mediaType === 'image' || mediaType === 'video') {
+          previewUrl = URL.createObjectURL(file);
+        }
+
+        return {
+          id: `temp-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+          file,
+          shouldTranscribe: shouldTranscribe?.[index] || false,
+          media_type: mediaType,
+          preview_url: previewUrl
+        };
+      });
+
+      setPendingFiles(prev => [...prev, ...newPendingFiles]);
+      return;
     }
-    
-    if (!noteId) return;
+
+    // For existing notes (edit mode), upload immediately
+    if (!note) return;
     
     const newUploads: UploadProgress[] = files.map((file, index) => ({
       fileName: file.name,
@@ -92,7 +110,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       });
       
       // Upload files via API
-      const attachments = await mediaService.uploadFiles(noteId, files, shouldTranscribe);
+      const attachments = await mediaService.uploadFiles(note.id, files, shouldTranscribe);
       
       // Update progress to complete
       files.forEach((_, index) => {
@@ -144,6 +162,16 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     }
   };
 
+  const handleDeletePendingFile = (fileId: string) => {
+    setPendingFiles(prev => {
+      const fileToDelete = prev.find(f => f.id === fileId);
+      if (fileToDelete?.preview_url) {
+        URL.revokeObjectURL(fileToDelete.preview_url);
+      }
+      return prev.filter(f => f.id !== fileId);
+    });
+  };
+
   const handleRetryTranscription = async (attachmentId: string) => {
     try {
       await mediaService.retryTranscription(attachmentId);
@@ -161,6 +189,29 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     }
   };
 
+  const uploadPendingFiles = async (noteId: string): Promise<MediaAttachment[]> => {
+    if (pendingFiles.length === 0) return [];
+
+    const files = pendingFiles.map(pf => pf.file);
+    const shouldTranscribe = pendingFiles.map(pf => pf.shouldTranscribe);
+
+    try {
+      const attachments = await mediaService.uploadFiles(noteId, files, shouldTranscribe);
+      
+      // Clean up preview URLs
+      pendingFiles.forEach(pf => {
+        if (pf.preview_url) {
+          URL.revokeObjectURL(pf.preview_url);
+        }
+      });
+
+      return attachments;
+    } catch (err) {
+      console.error('Failed to upload pending files:', err);
+      throw err;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -173,21 +224,47 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       setSaving(true);
       setError(null);
       
-      // Delete marked media
-      for (const id of deletedMediaIds) {
-        const attachment = note?.media_attachments?.find(a => a.id === id);
-        if (attachment) {
-          await mediaService.deleteAttachment(attachment.id);
+      if (isCreating) {
+        // Save the note first
+        const savedNote = await onSave(formData);
+        
+        // Then upload any pending files
+        if (pendingFiles.length > 0) {
+          await uploadPendingFiles(savedNote.id);
         }
+      } else {
+        // For existing notes, delete marked media first
+        for (const id of deletedMediaIds) {
+          const attachment = note?.media_attachments?.find(a => a.id === id);
+          if (attachment) {
+            await mediaService.deleteAttachment(attachment.id);
+          }
+        }
+        
+        await onSave(formData);
       }
-      
-      await onSave(formData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save note');
     } finally {
       setSaving(false);
     }
   };
+
+  // Convert pending files to a format that MediaUpload can display
+  const pendingFilesAsMedia: MediaAttachment[] = pendingFiles.map(pf => ({
+    id: pf.id,
+    note_id: 'temp',
+    file_name: pf.file.name,
+    file_size: pf.file.size,
+    mime_type: pf.file.type,
+    storage_path: '',
+    media_type: pf.media_type,
+    created_at: new Date().toISOString(),
+    url: pf.preview_url || '', // Use preview URL
+    transcription_status: pf.shouldTranscribe ? 'not_started' : undefined
+  }));
+
+  const displayMedia = isCreating ? pendingFilesAsMedia : pendingMedia;
 
   return (
     <form className={styles.editor} onSubmit={handleSubmit}>
@@ -210,9 +287,12 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       <MediaUpload
         onUpload={handleMediaUpload}
         uploads={pendingUploads}
-        existingMedia={pendingMedia}
-        onDeleteMedia={handleDeleteMedia}
-        onRetryTranscription={handleRetryTranscription}
+        existingMedia={displayMedia}
+        onDeleteMedia={isCreating ? 
+          (attachment) => handleDeletePendingFile(attachment.id) : 
+          handleDeleteMedia
+        }
+        onRetryTranscription={!isCreating ? handleRetryTranscription : undefined}
         disabled={saving}
       />
 

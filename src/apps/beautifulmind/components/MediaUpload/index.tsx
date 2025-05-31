@@ -236,13 +236,19 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
       case 'pending': return '⏳';
       case 'completed': return '✅';
       case 'failed': return '❌';
-      default: return '📝';
+      case 'not_started': return '📝';
+      default: return '';
     }
   };
 
   const truncateTranscription = (text: string, maxLength: number = 100) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
+  };
+
+  // Check if media item is a pending file (not yet uploaded)
+  const isPendingFile = (attachment: MediaAttachment) => {
+    return attachment.note_id === 'temp' || attachment.id.startsWith('temp-');
   };
 
   return (
@@ -413,97 +419,108 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
       {/* Existing Media */}
       {existingMedia.length > 0 && (
         <div className={styles.mediaGrid}>
-          {existingMedia.map((attachment) => (
-            <div key={attachment.id} className={styles.mediaItem}>
-              {attachment.media_type === 'image' ? (
-                <img
-                  src={attachment.url}
-                  alt={attachment.file_name}
-                  onClick={() => handlePreview(attachment.url!, attachment.media_type)}
-                  className={styles.mediaThumbnail}
-                />
-              ) : attachment.media_type === 'video' ? (
-                <div 
-                  className={styles.videoThumbnail}
-                  onClick={() => handlePreview(attachment.url!, attachment.media_type)}
-                >
-                  <span className={styles.videoIcon}>🎥</span>
-                  <span className={styles.fileName}>{attachment.file_name}</span>
-                </div>
-              ) : (
-                <div className={styles.audioThumbnail}>
-                  <div className={styles.audioHeader}>
-                    <div 
-                      className={styles.audioPlayButton}
-                      onClick={() => handlePreview(attachment.url!, attachment.media_type)}
-                    >
-                      <span className={styles.audioIcon}>🎵</span>
-                      <span className={styles.fileName}>{attachment.file_name}</span>
+          {existingMedia.map((attachment) => {
+            const isTemp = isPendingFile(attachment);
+            
+            return (
+              <div key={attachment.id} className={styles.mediaItem}>
+                {attachment.media_type === 'image' ? (
+                  <img
+                    src={attachment.url}
+                    alt={attachment.file_name}
+                    onClick={() => attachment.url && handlePreview(attachment.url, attachment.media_type)}
+                    className={styles.mediaThumbnail}
+                  />
+                ) : attachment.media_type === 'video' ? (
+                  <div 
+                    className={styles.videoThumbnail}
+                    onClick={() => attachment.url && handlePreview(attachment.url, attachment.media_type)}
+                  >
+                    <span className={styles.videoIcon}>🎥</span>
+                    <span className={styles.fileName}>{attachment.file_name}</span>
+                  </div>
+                ) : (
+                  <div className={styles.audioThumbnail}>
+                    <div className={styles.audioHeader}>
+                      <div 
+                        className={styles.audioPlayButton}
+                        onClick={() => attachment.url && handlePreview(attachment.url, attachment.media_type)}
+                      >
+                        <span className={styles.audioIcon}>🎵</span>
+                        <span className={styles.fileName}>{attachment.file_name}</span>
+                      </div>
+                      {attachment.transcription_status && !isTemp && (
+                        <div className={styles.transcriptionControls}>
+                          <span className={styles.transcriptionStatus}>
+                            {getTranscriptionStatusIcon(attachment.transcription_status)}
+                          </span>
+                          {attachment.transcription_status === 'failed' && onRetryTranscription && (
+                            <button
+                              className={styles.retryButton}
+                              onClick={() => onRetryTranscription(attachment.id)}
+                              title="Retry transcription"
+                            >
+                              🔄
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {isTemp && attachment.transcription_status === 'not_started' && (
+                        <div className={styles.transcriptionControls}>
+                          <span className={styles.transcriptionStatus} title="Will be transcribed when note is saved">
+                            📝
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    {attachment.transcription_status && (
-                      <div className={styles.transcriptionControls}>
-                        <span className={styles.transcriptionStatus}>
-                          {getTranscriptionStatusIcon(attachment.transcription_status)}
-                        </span>
-                        {attachment.transcription_status === 'failed' && onRetryTranscription && (
-                          <button
-                            className={styles.retryButton}
-                            onClick={() => onRetryTranscription(attachment.id)}
-                            title="Retry transcription"
-                          >
-                            🔄
-                          </button>
-                        )}
+                    
+                    {attachment.duration && (
+                      <span className={styles.audioDuration}>
+                        {formatDuration(Math.floor(attachment.duration))}
+                      </span>
+                    )}
+                    
+                    {/* Transcription Display - only for uploaded files */}
+                    {!isTemp && attachment.transcription_text && (
+                      <div className={styles.transcriptionSection}>
+                        <div className={styles.transcriptionPreview}>
+                          <p className={styles.transcriptionText}>
+                            {expandedTranscriptions.has(attachment.id) 
+                              ? attachment.transcription_text
+                              : truncateTranscription(attachment.transcription_text)
+                            }
+                          </p>
+                          {attachment.transcription_text.length > 100 && (
+                            <button
+                              className={styles.expandButton}
+                              onClick={() => toggleTranscriptionExpansion(attachment.id)}
+                            >
+                              {expandedTranscriptions.has(attachment.id) ? 'Show less' : 'Show more'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {!isTemp && attachment.transcription_error && (
+                      <div className={styles.transcriptionError}>
+                        Error: {attachment.transcription_error}
                       </div>
                     )}
                   </div>
-                  
-                  {attachment.duration && (
-                    <span className={styles.audioDuration}>
-                      {formatDuration(Math.floor(attachment.duration))}
-                    </span>
-                  )}
-                  
-                  {/* Transcription Display */}
-                  {attachment.transcription_text && (
-                    <div className={styles.transcriptionSection}>
-                      <div className={styles.transcriptionPreview}>
-                        <p className={styles.transcriptionText}>
-                          {expandedTranscriptions.has(attachment.id) 
-                            ? attachment.transcription_text
-                            : truncateTranscription(attachment.transcription_text)
-                          }
-                        </p>
-                        {attachment.transcription_text.length > 100 && (
-                          <button
-                            className={styles.expandButton}
-                            onClick={() => toggleTranscriptionExpansion(attachment.id)}
-                          >
-                            {expandedTranscriptions.has(attachment.id) ? 'Show less' : 'Show more'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {attachment.transcription_error && (
-                    <div className={styles.transcriptionError}>
-                      Error: {attachment.transcription_error}
-                    </div>
-                  )}
-                </div>
-              )}
-              {onDeleteMedia && (
-                <button
-                  className={styles.deleteButton}
-                  onClick={() => onDeleteMedia(attachment)}
-                  aria-label="Delete media"
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          ))}
+                )}
+                {onDeleteMedia && (
+                  <button
+                    className={styles.deleteButton}
+                    onClick={() => onDeleteMedia(attachment)}
+                    aria-label="Delete media"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

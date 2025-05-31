@@ -1,7 +1,7 @@
 // src/apps/beautifulmind/components/BeautifulMind.tsx
 
 import React, { useState } from 'react';
-import { Note, ViewMode, MediaAttachment, UploadProgress } from '../types/notes.types';
+import { Note, ViewMode, MediaAttachment, UploadProgress, PendingMediaFile } from '../types/notes.types';
 import { useNotes } from '../hooks/useNotes';
 import Navbar from './Navbar';
 import NoteList from './NoteList';
@@ -19,6 +19,9 @@ const BeautifulMind: React.FC = () => {
   const [pendingUploads, setPendingUploads] = useState<UploadProgress[]>([]);
   const [deletedMediaIds, setDeletedMediaIds] = useState<string[]>([]);
   
+  // New state for files during creation (before note exists)
+  const [pendingFiles, setPendingFiles] = useState<PendingMediaFile[]>([]);
+  
   const { notes, loading, error, createNote, updateNote, deleteNote, getNoteById } = useNotes();
 
   const handleNewNote = () => {
@@ -28,6 +31,7 @@ const BeautifulMind: React.FC = () => {
     setPendingMedia([]);
     setPendingUploads([]);
     setDeletedMediaIds([]);
+    setPendingFiles([]);
     setViewMode('create');
   };
 
@@ -38,6 +42,7 @@ const BeautifulMind: React.FC = () => {
     setPendingMedia([]);
     setPendingUploads([]);
     setDeletedMediaIds([]);
+    setPendingFiles([]);
     setViewMode('view');
   };
 
@@ -48,6 +53,7 @@ const BeautifulMind: React.FC = () => {
       setPendingMedia([...selectedNote.media_attachments]);
     }
     setDeletedMediaIds([]);
+    setPendingFiles([]);
     setViewMode('edit');
   };
 
@@ -63,41 +69,37 @@ const BeautifulMind: React.FC = () => {
         setPendingMedia([]);
         setPendingUploads([]);
         setDeletedMediaIds([]);
+        setPendingFiles([]);
       } catch (err) {
         console.error('Failed to delete note:', err);
       }
     }
   };
 
-  const handleSave = async (data: { title: string; content: string }, keepMedia?: boolean): Promise<Note> => {
+  const handleSave = async (data: { title: string; content: string }): Promise<Note> => {
     if (isCreating || !selectedNote) {
       // Creating new note
       const newNote = await createNote(data);
       setSelectedNote(newNote);
+      setIsCreating(false);
+      setViewMode('view');
       
-      if (!keepMedia) {
-        // Normal save - go to view mode and clear pending media
-        setIsCreating(false);
-        setViewMode('view');
-        setPendingMedia([]);
-        setPendingUploads([]);
-        setDeletedMediaIds([]);
-      } else {
-        // Media is being added - transition to edit but keep pending media
-        setIsCreating(false);
-        setViewMode('edit');
-      }
+      // Clear all pending states after successful creation
+      setPendingMedia([]);
+      setPendingUploads([]);
+      setDeletedMediaIds([]);
+      setPendingFiles([]);
+      
       return newNote;
     } else {
       // Updating existing note
       const updatedNote = await updateNote(selectedNote.id, data);
       setSelectedNote(updatedNote);
-      if (!keepMedia) {
-        setViewMode('view');
-        setPendingMedia([]);
-        setPendingUploads([]);
-        setDeletedMediaIds([]);
-      }
+      setViewMode('view');
+      setPendingMedia([]);
+      setPendingUploads([]);
+      setDeletedMediaIds([]);
+      setPendingFiles([]);
       return updatedNote;
     }
   };
@@ -114,6 +116,7 @@ const BeautifulMind: React.FC = () => {
     setPendingMedia([]);
     setPendingUploads([]);
     setDeletedMediaIds([]);
+    setPendingFiles([]);
   };
 
   const handleBackToList = () => {
@@ -123,6 +126,7 @@ const BeautifulMind: React.FC = () => {
     setPendingMedia([]);
     setPendingUploads([]);
     setDeletedMediaIds([]);
+    setPendingFiles([]);
   };
 
   if (loading) {
@@ -189,6 +193,9 @@ const BeautifulMind: React.FC = () => {
             setPendingUploads={setPendingUploads}
             deletedMediaIds={deletedMediaIds}
             setDeletedMediaIds={setDeletedMediaIds}
+            // New file state for creation mode
+            pendingFiles={pendingFiles}
+            setPendingFiles={setPendingFiles}
           />
         )}
       </main>

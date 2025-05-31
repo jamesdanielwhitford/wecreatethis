@@ -55,3 +55,12 @@ export interface AudioRecording {
   mediaRecorder?: MediaRecorder;
   shouldTranscribe?: boolean; // Add option for recordings
 }
+
+// New type for files that haven't been uploaded yet (during note creation)
+export interface PendingMediaFile {
+  id: string; // temporary ID for React keys
+  file: File;
+  shouldTranscribe: boolean;
+  media_type: 'image' | 'video' | 'audio';
+  preview_url?: string; // for images/videos
+}
