@@ -15,17 +15,24 @@ export interface MediaAttachment {
   created_at: string;
   url?: string; // Added for frontend convenience
   thumbnailUrl?: string; // Added for frontend convenience
+  
   // Transcription fields
   transcription_text?: string;
   transcription_status?: 'not_started' | 'pending' | 'completed' | 'failed';
   transcription_error?: string;
   transcribed_at?: string;
-  // New description fields
+  transcription_embedding?: number[]; // New: vector embedding of transcription
+  
+  // Description fields
   description?: string; // User-provided or AI-generated description
   ai_generated_description?: boolean; // Whether description was AI-generated
   description_status?: 'not_started' | 'pending' | 'completed' | 'failed';
   description_error?: string;
   described_at?: string;
+  description_embedding?: number[]; // New: vector embedding of description
+  
+  // Embedding metadata
+  last_embedded_at?: string; // When embeddings were last generated
 }
 
 export interface Note {
@@ -36,11 +43,50 @@ export interface Note {
   updated_at: string;
   user_id?: string;
   media_attachments?: MediaAttachment[];
+  
+  // New embedding fields
+  title_embedding?: number[]; // Vector embedding of title
+  content_embedding?: number[]; // Vector embedding of content
+  summary?: string; // AI-generated summary
+  summary_embedding?: number[]; // Vector embedding of summary
+  last_embedded_at?: string; // When embeddings were last generated
+}
+
+export interface Folder {
+  id: string;
+  user_id: string;
+  title: string;
+  description?: string;
+  enhanced_description?: string; // AI-enhanced version with strategic keywords
+  created_at: string;
+  updated_at: string;
+  
+  // Embedding fields
+  title_embedding?: number[]; // Vector embedding of title
+  description_embedding?: number[]; // Vector embedding of description
+  enhanced_description_embedding?: number[]; // Vector embedding of enhanced description
+  last_embedded_at?: string; // When embeddings were last generated
+}
+
+export interface PendingEmbedding {
+  id: string;
+  entity_type: 'note' | 'media_attachment' | 'folder';
+  entity_id: string;
+  field_name: string; // 'title', 'content', 'transcription', 'description', etc.
+  priority: number; // 1-10, lower = higher priority
+  created_at: string;
+  processed_at?: string;
+  error_message?: string;
 }
 
 export interface NoteFormData {
   title: string;
   content: string;
+}
+
+export interface FolderFormData {
+  title: string;
+  description?: string;
 }
 
 export type ViewMode = 'list' | 'view' | 'edit' | 'create';
@@ -75,4 +121,47 @@ export interface PendingMediaFile {
   description?: string; // Manual description
   media_type: 'image' | 'video' | 'audio';
   preview_url?: string; // for images/videos
+}
+
+// Search and similarity types
+export interface SimilaritySearchResult {
+  id: string;
+  similarity_score: number;
+  entity_type: 'note' | 'media_attachment' | 'folder';
+  entity: Note | MediaAttachment | Folder;
+}
+
+export interface FolderNoteResult {
+  note: Note;
+  similarity_score: number;
+  matched_fields: string[]; // Which fields contributed to the match
+}
+
+export interface EmbeddingStats {
+  total_embeddings: number;
+  pending_embeddings: number;
+  last_processed: string;
+  by_entity_type: {
+    notes: number;
+    media_attachments: number;
+    folders: number;
+  };
+}
+
+// AI enhancement types
+export interface AIEnhancementRequest {
+  type: 'folder_description' | 'note_summary';
+  content: string;
+  context?: {
+    existing_folders?: Folder[];
+    note_content?: string;
+    media_descriptions?: string[];
+    transcriptions?: string[];
+  };
+}
+
+export interface AIEnhancementResult {
+  enhanced_content: string;
+  strategy_explanation?: string; // Why certain keywords were added
+  confidence_score?: number; // 0-1, how confident the AI is
 }

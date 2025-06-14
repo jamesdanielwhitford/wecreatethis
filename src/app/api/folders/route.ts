@@ -1,15 +1,15 @@
-// src/app/api/notes/route.ts
+// src/app/api/folders/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Note } from '@/apps/beautifulmind/types/notes.types';
+import { Folder, FolderFormData } from '@/apps/beautifulmind/types/notes.types';
 
-// Initialize Supabase client with anon key for regular operations
+// Initialize Supabase client with anon key
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Initialize service role client for bypass operations (if needed)
+// Initialize service role client for bypass operations  
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -19,46 +19,49 @@ const getMediaUrl = (path: string): string => {
   return data.publicUrl;
 };
 
-// GET /api/notes - Get all notes
-export async function GET() {
+// GET /api/folders - Get all folders for user
+export async function GET(request: NextRequest) {
   try {
-    const { data, error } = await supabase
-      .from('notes')
-      .select(`
-        *,
-        media_attachments (*)
-      `)
+    // Use service role to bypass RLS for testing
+    const client = supabaseServiceKey ? supabaseService : supabase;
+    
+    const { data, error } = await client
+      .from('folders')
+      .select('*')
       .order('created_at', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error fetching folders:', error);
+      throw error;
+    }
     
-    // Add URLs to media attachments
-    const notesWithUrls = (data || []).map(note => ({
-      ...note,
-      media_attachments: note.media_attachments?.map((attachment: any) => ({
-        ...attachment,
-        url: getMediaUrl(attachment.storage_path),
-        thumbnailUrl: attachment.thumbnail_path ? getMediaUrl(attachment.thumbnail_path) : undefined
-      }))
-    }));
-    
-    return NextResponse.json(notesWithUrls);
+    return NextResponse.json(data || []);
   } catch (error) {
-    console.error('Error fetching notes:', error);
+    console.error('Error fetching folders:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch notes' },
+      { 
+        error: 'Failed to fetch folders',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
 }
 
-// POST /api/notes - Create a new note
+// POST /api/folders - Create a new folder
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { title, content } = body;
+    const body: FolderFormData = await request.json();
+    const { title, description } = body;
     
-    console.log('Creating note with:', { title, content });
+    console.log('Creating folder with:', { title, description });
+    
+    if (!title || title.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Title is required' },
+        { status: 400 }
+      );
+    }
     
     // Check if we have service role key for bypass
     if (!supabaseServiceKey) {
@@ -68,38 +71,38 @@ export async function POST(request: NextRequest) {
     // Use service role client to avoid RLS issues during testing
     const client = supabaseServiceKey ? supabaseService : supabase;
     
-    const noteData = {
-      title: title || 'Untitled Note', 
-      content: content || '',
+    const folderData = {
+      title: title.trim(), 
+      description: description?.trim() || null,
       // For testing without auth - set to null to avoid foreign key issues
       user_id: null
     };
     
-    console.log('Inserting note data:', noteData);
+    console.log('Inserting folder data:', folderData);
     
     const { data, error } = await client
-      .from('notes')
-      .insert([noteData])
+      .from('folders')
+      .insert([folderData])
       .select()
       .single();
     
     if (error) {
-      console.error('Supabase error:', error);
+      console.error('Supabase error creating folder:', error);
       return NextResponse.json({
-        error: 'Failed to create note',
+        error: 'Failed to create folder',
         details: error.message,
         code: error.code,
         hint: error.hint
       }, { status: 500 });
     }
     
-    console.log('Note created successfully:', data);
+    console.log('Folder created successfully:', data);
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error creating note:', error);
+    console.error('Error creating folder:', error);
     return NextResponse.json(
       { 
-        error: 'Failed to create note',
+        error: 'Failed to create folder',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
