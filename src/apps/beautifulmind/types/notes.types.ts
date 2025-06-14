@@ -89,7 +89,7 @@ export interface FolderFormData {
   description?: string;
 }
 
-export type ViewMode = 'list' | 'view' | 'edit' | 'create';
+export type ViewMode = 'list' | 'view' | 'edit' | 'create' | 'folders' | 'folder-view' | 'folder-edit' | 'folder-create';
 
 export interface UploadProgress {
   fileName: string;

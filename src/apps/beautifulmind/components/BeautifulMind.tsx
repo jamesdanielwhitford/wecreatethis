@@ -1,18 +1,24 @@
 // src/apps/beautifulmind/components/BeautifulMind.tsx
 
 import React, { useState } from 'react';
-import { Note, ViewMode, MediaAttachment, UploadProgress, PendingMediaFile } from '../types/notes.types';
+import { Note, Folder, ViewMode, MediaAttachment, UploadProgress, PendingMediaFile, FolderFormData } from '../types/notes.types';
 import { useNotes } from '../hooks/useNotes';
+import { useFolders } from '../hooks/useFolders';
 import Navbar from './Navbar';
 import NoteList from './NoteList';
 import NoteView from './NoteView';
 import NoteEditor from './NoteEditor';
+import FolderList from './FolderList';
+import FolderView from './FolderView';
+import FolderEditor from './FolderEditor';
 import styles from './BeautifulMind.module.css';
 
 const BeautifulMind: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+  const [isCreatingNote, setIsCreatingNote] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   
   // Lift media state to parent level - this survives component remounts
   const [pendingMedia, setPendingMedia] = useState<MediaAttachment[]>([]);
@@ -22,32 +28,39 @@ const BeautifulMind: React.FC = () => {
   // New state for files during creation (before note exists)
   const [pendingFiles, setPendingFiles] = useState<PendingMediaFile[]>([]);
   
-  const { notes, loading, error, createNote, updateNote, deleteNote, getNoteById, updateNoteInList } = useNotes();
+  const { notes, loading: notesLoading, error: notesError, createNote, updateNote, deleteNote, getNoteById } = useNotes();
+  const { folders, loading: foldersLoading, error: foldersError, createFolder, updateFolder, deleteFolder, getFolderById } = useFolders();
 
-  const handleNewNote = () => {
-    setSelectedNote(null);
-    setIsCreating(true);
-    // Clear any pending media from previous sessions
+  // Clear states helper
+  const clearStates = () => {
     setPendingMedia([]);
     setPendingUploads([]);
     setDeletedMediaIds([]);
     setPendingFiles([]);
+  };
+
+  // Note handlers
+  const handleNewNote = () => {
+    setSelectedNote(null);
+    setSelectedFolder(null);
+    setIsCreatingNote(true);
+    setIsCreatingFolder(false);
+    clearStates();
     setViewMode('create');
   };
 
   const handleNoteClick = (note: Note) => {
     setSelectedNote(note);
-    setIsCreating(false);
-    // Clear pending media when switching to view existing note
-    setPendingMedia([]);
-    setPendingUploads([]);
-    setDeletedMediaIds([]);
-    setPendingFiles([]);
+    setSelectedFolder(null);
+    setIsCreatingNote(false);
+    setIsCreatingFolder(false);
+    clearStates();
     setViewMode('view');
   };
 
-  const handleEdit = () => {
-    setIsCreating(false);
+  const handleNoteEdit = () => {
+    setIsCreatingNote(false);
+    setIsCreatingFolder(false);
     // When editing existing note, load its media into pending state
     if (selectedNote?.media_attachments) {
       setPendingMedia([...selectedNote.media_attachments]);
@@ -57,103 +70,153 @@ const BeautifulMind: React.FC = () => {
     setViewMode('edit');
   };
 
-  const handleDelete = async () => {
+  const handleNoteDelete = async () => {
     if (!selectedNote) return;
     
     if (window.confirm('Are you sure you want to delete this note?')) {
       try {
         await deleteNote(selectedNote.id);
-        setViewMode('list');
-        setSelectedNote(null);
-        setIsCreating(false);
-        setPendingMedia([]);
-        setPendingUploads([]);
-        setDeletedMediaIds([]);
-        setPendingFiles([]);
+        handleBackToList();
       } catch (err) {
         console.error('Failed to delete note:', err);
       }
     }
   };
 
-  const handleSave = async (data: { title: string; content: string }): Promise<Note> => {
-    if (isCreating || !selectedNote) {
+  const handleNoteSave = async (data: { title: string; content: string }): Promise<Note> => {
+    if (isCreatingNote || !selectedNote) {
       // Creating new note
       const newNote = await createNote(data);
-      
-      // After note creation and potential title generation, get the updated note
-      // The NoteEditor will handle title generation, so we should get the final note
       const finalNote = getNoteById(newNote.id) || newNote;
       
       setSelectedNote(finalNote);
-      setIsCreating(false);
+      setIsCreatingNote(false);
       setViewMode('view');
-      
-      // Clear all pending states after successful creation
-      setPendingMedia([]);
-      setPendingUploads([]);
-      setDeletedMediaIds([]);
-      setPendingFiles([]);
+      clearStates();
       
       return finalNote;
     } else {
       // Updating existing note
       const updatedNote = await updateNote(selectedNote.id, data);
-      
-      // After note update and potential title generation, get the updated note
       const finalNote = getNoteById(updatedNote.id) || updatedNote;
       
       setSelectedNote(finalNote);
       setViewMode('view');
-      setPendingMedia([]);
-      setPendingUploads([]);
-      setDeletedMediaIds([]);
-      setPendingFiles([]);
+      clearStates();
       return finalNote;
     }
   };
 
-  const handleCancel = () => {
-    if (isCreating) {
-      setViewMode('list');
-      setIsCreating(false);
-      setSelectedNote(null);
-    } else {
-      setViewMode('view');
+  // Folder handlers
+  const handleNewFolder = () => {
+    setSelectedNote(null);
+    setSelectedFolder(null);
+    setIsCreatingNote(false);
+    setIsCreatingFolder(true);
+    clearStates();
+    setViewMode('folder-create');
+  };
+
+  const handleFolderClick = (folder: Folder) => {
+    setSelectedNote(null);
+    setSelectedFolder(folder);
+    setIsCreatingNote(false);
+    setIsCreatingFolder(false);
+    clearStates();
+    setViewMode('folder-view');
+  };
+
+  const handleFolderEdit = () => {
+    setIsCreatingNote(false);
+    setIsCreatingFolder(false);
+    setViewMode('folder-edit');
+  };
+
+  const handleFolderDelete = async () => {
+    if (!selectedFolder) return;
+    
+    if (window.confirm('Are you sure you want to delete this folder? Notes will not be deleted.')) {
+      try {
+        await deleteFolder(selectedFolder.id);
+        handleBackToList();
+      } catch (err) {
+        console.error('Failed to delete folder:', err);
+      }
     }
-    // Clear pending media on cancel
-    setPendingMedia([]);
-    setPendingUploads([]);
-    setDeletedMediaIds([]);
-    setPendingFiles([]);
+  };
+
+  const handleFolderSave = async (data: FolderFormData): Promise<Folder> => {
+    if (isCreatingFolder || !selectedFolder) {
+      // Creating new folder
+      const newFolder = await createFolder(data);
+      setSelectedFolder(newFolder);
+      setIsCreatingFolder(false);
+      setViewMode('folder-view');
+      return newFolder;
+    } else {
+      // Updating existing folder
+      const updatedFolder = await updateFolder(selectedFolder.id, data);
+      setSelectedFolder(updatedFolder);
+      setViewMode('folder-view');
+      return updatedFolder;
+    }
+  };
+
+  // Navigation handlers
+  const handleCancel = () => {
+    if (isCreatingNote || isCreatingFolder) {
+      handleBackToList();
+    } else if (viewMode === 'edit') {
+      setViewMode('view');
+    } else if (viewMode === 'folder-edit') {
+      setViewMode('folder-view');
+    }
+    clearStates();
   };
 
   const handleBackToList = () => {
-    setViewMode('list');
-    setSelectedNote(null);
-    setIsCreating(false);
-    setPendingMedia([]);
-    setPendingUploads([]);
-    setDeletedMediaIds([]);
-    setPendingFiles([]);
-  };
-
-  // Custom save handler that includes title generation logic
-  const handleSaveWithTitleGeneration = async (data: { title: string; content: string }): Promise<Note> => {
-    let savedNote: Note;
-    
-    if (isCreating || !selectedNote) {
-      // Creating new note
-      savedNote = await createNote(data);
+    // Determine which list to return to
+    if (viewMode.startsWith('folder') || selectedFolder) {
+      setViewMode('folders');
     } else {
-      // Updating existing note
-      savedNote = await updateNote(selectedNote.id, data);
+      setViewMode('list');
     }
     
-    // Update the note in our local state if title was generated
-    // This will be handled by the NoteEditor component
-    return savedNote;
+    setSelectedNote(null);
+    setSelectedFolder(null);
+    setIsCreatingNote(false);
+    setIsCreatingFolder(false);
+    clearStates();
   };
+
+  const handleSwitchToNotes = () => {
+    setViewMode('list');
+    setSelectedNote(null);
+    setSelectedFolder(null);
+    setIsCreatingNote(false);
+    setIsCreatingFolder(false);
+    clearStates();
+  };
+
+  const handleSwitchToFolders = () => {
+    setViewMode('folders');
+    setSelectedNote(null);
+    setSelectedFolder(null);
+    setIsCreatingNote(false);
+    setIsCreatingFolder(false);
+    clearStates();
+  };
+
+  // Handle note click from folder view
+  const handleFolderNoteClick = (noteId: string) => {
+    const note = getNoteById(noteId);
+    if (note) {
+      handleNoteClick(note);
+    }
+  };
+
+  const loading = notesLoading || foldersLoading;
+  const error = notesError || foldersError;
 
   if (loading) {
     return (
@@ -161,9 +224,12 @@ const BeautifulMind: React.FC = () => {
         <Navbar
           viewMode={viewMode}
           onNewNote={handleNewNote}
+          onNewFolder={handleNewFolder}
           onBackToList={handleBackToList}
+          onSwitchToNotes={handleSwitchToNotes}
+          onSwitchToFolders={handleSwitchToFolders}
         />
-        <div className={styles.loading}>Loading notes...</div>
+        <div className={styles.loading}>Loading...</div>
       </div>
     );
   }
@@ -174,7 +240,10 @@ const BeautifulMind: React.FC = () => {
         <Navbar
           viewMode={viewMode}
           onNewNote={handleNewNote}
+          onNewFolder={handleNewFolder}
           onBackToList={handleBackToList}
+          onSwitchToNotes={handleSwitchToNotes}
+          onSwitchToFolders={handleSwitchToFolders}
         />
         <div className={styles.error}>Error: {error}</div>
       </div>
@@ -186,7 +255,10 @@ const BeautifulMind: React.FC = () => {
       <Navbar
         viewMode={viewMode}
         onNewNote={handleNewNote}
+        onNewFolder={handleNewFolder}
         onBackToList={handleBackToList}
+        onSwitchToNotes={handleSwitchToNotes}
+        onSwitchToFolders={handleSwitchToFolders}
       />
       
       <main className={styles.main}>
@@ -198,20 +270,37 @@ const BeautifulMind: React.FC = () => {
           />
         )}
         
+        {viewMode === 'folders' && (
+          <FolderList
+            folders={folders}
+            onFolderClick={handleFolderClick}
+            onFolderDelete={deleteFolder}
+          />
+        )}
+        
         {viewMode === 'view' && selectedNote && (
           <NoteView
             note={getNoteById(selectedNote.id) || selectedNote}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onEdit={handleNoteEdit}
+            onDelete={handleNoteDelete}
+          />
+        )}
+        
+        {viewMode === 'folder-view' && selectedFolder && (
+          <FolderView
+            folder={getFolderById(selectedFolder.id) || selectedFolder}
+            onEdit={handleFolderEdit}
+            onDelete={handleFolderDelete}
+            onNoteClick={handleFolderNoteClick}
           />
         )}
         
         {(viewMode === 'create' || viewMode === 'edit') && (
           <NoteEditor
             note={selectedNote}
-            onSave={handleSave}
+            onSave={handleNoteSave}
             onCancel={handleCancel}
-            isCreating={isCreating}
+            isCreating={isCreatingNote}
             // Pass media state from parent
             pendingMedia={pendingMedia}
             setPendingMedia={setPendingMedia}
@@ -222,6 +311,15 @@ const BeautifulMind: React.FC = () => {
             // New file state for creation mode
             pendingFiles={pendingFiles}
             setPendingFiles={setPendingFiles}
+          />
+        )}
+        
+        {(viewMode === 'folder-create' || viewMode === 'folder-edit') && (
+          <FolderEditor
+            folder={selectedFolder}
+            onSave={handleFolderSave}
+            onCancel={handleCancel}
+            isCreating={isCreatingFolder}
           />
         )}
       </main>
