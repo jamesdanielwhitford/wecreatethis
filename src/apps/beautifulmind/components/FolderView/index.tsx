@@ -130,7 +130,7 @@ const FolderView: React.FC<FolderViewProps> = ({ folder, onEdit, onDelete, onNot
           </label>
           <input
             type="range"
-            min="0.5"
+            min="0.01"
             max="0.95"
             step="0.05"
             value={threshold}

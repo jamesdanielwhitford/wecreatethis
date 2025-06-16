@@ -54,6 +54,7 @@
 
 .contentTextarea {
   flex: 1;
+  min-height: 400px; /* Much taller minimum height */
   background: transparent;
   border: 1px solid var(--border-color, #333);
   border-radius: 0.5rem;
@@ -61,10 +62,11 @@
   font-size: 1rem;
   line-height: 1.6;
   padding: 1rem;
-  resize: none;
+  resize: vertical; /* Allow vertical resizing */
   outline: none;
   transition: border-color 0.2s;
   font-family: inherit;
+  margin-bottom: 1rem; /* Space before media upload button */
 }
 
 .contentTextarea:focus {
@@ -126,4 +128,10 @@
 .saveButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .contentTextarea {
+    min-height: 300px; /* Slightly shorter on mobile but still tall */
+  }
 }

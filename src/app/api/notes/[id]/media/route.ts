@@ -20,6 +20,28 @@ const getMediaUrl = (path: string): string => {
   return data.publicUrl;
 };
 
+// Helper function to auto-process embeddings
+async function triggerEmbeddingProcessing(): Promise<void> {
+  try {
+    console.log('Triggering embedding processing after media upload...');
+    
+    // Use a separate fetch to trigger the processing endpoint
+    fetch('/api/embeddings/process', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.EMBEDDING_API_KEY || 'auto-process'
+      },
+      body: JSON.stringify({ batchSize: 15 })
+    }).catch(err => {
+      console.warn('Background embedding processing failed:', err);
+    });
+  } catch (error) {
+    console.warn('Failed to trigger embedding processing:', error);
+    // Don't throw - this is a background process
+  }
+}
+
 // Helper function to get audio duration
 async function getAudioDuration(buffer: ArrayBuffer): Promise<number | undefined> {
   // Note: In a production environment, you'd want to use a proper audio processing library
@@ -119,6 +141,7 @@ export async function POST(
     }
     
     const uploadedAttachments = [];
+    let shouldTriggerEmbeddings = false;
     
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -184,6 +207,7 @@ export async function POST(
             description_status: 'completed',
             described_at: new Date().toISOString()
           };
+          shouldTriggerEmbeddings = true; // Description provided, will need embedding
         } else if (shouldDescribe) {
           // AI description requested
           descriptionData = {
@@ -251,6 +275,8 @@ export async function POST(
 
             if (updateError) throw updateError;
 
+            shouldTriggerEmbeddings = true; // Transcription completed, will need embedding
+
             // Handle AI description for images
             let finalAttachment = updatedAttachment;
             if (mediaType === 'image' && shouldDescribe) {
@@ -271,6 +297,7 @@ export async function POST(
 
                 if (describeError) throw describeError;
                 finalAttachment = describedAttachment;
+                shouldTriggerEmbeddings = true; // Description generated, will need embedding
               } catch (descriptionError) {
                 console.error('Description failed:', descriptionError);
                 
@@ -384,6 +411,7 @@ export async function POST(
 
             if (describeError) throw describeError;
             finalAttachment = describedAttachment;
+            shouldTriggerEmbeddings = true; // Description generated, will need embedding
           } catch (descriptionError) {
             console.error('Description failed:', descriptionError);
             
@@ -408,6 +436,13 @@ export async function POST(
         
         uploadedAttachments.push(attachmentWithUrls);
       }
+    }
+    
+    // Trigger embedding processing if any transcriptions or descriptions were created
+    if (shouldTriggerEmbeddings) {
+      setTimeout(() => {
+        triggerEmbeddingProcessing();
+      }, 2000); // Delay to ensure database commits are complete
     }
     
     return NextResponse.json(uploadedAttachments);

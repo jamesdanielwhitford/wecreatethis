@@ -23,6 +23,33 @@ interface NoteEditorProps {
   setPendingFiles: React.Dispatch<React.SetStateAction<PendingMediaFile[]>>;
 }
 
+// Helper function to auto-process embeddings for media
+async function autoProcessMediaEmbeddings(): Promise<void> {
+  try {
+    console.log('Auto-processing media embeddings...');
+    
+    const response = await fetch('/api/embeddings/process', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.NEXT_PUBLIC_EMBEDDING_API_KEY || 'auto-process'
+      },
+      body: JSON.stringify({ batchSize: 15 })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn('Auto-media-embedding processing failed:', errorText);
+    } else {
+      const result = await response.json();
+      console.log('Auto-media-embedding processing completed:', result);
+    }
+  } catch (error) {
+    console.warn('Auto-media-embedding processing error:', error);
+    // Don't throw - this is a background process
+  }
+}
+
 const NoteEditor: React.FC<NoteEditorProps> = ({ 
   note, 
   onSave, 
@@ -128,6 +155,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       // Add to pending media (parent state)
       setPendingMedia(prev => [...prev, ...attachments]);
       
+      // Auto-process embeddings for media (transcriptions, descriptions)
+      setTimeout(async () => {
+        await autoProcessMediaEmbeddings();
+      }, 2000); // Slightly longer delay for media processing
+      
       // Remove from uploads after a delay
       setTimeout(() => {
         setPendingUploads(prev => prev.filter((_, idx) => 
@@ -189,6 +221,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           : attachment
       ));
       
+      // Auto-process embeddings for the retry
+      setTimeout(async () => {
+        await autoProcessMediaEmbeddings();
+      }, 1000);
+      
       setError(null);
     } catch (err) {
       setError('Failed to retry transcription');
@@ -206,6 +243,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           : attachment
       ));
       
+      // Auto-process embeddings for the generated description
+      setTimeout(async () => {
+        await autoProcessMediaEmbeddings();
+      }, 1000);
+      
       setError(null);
     } catch (err) {
       setError('Failed to generate description');
@@ -220,6 +262,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       setPendingMedia(prev => prev.map(attachment => 
         attachment.id === attachmentId ? updatedAttachment : attachment
       ));
+      
+      // Auto-process embeddings for the updated description
+      setTimeout(async () => {
+        await autoProcessMediaEmbeddings();
+      }, 1000);
       
       setError(null);
     } catch (err) {
@@ -244,6 +291,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           URL.revokeObjectURL(pf.preview_url);
         }
       });
+
+      // Auto-process embeddings for uploaded files
+      setTimeout(async () => {
+        await autoProcessMediaEmbeddings();
+      }, 2000);
 
       return attachments;
     } catch (err) {
@@ -390,6 +442,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         onGenerateDescription={!isCreating ? handleGenerateDescription : undefined}
         onUpdateDescription={!isCreating ? handleUpdateDescription : undefined}
         disabled={saving || generatingTitle}
+        compact={true} // Use compact mode in the note editor
       />
 
       {error && (

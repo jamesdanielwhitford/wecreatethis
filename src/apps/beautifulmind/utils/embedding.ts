@@ -102,6 +102,13 @@ class EmbeddingService {
   }
   
   /**
+   * Format embedding array for PostgreSQL vector type
+   */
+  private formatEmbeddingForDb(embedding: number[]): string {
+    return `[${embedding.join(',')}]`;
+  }
+  
+  /**
    * Get pending embeddings from the database
    */
   async getPendingEmbeddings(limit: number = 50): Promise<PendingEmbedding[]> {
@@ -242,7 +249,7 @@ class EmbeddingService {
   }
   
   /**
-   * Store embedding in the appropriate table
+   * Store embedding in the appropriate table using pgvector format
    */
   private async storeEmbedding(
     entityType: string, 
@@ -268,16 +275,33 @@ class EmbeddingService {
         throw new Error(`Unknown entity type: ${entityType}`);
     }
     
-    const { error } = await supabase
-      .from(tableName)
-      .update({ 
-        [embeddingColumn]: `[${embedding.join(',')}]`,
-        last_embedded_at: now
-      })
-      .eq('id', entityId);
+    // Format embedding as PostgreSQL vector type
+    const embeddingStr = this.formatEmbeddingForDb(embedding);
+    
+    // Use raw SQL to insert the vector properly
+    const { error } = await supabase.rpc('update_embedding', {
+      table_name: tableName,
+      entity_id: entityId,
+      embedding_column: embeddingColumn,
+      embedding_value: embeddingStr,
+      updated_at: now
+    });
     
     if (error) {
-      throw new Error(`Failed to store embedding: ${error.message}`);
+      // Fallback to direct update if the function doesn't exist
+      console.log('Custom update function not found, using direct update...');
+      
+      const { error: directError } = await supabase
+        .from(tableName)
+        .update({ 
+          [embeddingColumn]: embeddingStr,
+          last_embedded_at: now
+        })
+        .eq('id', entityId);
+      
+      if (directError) {
+        throw new Error(`Failed to store embedding: ${directError.message}`);
+      }
     }
   }
   
@@ -340,7 +364,7 @@ class EmbeddingService {
   }
   
   /**
-   * Calculate cosine similarity between two embeddings
+   * Calculate cosine similarity between two embeddings (for testing/validation)
    */
   cosineSimilarity(a: number[], b: number[]): number {
     if (a.length !== b.length) {
@@ -358,6 +382,26 @@ class EmbeddingService {
     }
     
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+  
+  /**
+   * Test vector similarity using the database
+   */
+  async testVectorSimilarity(embedding1: number[], embedding2: number[]): Promise<number> {
+    const emb1Str = this.formatEmbeddingForDb(embedding1);
+    const emb2Str = this.formatEmbeddingForDb(embedding2);
+    
+    const { data, error } = await supabase.rpc('vector_similarity', {
+      vec1: emb1Str,
+      vec2: emb2Str
+    });
+    
+    if (error) {
+      // Fallback to client-side calculation
+      return this.cosineSimilarity(embedding1, embedding2);
+    }
+    
+    return data;
   }
 }
 
