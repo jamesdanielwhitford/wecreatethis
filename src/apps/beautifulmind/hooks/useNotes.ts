@@ -3,33 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Note, NoteFormData } from '../types/notes.types';
 import { notesService } from '../utils/api';
-
-// Helper function to auto-process embeddings
-async function autoProcessEmbeddings(): Promise<void> {
-  try {
-    console.log('Auto-processing note embeddings...');
-    
-    const response = await fetch('/api/embeddings/process', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.NEXT_PUBLIC_EMBEDDING_API_KEY || 'auto-process'
-      },
-      body: JSON.stringify({ batchSize: 10 })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn('Auto-embedding processing failed:', errorText);
-    } else {
-      const result = await response.json();
-      console.log('Auto-embedding processing completed:', result);
-    }
-  } catch (error) {
-    console.warn('Auto-embedding processing error:', error);
-    // Don't throw - this is a background process
-  }
-}
+import { autoProcessEmbeddings } from '../utils/auto-embeddings';
 
 export const useNotes = () => {
   const [notes, setNotes] = useState<Note[]>([]);

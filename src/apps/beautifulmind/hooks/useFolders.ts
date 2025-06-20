@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Folder, FolderFormData } from '../types/notes.types';
+import { autoProcessEmbeddings } from '../utils/auto-embeddings';
 
 // Helper function to handle API responses
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -92,18 +93,7 @@ export const useFolders = () => {
       
       // Auto-process embeddings in the background
       setTimeout(async () => {
-        try {
-          await fetch('/api/embeddings/process', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': process.env.NEXT_PUBLIC_EMBEDDING_API_KEY || 'auto-process'
-            },
-            body: JSON.stringify({ batchSize: 5 })
-          });
-        } catch (err) {
-          console.warn('Auto-embedding processing failed:', err);
-        }
+        await autoProcessEmbeddings();
       }, 1000);
       
       return newFolder;

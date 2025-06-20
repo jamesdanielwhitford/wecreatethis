@@ -132,23 +132,32 @@ class EmbeddingService {
    */
   async processPendingEmbedding(pending: PendingEmbedding): Promise<void> {
     try {
+      console.log(`Processing embedding for ${pending.entity_type} ${pending.entity_id} field ${pending.field_name}`);
+      
       // Get the entity and extract the text to embed
       const text = await this.getTextForEmbedding(pending.entity_type, pending.entity_id, pending.field_name);
       
       if (!text || text.trim().length === 0) {
+        console.log(`No text found for ${pending.entity_type} ${pending.entity_id} ${pending.field_name}, marking as processed`);
         // Mark as processed with no embedding needed
         await this.markEmbeddingProcessed(pending.id, null);
         return;
       }
       
+      console.log(`Generating embedding for text length: ${text.length}`);
+      
       // Generate the embedding
       const result = await this.generateEmbedding(text);
+      
+      console.log(`Generated embedding with ${result.embedding.length} dimensions`);
       
       // Store the embedding back to the appropriate table
       await this.storeEmbedding(pending.entity_type, pending.entity_id, pending.field_name, result.embedding);
       
       // Mark as processed
       await this.markEmbeddingProcessed(pending.id, null);
+      
+      console.log(`Successfully processed embedding for ${pending.entity_type} ${pending.entity_id}`);
       
     } catch (error) {
       console.error('Error processing pending embedding:', error);
@@ -182,69 +191,114 @@ class EmbeddingService {
   }
   
   private async getNoteText(noteId: string, fieldName: string): Promise<string | null> {
-    const { data, error } = await supabase
-      .from('notes')
-      .select('title, content, summary')
-      .eq('id', noteId)
-      .single();
-    
-    if (error || !data) {
-      throw new Error(`Failed to fetch note: ${error?.message || 'Not found'}`);
-    }
-    
-    switch (fieldName) {
-      case 'title':
-        return data.title || null;
-      case 'content':
-        return data.content || null;
-      case 'summary':
-        return data.summary || null;
-      default:
-        throw new Error(`Unknown note field: ${fieldName}`);
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('title, content, summary, ai_categorization_description')
+        .eq('id', noteId)
+        .limit(1);
+      
+      if (error) {
+        console.error(`Error fetching note ${noteId}:`, error);
+        throw new Error(`Failed to fetch note: ${error.message}`);
+      }
+      
+      if (!data || data.length === 0) {
+        console.warn(`Note ${noteId} not found`);
+        return null;
+      }
+      
+      const note = data[0];
+      
+      switch (fieldName) {
+        case 'title':
+          return note.title || null;
+        case 'content':
+          return note.content || null;
+        case 'summary':
+          return note.summary || null;
+        case 'ai_categorization_description':
+          return note.ai_categorization_description || null;
+        default:
+          throw new Error(`Unknown note field: ${fieldName}`);
+      }
+    } catch (error) {
+      console.error(`Error in getNoteText for ${noteId}:`, error);
+      throw error;
     }
   }
   
   private async getMediaAttachmentText(attachmentId: string, fieldName: string): Promise<string | null> {
-    const { data, error } = await supabase
-      .from('media_attachments')
-      .select('transcription_text, description')
-      .eq('id', attachmentId)
-      .single();
-    
-    if (error || !data) {
-      throw new Error(`Failed to fetch media attachment: ${error?.message || 'Not found'}`);
-    }
-    
-    switch (fieldName) {
-      case 'transcription':
-        return data.transcription_text || null;
-      case 'description':
-        return data.description || null;
-      default:
-        throw new Error(`Unknown media attachment field: ${fieldName}`);
+    try {
+      const { data, error } = await supabase
+        .from('media_attachments')
+        .select('transcription_text, description, ai_categorization_description')
+        .eq('id', attachmentId)
+        .limit(1);
+      
+      if (error) {
+        console.error(`Error fetching media attachment ${attachmentId}:`, error);
+        throw new Error(`Failed to fetch media attachment: ${error.message}`);
+      }
+      
+      if (!data || data.length === 0) {
+        console.warn(`Media attachment ${attachmentId} not found`);
+        return null;
+      }
+      
+      const attachment = data[0];
+      
+      switch (fieldName) {
+        case 'transcription':
+          return attachment.transcription_text || null;
+        case 'description':
+          return attachment.description || null;
+        case 'ai_categorization_description':
+          return attachment.ai_categorization_description || null;
+        default:
+          throw new Error(`Unknown media attachment field: ${fieldName}`);
+      }
+    } catch (error) {
+      console.error(`Error in getMediaAttachmentText for ${attachmentId}:`, error);
+      throw error;
     }
   }
   
   private async getFolderText(folderId: string, fieldName: string): Promise<string | null> {
-    const { data, error } = await supabase
-      .from('folders')
-      .select('title, description, enhanced_description')
-      .eq('id', folderId)
-      .single();
-    
-    if (error || !data) {
-      throw new Error(`Failed to fetch folder: ${error?.message || 'Not found'}`);
-    }
-    
-    switch (fieldName) {
-      case 'title':
-        return data.title || null;
-      case 'description':
-        return data.description || null;
-      case 'enhanced_description':
-        return data.enhanced_description || null;
-      default:
-        throw new Error(`Unknown folder field: ${fieldName}`);
+    try {
+      const { data, error } = await supabase
+        .from('folders')
+        .select('title, description, enhanced_description, ai_matching_description')
+        .eq('id', folderId)
+        .limit(1);
+      
+      if (error) {
+        console.error(`Error fetching folder ${folderId}:`, error);
+        throw new Error(`Failed to fetch folder: ${error.message}`);
+      }
+      
+      if (!data || data.length === 0) {
+        console.warn(`Folder ${folderId} not found`);
+        return null;
+      }
+      
+      const folder = data[0];
+      
+      switch (fieldName) {
+        case 'title':
+          return folder.title || null;
+        case 'description':
+          return folder.description || null;
+        case 'enhanced_description':
+          return folder.enhanced_description || null;
+        case 'ai_matching_description':
+          return folder.ai_matching_description || null;
+        default:
+          throw new Error(`Unknown folder field: ${fieldName}`);
+      }
+    } catch (error) {
+      console.error(`Error in getFolderText for ${folderId}:`, error);
+      throw error;
     }
   }
   
@@ -257,7 +311,16 @@ class EmbeddingService {
     fieldName: string, 
     embedding: number[]
   ): Promise<void> {
-    const embeddingColumn = `${fieldName}_embedding`;
+    // Map field names to correct embedding column names
+    let embeddingColumn: string;
+    if (fieldName === 'ai_matching_description') {
+      embeddingColumn = 'ai_matching_embedding';
+    } else if (fieldName === 'ai_categorization_description') {
+      embeddingColumn = 'ai_categorization_embedding';
+    } else {
+      embeddingColumn = `${fieldName}_embedding`;
+    }
+    
     const now = new Date().toISOString();
     
     let tableName: string;
@@ -277,6 +340,8 @@ class EmbeddingService {
     
     // Format embedding as PostgreSQL vector type
     const embeddingStr = this.formatEmbeddingForDb(embedding);
+    
+    console.log(`Storing embedding in ${tableName}.${embeddingColumn} for entity ${entityId}`);
     
     // Use raw SQL to insert the vector properly
     const { error } = await supabase.rpc('update_embedding', {
@@ -300,9 +365,12 @@ class EmbeddingService {
         .eq('id', entityId);
       
       if (directError) {
+        console.error(`Failed to store embedding directly:`, directError);
         throw new Error(`Failed to store embedding: ${directError.message}`);
       }
     }
+    
+    console.log(`Successfully stored embedding for ${entityType} ${entityId}`);
   }
   
   /**
@@ -336,6 +404,8 @@ class EmbeddingService {
         hasMore = false;
         break;
       }
+      
+      console.log(`Processing batch of ${pending.length} embeddings...`);
       
       // Process embeddings in parallel (but respect rate limits)
       const promises = pending.map(item => this.processPendingEmbedding(item));

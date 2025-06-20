@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { aiMatchingService } from '@/apps/beautifulmind/utils/ai-matching';
+import { autoProcessMediaEmbeddings } from '@/apps/beautifulmind/utils/auto-embeddings';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -20,28 +21,6 @@ const getMediaUrl = (path: string): string => {
   const { data } = supabase.storage.from('note-media').getPublicUrl(path);
   return data.publicUrl;
 };
-
-// Helper function to auto-process embeddings
-async function triggerEmbeddingProcessing(): Promise<void> {
-  try {
-    console.log('Triggering embedding processing after media upload...');
-    
-    // Use a separate fetch to trigger the processing endpoint
-    fetch('/api/embeddings/process', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.EMBEDDING_API_KEY || 'auto-process'
-      },
-      body: JSON.stringify({ batchSize: 15 })
-    }).catch(err => {
-      console.warn('Background embedding processing failed:', err);
-    });
-  } catch (error) {
-    console.warn('Failed to trigger embedding processing:', error);
-    // Don't throw - this is a background process
-  }
-}
 
 // Helper function to get audio duration
 async function getAudioDuration(buffer: ArrayBuffer): Promise<number | undefined> {
@@ -513,7 +492,7 @@ export async function POST(
     // Trigger embedding processing if any transcriptions, descriptions, or AI categorizations were created
     if (shouldTriggerEmbeddings) {
       setTimeout(() => {
-        triggerEmbeddingProcessing();
+        autoProcessMediaEmbeddings();
       }, 2000); // Delay to ensure database commits are complete
     }
     

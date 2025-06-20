@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Note } from '@/apps/beautifulmind/types/notes.types';
 import { aiMatchingService } from '@/apps/beautifulmind/utils/ai-matching';
+import { autoProcessEmbeddings } from '@/apps/beautifulmind/utils/auto-embeddings';
 
 // Initialize Supabase client with anon key for regular operations
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -19,33 +20,6 @@ const getMediaUrl = (path: string): string => {
   const { data } = supabase.storage.from('note-media').getPublicUrl(path);
   return data.publicUrl;
 };
-
-// Helper function to auto-process embeddings
-async function autoProcessEmbeddings(): Promise<void> {
-  try {
-    console.log('Auto-processing note embeddings...');
-    
-    const response = await fetch('/api/embeddings/process', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.EMBEDDING_API_KEY || 'auto-process'
-      },
-      body: JSON.stringify({ batchSize: 10 })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn('Auto-embedding processing failed:', errorText);
-    } else {
-      const result = await response.json();
-      console.log('Auto-embedding processing completed:', result);
-    }
-  } catch (error) {
-    console.warn('Auto-embedding processing error:', error);
-    // Don't throw - this is a background process
-  }
-}
 
 // GET /api/notes - Get all notes
 export async function GET() {
