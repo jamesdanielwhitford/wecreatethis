@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Note } from '@/apps/beautifulmind/types/notes.types';
+import { aiMatchingService } from '@/apps/beautifulmind/utils/ai-matching';
 
 // Initialize Supabase client with anon key for regular operations
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -18,6 +19,33 @@ const getMediaUrl = (path: string): string => {
   const { data } = supabase.storage.from('note-media').getPublicUrl(path);
   return data.publicUrl;
 };
+
+// Helper function to auto-process embeddings
+async function autoProcessEmbeddings(): Promise<void> {
+  try {
+    console.log('Auto-processing note embeddings...');
+    
+    const response = await fetch('/api/embeddings/process', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.EMBEDDING_API_KEY || 'auto-process'
+      },
+      body: JSON.stringify({ batchSize: 10 })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn('Auto-embedding processing failed:', errorText);
+    } else {
+      const result = await response.json();
+      console.log('Auto-embedding processing completed:', result);
+    }
+  } catch (error) {
+    console.warn('Auto-embedding processing error:', error);
+    // Don't throw - this is a background process
+  }
+}
 
 // GET /api/notes - Get all notes
 export async function GET() {
@@ -52,13 +80,13 @@ export async function GET() {
   }
 }
 
-// POST /api/notes - Create a new note
+// POST /api/notes - Create a new note with AI categorization
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { title, content } = body;
     
-    console.log('Creating note with:', { title, content });
+    console.log('Creating note with AI categorization:', { title: title?.substring(0, 50), contentLength: content?.length });
     
     // Check if we have service role key for bypass
     if (!supabaseServiceKey) {
@@ -68,14 +96,38 @@ export async function POST(request: NextRequest) {
     // Use service role client to avoid RLS issues during testing
     const client = supabaseServiceKey ? supabaseService : supabase;
     
+    // Step 1: Get existing folders for AI context
+    const existingFolders = await aiMatchingService.getExistingFolders();
+    console.log('Found existing folders for context:', existingFolders.length);
+    
+    // Step 2: Generate AI categorization description
+    let aiCategorizationDescription = '';
+    try {
+      if (content && content.trim()) {
+        const aiResult = await aiMatchingService.generateNoteCategorization(
+          { title: title?.trim(), content: content.trim() },
+          [], // transcriptions - will be added later when media is processed
+          [], // descriptions - will be added later when media is processed  
+          existingFolders
+        );
+        aiCategorizationDescription = aiResult.description;
+        console.log('Generated AI categorization:', aiCategorizationDescription);
+      }
+    } catch (aiError) {
+      console.error('AI categorization generation failed:', aiError);
+      // Continue without AI description - it's not critical for note creation
+    }
+    
+    // Step 3: Create note with AI categorization
     const noteData = {
       title: title || 'Untitled Note', 
       content: content || '',
+      ai_categorization_description: aiCategorizationDescription || null,
       // For testing without auth - set to null to avoid foreign key issues
       user_id: null
     };
     
-    console.log('Inserting note data:', noteData);
+    console.log('Inserting note data with AI categorization');
     
     const { data, error } = await client
       .from('notes')
@@ -93,7 +145,24 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
     
-    console.log('Note created successfully:', data);
+    console.log('Note created successfully with AI categorization:', data.id);
+    
+    // Step 4: Queue embedding generation for AI categorization (background process)
+    if (aiCategorizationDescription) {
+      try {
+        await aiMatchingService.queueEmbeddingGeneration('note', data.id, 'ai_categorization');
+        console.log('Queued AI categorization embedding generation');
+      } catch (embeddingError) {
+        console.error('Failed to queue embedding generation:', embeddingError);
+        // Don't fail the request for embedding issues
+      }
+    }
+    
+    // Step 5: Auto-process embeddings in background
+    setTimeout(async () => {
+      await autoProcessEmbeddings();
+    }, 2000);
+    
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error creating note:', error);

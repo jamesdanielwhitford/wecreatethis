@@ -21,7 +21,7 @@ export interface MediaAttachment {
   transcription_status?: 'not_started' | 'pending' | 'completed' | 'failed';
   transcription_error?: string;
   transcribed_at?: string;
-  transcription_embedding?: number[]; // New: vector embedding of transcription
+  transcription_embedding?: number[]; // Vector embedding of transcription
   
   // Description fields
   description?: string; // User-provided or AI-generated description
@@ -29,7 +29,11 @@ export interface MediaAttachment {
   description_status?: 'not_started' | 'pending' | 'completed' | 'failed';
   description_error?: string;
   described_at?: string;
-  description_embedding?: number[]; // New: vector embedding of description
+  description_embedding?: number[]; // Vector embedding of description
+  
+  // NEW: AI categorization fields
+  ai_categorization_description?: string; // AI-generated categorization for folder matching
+  ai_categorization_embedding?: number[]; // Vector embedding of AI categorization
   
   // Embedding metadata
   last_embedded_at?: string; // When embeddings were last generated
@@ -44,11 +48,13 @@ export interface Note {
   user_id?: string;
   media_attachments?: MediaAttachment[];
   
-  // New embedding fields
+  // Embedding fields
   title_embedding?: number[]; // Vector embedding of title
   content_embedding?: number[]; // Vector embedding of content
   summary?: string; // AI-generated summary
   summary_embedding?: number[]; // Vector embedding of summary
+  ai_categorization_description?: string; // NEW: AI-generated categorization for matching
+  ai_categorization_embedding?: number[]; // NEW: Vector embedding of AI categorization
   last_embedded_at?: string; // When embeddings were last generated
 }
 
@@ -58,6 +64,7 @@ export interface Folder {
   title: string;
   description?: string;
   enhanced_description?: string; // AI-enhanced version with strategic keywords
+  ai_matching_description?: string; // NEW: AI-generated description optimized for matching
   created_at: string;
   updated_at: string;
   
@@ -65,6 +72,7 @@ export interface Folder {
   title_embedding?: number[]; // Vector embedding of title
   description_embedding?: number[]; // Vector embedding of description
   enhanced_description_embedding?: number[]; // Vector embedding of enhanced description
+  ai_matching_embedding?: number[]; // NEW: Vector embedding of AI matching description
   last_embedded_at?: string; // When embeddings were last generated
 }
 

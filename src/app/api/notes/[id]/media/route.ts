@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
+import { aiMatchingService } from '@/apps/beautifulmind/utils/ai-matching';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -124,7 +125,7 @@ async function generateImageDescription(file: File): Promise<string> {
   }
 }
 
-// POST /api/notes/[id]/media - Upload media to a note
+// POST /api/notes/[id]/media - Upload media to a note with AI categorization
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -139,6 +140,18 @@ export async function POST(
         { status: 400 }
       );
     }
+    
+    // Get note context for AI categorization
+    const { data: noteData } = await supabase
+      .from('notes')
+      .select('title, content')
+      .eq('id', params.id)
+      .single();
+    
+    const noteContext = noteData ? { title: noteData.title, content: noteData.content } : undefined;
+    
+    // Get existing folders for AI context
+    const existingFolders = await aiMatchingService.getExistingFolders();
     
     const uploadedAttachments = [];
     let shouldTriggerEmbeddings = false;
@@ -277,6 +290,35 @@ export async function POST(
 
             shouldTriggerEmbeddings = true; // Transcription completed, will need embedding
 
+            // Generate AI categorization for this media
+            try {
+              const aiResult = await aiMatchingService.generateMediaCategorization(
+                { ...updatedAttachment, transcription_text: transcriptionText },
+                noteContext,
+                existingFolders
+              );
+              
+              if (aiResult.description) {
+                const { data: categorizedAttachment, error: categorizationError } = await supabase
+                  .from('media_attachments')
+                  .update({
+                    ai_categorization_description: aiResult.description
+                  })
+                  .eq('id', attachment.id)
+                  .select()
+                  .single();
+
+                if (categorizationError) throw categorizationError;
+                
+                // Queue embedding for AI categorization
+                await aiMatchingService.queueEmbeddingGeneration('media_attachment', attachment.id, 'ai_categorization');
+                updatedAttachment.ai_categorization_description = aiResult.description;
+              }
+            } catch (aiCategorizeError) {
+              console.error('AI categorization failed for audio:', aiCategorizeError);
+              // Continue without AI categorization
+            }
+
             // Handle AI description for images
             let finalAttachment = updatedAttachment;
             if (mediaType === 'image' && shouldDescribe) {
@@ -391,6 +433,36 @@ export async function POST(
           throw error;
         }
         
+        // Generate AI categorization for all media types
+        try {
+          const aiResult = await aiMatchingService.generateMediaCategorization(
+            data,
+            noteContext,
+            existingFolders
+          );
+          
+          if (aiResult.description) {
+            const { data: categorizedAttachment, error: categorizationError } = await supabase
+              .from('media_attachments')
+              .update({
+                ai_categorization_description: aiResult.description
+              })
+              .eq('id', data.id)
+              .select()
+              .single();
+
+            if (!categorizationError) {
+              data.ai_categorization_description = aiResult.description;
+              // Queue embedding for AI categorization
+              await aiMatchingService.queueEmbeddingGeneration('media_attachment', data.id, 'ai_categorization');
+              shouldTriggerEmbeddings = true;
+            }
+          }
+        } catch (aiCategorizeError) {
+          console.error('AI categorization failed:', aiCategorizeError);
+          // Continue without AI categorization
+        }
+        
         // Handle AI description for images
         let finalAttachment = data;
         if (mediaType === 'image' && shouldDescribe && !manualDescription?.trim()) {
@@ -438,7 +510,7 @@ export async function POST(
       }
     }
     
-    // Trigger embedding processing if any transcriptions or descriptions were created
+    // Trigger embedding processing if any transcriptions, descriptions, or AI categorizations were created
     if (shouldTriggerEmbeddings) {
       setTimeout(() => {
         triggerEmbeddingProcessing();
@@ -447,7 +519,7 @@ export async function POST(
     
     return NextResponse.json(uploadedAttachments);
   } catch (error) {
-    console.error('Error uploading media:', error);
+    console.error('Error uploading media with AI categorization:', error);
     return NextResponse.json(
       { error: 'Failed to upload media' },
       { status: 500 }
