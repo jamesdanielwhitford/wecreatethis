@@ -66,7 +66,7 @@ export async function GET(
     
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '20');
-    const threshold = parseFloat(searchParams.get('threshold') || '0.5');
+    const threshold = parseFloat(searchParams.get('threshold') || '0');
     
     console.log('Search params:', { limit, threshold });
 
@@ -131,80 +131,205 @@ export async function GET(
       console.log('No folder embeddings available - will show notes in creation order');
     }
 
-    const searchEmbeddingStr = formatEmbeddingForQuery(searchEmbedding);
-    
-    // Step 4: Search for matching notes using AI categorization embeddings (best match)
     const noteResults: Array<{ note: any; similarity_score: number; match_reason: string }> = [];
     
-    // Primary search: AI categorization embeddings
-    const { data: aiMatches, error: aiError } = await supabase
-      .from('notes')
-      .select(`
-        id,
-        title,
-        content,
-        created_at,
-        updated_at,
-        ai_categorization_description,
-        media_attachments (*),
-        similarity:ai_categorization_embedding.cosine_similarity(${searchEmbeddingStr})
-      `)
-      .not('ai_categorization_embedding', 'is', null)
-      .not('id', 'in', `(${excludeNoteIds.map(id => `'${id}'`).join(',') || "''"})`)
-      .gte('ai_categorization_embedding.cosine_similarity', threshold)
-      .order('ai_categorization_embedding.cosine_similarity', { ascending: false })
-      .limit(Math.min(limit, 15)); // Leave room for other matches
-    
-    if (!aiError && aiMatches) {
-      console.log('Found AI categorization matches:', aiMatches.length);
-      aiMatches.forEach(note => {
-        noteResults.push({
-          note,
-          similarity_score: note.similarity,
-          match_reason: 'ai_categorization'
-        });
-      });
+    // Step 4: Only do embedding-based searches if we have a folder embedding
+    if (searchEmbedding) {
+      // Simplified approach: Get notes with embeddings and calculate similarity in-memory
+      
+      // Primary search: AI categorization embeddings
+      try {
+        const { data: aiNotes, error: aiError } = await supabase
+          .from('notes')
+          .select(`
+            id,
+            title,
+            content,
+            created_at,
+            updated_at,
+            ai_categorization_description,
+            ai_categorization_embedding,
+            media_attachments (*)
+          `)
+          .not('ai_categorization_embedding', 'is', null)
+          .limit(Math.min(limit * 2, 30)); // Get more than needed for filtering
+        
+        if (!aiError && aiNotes) {
+          console.log('Found notes with AI categorization embeddings:', aiNotes.length);
+          
+          // Calculate similarity and filter
+          aiNotes.forEach(note => {
+            // Skip if already in folder
+            if (excludeNoteIds.includes(note.id)) return;
+            
+            try {
+              const noteEmbedding = parseEmbeddingFromDb(note.ai_categorization_embedding);
+              const similarity = calculateCosineSimilarity(searchEmbedding, noteEmbedding);
+              
+              if (similarity >= threshold) {
+                noteResults.push({
+                  note,
+                  similarity_score: similarity,
+                  match_reason: 'ai_categorization'
+                });
+              }
+            } catch (embErr) {
+              console.warn('Error calculating AI categorization similarity for note:', note.id, embErr);
+            }
+          });
+        } else if (aiError) {
+          console.warn('AI categorization search failed:', aiError.message);
+        }
+      } catch (err) {
+        console.warn('AI categorization search error:', err);
+      }
+      
+      // Secondary search: Title embeddings (if we have room)
+      if (noteResults.length < limit) {
+        try {
+          const { data: titleNotes, error: titleError } = await supabase
+            .from('notes')
+            .select(`
+              id,
+              title,
+              content,
+              created_at,
+              updated_at,
+              title_embedding,
+              media_attachments (*)
+            `)
+            .not('title_embedding', 'is', null)
+            .limit(Math.min(limit * 2, 30));
+          
+          if (!titleError && titleNotes) {
+            console.log('Found notes with title embeddings:', titleNotes.length);
+            
+            titleNotes.forEach(note => {
+              // Skip if already in folder or already added to results
+              if (excludeNoteIds.includes(note.id) || noteResults.some(r => r.note.id === note.id)) return;
+              
+              try {
+                const noteEmbedding = parseEmbeddingFromDb(note.title_embedding);
+                const similarity = calculateCosineSimilarity(searchEmbedding, noteEmbedding);
+                
+                if (similarity >= threshold) {
+                  noteResults.push({
+                    note,
+                    similarity_score: similarity,
+                    match_reason: 'title_similarity'
+                  });
+                }
+              } catch (embErr) {
+                console.warn('Error calculating title similarity for note:', note.id, embErr);
+              }
+            });
+          } else if (titleError) {
+            console.warn('Title similarity search failed:', titleError.message);
+          }
+        } catch (err) {
+          console.warn('Title similarity search error:', err);
+        }
+      }
+      
+      // Tertiary search: Content embeddings (if we still have room)
+      if (noteResults.length < limit) {
+        try {
+          const { data: contentNotes, error: contentError } = await supabase
+            .from('notes')
+            .select(`
+              id,
+              title,
+              content,
+              created_at,
+              updated_at,
+              content_embedding,
+              media_attachments (*)
+            `)
+            .not('content_embedding', 'is', null)
+            .limit(Math.min(limit * 2, 30));
+          
+          if (!contentError && contentNotes) {
+            console.log('Found notes with content embeddings:', contentNotes.length);
+            
+            contentNotes.forEach(note => {
+              // Skip if already in folder or already added to results
+              if (excludeNoteIds.includes(note.id) || noteResults.some(r => r.note.id === note.id)) return;
+              
+              try {
+                const noteEmbedding = parseEmbeddingFromDb(note.content_embedding);
+                const similarity = calculateCosineSimilarity(searchEmbedding, noteEmbedding);
+                
+                if (similarity >= threshold) {
+                  noteResults.push({
+                    note,
+                    similarity_score: similarity,
+                    match_reason: 'content_similarity'
+                  });
+                }
+              } catch (embErr) {
+                console.warn('Error calculating content similarity for note:', note.id, embErr);
+              }
+            });
+          } else if (contentError) {
+            console.warn('Content similarity search failed:', contentError.message);
+          }
+        } catch (err) {
+          console.warn('Content similarity search error:', err);
+        }
+      }
     }
     
-    // Secondary search: Title embeddings (if we have room)
+    // Step 5: FALLBACK - Get remaining notes without embeddings by creation order
     if (noteResults.length < limit) {
       const remainingLimit = limit - noteResults.length;
       const excludeNoteIdsWithResults = [...excludeNoteIds, ...noteResults.map(r => r.note.id)];
       
-      const { data: titleMatches, error: titleError } = await supabase
-        .from('notes')
-        .select(`
-          id,
-          title,
-          content,
-          created_at,
-          updated_at,
-          media_attachments (*),
-          similarity:title_embedding.cosine_similarity(${searchEmbeddingStr})
-        `)
-        .not('title_embedding', 'is', null)
-        .not('id', 'in', `(${excludeNoteIdsWithResults.map(id => `'${id}'`).join(',') || "''"})`)
-        .gte('title_embedding.cosine_similarity', threshold)
-        .order('title_embedding.cosine_similarity', { ascending: false })
-        .limit(remainingLimit);
+      console.log('Fetching remaining notes by creation order, limit:', remainingLimit);
+      console.log('Excluding note IDs with results:', excludeNoteIdsWithResults);
       
-      if (!titleError && titleMatches) {
-        console.log('Found title matches:', titleMatches.length);
-        titleMatches.forEach(note => {
-          noteResults.push({
-            note,
-            similarity_score: note.similarity,
-            match_reason: 'title_similarity'
-          });
+      try {
+        let query = supabase
+          .from('notes')
+          .select(`
+            id,
+            title,
+            content,
+            created_at,
+            updated_at,
+            media_attachments (*)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(remainingLimit);
+        
+        // Use individual .neq() calls for each ID to exclude (more reliable)
+        excludeNoteIdsWithResults.forEach(excludeId => {
+          query = query.neq('id', excludeId);
         });
+        
+        const { data: remainingNotes, error: remainingError } = await query;
+        
+        if (!remainingError && remainingNotes) {
+          console.log('Found remaining notes by creation order:', remainingNotes.length);
+          remainingNotes.forEach(note => {
+            noteResults.push({
+              note,
+              similarity_score: 0, // No similarity score for creation order
+              match_reason: searchEmbedding ? 'no_note_embedding' : 'creation_order'
+            });
+          });
+        } else if (remainingError) {
+          console.error('Error fetching remaining notes:', remainingError);
+        }
+      } catch (err) {
+        console.error('Fallback notes search error:', err);
       }
     }
     
-    // Step 5: Sort all results by similarity score (highest first) and limit
+    // Step 6: Sort all results by similarity score (highest first) and limit
     noteResults.sort((a, b) => b.similarity_score - a.similarity_score);
     const limitedResults = noteResults.slice(0, limit);
     
-    // Step 6: Add media URLs and process results
+    // Step 7: Add media URLs and process results
     const processedSuggestions = limitedResults.map(result => ({
       note: {
         ...result.note,
@@ -224,7 +349,7 @@ export async function GET(
       folder: { id: folder.id, title: folder.title, description: folder.description },
       suggested_notes: processedSuggestions,
       total_suggestions: processedSuggestions.length,
-      threshold: 0, // No threshold filtering - showing all available notes
+      threshold,
       method: 'all_available_notes_by_relevance',
       debug: {
         folder_embedding_type: embeddingType,
@@ -232,7 +357,9 @@ export async function GET(
         title_matches: noteResults.filter(r => r.match_reason === 'title_similarity').length,
         content_matches: noteResults.filter(r => r.match_reason === 'content_similarity').length,
         creation_order_matches: noteResults.filter(r => r.match_reason === 'creation_order').length,
-        no_embedding_matches: noteResults.filter(r => r.match_reason === 'no_note_embedding').length
+        no_embedding_matches: noteResults.filter(r => r.match_reason === 'no_note_embedding').length,
+        total_excluded_notes: excludeNoteIds.length,
+        search_embedding_available: !!searchEmbedding
       }
     });
     
