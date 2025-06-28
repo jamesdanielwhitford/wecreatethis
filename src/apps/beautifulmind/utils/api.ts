@@ -1,6 +1,6 @@
 // src/apps/beautifulmind/utils/api.ts
 
-import { Note, MediaAttachment, NoteFormData } from '../types/notes.types';
+import { Note, MediaAttachment, NoteFormData, Folder } from '../types/notes.types';
 
 // Base API URL - will work for both local development and Vercel deployment
 const API_BASE = '/api';
@@ -152,5 +152,98 @@ export const notesService = {
     });
     
     return handleResponse<{ note: Note; title: string; message: string }>(response);
+  },
+
+  // NEW: Get folders containing a note
+  async getNoteFolders(noteId: string): Promise<{ note: { id: string; title: string }; folders: Folder[] }> {
+    const response = await fetch(`${API_BASE}/notes/${noteId}/folders`);
+    return handleResponse<{ note: { id: string; title: string }; folders: Folder[] }>(response);
+  },
+
+  // NEW: Get AI-suggested folders for a note
+  async getSuggestedFolders(noteId: string, threshold: number = 0.5, limit: number = 10): Promise<{
+    note: { id: string; title: string };
+    suggested_folders: Array<{
+      folder: Folder;
+      similarity_score: number;
+      match_reason: string;
+    }>;
+    total_suggestions: number;
+  }> {
+    const response = await fetch(`${API_BASE}/notes/${noteId}/suggested-folders?threshold=${threshold}&limit=${limit}`);
+    return handleResponse<{
+      note: { id: string; title: string };
+      suggested_folders: Array<{
+        folder: Folder;
+        similarity_score: number;
+        match_reason: string;
+      }>;
+      total_suggestions: number;
+    }>(response);
+  }
+};
+
+// NEW: Folder management service for manual folder-note relationships
+export const folderManagementService = {
+  // Get notes manually added to a folder
+  async getFolderNotes(folderId: string): Promise<{
+    folder: Folder;
+    notes: Note[];
+    total_notes: number;
+  }> {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/notes`);
+    return handleResponse<{
+      folder: Folder;
+      notes: Note[];
+      total_notes: number;
+    }>(response);
+  },
+
+  // Add a note to a folder manually
+  async addNoteToFolder(folderId: string, noteId: string): Promise<{
+    message: string;
+    folder: { id: string; title: string };
+    note: { id: string; title: string };
+    added_at: string;
+  }> {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/notes/${noteId}`, {
+      method: 'POST'
+    });
+    return handleResponse<{
+      message: string;
+      folder: { id: string; title: string };
+      note: { id: string; title: string };
+      added_at: string;
+    }>(response);
+  },
+
+  // Remove a note from a folder
+  async removeNoteFromFolder(folderId: string, noteId: string): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/notes/${noteId}`, {
+      method: 'DELETE'
+    });
+    return handleResponse<{ message: string }>(response);
+  },
+
+  // Get AI-suggested notes for a folder
+  async getSuggestedNotes(folderId: string, threshold: number = 0.5, limit: number = 20): Promise<{
+    folder: { id: string; title: string; description?: string };
+    suggested_notes: Array<{
+      note: Note;
+      similarity_score: number;
+      match_reason: string;
+    }>;
+    total_suggestions: number;
+  }> {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/suggested-notes?threshold=${threshold}&limit=${limit}`);
+    return handleResponse<{
+      folder: { id: string; title: string; description?: string };
+      suggested_notes: Array<{
+        note: Note;
+        similarity_score: number;
+        match_reason: string;
+      }>;
+      total_suggestions: number;
+    }>(response);
   }
 };

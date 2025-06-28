@@ -31,7 +31,7 @@ export interface MediaAttachment {
   described_at?: string;
   description_embedding?: number[]; // Vector embedding of description
   
-  // NEW: AI categorization fields
+  // AI categorization fields
   ai_categorization_description?: string; // AI-generated categorization for folder matching
   ai_categorization_embedding?: number[]; // Vector embedding of AI categorization
   
@@ -53,9 +53,12 @@ export interface Note {
   content_embedding?: number[]; // Vector embedding of content
   summary?: string; // AI-generated summary
   summary_embedding?: number[]; // Vector embedding of summary
-  ai_categorization_description?: string; // NEW: AI-generated categorization for matching
-  ai_categorization_embedding?: number[]; // NEW: Vector embedding of AI categorization
+  ai_categorization_description?: string; // AI-generated categorization for matching
+  ai_categorization_embedding?: number[]; // Vector embedding of AI categorization
   last_embedded_at?: string; // When embeddings were last generated
+  
+  // NEW: Manual folder relationship info (populated when fetched from folder context)
+  added_to_folder_at?: string; // When note was added to current folder (if applicable)
 }
 
 export interface Folder {
@@ -64,7 +67,7 @@ export interface Folder {
   title: string;
   description?: string;
   enhanced_description?: string; // AI-enhanced version with strategic keywords
-  ai_matching_description?: string; // NEW: AI-generated description optimized for matching
+  ai_matching_description?: string; // AI-generated description optimized for matching
   created_at: string;
   updated_at: string;
   
@@ -72,8 +75,20 @@ export interface Folder {
   title_embedding?: number[]; // Vector embedding of title
   description_embedding?: number[]; // Vector embedding of description
   enhanced_description_embedding?: number[]; // Vector embedding of enhanced description
-  ai_matching_embedding?: number[]; // NEW: Vector embedding of AI matching description
+  ai_matching_embedding?: number[]; // Vector embedding of AI matching description
   last_embedded_at?: string; // When embeddings were last generated
+  
+  // NEW: Manual folder relationship info (populated when fetched from note context)
+  added_to_folder_at?: string; // When folder was added to current note (if applicable)
+}
+
+// NEW: Junction table type for manual folder-note relationships
+export interface FolderNote {
+  id: string;
+  folder_id: string;
+  note_id: string;
+  added_at: string;
+  added_by?: string; // User who added the note to folder
 }
 
 export interface PendingEmbedding {
@@ -139,10 +154,25 @@ export interface SimilaritySearchResult {
   entity: Note | MediaAttachment | Folder;
 }
 
+// UPDATED: Now represents manually added notes with similarity info for suggestions
 export interface FolderNoteResult {
   note: Note;
+  similarity_score?: number; // Optional - used for AI suggestions
+  matched_fields?: string[]; // Optional - used for AI suggestions
+  match_reason?: string; // NEW: Why this note was suggested
+}
+
+// NEW: AI suggestion types
+export interface FolderSuggestion {
+  folder: Folder;
   similarity_score: number;
-  matched_fields: string[]; // Which fields contributed to the match
+  match_reason: 'ai_categorization' | 'title_similarity' | 'content_similarity';
+}
+
+export interface NoteSuggestion {
+  note: Note;
+  similarity_score: number;
+  match_reason: 'ai_categorization' | 'title_similarity' | 'content_similarity';
 }
 
 export interface EmbeddingStats {
