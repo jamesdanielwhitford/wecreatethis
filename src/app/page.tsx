@@ -31,6 +31,10 @@ const appCategories = [
         name: 'Rankings',
         path: '/rankings'
       },
+      {
+        name: 'withLove',
+        path: '/withlove'
+      },
     ]
   },
   // {
