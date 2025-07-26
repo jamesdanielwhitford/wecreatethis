@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import DrawingCanvas from '../DrawingCanvas';
+import dynamic from 'next/dynamic';
+
+const DrawingCanvas = dynamic(() => import('../DrawingCanvas'), { ssr: false });
 import * as strokeStorage from '../../utils/strokeStorage';
 import { LetterStroke } from '../../types';
 import styles from './styles.module.css';
