@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { aiMatchingService } from '@/apps/beautifulmind/utils/ai-matching';
-import { autoProcessEmbeddings } from '@/apps/beautifulmind/utils/auto-embeddings';
+// import { autoProcessEmbeddings } from '@/apps/beautifulmind/utils/auto-embeddings';
 
 // Initialize Supabase client with anon key for regular operations
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -132,9 +132,10 @@ export async function POST(request: NextRequest) {
     }
     
     // Step 5: Auto-process embeddings in background
-    setTimeout(async () => {
-      await autoProcessEmbeddings();
-    }, 2000);
+    // TODO: Fix auto-processing for Vercel deployment
+    // setTimeout(async () => {
+    //   await autoProcessEmbeddings();
+    // }, 2000);
     
     return NextResponse.json(data);
   } catch (error) {
