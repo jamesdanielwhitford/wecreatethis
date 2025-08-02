@@ -136,7 +136,7 @@ export async function POST(
     const existingFolders = await aiMatchingService.getExistingFolders();
     
     const uploadedAttachments = [];
-    let shouldTriggerEmbeddings = false;
+    // let shouldTriggerEmbeddings = false;
     
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -202,7 +202,7 @@ export async function POST(
             description_status: 'completed',
             described_at: new Date().toISOString()
           };
-          shouldTriggerEmbeddings = true; // Description provided, will need embedding
+          // shouldTriggerEmbeddings = true; // Description provided, will need embedding
         } else if (shouldDescribe) {
           // AI description requested
           descriptionData = {
@@ -270,7 +270,7 @@ export async function POST(
 
             if (updateError) throw updateError;
 
-            shouldTriggerEmbeddings = true; // Transcription completed, will need embedding
+            // shouldTriggerEmbeddings = true; // Transcription completed, will need embedding
 
             // Generate AI categorization for this media
             try {
@@ -403,7 +403,7 @@ export async function POST(
               data.ai_categorization_description = aiResult.description;
               // Queue embedding for AI categorization
               await aiMatchingService.queueEmbeddingGeneration('media_attachment', data.id, 'ai_categorization');
-              shouldTriggerEmbeddings = true;
+              // shouldTriggerEmbeddings = true;
             }
           }
         } catch (aiCategorizeError) {
@@ -431,7 +431,7 @@ export async function POST(
 
             if (describeError) throw describeError;
             finalAttachment = describedAttachment;
-            shouldTriggerEmbeddings = true; // Description generated, will need embedding
+            // shouldTriggerEmbeddings = true; // Description generated, will need embedding
           } catch (descriptionError) {
             console.error('Description failed:', descriptionError);
             
