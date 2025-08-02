@@ -62,6 +62,7 @@ export async function GET(
     console.log('Found folders containing note:', noteFolders?.length || 0);
     
     // Step 3: Process results
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const processedFolders = (noteFolders || []).map((noteFolder: any) => ({
       ...noteFolder.folder,
       added_to_folder_at: noteFolder.added_at

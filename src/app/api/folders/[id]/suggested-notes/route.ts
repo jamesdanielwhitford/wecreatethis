@@ -39,13 +39,9 @@ function calculateCosineSimilarity(a: number[], b: number[]): number {
   return dotProduct / denominator;
 }
 
-// Helper function to format embedding as PostgreSQL array
-function formatEmbeddingForQuery(embedding: number[]): string {
-  return `[${embedding.join(',')}]`;
-}
 
 // Helper function to parse PostgreSQL array back to number array
-function parseEmbeddingFromDb(dbArray: any): number[] {
+function parseEmbeddingFromDb(dbArray: string | number[]): number[] {
   if (typeof dbArray === 'string') {
     return dbArray.replace(/^\[|\]$/g, '').split(',').map(Number);
   }
@@ -131,7 +127,29 @@ export async function GET(
       console.log('No folder embeddings available - will show notes in creation order');
     }
 
-    const noteResults: Array<{ note: any; similarity_score: number; match_reason: string }> = [];
+    interface NoteResult {
+      note: {
+        id: string;
+        title: string;
+        content?: string;
+        created_at: string;
+        updated_at: string;
+        ai_categorization_description?: string;
+        ai_categorization_embedding?: string | number[];
+        title_embedding?: string | number[];
+        content_embedding?: string | number[];
+        media_attachments?: Array<{
+          id: string;
+          storage_path: string;
+          thumbnail_path?: string;
+          [key: string]: unknown;
+        }>;
+      };
+      similarity_score: number;
+      match_reason: string;
+    }
+    
+    const noteResults: NoteResult[] = [];
     
     // Step 4: Only do embedding-based searches if we have a folder embedding
     if (searchEmbedding) {
@@ -333,7 +351,7 @@ export async function GET(
     const processedSuggestions = limitedResults.map(result => ({
       note: {
         ...result.note,
-        media_attachments: result.note.media_attachments?.map((attachment: any) => ({
+        media_attachments: result.note.media_attachments?.map((attachment) => ({
           ...attachment,
           url: getMediaUrl(attachment.storage_path),
           thumbnailUrl: attachment.thumbnail_path ? getMediaUrl(attachment.thumbnail_path) : undefined

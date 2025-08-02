@@ -2,7 +2,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Note } from '@/apps/beautifulmind/types/notes.types';
 import { aiMatchingService } from '@/apps/beautifulmind/utils/ai-matching';
 import { autoProcessEmbeddings } from '@/apps/beautifulmind/utils/auto-embeddings';
 
@@ -37,7 +36,7 @@ export async function GET() {
     // Add URLs to media attachments
     const notesWithUrls = (data || []).map(note => ({
       ...note,
-      media_attachments: note.media_attachments?.map((attachment: any) => ({
+      media_attachments: note.media_attachments?.map((attachment: { storage_path: string; thumbnail_path?: string }) => ({
         ...attachment,
         url: getMediaUrl(attachment.storage_path),
         thumbnailUrl: attachment.thumbnail_path ? getMediaUrl(attachment.thumbnail_path) : undefined

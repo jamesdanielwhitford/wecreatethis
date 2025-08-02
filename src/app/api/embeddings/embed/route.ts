@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { embeddingService } from '@/apps/beautifulmind/utils/embedding';
+import { createClient } from '@supabase/supabase-js';
 
 interface EmbedRequest {
   text?: string;
@@ -30,7 +31,6 @@ export async function POST(request: NextRequest) {
     // Handle entity embedding
     if (body.entity_type && body.entity_id && body.field_name) {
       // Create a pending embedding entry (this will be processed by the triggers)
-      const { createClient } = require('@supabase/supabase-js');
       
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';

@@ -1,7 +1,7 @@
 // src/apps/beautifulmind/components/FolderList/index.tsx
 
 import React, { useState } from 'react';
-import { Folder, FolderHierarchy } from '../../types/notes.types';
+import { Folder } from '../../types/notes.types';
 import FolderTree from '../FolderTree';
 import { buildFolderTree } from '../../utils/folder-hierarchy';
 import styles from './styles.module.css';

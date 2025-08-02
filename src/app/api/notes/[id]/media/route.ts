@@ -23,21 +23,24 @@ const getMediaUrl = (path: string): string => {
 };
 
 // Helper function to get audio duration
-async function getAudioDuration(buffer: ArrayBuffer): Promise<number | undefined> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function getAudioDuration(_buffer: ArrayBuffer): Promise<number | undefined> {
   // Note: In a production environment, you'd want to use a proper audio processing library
   // For now, we'll return undefined and let the client handle duration
   return undefined;
 }
 
 // Helper function to get video duration  
-async function getVideoDuration(buffer: ArrayBuffer): Promise<number | undefined> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function getVideoDuration(_buffer: ArrayBuffer): Promise<number | undefined> {
   // Note: In a production environment, you'd want to use a proper video processing library
   // For now, we'll return undefined and let the client handle duration
   return undefined;
 }
 
 // Helper function to get image dimensions
-async function getImageDimensions(buffer: ArrayBuffer): Promise<{ width?: number; height?: number }> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function getImageDimensions(_buffer: ArrayBuffer): Promise<{ width?: number; height?: number }> {
   // Note: In a production environment, you'd want to use a proper image processing library
   // For now, we'll return empty object and let the client handle dimensions
   return {};
@@ -278,7 +281,7 @@ export async function POST(
               );
               
               if (aiResult.description) {
-                const { data: categorizedAttachment, error: categorizationError } = await supabase
+                const { error: categorizationError } = await supabase
                   .from('media_attachments')
                   .update({
                     ai_categorization_description: aiResult.description
@@ -298,41 +301,7 @@ export async function POST(
               // Continue without AI categorization
             }
 
-            // Handle AI description for images
-            let finalAttachment = updatedAttachment;
-            if (mediaType === 'image' && shouldDescribe) {
-              try {
-                const description = await generateImageDescription(file);
-                
-                const { data: describedAttachment, error: describeError } = await supabase
-                  .from('media_attachments')
-                  .update({
-                    description: description,
-                    ai_generated_description: true,
-                    description_status: 'completed',
-                    described_at: new Date().toISOString()
-                  })
-                  .eq('id', attachment.id)
-                  .select()
-                  .single();
-
-                if (describeError) throw describeError;
-                finalAttachment = describedAttachment;
-                shouldTriggerEmbeddings = true; // Description generated, will need embedding
-              } catch (descriptionError) {
-                console.error('Description failed:', descriptionError);
-                
-                await supabase
-                  .from('media_attachments')
-                  .update({
-                    description_status: 'failed',
-                    description_error: descriptionError instanceof Error 
-                      ? descriptionError.message 
-                      : 'Unknown description error'
-                  })
-                  .eq('id', attachment.id);
-              }
-            }
+            const finalAttachment = updatedAttachment;
 
             // Add URLs for convenience
             const attachmentWithUrls = {
@@ -421,7 +390,7 @@ export async function POST(
           );
           
           if (aiResult.description) {
-            const { data: categorizedAttachment, error: categorizationError } = await supabase
+            const { error: categorizationError } = await supabase
               .from('media_attachments')
               .update({
                 ai_categorization_description: aiResult.description

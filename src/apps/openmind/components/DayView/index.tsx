@@ -23,7 +23,7 @@ const DayView: React.FC<DayViewProps> = ({ entries, date, onEntryClick }) => {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
-          <h3 className={styles.title}>Today's Entries</h3>
+          <h3 className={styles.title}>Today&apos;s Entries</h3>
         </div>
         <div className={styles.noEntries}>
           No voice notes recorded for this day.
@@ -48,7 +48,7 @@ const DayView: React.FC<DayViewProps> = ({ entries, date, onEntryClick }) => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h3 className={styles.title}>Today's Entries</h3>
+        <h3 className={styles.title}>Today&apos;s Entries</h3>
         <div className={styles.entryCount}>
           {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
         </div>

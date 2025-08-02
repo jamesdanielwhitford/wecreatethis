@@ -133,7 +133,7 @@ export function flattenFolderTree(tree: FolderHierarchy[]): Folder[] {
   
   function traverse(nodes: FolderHierarchy[]) {
     nodes.forEach(node => {
-      const { children, depth, path, breadcrumb, ...folder } = node;
+      const { children, ...folder } = node;
       result.push(folder);
       if (children && children.length > 0) {
         traverse(children);

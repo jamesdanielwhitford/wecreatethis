@@ -24,9 +24,9 @@ export const useFolders = () => {
         // Also set the flat folders list for compatibility
         const flatFolders = (data as FolderHierarchy[]).reduce((acc: Folder[], tree) => {
           const extractFolders = (nodes: FolderHierarchy[]): Folder[] => {
-            let result: Folder[] = [];
+            const result: Folder[] = [];
             nodes.forEach(node => {
-              const { children, depth, path, breadcrumb, ...folder } = node;
+              const { children, ...folder } = node;
               result.push(folder);
               if (children && children.length > 0) {
                 result.push(...extractFolders(children));

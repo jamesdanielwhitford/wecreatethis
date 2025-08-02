@@ -75,7 +75,7 @@ const FolderEditor: React.FC<FolderEditorProps> = ({
         <div className={styles.parentInfo}>
           <span className={styles.parentLabel}>📁 Creating subfolder in:</span>
           <span className={styles.parentName}>
-            {folder && 'title' in folder ? (folder as any).title : 'Parent Folder'}
+            {folder?.title || 'Parent Folder'}
           </span>
         </div>
       )}

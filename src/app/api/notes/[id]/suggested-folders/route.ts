@@ -34,7 +34,7 @@ function calculateCosineSimilarity(a: number[], b: number[]): number {
 }
 
 // Helper function to parse PostgreSQL array back to number array
-function parseEmbeddingFromDb(dbArray: any): number[] {
+function parseEmbeddingFromDb(dbArray: unknown): number[] {
   if (typeof dbArray === 'string') {
     return dbArray.replace(/^\[|\]$/g, '').split(',').map(Number);
   }
@@ -155,7 +155,13 @@ export async function GET(
 
     // Step 5: Calculate similarities and create suggestions
     const suggestions: Array<{
-      folder: any;
+      folder: {
+        id: string;
+        title: string;
+        description?: string;
+        ai_matching_description?: string;
+        created_at: string;
+      };
       similarity_score: number;
       match_reason: string;
     }> = [];

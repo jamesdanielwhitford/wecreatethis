@@ -2,10 +2,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Folder, FolderFormData, FolderHierarchy } from '@/apps/beautifulmind/types/notes.types';
+import { FolderFormData } from '@/apps/beautifulmind/types/notes.types';
 import { aiMatchingService } from '@/apps/beautifulmind/utils/ai-matching';
 import { autoProcessEmbeddings } from '@/apps/beautifulmind/utils/auto-embeddings';
-import { buildFolderTree, canMoveFolder } from '@/apps/beautifulmind/utils/folder-hierarchy';
+import { buildFolderTree } from '@/apps/beautifulmind/utils/folder-hierarchy';
 
 // Initialize Supabase client with anon key
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -16,11 +16,6 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
-// Helper function to get media URL
-const getMediaUrl = (path: string): string => {
-  const { data } = supabase.storage.from('note-media').getPublicUrl(path);
-  return data.publicUrl;
-};
 
 // GET /api/folders - Get all folders for user with optional hierarchy
 export async function GET(request: NextRequest) {

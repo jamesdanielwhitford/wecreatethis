@@ -1,6 +1,6 @@
 // src/apps/beautifulmind/utils/api.ts
 
-import { Note, MediaAttachment, NoteFormData, Folder, FolderFormData, FolderHierarchy, FolderOperationType } from '../types/notes.types';
+import { Note, MediaAttachment, NoteFormData, Folder, FolderFormData, FolderHierarchy } from '../types/notes.types';
 
 // Base API URL - will work for both local development and Vercel deployment
 const API_BASE = '/api';

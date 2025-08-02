@@ -115,7 +115,6 @@ const BeautifulMind: React.FC = () => {
     clearStates();
     // Store parent folder info for subfolder creation
     if (parentId) {
-      const parentFolder = folders.find(f => f.id === parentId);
       setSelectedFolder({ 
         id: '', // This will be generated on save
         title: '',
@@ -123,10 +122,8 @@ const BeautifulMind: React.FC = () => {
         parent_folder_id: parentId,
         user_id: '',
         created_at: '',
-        updated_at: '',
-        // Include parent folder title for display
-        parentTitle: parentFolder?.title || 'Parent Folder'
-      } as any);
+        updated_at: ''
+      });
     } else {
       setSelectedFolder(null);
     }

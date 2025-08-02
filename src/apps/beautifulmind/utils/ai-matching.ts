@@ -2,7 +2,7 @@
 
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
-import { Folder, Note, MediaAttachment } from '../types/notes.types';
+import { Folder, MediaAttachment } from '../types/notes.types';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -182,11 +182,6 @@ Return only the categorization description without explanation.`;
     existingFolders: Folder[] = []
   ): Promise<AIMatchingResult> {
     try {
-      const mediaContent = [
-        mediaAttachment.transcription_text || '',
-        mediaAttachment.description || '',
-        mediaAttachment.file_name
-      ].filter(Boolean).join(' ');
 
       const folderContext = existingFolders
         .slice(0, 10)
@@ -271,7 +266,7 @@ Return only the categorization description (1-2 sentences).`;
   private extractKeyTerms(content: string): string {
     // Extract capitalized words, technical terms, and important phrases
     const words = content.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b|[a-zA-Z]{3,}/g) || [];
-    const uniqueWords = [...new Set(words)].slice(0, 10);
+    const uniqueWords = Array.from(new Set(words)).slice(0, 10);
     return uniqueWords.join(', ');
   }
 
@@ -287,7 +282,7 @@ Return only the categorization description (1-2 sentences).`;
         .limit(20);
 
       if (error) throw error;
-      return data || [];
+      return data as Folder[] || [];
     } catch (error) {
       console.error('Error fetching existing folders:', error);
       return [];
