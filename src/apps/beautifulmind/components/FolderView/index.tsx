@@ -2,17 +2,32 @@
 
 import React, { useState, useEffect } from 'react';
 import { Folder, Note, NoteSuggestion } from '../../types/notes.types';
-import { folderManagementService } from '../../utils/api';
+import { folderManagementService, foldersService } from '../../utils/api';
+import Breadcrumb from '../Breadcrumb';
+import { getFolderPath } from '../../utils/folder-hierarchy';
 import styles from './styles.module.css';
 
 interface FolderViewProps {
   folder: Folder;
+  allFolders: Folder[]; // Need all folders for breadcrumb and subfolder display
   onEdit: () => void;
   onDelete: () => void;
   onNoteClick: (noteId: string) => void;
+  onFolderClick: (folder: Folder) => void;
+  onCreateSubfolder: (parentId: string) => void;
+  onNavigateToFolder: (folderId: string | null) => void;
 }
 
-const FolderView: React.FC<FolderViewProps> = ({ folder, onEdit, onDelete, onNoteClick }) => {
+const FolderView: React.FC<FolderViewProps> = ({ 
+  folder, 
+  allFolders, 
+  onEdit, 
+  onDelete, 
+  onNoteClick, 
+  onFolderClick, 
+  onCreateSubfolder, 
+  onNavigateToFolder 
+}) => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -132,8 +147,23 @@ const FolderView: React.FC<FolderViewProps> = ({ folder, onEdit, onDelete, onNot
     fetchFolderNotes();
   }, [folder.id]);
 
+  // Get breadcrumb path and subfolders
+  const breadcrumbPath = getFolderPath(folder.id, allFolders);
+  const subfolders = allFolders.filter(f => f.parent_folder_id === folder.id);
+
+  const handleCreateSubfolder = () => {
+    onCreateSubfolder(folder.id);
+  };
+
   return (
     <div className={styles.folderView}>
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb 
+        path={breadcrumbPath}
+        onNavigate={onNavigateToFolder}
+        showHome={true}
+      />
+
       <div className={styles.header}>
         <div className={styles.folderInfo}>
           <div className={styles.folderHeader}>
@@ -167,6 +197,50 @@ const FolderView: React.FC<FolderViewProps> = ({ folder, onEdit, onDelete, onNot
           </button>
         </div>
       </div>
+
+      {/* Subfolders Section */}
+      {subfolders.length > 0 && (
+        <div className={styles.subfoldersSection}>
+          <div className={styles.subfoldersHeader}>
+            <h2 className={styles.sectionTitle}>📁 Subfolders</h2>
+            <button
+              className={styles.createSubfolderButton}
+              onClick={handleCreateSubfolder}
+            >
+              + New Subfolder
+            </button>
+          </div>
+          <div className={styles.subfoldersList}>
+            {subfolders.map((subfolder) => (
+              <div
+                key={subfolder.id}
+                className={styles.subfolderCard}
+                onClick={() => onFolderClick(subfolder)}
+              >
+                <div className={styles.subfolderIcon}>📁</div>
+                <div className={styles.subfolderInfo}>
+                  <h4 className={styles.subfolderTitle}>{subfolder.title}</h4>
+                  {subfolder.description && (
+                    <p className={styles.subfolderDescription}>{subfolder.description}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Create Subfolder Section - show if no subfolders exist */}
+      {subfolders.length === 0 && (
+        <div className={styles.createSubfolderSection}>
+          <button
+            className={styles.createSubfolderButton}
+            onClick={handleCreateSubfolder}
+          >
+            📁+ Create Subfolder
+          </button>
+        </div>
+      )}
 
       {/* Manual folder management info */}
       <div className={styles.folderControls}>

@@ -1,6 +1,6 @@
 // src/apps/beautifulmind/utils/api.ts
 
-import { Note, MediaAttachment, NoteFormData, Folder } from '../types/notes.types';
+import { Note, MediaAttachment, NoteFormData, Folder, FolderFormData, FolderHierarchy, FolderOperationType } from '../types/notes.types';
 
 // Base API URL - will work for both local development and Vercel deployment
 const API_BASE = '/api';
@@ -179,6 +179,135 @@ export const notesService = {
         match_reason: string;
       }>;
       total_suggestions: number;
+    }>(response);
+  }
+};
+
+// NEW: Folders service
+export const foldersService = {
+  async getAllFolders(hierarchy: boolean = false, parentId?: string | null): Promise<Folder[] | FolderHierarchy[]> {
+    let url = `${API_BASE}/folders`;
+    const params = new URLSearchParams();
+    
+    if (hierarchy) {
+      params.append('hierarchy', 'true');
+    }
+    
+    if (parentId !== undefined) {
+      params.append('parent_id', parentId || 'null');
+    }
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    const response = await fetch(url);
+    return handleResponse<Folder[] | FolderHierarchy[]>(response);
+  },
+
+  async getFolderById(id: string): Promise<Folder | null> {
+    try {
+      const response = await fetch(`${API_BASE}/folders/${id}`);
+      return handleResponse<Folder>(response);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('404')) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  async createFolder(folder: FolderFormData): Promise<Folder> {
+    const response = await fetch(`${API_BASE}/folders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(folder)
+    });
+    
+    return handleResponse<Folder>(response);
+  },
+
+  async updateFolder(id: string, updates: Partial<FolderFormData>): Promise<Folder> {
+    const response = await fetch(`${API_BASE}/folders/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updates)
+    });
+    
+    return handleResponse<Folder>(response);
+  },
+
+  async deleteFolder(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/folders/${id}`, {
+      method: 'DELETE'
+    });
+    
+    await handleResponse<{ message: string }>(response);
+  },
+
+  async moveNote(targetFolderId: string, noteId: string, sourceFolderId?: string): Promise<{
+    message: string;
+    note: { id: string; title: string };
+    target_folder: { id: string; title: string };
+    source_folder_id: string | null;
+  }> {
+    const response = await fetch(`${API_BASE}/folders/${targetFolderId}/move-note`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ note_id: noteId, source_folder_id: sourceFolderId })
+    });
+    
+    return handleResponse<{
+      message: string;
+      note: { id: string; title: string };
+      target_folder: { id: string; title: string };
+      source_folder_id: string | null;
+    }>(response);
+  },
+
+  async addNoteToFolder(folderId: string, noteId: string): Promise<{
+    message: string;
+    note: { id: string; title: string };
+    folder: { id: string; title: string };
+    added_at: string;
+    already_exists?: boolean;
+  }> {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/add-note`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ note_id: noteId })
+    });
+    
+    return handleResponse<{
+      message: string;
+      note: { id: string; title: string };
+      folder: { id: string; title: string };
+      added_at: string;
+      already_exists?: boolean;
+    }>(response);
+  },
+
+  async removeNoteFromFolder(folderId: string, noteId: string): Promise<{
+    message: string;
+    folder_id: string;
+    note_id: string;
+  }> {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/add-note?note_id=${noteId}`, {
+      method: 'DELETE'
+    });
+    
+    return handleResponse<{
+      message: string;
+      folder_id: string;
+      note_id: string;
     }>(response);
   }
 };

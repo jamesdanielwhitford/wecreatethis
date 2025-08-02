@@ -9,3 +9,6 @@ export { default as MediaUpload } from './MediaUpload';
 export { default as FolderList } from './FolderList';
 export { default as FolderView } from './FolderView';
 export { default as FolderEditor } from './FolderEditor';
+export { default as FolderTree } from './FolderTree';
+export { default as Breadcrumb } from './Breadcrumb';
+export { default as FolderPicker } from './FolderPicker';

@@ -108,12 +108,28 @@ const BeautifulMind: React.FC = () => {
   };
 
   // Folder handlers
-  const handleNewFolder = () => {
+  const handleNewFolder = (parentId?: string) => {
     setSelectedNote(null);
-    setSelectedFolder(null);
     setIsCreatingNote(false);
     setIsCreatingFolder(true);
     clearStates();
+    // Store parent folder info for subfolder creation
+    if (parentId) {
+      const parentFolder = folders.find(f => f.id === parentId);
+      setSelectedFolder({ 
+        id: '', // This will be generated on save
+        title: '',
+        description: '',
+        parent_folder_id: parentId,
+        user_id: '',
+        created_at: '',
+        updated_at: '',
+        // Include parent folder title for display
+        parentTitle: parentFolder?.title || 'Parent Folder'
+      } as any);
+    } else {
+      setSelectedFolder(null);
+    }
     setViewMode('folder-create');
   };
 
@@ -275,6 +291,7 @@ const BeautifulMind: React.FC = () => {
             folders={folders}
             onFolderClick={handleFolderClick}
             onFolderDelete={deleteFolder}
+            onCreateSubfolder={handleNewFolder}
           />
         )}
         
@@ -289,9 +306,20 @@ const BeautifulMind: React.FC = () => {
         {viewMode === 'folder-view' && selectedFolder && (
           <FolderView
             folder={getFolderById(selectedFolder.id) || selectedFolder}
+            allFolders={folders}
             onEdit={handleFolderEdit}
             onDelete={handleFolderDelete}
             onNoteClick={handleFolderNoteClick}
+            onFolderClick={handleFolderClick}
+            onCreateSubfolder={handleNewFolder}
+            onNavigateToFolder={(folderId) => {
+              if (folderId) {
+                const folder = getFolderById(folderId);
+                if (folder) handleFolderClick(folder);
+              } else {
+                handleSwitchToFolders();
+              }
+            }}
           />
         )}
         

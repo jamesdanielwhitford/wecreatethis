@@ -64,6 +64,7 @@ export interface Note {
 export interface Folder {
   id: string;
   user_id: string;
+  parent_folder_id: string | null; // null = root level folder
   title: string;
   description?: string;
   enhanced_description?: string; // AI-enhanced version with strategic keywords
@@ -110,6 +111,35 @@ export interface NoteFormData {
 export interface FolderFormData {
   title: string;
   description?: string;
+  parent_folder_id?: string | null; // For creating subfolders
+}
+
+// NEW: Folder hierarchy types
+export interface FolderHierarchy extends Folder {
+  children?: FolderHierarchy[]; // Nested subfolders
+  depth: number; // How deep in the hierarchy (0 = root)
+  path: string[]; // Array of folder IDs from root to this folder
+  breadcrumb: { id: string; title: string }[]; // For navigation
+}
+
+export interface FolderTreeNode {
+  folder: Folder;
+  children: FolderTreeNode[];
+  isExpanded: boolean;
+  level: number;
+}
+
+// NEW: Multiple folder assignment types
+export interface NoteFolderAssignment {
+  note: Note;
+  folders: Folder[]; // All folders this note belongs to
+  suggested_folders?: FolderSuggestion[]; // AI suggestions for additional folders
+}
+
+export interface FolderOperationType {
+  type: 'move' | 'add'; // move = exclusive, add = additive
+  source_folder_id?: string; // for move operations
+  target_folder_ids: string[]; // destination folder(s)
 }
 
 export type ViewMode = 'list' | 'view' | 'edit' | 'create' | 'folders' | 'folder-view' | 'folder-edit' | 'folder-create';

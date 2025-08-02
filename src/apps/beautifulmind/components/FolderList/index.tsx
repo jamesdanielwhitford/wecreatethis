@@ -1,40 +1,43 @@
 // src/apps/beautifulmind/components/FolderList/index.tsx
 
-import React from 'react';
-import { Folder } from '../../types/notes.types';
+import React, { useState } from 'react';
+import { Folder, FolderHierarchy } from '../../types/notes.types';
+import FolderTree from '../FolderTree';
+import { buildFolderTree } from '../../utils/folder-hierarchy';
 import styles from './styles.module.css';
 
 interface FolderListProps {
   folders: Folder[];
   onFolderClick: (folder: Folder) => void;
   onFolderDelete?: (id: string) => void;
+  onCreateSubfolder?: (parentId: string) => void;
 }
 
-const FolderList: React.FC<FolderListProps> = ({ folders, onFolderClick, onFolderDelete }) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+const FolderList: React.FC<FolderListProps> = ({ folders, onFolderClick, onFolderDelete, onCreateSubfolder }) => {
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+
+  // Build folder tree from flat array
+  const folderTree = buildFolderTree(folders);
+
+  const handleToggleExpand = (folderId: string) => {
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(folderId)) {
+        newSet.delete(folderId);
+      } else {
+        newSet.add(folderId);
+      }
+      return newSet;
     });
   };
 
-  const getPreview = (description: string | undefined) => {
-    if (!description) return 'No description';
-    const maxLength = 150;
-    if (description.length <= maxLength) return description;
-    return description.substring(0, maxLength) + '...';
+  const handleFolderDelete = async (folderId: string) => {
+    if (onFolderDelete) {
+      await onFolderDelete(folderId);
+    }
   };
 
-  const getEmbeddingStatus = (folder: Folder) => {
-    const hasEmbeddings = folder.title_embedding || folder.description_embedding || folder.enhanced_description_embedding;
-    return hasEmbeddings ? '🔍' : '⏳';
-  };
-
-  if (folders.length === 0) {
+  if (folderTree.length === 0) {
     return (
       <div className={styles.emptyState}>
         <h3>No folders yet</h3>
@@ -45,48 +48,15 @@ const FolderList: React.FC<FolderListProps> = ({ folders, onFolderClick, onFolde
 
   return (
     <div className={styles.folderList}>
-      {folders.map((folder) => (
-        <div
-          key={folder.id}
-          className={styles.folderCard}
-          onClick={() => onFolderClick(folder)}
-        >
-          <div className={styles.folderContent}>
-            <div className={styles.folderHeader}>
-              <div className={styles.folderIcon}>📁</div>
-              <h3 className={styles.folderTitle}>{folder.title}</h3>
-              <div className={styles.embeddingStatus} title={
-                folder.title_embedding || folder.description_embedding ? 
-                'Folder is ready for semantic search' : 
-                'Embeddings processing...'
-              }>
-                {getEmbeddingStatus(folder)}
-              </div>
-            </div>
-            <p className={styles.folderPreview}>{getPreview(folder.description)}</p>
-            <div className={styles.folderMeta}>
-              <span className={styles.folderDate}>{formatDate(folder.created_at)}</span>
-              <div className={styles.folderIndicators}>
-                <span className={styles.semanticIndicator} title="Semantic folder - finds related notes automatically">
-                  🧠 Smart Folder
-                </span>
-              </div>
-            </div>
-          </div>
-          {onFolderDelete && (
-            <button
-              className={styles.deleteButton}
-              onClick={(e) => {
-                e.stopPropagation();
-                onFolderDelete(folder.id);
-              }}
-              aria-label="Delete folder"
-            >
-              ×
-            </button>
-          )}
-        </div>
-      ))}
+      <FolderTree
+        folderTree={folderTree}
+        onFolderClick={onFolderClick}
+        onFolderDelete={handleFolderDelete}
+        onCreateSubfolder={onCreateSubfolder}
+        expandedFolders={expandedFolders}
+        onToggleExpand={handleToggleExpand}
+        showActions={true}
+      />
     </div>
   );
 };

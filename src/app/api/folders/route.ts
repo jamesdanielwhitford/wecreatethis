@@ -2,9 +2,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Folder, FolderFormData } from '@/apps/beautifulmind/types/notes.types';
+import { Folder, FolderFormData, FolderHierarchy } from '@/apps/beautifulmind/types/notes.types';
 import { aiMatchingService } from '@/apps/beautifulmind/utils/ai-matching';
 import { autoProcessEmbeddings } from '@/apps/beautifulmind/utils/auto-embeddings';
+import { buildFolderTree, canMoveFolder } from '@/apps/beautifulmind/utils/folder-hierarchy';
 
 // Initialize Supabase client with anon key
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -21,23 +22,50 @@ const getMediaUrl = (path: string): string => {
   return data.publicUrl;
 };
 
-// GET /api/folders - Get all folders for user
+// GET /api/folders - Get all folders for user with optional hierarchy
 export async function GET(request: NextRequest) {
   try {
     // Use service role to bypass RLS for testing
     const client = supabaseServiceKey ? supabaseService : supabase;
     
-    const { data, error } = await client
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const hierarchy = searchParams.get('hierarchy') === 'true';
+    const parentId = searchParams.get('parent_id');
+    
+    let query = client
       .from('folders')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*');
+    
+    // If parent_id is specified, get only children of that folder
+    if (parentId !== null) {
+      if (parentId === 'null' || parentId === '') {
+        // Get root level folders
+        query = query.is('parent_folder_id', null);
+      } else {
+        // Get children of specific folder
+        query = query.eq('parent_folder_id', parentId);
+      }
+    }
+    
+    query = query.order('title', { ascending: true });
+    
+    const { data, error } = await query;
     
     if (error) {
       console.error('Supabase error fetching folders:', error);
       throw error;
     }
     
-    return NextResponse.json(data || []);
+    const folders = data || [];
+    
+    // If hierarchy is requested and no specific parent filter, build tree structure
+    if (hierarchy && parentId === null) {
+      const folderTree = buildFolderTree(folders);
+      return NextResponse.json(folderTree);
+    }
+    
+    return NextResponse.json(folders);
   } catch (error) {
     console.error('Error fetching folders:', error);
     return NextResponse.json(
@@ -54,15 +82,31 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body: FolderFormData = await request.json();
-    const { title, description } = body;
+    const { title, description, parent_folder_id } = body;
     
-    console.log('Creating folder with AI matching:', { title, description });
+    console.log('Creating folder with AI matching:', { title, description, parent_folder_id });
     
     if (!title || title.trim().length === 0) {
       return NextResponse.json(
         { error: 'Title is required' },
         { status: 400 }
       );
+    }
+    
+    // Validate parent folder exists if specified
+    if (parent_folder_id) {
+      const { data: parentFolder, error: parentError } = await supabase
+        .from('folders')
+        .select('id')
+        .eq('id', parent_folder_id)
+        .single();
+      
+      if (parentError || !parentFolder) {
+        return NextResponse.json(
+          { error: 'Parent folder not found' },
+          { status: 400 }
+        );
+      }
     }
     
     // Check if we have service role key for bypass
@@ -95,6 +139,7 @@ export async function POST(request: NextRequest) {
     const folderData = {
       title: title.trim(), 
       description: description?.trim() || null,
+      parent_folder_id: parent_folder_id || null,
       ai_matching_description: aiMatchingDescription || null,
       // For testing without auth - set to null to avoid foreign key issues
       user_id: null

@@ -19,7 +19,8 @@ const FolderEditor: React.FC<FolderEditorProps> = ({
 }) => {
   const [formData, setFormData] = useState<FolderFormData>({
     title: '',
-    description: ''
+    description: '',
+    parent_folder_id: null
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +29,12 @@ const FolderEditor: React.FC<FolderEditorProps> = ({
     if (folder) {
       setFormData({
         title: folder.title,
-        description: folder.description || ''
+        description: folder.description || '',
+        parent_folder_id: folder.parent_folder_id || null
       });
     } else if (!isCreating) {
       // Reset form when folder is null but not creating (shouldn't happen, but safety)
-      setFormData({ title: '', description: '' });
+      setFormData({ title: '', description: '', parent_folder_id: null });
     }
   }, [folder, isCreating]);
 
@@ -61,9 +63,22 @@ const FolderEditor: React.FC<FolderEditorProps> = ({
       <div className={styles.header}>
         <div className={styles.folderIcon}>📁</div>
         <h2 className={styles.title}>
-          {isCreating ? 'Create New Semantic Folder' : 'Edit Folder'}
+          {isCreating ? 
+            (formData.parent_folder_id ? 'Create New Subfolder' : 'Create New Semantic Folder') : 
+            'Edit Folder'
+          }
         </h2>
       </div>
+
+      {/* Show parent folder info when creating a subfolder */}
+      {isCreating && formData.parent_folder_id && (
+        <div className={styles.parentInfo}>
+          <span className={styles.parentLabel}>📁 Creating subfolder in:</span>
+          <span className={styles.parentName}>
+            {folder && 'title' in folder ? (folder as any).title : 'Parent Folder'}
+          </span>
+        </div>
+      )}
 
       <div className={styles.formGroup}>
         <label className={styles.label} htmlFor="folder-title">

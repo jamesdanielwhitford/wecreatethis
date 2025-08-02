@@ -1,81 +1,48 @@
 // src/apps/beautifulmind/hooks/useFolders.ts
 
 import { useState, useEffect } from 'react';
-import { Folder, FolderFormData } from '../types/notes.types';
+import { Folder, FolderFormData, FolderHierarchy } from '../types/notes.types';
+import { foldersService } from '../utils/api';
 import { autoProcessEmbeddings } from '../utils/auto-embeddings';
-
-// Helper function to handle API responses
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
-  }
-  return response.json();
-}
-
-// Folders service
-const foldersService = {
-  async getAllFolders(): Promise<Folder[]> {
-    const response = await fetch('/api/folders');
-    return handleResponse<Folder[]>(response);
-  },
-
-  async getFolderById(id: string): Promise<Folder | null> {
-    try {
-      const response = await fetch(`/api/folders/${id}`);
-      return handleResponse<Folder>(response);
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('404')) {
-        return null;
-      }
-      throw error;
-    }
-  },
-
-  async createFolder(folder: FolderFormData): Promise<Folder> {
-    const response = await fetch('/api/folders', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(folder)
-    });
-    
-    return handleResponse<Folder>(response);
-  },
-
-  async updateFolder(id: string, updates: Partial<FolderFormData>): Promise<Folder> {
-    const response = await fetch(`/api/folders/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(updates)
-    });
-    
-    return handleResponse<Folder>(response);
-  },
-
-  async deleteFolder(id: string): Promise<void> {
-    const response = await fetch(`/api/folders/${id}`, {
-      method: 'DELETE'
-    });
-    
-    await handleResponse<{ message: string }>(response);
-  }
-};
+import { buildFolderTree } from '../utils/folder-hierarchy';
 
 export const useFolders = () => {
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [folderTree, setFolderTree] = useState<FolderHierarchy[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
   // Fetch all folders
-  const fetchFolders = async () => {
+  const fetchFolders = async (hierarchy: boolean = false) => {
     try {
       setLoading(true);
-      const data = await foldersService.getAllFolders();
-      setFolders(data);
+      const data = await foldersService.getAllFolders(hierarchy);
+      
+      if (hierarchy) {
+        setFolderTree(data as FolderHierarchy[]);
+        // Also set the flat folders list for compatibility
+        const flatFolders = (data as FolderHierarchy[]).reduce((acc: Folder[], tree) => {
+          const extractFolders = (nodes: FolderHierarchy[]): Folder[] => {
+            let result: Folder[] = [];
+            nodes.forEach(node => {
+              const { children, depth, path, breadcrumb, ...folder } = node;
+              result.push(folder);
+              if (children && children.length > 0) {
+                result.push(...extractFolders(children));
+              }
+            });
+            return result;
+          };
+          return [...acc, ...extractFolders([tree])];
+        }, []);
+        setFolders(flatFolders);
+      } else {
+        setFolders(data as Folder[]);
+        // Build tree from flat data for components that need it
+        setFolderTree(buildFolderTree(data as Folder[]));
+      }
+      
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch folders');
@@ -138,6 +105,67 @@ export const useFolders = () => {
     setFolders(prev => prev.map(folder => 
       folder.id === updatedFolder.id ? updatedFolder : folder
     ));
+    // Rebuild folder tree
+    setFolderTree(buildFolderTree(folders.map(folder => 
+      folder.id === updatedFolder.id ? updatedFolder : folder
+    )));
+  };
+
+  // Move a note between folders (exclusive)
+  const moveNote = async (targetFolderId: string, noteId: string, sourceFolderId?: string) => {
+    try {
+      return await foldersService.moveNote(targetFolderId, noteId, sourceFolderId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to move note');
+      throw err;
+    }
+  };
+
+  // Add a note to a folder (additive)
+  const addNoteToFolder = async (folderId: string, noteId: string) => {
+    try {
+      return await foldersService.addNoteToFolder(folderId, noteId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add note to folder');
+      throw err;
+    }
+  };
+
+  // Remove a note from a folder
+  const removeNoteFromFolder = async (folderId: string, noteId: string) => {
+    try {
+      return await foldersService.removeNoteFromFolder(folderId, noteId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove note from folder');
+      throw err;
+    }
+  };
+
+  // Get children of a specific folder
+  const getChildFolders = (parentId: string | null): Folder[] => {
+    return folders.filter(folder => folder.parent_folder_id === parentId);
+  };
+
+  // Navigate to a folder (for hierarchical navigation)
+  const navigateToFolder = (folderId: string | null) => {
+    setCurrentFolderId(folderId);
+  };
+
+  // Get current folder path (breadcrumb)
+  const getCurrentPath = (): Folder[] => {
+    if (!currentFolderId) return [];
+    
+    const path: Folder[] = [];
+    let current = folders.find(f => f.id === currentFolderId);
+    
+    while (current) {
+      path.unshift(current);
+      current = current.parent_folder_id 
+        ? folders.find(f => f.id === current!.parent_folder_id) 
+        : undefined;
+    }
+    
+    return path;
   };
 
   useEffect(() => {
@@ -145,14 +173,29 @@ export const useFolders = () => {
   }, []);
 
   return {
+    // Data
     folders,
+    folderTree,
+    currentFolderId,
     loading,
     error,
+    
+    // CRUD operations
     createFolder,
     updateFolder,
     deleteFolder,
     getFolderById,
     updateFolderInList,
-    refreshFolders: fetchFolders
+    refreshFolders: fetchFolders,
+    
+    // Note management
+    moveNote,
+    addNoteToFolder,
+    removeNoteFromFolder,
+    
+    // Hierarchy navigation
+    getChildFolders,
+    navigateToFolder,
+    getCurrentPath
   };
 };

@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { FolderFormData } from '@/apps/beautifulmind/types/notes.types';
+import { canMoveFolder } from '@/apps/beautifulmind/utils/folder-hierarchy';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -53,7 +54,7 @@ export async function PUT(
 ) {
   try {
     const body: FolderFormData = await request.json();
-    const { title, description } = body;
+    const { title, description, parent_folder_id } = body;
     
     if (!title || title.trim().length === 0) {
       return NextResponse.json(
@@ -62,13 +63,53 @@ export async function PUT(
       );
     }
     
+    // If parent_folder_id is being changed, validate the move
+    if (parent_folder_id !== undefined) {
+      // Get all folders to check for circular references
+      const { data: allFolders, error: fetchError } = await supabase
+        .from('folders')
+        .select('*');
+      
+      if (fetchError) throw fetchError;
+      
+      if (!canMoveFolder(params.id, parent_folder_id, allFolders || [])) {
+        return NextResponse.json(
+          { error: 'Cannot move folder: would create circular reference' },
+          { status: 400 }
+        );
+      }
+      
+      // Validate parent folder exists if specified
+      if (parent_folder_id) {
+        const { data: parentFolder, error: parentError } = await supabase
+          .from('folders')
+          .select('id')
+          .eq('id', parent_folder_id)
+          .single();
+        
+        if (parentError || !parentFolder) {
+          return NextResponse.json(
+            { error: 'Parent folder not found' },
+            { status: 400 }
+          );
+        }
+      }
+    }
+    
+    const updateData: any = {
+      title: title.trim(),
+      description: description?.trim() || null,
+      updated_at: new Date().toISOString()
+    };
+    
+    // Only update parent_folder_id if it was provided in the request
+    if (parent_folder_id !== undefined) {
+      updateData.parent_folder_id = parent_folder_id;
+    }
+    
     const { data, error } = await supabase
       .from('folders')
-      .update({ 
-        title: title.trim(),
-        description: description?.trim() || null,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', params.id)
       .select()
       .single();
