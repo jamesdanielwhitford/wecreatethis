@@ -1,0 +1,156 @@
+/* src/apps/openmind/components/MonthView/styles.module.css */
+
+.container {
+  padding: 1.5rem;
+}
+
+.header {
+  margin-bottom: 1.5rem;
+}
+
+.monthTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
+  text-align: center;
+}
+
+.calendar {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.weekDays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #f7fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.weekDay {
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.dayCell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid #f7fafc;
+  border-bottom: 1px solid #f7fafc;
+  position: relative;
+  min-height: 60px;
+}
+
+.dayCell:nth-child(7n) {
+  border-right: none;
+}
+
+.validDay {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.validDay:hover {
+  background: #f7fafc;
+}
+
+.emptyDay {
+  background: #fafafa;
+}
+
+.futureDay {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.futureDay:hover {
+  background: transparent;
+}
+
+.today {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.today:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
+
+.hasEntries {
+  background: #e6fffa;
+  border-color: #81e6d9;
+}
+
+.hasEntries:hover {
+  background: #b2f5ea;
+}
+
+.today.hasEntries {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.dayNumber {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.entriesIndicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38b2ac;
+  margin-top: 2px;
+}
+
+.today .entriesIndicator {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 8px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #4a5568;
+}
+
+.legendDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.todayDot {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.entriesDot {
+  background: #38b2ac;
+}

@@ -1,0 +1,197 @@
+/* src/apps/openmind/components/NoteViewer/styles.module.css */
+
+.container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #4a5568;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeButton:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #2d3748;
+}
+
+.noteInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.typeTag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.originalType {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.topicType {
+  background: #fef5e7;
+  color: #d69e2e;
+  border: 1px solid #f6e05e;
+}
+
+.typeIcon {
+  font-size: 1rem;
+}
+
+.typeLabel {
+  font-weight: 600;
+}
+
+.dateTime {
+  text-align: right;
+  color: #4a5568;
+}
+
+.date {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.time {
+  font-size: 0.75rem;
+  color: #718096;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.3;
+}
+
+.noteContent {
+  color: #4a5568;
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+.paragraph {
+  margin: 0 0 1rem 0;
+}
+
+.paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.footer {
+  background: #f7fafc;
+  padding: 1rem 2rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wordCount {
+  font-size: 0.75rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+.relationInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.relationLabel {
+  font-size: 0.75rem;
+  color: #718096;
+  background: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Scrollbar styling */
+.content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 2px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+@media (max-width: 768px) {
+  .container {
+    max-height: 90vh;
+    margin: 1rem;
+  }
+  
+  .header {
+    padding: 1rem;
+  }
+  
+  .content {
+    padding: 1.5rem;
+  }
+  
+  .title {
+    font-size: 1.25rem;
+  }
+  
+  .noteContent {
+    font-size: 0.95rem;
+  }
+  
+  .footer {
+    padding: 0.75rem 1.5rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+}
