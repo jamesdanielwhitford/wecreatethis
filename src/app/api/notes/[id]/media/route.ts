@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { aiMatchingService } from '@/apps/beautifulmind/utils/ai-matching';
-import { autoProcessMediaEmbeddings } from '@/apps/beautifulmind/utils/auto-embeddings';
+// import { autoProcessMediaEmbeddings } from '@/apps/beautifulmind/utils/auto-embeddings';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -459,11 +459,12 @@ export async function POST(
     }
     
     // Trigger embedding processing if any transcriptions, descriptions, or AI categorizations were created
-    if (shouldTriggerEmbeddings) {
-      setTimeout(() => {
-        autoProcessMediaEmbeddings();
-      }, 2000); // Delay to ensure database commits are complete
-    }
+    // TODO: Fix auto-processing for Vercel deployment
+    // if (shouldTriggerEmbeddings) {
+    //   setTimeout(() => {
+    //     autoProcessMediaEmbeddings();
+    //   }, 2000); // Delay to ensure database commits are complete
+    // }
     
     return NextResponse.json(uploadedAttachments);
   } catch (error) {
