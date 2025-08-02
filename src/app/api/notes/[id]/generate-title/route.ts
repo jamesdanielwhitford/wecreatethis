@@ -116,8 +116,8 @@ export async function POST(
       );
     }
 
-    // Check if note already has a title
-    if (note.title && note.title.trim()) {
+    // Check if note already has a title (excluding 'Untitled Note' placeholder)
+    if (note.title && note.title.trim() && note.title.trim() !== 'Untitled Note') {
       return NextResponse.json({ 
         title: note.title,
         message: 'Note already has a title' 
