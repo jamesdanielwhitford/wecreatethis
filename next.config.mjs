@@ -1,3 +1,5 @@
+// next.config.mjs - Fixed PWA Configuration
+
 import withPWA from '@ducanh2912/next-pwa';
 
 const nextConfig = {
@@ -68,7 +70,38 @@ export default withPWA({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
+  // Add buildExcludes to prevent problematic files from being precached
+  buildExcludes: [
+    /app-build-manifest\.json$/,
+    /middleware-manifest\.json$/,
+    /server\/middleware-manifest\.json$/,
+    /_buildManifest\.js$/,
+    /^build-manifest\.json$/,
+    /^react-loadable-manifest\.json$/,
+  ],
   workboxOptions: {
+    // Additional exclude patterns for Workbox
+    exclude: [
+      /\.map$/,
+      /^manifest.*\.js$/,
+      /^server\//,
+      /_buildManifest\.js$/,
+      /middleware-manifest\.json$/,
+      /app-build-manifest\.json$/,
+      /react-loadable-manifest\.json$/,
+      // Add a function-based exclusion for more control
+      ({ asset }) => {
+        if (
+          asset.name.includes('_buildManifest') ||
+          asset.name.includes('build-manifest') ||
+          asset.name.includes('middleware-manifest') ||
+          asset.name.includes('react-loadable-manifest')
+        ) {
+          return true;
+        }
+        return false;
+      }
+    ],
     runtimeCaching: [
       {
         urlPattern: /^https:\/\/firebasestorage\.googleapis\.com/,

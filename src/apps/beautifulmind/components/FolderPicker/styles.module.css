@@ -1,0 +1,262 @@
+/* src/apps/beautifulmind/components/FolderPicker/styles.module.css */
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  font-size: 16px;
+  color: #666;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+  min-height: 200px;
+  max-height: 400px;
+}
+
+.folderTree {
+  width: 100%;
+}
+
+.folderNode {
+  width: 100%;
+}
+
+.folderItem {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 2px;
+}
+
+.folderItem:hover:not(.disabled) {
+  background-color: #f5f5f5;
+}
+
+.folderItem.selected {
+  background-color: #e3f2fd;
+  border: 1px solid #2196f3;
+}
+
+.folderItem.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.folderContent {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+}
+
+.expandButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  font-size: 10px;
+  color: #666;
+  transition: transform 0.2s ease;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expandButton:hover {
+  color: #333;
+}
+
+.expandButton.expanded {
+  transform: rotate(90deg);
+}
+
+.selectionControl {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox,
+.radio {
+  margin: 0;
+  cursor: pointer;
+}
+
+.checkbox:disabled,
+.radio:disabled {
+  cursor: not-allowed;
+}
+
+.folderIcon {
+  font-size: 16px;
+}
+
+.folderInfo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.folderTitle {
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.currentIndicator {
+  font-weight: normal;
+  color: #666;
+  font-style: italic;
+}
+
+.folderDescription {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.children {
+  margin-left: 8px;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.selectionInfo {
+  flex: 1;
+}
+
+.selectionCount {
+  font-size: 14px;
+  color: #666;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.cancelButton,
+.confirmButton {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.cancelButton {
+  background: white;
+  color: #666;
+  border-color: #ddd;
+}
+
+.cancelButton:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.confirmButton {
+  background: #2196f3;
+  color: white;
+  border-color: #2196f3;
+}
+
+.confirmButton:hover:not(:disabled) {
+  background: #1976d2;
+  border-color: #1976d2;
+}
+
+.confirmButton:disabled {
+  background: #ccc;
+  border-color: #ccc;
+  cursor: not-allowed;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 32px 16px;
+  color: #666;
+}
+
+.emptyState p {
+  margin: 4px 0;
+}
+
+.emptyState p:first-child {
+  font-weight: 500;
+  color: #333;
+}
