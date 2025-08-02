@@ -21,7 +21,7 @@ const Navbar: React.FC<NavbarProps> = ({
   onSwitchToNotes, 
   onSwitchToFolders 
 }) => {
-  const isInFolder = viewMode.startsWith('folder');
+  const isInFolder = ['folder-view', 'folder-edit', 'folder-create'].includes(viewMode);
   const isInNote = ['view', 'edit', 'create'].includes(viewMode);
   const showMainActions = viewMode === 'list' || viewMode === 'folders';
 
