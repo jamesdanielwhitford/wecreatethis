@@ -45,6 +45,10 @@ const appCategories = [
         name: 'OpenMind',
         path: '/openmind'
       },
+      {
+        name: 'BirdWatch',
+        path: '/birdwatch'
+      },
     ]
   }
 ];

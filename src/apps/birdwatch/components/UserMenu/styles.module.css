@@ -1,0 +1,146 @@
+.container {
+  position: relative;
+  display: inline-block;
+}
+
+.signInButton {
+  padding: 8px 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.signInButton:hover {
+  background: #0056b3;
+}
+
+.userButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  max-width: 200px;
+}
+
+.userButton:hover {
+  background: #f8f9fa;
+  border-color: #007bff;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #007bff;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.userName {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #333;
+}
+
+.chevron {
+  color: #666;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  z-index: 1000;
+  margin-top: 4px;
+}
+
+.menuItem {
+  padding: 12px 16px;
+}
+
+.userInfo {
+  text-align: left;
+}
+
+.userEmail {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.syncStatus {
+  font-size: 12px;
+  color: #28a745;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.syncStatus::before {
+  content: '☁️';
+  font-size: 10px;
+}
+
+.divider {
+  margin: 0;
+  border: none;
+  border-top: 1px solid #eee;
+}
+
+.menuButton {
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: #dc3545;
+  transition: background-color 0.2s;
+}
+
+.menuButton:hover {
+  background: #f8f9fa;
+}
+
+@media (max-width: 768px) {
+  .userButton {
+    max-width: 150px;
+  }
+  
+  .userName {
+    display: none;
+  }
+  
+  .menu {
+    right: -10px;
+    min-width: 180px;
+  }
+}

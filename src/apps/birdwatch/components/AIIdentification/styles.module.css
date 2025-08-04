@@ -1,0 +1,265 @@
+.container {
+  border: 2px dashed #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  background: #f9f9f9;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.identifyButton {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.identifyButton:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.identifyButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid #f5c6cb;
+  margin-bottom: 15px;
+}
+
+.apiKeyHelp {
+  margin: 10px 0 0 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.result {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.identification {
+  margin-bottom: 20px;
+}
+
+.identificationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.speciesInfo {
+  flex: 1;
+}
+
+.commonName {
+  margin: 0 0 5px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.scientificName {
+  margin: 0;
+  font-style: italic;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.confidence {
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: right;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 20px;
+  border: 1px solid currentColor;
+}
+
+.reasoning {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #555;
+}
+
+.searchTerms {
+  margin-bottom: 15px;
+}
+
+.searchTerms strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.termButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.termButton {
+  background: #e9ecef;
+  border: 1px solid #dee2e6;
+  color: #495057;
+  padding: 6px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.termButton:hover {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.searching {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+}
+
+.suggestions {
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.suggestionsTitle {
+  margin: 0 0 15px 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.birdSuggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.birdSuggestion {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s;
+}
+
+.birdSuggestion:hover {
+  background: #e9ecef;
+  border-color: #007bff;
+}
+
+.suggestionImage {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-right: 12px;
+}
+
+.suggestionInfo {
+  flex: 1;
+}
+
+.suggestionName {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+
+.suggestionScientific {
+  font-style: italic;
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.selectButton {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.selectButton:hover {
+  background: #218838;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  
+  .identificationHeader {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .confidence {
+    text-align: left;
+    align-self: flex-start;
+  }
+  
+  .birdSuggestion {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+  
+  .suggestionImage {
+    margin-right: 0;
+  }
+  
+  .selectButton {
+    width: 100%;
+  }
+}

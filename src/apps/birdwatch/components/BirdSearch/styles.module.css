@@ -1,0 +1,166 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.searchForm {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.searchInput {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.searchButton {
+  padding: 12px 24px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.searchButton:hover {
+  background: #0056b3;
+}
+
+.searchButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.checkbox input {
+  margin: 0;
+}
+
+.error {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border: 1px solid #f5c6cb;
+}
+
+.resultsTitle {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.birdGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.birdCard {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.birdCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.birdImage {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.birdInfo {
+  padding: 15px;
+}
+
+.commonName {
+  margin: 0 0 5px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.scientificName {
+  margin: 0 0 15px 0;
+  font-style: italic;
+  color: #666;
+  font-size: 14px;
+}
+
+.addButton {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 100%;
+}
+
+.addButton:hover {
+  background: #218838;
+}
+
+.addButton.alreadyAdded {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.addButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.noResults {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  
+  .searchInput {
+    flex-direction: column;
+  }
+  
+  .birdGrid {
+    grid-template-columns: 1fr;
+  }
+}
