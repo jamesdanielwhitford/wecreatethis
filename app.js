@@ -10,10 +10,14 @@ function isDarkMode() {
 }
 
 function generateGrain() {
-  grainCanvas.width = window.innerWidth;
-  grainCanvas.height = window.innerHeight;
+  // Use clientWidth/Height to avoid scrollbar issues
+  const width = document.documentElement.clientWidth;
+  const height = document.documentElement.clientHeight;
 
-  const imageData = grainCtx.createImageData(grainCanvas.width, grainCanvas.height);
+  grainCanvas.width = width;
+  grainCanvas.height = height;
+
+  const imageData = grainCtx.createImageData(width, height);
   const data = imageData.data;
 
   // Base colors for light and dark mode
@@ -204,6 +208,46 @@ const fsStorage = {
   async updateMeta(note, meta) {
     const folderHandle = await getFolderHandle(state.dirHandle, note.folder);
     await writeMetadataFS(folderHandle, note.name, meta);
+  },
+
+  async exportAll() {
+    const notes = await this.getAllNotes();
+    const exportData = [];
+
+    for (const note of notes) {
+      const data = await this.readNote(note);
+      const exportNote = {
+        id: note.id,
+        name: note.name,
+        folder: note.folder,
+        type: note.type,
+      };
+
+      if (note.type === 'text') {
+        exportNote.content = data.text;
+      } else {
+        // Convert blob to base64
+        const file = await note.handle.getFile();
+        exportNote.data = await blobToBase64(file);
+        exportNote.meta = data.meta;
+      }
+
+      exportData.push(exportNote);
+    }
+
+    return exportData;
+  },
+
+  async importAll(exportData) {
+    for (const note of exportData) {
+      if (note.type === 'text') {
+        const parsed = parseFrontmatter(note.content);
+        await this.saveTextNote(note.folder, note.name, parsed.content, parsed.meta);
+      } else {
+        const blob = await base64ToBlob(note.data);
+        await this.saveBinaryNote(note.folder, note.name, blob, note.meta || {});
+      }
+    }
   },
 
   getStorageName() {
@@ -433,6 +477,50 @@ const idbStorage = {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
+  },
+
+  async exportAll() {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('notes', 'readonly');
+      const request = tx.objectStore('notes').getAll();
+      request.onsuccess = async () => {
+        const notes = request.result;
+        const exportData = [];
+
+        for (const note of notes) {
+          const exportNote = {
+            id: note.id,
+            name: note.name,
+            folder: note.folder,
+            type: note.type,
+          };
+
+          if (note.type === 'text') {
+            exportNote.content = createFrontmatter(note.meta || {}) + note.content;
+          } else {
+            exportNote.data = await blobToBase64(note.blob);
+            exportNote.meta = note.meta;
+          }
+
+          exportData.push(exportNote);
+        }
+
+        resolve(exportData);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async importAll(exportData) {
+    for (const note of exportData) {
+      if (note.type === 'text') {
+        const parsed = parseFrontmatter(note.content);
+        await this.saveTextNote(note.folder, note.name, parsed.content, parsed.meta);
+      } else {
+        const blob = await base64ToBlob(note.data);
+        await this.saveBinaryNote(note.folder, note.name, blob, note.meta || {});
+      }
+    }
   },
 
   getStorageName() {
@@ -1548,6 +1636,52 @@ async function renderEditNote(container, path) {
 // ============================================
 function sanitizeFilename(name) {
   return name.replace(/[<>:"/\\|?*]/g, '').replace(/\s+/g, ' ').trim().slice(0, 100);
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function base64ToBlob(base64) {
+  return fetch(base64).then(res => res.blob());
+}
+
+async function exportNotes() {
+  try {
+    const data = await storage.exportAll();
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `notes-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('Export failed: ' + e.message);
+  }
+}
+
+async function importNotes(file) {
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid export file format');
+    }
+
+    await storage.importAll(data);
+    alert(`Imported ${data.length} note(s) successfully!`);
+    router();
+  } catch (e) {
+    alert('Import failed: ' + e.message);
+  }
 }
 
 // ============================================
