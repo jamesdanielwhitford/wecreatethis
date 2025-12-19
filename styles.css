@@ -1,0 +1,859 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Theme variables */
+:root {
+  --bg: #e8e6e0;
+  --text: #2a2826;
+  --text-muted: #5a5855;
+  --surface: rgba(255, 255, 255, 0.7);
+  --surface-hover: rgba(255, 255, 255, 0.9);
+  --border: rgba(42, 40, 38, 0.15);
+  --accent: #5a4a3a;
+  --danger: #8b3a3a;
+  --danger-hover: #6b2a2a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a1a;
+    --text: #d4d4d4;
+    --text-muted: #888;
+    --surface: rgba(40, 40, 40, 0.8);
+    --surface-hover: rgba(50, 50, 50, 0.9);
+    --border: rgba(212, 212, 212, 0.15);
+    --accent: #a89a8a;
+    --danger: #b35a5a;
+    --danger-hover: #c36a6a;
+  }
+}
+
+/* Grain canvas */
+#grain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+body {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  line-height: 1.6;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+button {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: background-color 0.2s ease;
+}
+
+button:hover {
+  opacity: 0.85;
+}
+
+button.danger {
+  background: var(--danger);
+}
+
+button.danger:hover {
+  background: var(--danger-hover);
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+textarea {
+  resize: vertical;
+}
+
+label {
+  display: block;
+  margin-bottom: 1rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+label input, label textarea {
+  margin-top: 0.25rem;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.empty-state h1 {
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  margin-bottom: 1.5rem;
+  color: var(--text-muted);
+}
+
+.error {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--danger);
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+/* Navigation view */
+.nav-view header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-view h1 {
+  font-size: 1.5rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.icon-btn {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.5rem;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.icon-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.notes-list {
+  background: var(--surface);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.notes-list .empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* Type menu */
+.type-menu {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface);
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 100;
+}
+
+.type-menu.hidden {
+  display: none;
+}
+
+.type-menu button {
+  text-align: left;
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.type-menu button:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* Folder tree */
+.folder {
+  border-bottom: 1px solid var(--border);
+}
+
+.folder-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  background: transparent;
+}
+
+.folder-header:hover {
+  background: var(--surface-hover);
+}
+
+.folder-delete {
+  margin-left: auto;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.25rem 0.5rem;
+  font-size: 1rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.folder-header:hover .folder-delete {
+  opacity: 1;
+}
+
+.folder-delete:hover {
+  background: rgba(139, 58, 58, 0.2);
+  color: var(--danger);
+}
+
+.folder-icon {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.folder-name {
+  font-weight: 500;
+}
+
+.folder-contents {
+  padding-left: 1.5rem;
+}
+
+.folder-contents.hidden {
+  display: none;
+}
+
+/* Note item */
+.note-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+
+.note-item:last-child {
+  border-bottom: none;
+}
+
+.note-item:hover {
+  background: var(--surface-hover);
+}
+
+.note-icon {
+  font-size: 1.25rem;
+}
+
+.note-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* View note */
+.view-note header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.view-note header .actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.view-note h1 {
+  margin-bottom: 0.5rem;
+}
+
+.view-note .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tag {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.view-note .description {
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: 1rem;
+}
+
+.view-note .content {
+  background: var(--surface);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.view-note .content img,
+.view-note .content video {
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+.view-note .content audio {
+  width: 100%;
+}
+
+/* Edit note */
+.edit-note header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.edit-note h2 {
+  margin-bottom: 1rem;
+}
+
+.edit-note form {
+  background: var(--surface);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.recorder {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.recorder button {
+  background: var(--danger);
+}
+
+#recordStatus {
+  color: var(--danger);
+  font-weight: 500;
+}
+
+#preview {
+  margin-top: 1rem;
+}
+
+#preview img,
+#preview video {
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+#preview audio {
+  width: 100%;
+}
+
+/* Markdown content */
+.content h1, .content h2, .content h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.content h1:first-child, .content h2:first-child, .content h3:first-child {
+  margin-top: 0;
+}
+
+.content p {
+  margin-bottom: 1rem;
+  line-height: 1.8;
+}
+
+.content ul, .content ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.content code {
+  background: var(--surface-hover);
+  padding: 0.125rem 0.25rem;
+  border-radius: 2px;
+  font-family: 'Courier New', monospace;
+}
+
+.content pre {
+  background: var(--surface-hover);
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.content pre code {
+  background: none;
+  padding: 0;
+}
+
+.content blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.content a {
+  color: var(--accent);
+}
+
+/* ============================================
+   Full-page Text Editor
+   ============================================ */
+.fullpage-editor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.fullpage-editor textarea {
+  flex: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 2rem;
+  font-size: 1.125rem;
+  line-height: 1.8;
+  font-family: inherit;
+  background: transparent;
+  color: var(--text);
+}
+
+.fullpage-editor textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ============================================
+   Save Bar (bottom bar)
+   ============================================ */
+.save-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.save-options {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.save-options select {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.text-btn {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.5rem 0.75rem;
+}
+
+.text-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+/* ============================================
+   Metadata Panel (expandable)
+   ============================================ */
+.meta-panel {
+  background: var(--surface);
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.meta-panel.hidden {
+  display: none;
+}
+
+.meta-panel label {
+  margin-bottom: 0.75rem;
+  font-weight: normal;
+  font-size: 0.875rem;
+}
+
+.meta-panel input,
+.meta-panel textarea {
+  font-size: 0.875rem;
+  padding: 0.4rem;
+}
+
+/* ============================================
+   Modal
+   ============================================ */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: var(--surface);
+  padding: 1.5rem;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  border: 1px solid var(--border);
+}
+
+.modal-content h3 {
+  margin-bottom: 1rem;
+}
+
+.modal-content input {
+  margin-bottom: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* ============================================
+   Capture View (Image/Video/Audio)
+   ============================================ */
+.capture-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #111;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.capture-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.capture-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: #fff;
+}
+
+.capture-prompt span {
+  color: #888;
+}
+
+.capture-prompt button {
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+}
+
+.file-label {
+  background: #333;
+  color: #fff;
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.file-label:hover {
+  background: #555;
+}
+
+.capture-area video {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.capture-area canvas {
+  display: none;
+}
+
+.cancel-floating {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: #fff;
+}
+
+.cancel-floating:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* ============================================
+   Preview Area (after capture)
+   ============================================ */
+.preview-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.preview-area img,
+.preview-area video {
+  flex: 1;
+  object-fit: contain;
+  background: #000;
+  max-height: 60vh;
+}
+
+.preview-area audio {
+  width: 100%;
+  padding: 2rem;
+}
+
+.preview-area .save-bar {
+  background: var(--surface);
+}
+
+.preview-area .meta-panel {
+  background: var(--surface);
+}
+
+/* ============================================
+   Recording UI
+   ============================================ */
+.recording-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
+  position: absolute;
+  bottom: 2rem;
+}
+
+.recording-controls span {
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  font-size: 1.25rem;
+}
+
+.recording-controls button {
+  background: var(--danger);
+}
+
+.recording-ui {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.recording-indicator {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--danger);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.recording-ui span {
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  font-size: 2rem;
+}
+
+.recording-ui button {
+  background: var(--danger);
+  padding: 1rem 2rem;
+}
+
+/* Audio capture specific */
+.audio-capture .capture-area {
+  background: #222;
+}
+
+.record-btn {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: var(--danger);
+  font-size: 1rem;
+}
+
+.record-btn:hover {
+  background: var(--danger-hover);
+}
+
+/* ============================================
+   Settings Panel
+   ============================================ */
+.settings-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.settings-content {
+  background: var(--surface);
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-header h2 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.settings-body {
+  padding: 1rem;
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-info strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.setting-info p {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.setting-item button {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Hidden utility
+   ============================================ */
+.hidden {
+  display: none !important;
+}
