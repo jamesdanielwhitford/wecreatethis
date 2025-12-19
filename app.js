@@ -54,6 +54,11 @@ window.addEventListener('resize', generateGrain);
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', generateGrain);
 
 // ============================================
+// Storage Mode Detection
+// ============================================
+const USE_FILESYSTEM = 'showDirectoryPicker' in window;
+
+// ============================================
 // State
 // ============================================
 const state = {
@@ -61,6 +66,7 @@ const state = {
   notes: [],
   currentNote: null,
   expandedFolders: new Set(['']),
+  storageReady: false,
 };
 
 // File type mappings
@@ -72,127 +78,180 @@ const FILE_TYPES = {
 };
 
 // ============================================
-// IndexedDB (for directory handle only)
+// IndexedDB Setup
 // ============================================
+let db = null;
+
 function openDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('notes-app', 1);
+    const request = indexedDB.open('notes-app', 2);
     request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      db = request.result;
+      resolve(db);
+    };
     request.onupgradeneeded = (e) => {
-      e.target.result.createObjectStore('handles');
+      const database = e.target.result;
+      // Store for file system handles (desktop)
+      if (!database.objectStoreNames.contains('handles')) {
+        database.createObjectStore('handles');
+      }
+      // Store for notes (mobile fallback)
+      if (!database.objectStoreNames.contains('notes')) {
+        const notesStore = database.createObjectStore('notes', { keyPath: 'id' });
+        notesStore.createIndex('folder', 'folder', { unique: false });
+      }
     };
   });
 }
 
-async function saveHandle(handle) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('handles', 'readwrite');
-    tx.objectStore('handles').put(handle, 'rootDir');
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function loadHandle() {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('handles', 'readonly');
-    const request = tx.objectStore('handles').get('rootDir');
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
 // ============================================
-// File System API
+// File System Storage (Desktop)
 // ============================================
-async function selectFolder() {
-  try {
-    const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-    await saveHandle(handle);
-    state.dirHandle = handle;
-    return handle;
-  } catch (e) {
-    if (e.name !== 'AbortError') console.error(e);
-    return null;
+const fsStorage = {
+  async init() {
+    await openDB();
+    const handle = await this.loadHandle();
+    if (handle && (await this.requestPermission(handle))) {
+      state.dirHandle = handle;
+      return true;
+    }
+    return false;
+  },
+
+  async selectFolder() {
+    try {
+      const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      await this.saveHandle(handle);
+      state.dirHandle = handle;
+      return true;
+    } catch (e) {
+      if (e.name !== 'AbortError') console.error(e);
+      return false;
+    }
+  },
+
+  async saveHandle(handle) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('handles', 'readwrite');
+      tx.objectStore('handles').put(handle, 'rootDir');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  },
+
+  async loadHandle() {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('handles', 'readonly');
+      const request = tx.objectStore('handles').get('rootDir');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async requestPermission(handle) {
+    const opts = { mode: 'readwrite' };
+    if ((await handle.queryPermission(opts)) === 'granted') return true;
+    if ((await handle.requestPermission(opts)) === 'granted') return true;
+    return false;
+  },
+
+  async getAllNotes() {
+    return await scanDirectory(state.dirHandle);
+  },
+
+  async saveTextNote(folder, filename, content, meta) {
+    const targetFolder = await getOrCreateFolder(state.dirHandle, folder);
+    const fileContent = createFrontmatter(meta) + content;
+    await writeTextFile(targetFolder, filename, fileContent);
+  },
+
+  async saveBinaryNote(folder, filename, blob, meta) {
+    const targetFolder = await getOrCreateFolder(state.dirHandle, folder);
+    await writeBinaryFile(targetFolder, filename, blob);
+    await writeMetadataFS(targetFolder, filename, meta);
+  },
+
+  async readNote(note) {
+    if (note.type === 'text') {
+      const text = await readTextFileFS(note.handle);
+      return { text, meta: parseFrontmatter(text).meta };
+    } else {
+      const url = await readBinaryFileFS(note.handle);
+      const meta = await readMetadataFS(note.metaHandle);
+      return { url, meta };
+    }
+  },
+
+  async deleteNote(note) {
+    const folderHandle = await getFolderHandle(state.dirHandle, note.folder);
+    await folderHandle.removeEntry(note.name);
+    if (note.metaHandle) {
+      await folderHandle.removeEntry(`${note.name}.meta.json`);
+    }
+  },
+
+  async deleteFolder(folderPath) {
+    const parts = folderPath.split('/').filter(Boolean);
+    const folderName = parts.pop();
+    const parentPath = parts.join('/');
+    const parentHandle = parentPath
+      ? await getFolderHandle(state.dirHandle, parentPath)
+      : state.dirHandle;
+    await parentHandle.removeEntry(folderName, { recursive: true });
+  },
+
+  async updateMeta(note, meta) {
+    const folderHandle = await getFolderHandle(state.dirHandle, note.folder);
+    await writeMetadataFS(folderHandle, note.name, meta);
+  },
+
+  getStorageName() {
+    return state.dirHandle?.name || 'Not set';
   }
-}
+};
 
-async function requestPermission(handle) {
-  const opts = { mode: 'readwrite' };
-  if ((await handle.queryPermission(opts)) === 'granted') return true;
-  if ((await handle.requestPermission(opts)) === 'granted') return true;
-  return false;
-}
-
-async function initFolder() {
-  const handle = await loadHandle();
-  if (handle && (await requestPermission(handle))) {
-    state.dirHandle = handle;
-    return true;
-  }
-  return false;
-}
-
-function getFileType(filename) {
-  const ext = '.' + filename.split('.').pop().toLowerCase();
-  for (const [type, exts] of Object.entries(FILE_TYPES)) {
-    if (exts.includes(ext)) return type;
-  }
-  return null;
-}
-
-function isMetaFile(filename) {
-  return filename.endsWith('.meta.json');
-}
-
+// File System Helper Functions
 async function scanDirectory(dirHandle, path = '') {
   const notes = [];
   const metaFiles = new Map();
 
-  // First pass: collect all meta files
   for await (const entry of dirHandle.values()) {
-    if (entry.kind === 'file' && isMetaFile(entry.name)) {
-      const baseName = entry.name.replace('.meta.json', '');
-      metaFiles.set(baseName, entry);
+    if (entry.kind === 'file' && entry.name.endsWith('.meta.json')) {
+      metaFiles.set(entry.name.replace('.meta.json', ''), entry);
     }
   }
 
-  // Second pass: collect notes
   for await (const entry of dirHandle.values()) {
     const fullPath = path ? `${path}/${entry.name}` : entry.name;
 
     if (entry.kind === 'directory') {
       const subDir = await dirHandle.getDirectoryHandle(entry.name);
-      const subNotes = await scanDirectory(subDir, fullPath);
-      notes.push(...subNotes);
-    } else if (entry.kind === 'file' && !isMetaFile(entry.name)) {
+      notes.push(...await scanDirectory(subDir, fullPath));
+    } else if (entry.kind === 'file' && !entry.name.endsWith('.meta.json')) {
       const type = getFileType(entry.name);
       if (type) {
-        const note = {
+        notes.push({
+          id: fullPath,
           name: entry.name,
           path: fullPath,
           folder: path,
           type,
           handle: entry,
           metaHandle: metaFiles.get(entry.name) || null,
-        };
-        notes.push(note);
+        });
       }
     }
   }
-
   return notes;
 }
 
-async function readTextFile(fileHandle) {
+async function readTextFileFS(fileHandle) {
   const file = await fileHandle.getFile();
   return await file.text();
 }
 
-async function readBinaryFile(fileHandle) {
+async function readBinaryFileFS(fileHandle) {
   const file = await fileHandle.getFile();
   return URL.createObjectURL(file);
 }
@@ -202,7 +261,6 @@ async function writeTextFile(dirHandle, filename, content) {
   const writable = await fileHandle.createWritable();
   await writable.write(content);
   await writable.close();
-  return fileHandle;
 }
 
 async function writeBinaryFile(dirHandle, filename, blob) {
@@ -210,30 +268,26 @@ async function writeBinaryFile(dirHandle, filename, blob) {
   const writable = await fileHandle.createWritable();
   await writable.write(blob);
   await writable.close();
-  return fileHandle;
 }
 
-async function deleteFile(dirHandle, filename) {
-  await dirHandle.removeEntry(filename);
+async function readMetadataFS(metaHandle) {
+  if (!metaHandle) return {};
+  try {
+    const text = await readTextFileFS(metaHandle);
+    return JSON.parse(text);
+  } catch {
+    return {};
+  }
 }
 
-async function deleteFolder(folderPath) {
-  const parts = folderPath.split('/').filter(Boolean);
-  const folderName = parts.pop();
-  const parentPath = parts.join('/');
-
-  const parentHandle = parentPath
-    ? await getFolderHandle(state.dirHandle, parentPath)
-    : state.dirHandle;
-
-  await parentHandle.removeEntry(folderName, { recursive: true });
+async function writeMetadataFS(dirHandle, filename, meta) {
+  await writeTextFile(dirHandle, `${filename}.meta.json`, JSON.stringify(meta, null, 2));
 }
 
 async function getOrCreateFolder(rootHandle, folderPath) {
   if (!folderPath) return rootHandle;
-  const parts = folderPath.split('/').filter(Boolean);
   let current = rootHandle;
-  for (const part of parts) {
+  for (const part of folderPath.split('/').filter(Boolean)) {
     current = await current.getDirectoryHandle(part, { create: true });
   }
   return current;
@@ -241,12 +295,162 @@ async function getOrCreateFolder(rootHandle, folderPath) {
 
 async function getFolderHandle(rootHandle, folderPath) {
   if (!folderPath) return rootHandle;
-  const parts = folderPath.split('/').filter(Boolean);
   let current = rootHandle;
-  for (const part of parts) {
+  for (const part of folderPath.split('/').filter(Boolean)) {
     current = await current.getDirectoryHandle(part);
   }
   return current;
+}
+
+// ============================================
+// IndexedDB Storage (Mobile Fallback)
+// ============================================
+const idbStorage = {
+  async init() {
+    await openDB();
+    state.storageReady = true;
+    return true;
+  },
+
+  async selectFolder() {
+    // No folder selection needed for IndexedDB
+    return true;
+  },
+
+  async getAllNotes() {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('notes', 'readonly');
+      const request = tx.objectStore('notes').getAll();
+      request.onsuccess = () => {
+        const notes = request.result.map(note => ({
+          ...note,
+          path: note.id,
+        }));
+        resolve(notes);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async saveTextNote(folder, filename, content, meta) {
+    const id = folder ? `${folder}/${filename}` : filename;
+    const note = {
+      id,
+      name: filename,
+      folder: folder || '',
+      type: 'text',
+      content,
+      meta,
+      createdAt: meta.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await this._saveNote(note);
+  },
+
+  async saveBinaryNote(folder, filename, blob, meta) {
+    const id = folder ? `${folder}/${filename}` : filename;
+    const type = getFileType(filename);
+    const note = {
+      id,
+      name: filename,
+      folder: folder || '',
+      type,
+      blob,
+      meta,
+      createdAt: meta.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await this._saveNote(note);
+  },
+
+  async _saveNote(note) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('notes', 'readwrite');
+      tx.objectStore('notes').put(note);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  },
+
+  async readNote(note) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('notes', 'readonly');
+      const request = tx.objectStore('notes').get(note.id);
+      request.onsuccess = () => {
+        const data = request.result;
+        if (!data) {
+          reject(new Error('Note not found'));
+          return;
+        }
+        if (data.type === 'text') {
+          resolve({ text: data.content, meta: data.meta || {} });
+        } else {
+          const url = URL.createObjectURL(data.blob);
+          resolve({ url, meta: data.meta || {} });
+        }
+      };
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async deleteNote(note) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('notes', 'readwrite');
+      tx.objectStore('notes').delete(note.id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  },
+
+  async deleteFolder(folderPath) {
+    const notes = await this.getAllNotes();
+    const toDelete = notes.filter(n =>
+      n.folder === folderPath || n.folder.startsWith(folderPath + '/')
+    );
+
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('notes', 'readwrite');
+      const store = tx.objectStore('notes');
+      toDelete.forEach(note => store.delete(note.id));
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  },
+
+  async updateMeta(note, meta) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('notes', 'readwrite');
+      const store = tx.objectStore('notes');
+      const request = store.get(note.id);
+      request.onsuccess = () => {
+        const data = request.result;
+        if (data) {
+          data.meta = meta;
+          data.updatedAt = new Date().toISOString();
+          store.put(data);
+        }
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  },
+
+  getStorageName() {
+    return 'Browser Storage';
+  }
+};
+
+// ============================================
+// Storage Abstraction
+// ============================================
+const storage = USE_FILESYSTEM ? fsStorage : idbStorage;
+
+function getFileType(filename) {
+  const ext = '.' + filename.split('.').pop().toLowerCase();
+  for (const [type, exts] of Object.entries(FILE_TYPES)) {
+    if (exts.includes(ext)) return type;
+  }
+  return null;
 }
 
 // ============================================
@@ -281,20 +485,6 @@ function createFrontmatter(meta) {
   return lines.join('\n');
 }
 
-async function readMetadata(metaHandle) {
-  if (!metaHandle) return {};
-  try {
-    const text = await readTextFile(metaHandle);
-    return JSON.parse(text);
-  } catch {
-    return {};
-  }
-}
-
-async function writeMetadata(dirHandle, filename, meta) {
-  const metaFilename = `${filename}.meta.json`;
-  await writeTextFile(dirHandle, metaFilename, JSON.stringify(meta, null, 2));
-}
 
 // ============================================
 // Router
@@ -330,22 +520,26 @@ window.addEventListener('hashchange', router);
 // Navigation View
 // ============================================
 async function renderNavigation(container) {
-  if (!state.dirHandle) {
-    const hasFolder = await initFolder();
-    if (!hasFolder) {
-      container.innerHTML = `
-        <div class="empty-state">
-          <h1>Notes</h1>
-          <p>Select a folder to store your notes</p>
-          <button id="selectFolder">Select Folder</button>
-        </div>
-      `;
-      document.getElementById('selectFolder').onclick = async () => {
-        if (await selectFolder()) router();
-      };
-      return;
-    }
+  // Initialize storage
+  await storage.init();
+
+  // For file system mode, check if folder is selected
+  if (USE_FILESYSTEM && !state.dirHandle) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h1>Notes</h1>
+        <p>Select a folder to store your notes</p>
+        <button id="selectFolder">Select Folder</button>
+      </div>
+    `;
+    document.getElementById('selectFolder').onclick = async () => {
+      if (await storage.selectFolder()) router();
+    };
+    return;
   }
+
+  const storageName = storage.getStorageName();
+  const showFolderSetting = USE_FILESYSTEM;
 
   container.innerHTML = `
     <div class="nav-view">
@@ -373,10 +567,10 @@ async function renderNavigation(container) {
         <div class="settings-body">
           <div class="setting-item">
             <div class="setting-info">
-              <strong>Storage Folder</strong>
-              <p id="currentFolder">${state.dirHandle?.name || 'Not set'}</p>
+              <strong>Storage</strong>
+              <p id="currentFolder">${storageName}</p>
             </div>
-            <button id="changeFolder">Change</button>
+            ${showFolderSetting ? '<button id="changeFolder">Change</button>' : ''}
           </div>
         </div>
       </div>
@@ -411,12 +605,14 @@ async function renderNavigation(container) {
   document.getElementById('closeSettings').onclick = () => {
     settingsPanel.classList.add('hidden');
   };
-  document.getElementById('changeFolder').onclick = async () => {
-    if (await selectFolder()) {
-      settingsPanel.classList.add('hidden');
-      router();
-    }
-  };
+  if (showFolderSetting) {
+    document.getElementById('changeFolder').onclick = async () => {
+      if (await storage.selectFolder()) {
+        settingsPanel.classList.add('hidden');
+        router();
+      }
+    };
+  }
   // Close settings on backdrop click
   settingsPanel.onclick = (e) => {
     if (e.target === settingsPanel) {
@@ -425,7 +621,7 @@ async function renderNavigation(container) {
   };
 
   // Load and render notes
-  state.notes = await scanDirectory(state.dirHandle);
+  state.notes = await storage.getAllNotes();
   renderNotesList();
 }
 
@@ -499,8 +695,8 @@ function renderNotesList() {
         : `Delete empty folder "${folderPath}"?`;
 
       if (confirm(message)) {
-        await deleteFolder(folderPath);
-        state.notes = await scanDirectory(state.dirHandle);
+        await storage.deleteFolder(folderPath);
+        state.notes = await storage.getAllNotes();
         renderNotesList();
       }
     };
@@ -542,24 +738,30 @@ async function renderViewNote(container, path) {
   let content = '';
   let meta = {};
 
-  if (note.type === 'text') {
-    const text = await readTextFile(note.handle);
-    const parsed = parseFrontmatter(text);
-    meta = parsed.meta;
-    content = marked.parse(parsed.content);
-    title = meta.title || note.name;
-  } else {
-    meta = await readMetadata(note.metaHandle);
-    title = meta.title || note.name;
-    const url = await readBinaryFile(note.handle);
+  try {
+    const data = await storage.readNote(note);
 
-    if (note.type === 'image') {
-      content = `<img src="${url}" alt="${title}">`;
-    } else if (note.type === 'video') {
-      content = `<video src="${url}" controls></video>`;
-    } else if (note.type === 'audio') {
-      content = `<audio src="${url}" controls></audio>`;
+    if (note.type === 'text') {
+      const parsed = parseFrontmatter(data.text);
+      meta = parsed.meta;
+      content = marked.parse(parsed.content);
+      title = meta.title || note.name;
+    } else {
+      meta = data.meta || {};
+      title = meta.title || note.name;
+      const url = data.url;
+
+      if (note.type === 'image') {
+        content = `<img src="${url}" alt="${title}">`;
+      } else if (note.type === 'video') {
+        content = `<video src="${url}" controls></video>`;
+      } else if (note.type === 'audio') {
+        content = `<audio src="${url}" controls></audio>`;
+      }
     }
+  } catch (e) {
+    container.innerHTML = `<p>Error loading note: ${e.message}</p><button onclick="navigate('#/')">Back</button>`;
+    return;
   }
 
   const tags = meta.tags?.length ? `<div class="tags">${meta.tags.map((t) => `<span class="tag">${t}</span>`).join('')}</div>` : '';
@@ -585,11 +787,7 @@ async function renderViewNote(container, path) {
   document.getElementById('editBtn').onclick = () => navigate(`#/edit/${encodeURIComponent(path)}`);
   document.getElementById('deleteBtn').onclick = async () => {
     if (confirm('Delete this note?')) {
-      const folderHandle = await getFolderHandle(state.dirHandle, note.folder);
-      await deleteFile(folderHandle, note.name);
-      if (note.metaHandle) {
-        await deleteFile(folderHandle, `${note.name}.meta.json`);
-      }
+      await storage.deleteNote(note);
       navigate('#/');
     }
   };
@@ -728,10 +926,8 @@ function renderAddTextNote(container) {
     const now = new Date().toISOString();
     const meta = { title, tags, description, createdAt: now };
     const filename = sanitizeFilename(title) + '.md';
-    const fileContent = createFrontmatter(meta) + content;
 
-    const targetFolder = await getOrCreateFolder(state.dirHandle, folderPath);
-    await writeTextFile(targetFolder, filename, fileContent);
+    await storage.saveTextNote(folderPath, filename, content, meta);
 
     navigate('#/');
   };
@@ -881,10 +1077,9 @@ function renderAddImageNote(container) {
     const now = new Date().toISOString();
     const ext = imageBlob.name ? '.' + imageBlob.name.split('.').pop() : '.jpg';
     const filename = sanitizeFilename(title) + ext;
+    const meta = { title, tags, description, createdAt: now, updatedAt: now };
 
-    const targetFolder = await getOrCreateFolder(state.dirHandle, folderPath);
-    await writeBinaryFile(targetFolder, filename, imageBlob);
-    await writeMetadata(targetFolder, filename, { title, tags, description, createdAt: now, updatedAt: now });
+    await storage.saveBinaryNote(folderPath, filename, imageBlob, meta);
 
     navigate('#/');
   };
@@ -1042,10 +1237,9 @@ function renderAddVideoNote(container) {
     const now = new Date().toISOString();
     const ext = videoBlob.name ? '.' + videoBlob.name.split('.').pop() : '.webm';
     const filename = sanitizeFilename(title) + ext;
+    const meta = { title, tags, description, createdAt: now, updatedAt: now };
 
-    const targetFolder = await getOrCreateFolder(state.dirHandle, folderPath);
-    await writeBinaryFile(targetFolder, filename, videoBlob);
-    await writeMetadata(targetFolder, filename, { title, tags, description, createdAt: now, updatedAt: now });
+    await storage.saveBinaryNote(folderPath, filename, videoBlob, meta);
 
     navigate('#/');
   };
@@ -1200,10 +1394,9 @@ function renderAddAudioNote(container) {
     const now = new Date().toISOString();
     const ext = audioBlob.name ? '.' + audioBlob.name.split('.').pop() : '.webm';
     const filename = sanitizeFilename(title) + ext;
+    const meta = { title, tags, description, createdAt: now, updatedAt: now };
 
-    const targetFolder = await getOrCreateFolder(state.dirHandle, folderPath);
-    await writeBinaryFile(targetFolder, filename, audioBlob);
-    await writeMetadata(targetFolder, filename, { title, tags, description, createdAt: now, updatedAt: now });
+    await storage.saveBinaryNote(folderPath, filename, audioBlob, meta);
 
     navigate('#/');
   };
@@ -1253,14 +1446,21 @@ async function renderEditNote(container, path) {
 
   let meta = {};
   let content = '';
+  let binaryUrl = '';
 
-  if (note.type === 'text') {
-    const text = await readTextFile(note.handle);
-    const parsed = parseFrontmatter(text);
-    meta = parsed.meta;
-    content = parsed.content;
-  } else {
-    meta = await readMetadata(note.metaHandle);
+  try {
+    const data = await storage.readNote(note);
+    if (note.type === 'text') {
+      const parsed = parseFrontmatter(data.text);
+      meta = parsed.meta;
+      content = parsed.content;
+    } else {
+      meta = data.meta || {};
+      binaryUrl = data.url;
+    }
+  } catch (e) {
+    container.innerHTML = `<p>Error loading note: ${e.message}</p>`;
+    return;
   }
 
   const isText = note.type === 'text';
@@ -1296,10 +1496,9 @@ async function renderEditNote(container, path) {
     const preview = document.getElementById('preview');
 
     // Show current
-    const url = await readBinaryFile(note.handle);
-    if (note.type === 'image') preview.innerHTML = `<img src="${url}">`;
-    else if (note.type === 'video') preview.innerHTML = `<video src="${url}" controls></video>`;
-    else if (note.type === 'audio') preview.innerHTML = `<audio src="${url}" controls></audio>`;
+    if (note.type === 'image') preview.innerHTML = `<img src="${binaryUrl}">`;
+    else if (note.type === 'video') preview.innerHTML = `<video src="${binaryUrl}" controls></video>`;
+    else if (note.type === 'audio') preview.innerHTML = `<audio src="${binaryUrl}" controls></audio>`;
 
     fileInput.onchange = () => {
       newFile = fileInput.files[0];
@@ -1321,29 +1520,22 @@ async function renderEditNote(container, path) {
     const description = data.get('description').trim();
     const now = new Date().toISOString();
 
-    const folderHandle = await getFolderHandle(state.dirHandle, note.folder);
-
     if (isText) {
       const newContent = data.get('content') || '';
       const newMeta = { title, tags, description, createdAt: meta.createdAt || now };
-      const fileContent = createFrontmatter(newMeta) + newContent;
-      await writeTextFile(folderHandle, note.name, fileContent);
+      await storage.saveTextNote(note.folder, note.name, newContent, newMeta);
     } else {
-      // Update metadata
       const newMeta = { ...meta, title, tags, description, updatedAt: now };
-      await writeMetadata(folderHandle, note.name, newMeta);
 
-      // Replace file if new one selected
       if (newFile) {
-        await deleteFile(folderHandle, note.name);
+        // Replace file: delete old, save new
+        await storage.deleteNote(note);
         const ext = '.' + newFile.name.split('.').pop();
         const newFilename = sanitizeFilename(title) + ext;
-        await writeBinaryFile(folderHandle, newFilename, newFile);
-        // Update meta filename if changed
-        if (newFilename !== note.name) {
-          await deleteFile(folderHandle, `${note.name}.meta.json`);
-          await writeMetadata(folderHandle, newFilename, newMeta);
-        }
+        await storage.saveBinaryNote(note.folder, newFilename, newFile, newMeta);
+      } else {
+        // Just update metadata
+        await storage.updateMeta(note, newMeta);
       }
     }
 
@@ -1359,16 +1551,6 @@ function sanitizeFilename(name) {
 }
 
 // ============================================
-// Check API Support & Init
+// Init
 // ============================================
-if (!('showDirectoryPicker' in window)) {
-  document.getElementById('app').innerHTML = `
-    <div class="error">
-      <h1>Browser Not Supported</h1>
-      <p>This app requires the File System Access API.</p>
-      <p>Please use Chrome, Edge, or Opera.</p>
-    </div>
-  `;
-} else {
-  router();
-}
+router();
