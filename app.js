@@ -119,9 +119,17 @@ const fsStorage = {
   async init() {
     await openDB();
     const handle = await this.loadHandle();
-    if (handle && (await this.requestPermission(handle))) {
-      state.dirHandle = handle;
-      return true;
+    if (handle) {
+      // Try to verify permission without prompting (silent check)
+      try {
+        const permission = await handle.queryPermission({ mode: 'readwrite' });
+        if (permission === 'granted') {
+          state.dirHandle = handle;
+          return true;
+        }
+      } catch (e) {
+        // Handle doesn't exist or is invalid
+      }
     }
     return false;
   },
