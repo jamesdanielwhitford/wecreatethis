@@ -87,6 +87,9 @@ const FILE_TYPES = {
 let db = null;
 
 function openDB() {
+  // Return existing connection if already open
+  if (db) return Promise.resolve(db);
+
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('notes-app', 2);
     request.onerror = () => reject(request.error);
@@ -362,6 +365,7 @@ const idbStorage = {
   },
 
   async getAllNotes() {
+    await openDB(); // Ensure DB is ready
     return new Promise((resolve, reject) => {
       const tx = db.transaction('notes', 'readonly');
       const request = tx.objectStore('notes').getAll();
@@ -394,12 +398,15 @@ const idbStorage = {
   async saveBinaryNote(folder, filename, blob, meta) {
     const id = folder ? `${folder}/${filename}` : filename;
     const type = getFileType(filename);
+    // Convert blob to ArrayBuffer for better iOS Safari compatibility
+    const arrayBuffer = await blob.arrayBuffer();
     const note = {
       id,
       name: filename,
       folder: folder || '',
       type,
-      blob,
+      data: arrayBuffer,
+      mimeType: blob.type || 'application/octet-stream',
       meta,
       createdAt: meta.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -408,15 +415,18 @@ const idbStorage = {
   },
 
   async _saveNote(note) {
+    await openDB(); // Ensure DB is ready
     return new Promise((resolve, reject) => {
       const tx = db.transaction('notes', 'readwrite');
-      tx.objectStore('notes').put(note);
+      const request = tx.objectStore('notes').put(note);
+      request.onerror = (e) => reject(new Error('Failed to save note: ' + (e.target.error?.message || 'Unknown error')));
       tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
+      tx.onerror = (e) => reject(new Error('Transaction failed: ' + (e.target.error?.message || 'Unknown error')));
     });
   },
 
   async readNote(note) {
+    await openDB(); // Ensure DB is ready
     return new Promise((resolve, reject) => {
       const tx = db.transaction('notes', 'readonly');
       const request = tx.objectStore('notes').get(note.id);
@@ -429,7 +439,17 @@ const idbStorage = {
         if (data.type === 'text') {
           resolve({ text: data.content, meta: data.meta || {} });
         } else {
-          const url = URL.createObjectURL(data.blob);
+          // Handle both old (blob) and new (data/mimeType) formats
+          let blob;
+          if (data.data instanceof ArrayBuffer) {
+            blob = new Blob([data.data], { type: data.mimeType || 'application/octet-stream' });
+          } else if (data.blob) {
+            blob = data.blob;
+          } else {
+            reject(new Error('Invalid note data'));
+            return;
+          }
+          const url = URL.createObjectURL(blob);
           resolve({ url, meta: data.meta || {} });
         }
       };
@@ -438,6 +458,7 @@ const idbStorage = {
   },
 
   async deleteNote(note) {
+    await openDB(); // Ensure DB is ready
     return new Promise((resolve, reject) => {
       const tx = db.transaction('notes', 'readwrite');
       tx.objectStore('notes').delete(note.id);
@@ -447,6 +468,7 @@ const idbStorage = {
   },
 
   async deleteFolder(folderPath) {
+    await openDB(); // Ensure DB is ready
     const notes = await this.getAllNotes();
     const toDelete = notes.filter(n =>
       n.folder === folderPath || n.folder.startsWith(folderPath + '/')
@@ -462,6 +484,7 @@ const idbStorage = {
   },
 
   async updateMeta(note, meta) {
+    await openDB(); // Ensure DB is ready
     return new Promise((resolve, reject) => {
       const tx = db.transaction('notes', 'readwrite');
       const store = tx.objectStore('notes');
@@ -480,6 +503,7 @@ const idbStorage = {
   },
 
   async exportAll() {
+    await openDB(); // Ensure DB is ready
     return new Promise((resolve, reject) => {
       const tx = db.transaction('notes', 'readonly');
       const request = tx.objectStore('notes').getAll();
@@ -498,7 +522,16 @@ const idbStorage = {
           if (note.type === 'text') {
             exportNote.content = createFrontmatter(note.meta || {}) + note.content;
           } else {
-            exportNote.data = await blobToBase64(note.blob);
+            // Handle both old (blob) and new (data/mimeType) formats
+            let blob;
+            if (note.data instanceof ArrayBuffer) {
+              blob = new Blob([note.data], { type: note.mimeType || 'application/octet-stream' });
+            } else if (note.blob) {
+              blob = note.blob;
+            }
+            if (blob) {
+              exportNote.data = await blobToBase64(blob);
+            }
             exportNote.meta = note.meta;
           }
 
@@ -581,9 +614,12 @@ function navigate(hash) {
   window.location.hash = hash;
 }
 
-function router() {
+async function router() {
   const hash = window.location.hash || '#/';
   const app = document.getElementById('app');
+
+  // Always ensure storage is initialized
+  await storage.init();
 
   if (hash === '#/' || hash === '#/notes' || hash === '') {
     renderNavigation(app);
@@ -608,9 +644,6 @@ window.addEventListener('hashchange', router);
 // Navigation View
 // ============================================
 async function renderNavigation(container) {
-  // Initialize storage
-  await storage.init();
-
   // For file system mode, check if folder is selected
   if (USE_FILESYSTEM && !state.dirHandle) {
     container.innerHTML = `
@@ -660,6 +693,23 @@ async function renderNavigation(container) {
             </div>
             ${showFolderSetting ? '<button id="changeFolder">Change</button>' : ''}
           </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <strong>Export</strong>
+              <p>Download all notes as JSON</p>
+            </div>
+            <button id="exportBtn">Export</button>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <strong>Import</strong>
+              <p>Load notes from JSON file</p>
+            </div>
+            <label class="import-label">
+              Import
+              <input type="file" id="importInput" accept=".json" hidden>
+            </label>
+          </div>
         </div>
       </div>
     </div>
@@ -701,6 +751,19 @@ async function renderNavigation(container) {
       }
     };
   }
+
+  // Export/Import
+  document.getElementById('exportBtn').onclick = async () => {
+    await exportNotes();
+  };
+  document.getElementById('importInput').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      await importNotes(file);
+      settingsPanel.classList.add('hidden');
+    }
+  };
+
   // Close settings on backdrop click
   settingsPanel.onclick = (e) => {
     if (e.target === settingsPanel) {
@@ -1647,8 +1710,9 @@ function blobToBase64(blob) {
   });
 }
 
-function base64ToBlob(base64) {
-  return fetch(base64).then(res => res.blob());
+async function base64ToBlob(base64) {
+  const res = await fetch(base64);
+  return res.blob();
 }
 
 async function exportNotes() {
