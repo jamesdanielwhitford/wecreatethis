@@ -17,6 +17,32 @@ This ensures a new Claude session can pick up exactly where we left off.
 
 ## Current Implementation Status
 
+### Completed (Session 5 - Dec 2024)
+
+**Stage 7.5: JSON Metadata Sidecar Files - COMPLETE**
+- Metadata now persists to filesystem as JSON sidecar files
+- For each file `photo.jpg`, a `photo.jpg.json` is created alongside it
+- JSON contains: name, type, description, location, tags, dateCreated, dateModified, lastAccessed
+- On folder import: reads existing `.json` files and uses their metadata
+- On file save/edit: writes updated metadata to `.json` file
+- On file rename: deletes old `.json`, creates new `.json`
+- On file delete: also deletes the `.json` file
+- Metadata JSON files are skipped during import (not shown as separate files)
+
+**Files Modified:**
+- `fileSystem.js` - Added `writeMetadataJSON()`, `readMetadataJSON()`, `deleteMetadataJSON()`
+- `fileSystem.js` - Updated `importFile()` to read existing JSON metadata
+- `fileSystem.js` - Updated `writeFileToFS()` to also write JSON metadata
+- `fileSystem.js` - Updated `deleteFileFromFS()` to also delete JSON metadata
+
+**Key Technical Decisions:**
+- JSON filename format: `originalfile.ext.json` (e.g., `photo.jpg.json`)
+- On import, checks if `.json` file has a corresponding base file; if so, it's metadata (skip), if not, it's a regular JSON file (import)
+- If no existing JSON metadata on import, creates one automatically
+- Metadata survives IndexedDB clearing - just re-import the folder
+
+---
+
 ### Completed (Session 4 - Dec 2024)
 
 **Stage 7: File System Access API - COMPLETE**
@@ -129,12 +155,13 @@ This ensures a new Claude session can pick up exactly where we left off.
 ## Next Steps
 
 ### Stage 8: Polish
-- LRU cache tracking in db.js
+- LRU cache eviction logic in db.js (tracking already implemented)
 - Keyboard shortcuts (Escape to close, Ctrl+S to save)
 - Loading states and error handling
 - Better UI styling
 
 ### Future (Not Started)
+- Lazy loading: Only load folder structure on import, fetch file content on access (optimization if needed for large folders)
 - Stage 9: Cross-device sync via WebRTC
 - Stage 10: Embeddings for AI features
 

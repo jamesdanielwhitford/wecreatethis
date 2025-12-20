@@ -1,5 +1,5 @@
 // Service Worker for Local Files & Notes PWA
-const CACHE_NAME = 'file-notes-v5';
+const CACHE_NAME = 'file-notes-v6';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',

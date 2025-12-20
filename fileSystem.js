@@ -125,6 +125,10 @@ export async function writeFileToFS(fileData) {
 
         await writable.close();
         console.log('Written to filesystem:', fileName);
+
+        // Also write metadata JSON
+        await writeMetadataJSON(fileData, folderId);
+
         return true;
     } catch (err) {
         console.error('Error writing file to filesystem:', err);
@@ -156,7 +160,7 @@ export async function createFolderInFS(folderName, parentFolderId) {
     }
 }
 
-// Delete a file from filesystem
+// Delete a file from filesystem (and its metadata JSON)
 export async function deleteFileFromFS(fileName, folderId) {
     const dirHandle = folderHandles.get(folderId);
 
@@ -170,15 +174,18 @@ export async function deleteFileFromFS(fileName, folderId) {
 
     try {
         await dirHandle.removeEntry(fileName);
-        return true;
     } catch (err) {
         // NotFoundError is fine - file doesn't exist on disk
-        if (err.name === 'NotFoundError') {
-            return true;
+        if (err.name !== 'NotFoundError') {
+            console.error('Error deleting file from filesystem:', err);
+            return false;
         }
-        console.error('Error deleting file from filesystem:', err);
-        return false;
     }
+
+    // Also delete the metadata JSON file
+    await deleteMetadataJSON(fileName, folderId);
+
+    return true;
 }
 
 // Read file content as data URL (for media files)
@@ -201,11 +208,109 @@ async function readFileAsText(file) {
     });
 }
 
+// Get JSON metadata filename for a file
+function getMetadataFileName(fileName) {
+    return `${fileName}.json`;
+}
+
+// Write metadata JSON file alongside the actual file
+export async function writeMetadataJSON(fileData, folderId) {
+    const dirHandle = folderHandles.get(folderId);
+
+    if (!dirHandle) {
+        return false;
+    }
+
+    if (!(await verifyPermission(dirHandle))) {
+        return false;
+    }
+
+    try {
+        const metaFileName = getMetadataFileName(fileData.name);
+        const fileHandle = await dirHandle.getFileHandle(metaFileName, { create: true });
+        const writable = await fileHandle.createWritable();
+
+        const metadata = {
+            name: fileData.name,
+            type: fileData.type,
+            description: fileData.description || '',
+            location: fileData.location || '',
+            tags: fileData.tags || [],
+            dateCreated: fileData.dateCreated,
+            dateModified: fileData.dateModified,
+            lastAccessed: fileData.lastAccessed
+        };
+
+        await writable.write(JSON.stringify(metadata, null, 2));
+        await writable.close();
+        console.log('Written metadata JSON:', metaFileName);
+        return true;
+    } catch (err) {
+        console.error('Error writing metadata JSON:', err);
+        return false;
+    }
+}
+
+// Read metadata JSON file if it exists
+async function readMetadataJSON(dirHandle, fileName) {
+    try {
+        const metaFileName = getMetadataFileName(fileName);
+        const fileHandle = await dirHandle.getFileHandle(metaFileName);
+        const file = await fileHandle.getFile();
+        const content = await readFileAsText(file);
+        return JSON.parse(content);
+    } catch (err) {
+        // File doesn't exist or couldn't be parsed - that's fine
+        return null;
+    }
+}
+
+// Delete metadata JSON file
+export async function deleteMetadataJSON(fileName, folderId) {
+    const dirHandle = folderHandles.get(folderId);
+
+    if (!dirHandle) {
+        return false;
+    }
+
+    if (!(await verifyPermission(dirHandle))) {
+        return false;
+    }
+
+    try {
+        const metaFileName = getMetadataFileName(fileName);
+        await dirHandle.removeEntry(metaFileName);
+        console.log('Deleted metadata JSON:', metaFileName);
+        return true;
+    } catch (err) {
+        // NotFoundError is fine - file doesn't exist
+        if (err.name === 'NotFoundError') {
+            return true;
+        }
+        console.error('Error deleting metadata JSON:', err);
+        return false;
+    }
+}
+
 // Import a single file from the filesystem into IndexedDB
-async function importFile(fileHandle, folderId) {
+async function importFile(fileHandle, folderId, dirHandle) {
     try {
         const file = await fileHandle.getFile();
         const fileName = file.name;
+
+        // Skip JSON metadata files - they're handled separately
+        if (fileName.endsWith('.json')) {
+            // Check if this is a metadata file (has a corresponding non-json file)
+            const baseName = fileName.slice(0, -5); // Remove .json
+            try {
+                await dirHandle.getFileHandle(baseName);
+                // Corresponding file exists, this is a metadata file - skip it
+                return null;
+            } catch {
+                // No corresponding file, this is a regular JSON file - import it
+            }
+        }
+
         const fileType = getFileType(file.type || fileName);
 
         let content;
@@ -215,18 +320,32 @@ async function importFile(fileHandle, folderId) {
             content = await readFileAsDataURL(file);
         }
 
+        // Check for existing metadata JSON file
+        const existingMetadata = await readMetadataJSON(dirHandle, fileName);
+
+        const now = Date.now();
         const fileData = {
             id: generateUUID(),
             name: fileName,
             type: fileType,
             content: content,
             folderId: folderId,
-            description: '',
-            location: '',
-            tags: []
+            description: existingMetadata?.description || '',
+            location: existingMetadata?.location || '',
+            tags: existingMetadata?.tags || [],
+            dateCreated: existingMetadata?.dateCreated || file.lastModified || now,
+            dateModified: existingMetadata?.dateModified || file.lastModified || now,
+            lastAccessed: now
         };
 
-        return await saveFile(fileData);
+        const saved = await saveFile(fileData);
+
+        // Create metadata JSON if it didn't exist
+        if (!existingMetadata && dirHandle) {
+            await writeMetadataJSON(saved, folderId);
+        }
+
+        return saved;
     } catch (err) {
         console.error(`Error importing file ${fileHandle.name}:`, err);
         return null;
@@ -269,7 +388,7 @@ export async function syncFolderToIndexedDB(dirHandle, parentFolderId = null, op
 
         try {
             if (entry.kind === 'file') {
-                const imported = await importFile(entry, folder.id);
+                const imported = await importFile(entry, folder.id, dirHandle);
                 if (imported) {
                     results.files++;
                     if (onProgress) {
@@ -314,6 +433,8 @@ window.FS = {
     openDirectoryPicker,
     syncFolderToIndexedDB,
     writeFileToFS,
+    writeMetadataJSON,
+    deleteMetadataJSON,
     createFolderInFS,
     deleteFileFromFS,
     isFolderLinked,
