@@ -8,6 +8,7 @@ let uploadedContent = '';
 let mediaStream = null;
 let mediaRecorder = null;
 let recordedChunks = [];
+let capturedLocation = null;
 
 export async function openEditor(fileId, folderId) {
     currentFolderId = folderId;
@@ -17,14 +18,44 @@ export async function openEditor(fileId, folderId) {
     if (fileId) {
         // Edit existing file
         currentFile = await getFile(fileId);
+        capturedLocation = currentFile.location || null;
         renderEditorForType(modalBody, currentFile.type, currentFile);
     } else {
-        // New file - show type selector
+        // New file - show type selector and capture location
         currentFile = null;
+        capturedLocation = null;
+        captureCurrentLocation();
         renderTypeSelector(modalBody);
     }
 
     modal.classList.remove('hidden');
+}
+
+function captureCurrentLocation() {
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const { latitude, longitude } = position.coords;
+            // Try to get place name
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+                );
+                const data = await response.json();
+                const shortName = data.address?.city || data.address?.town ||
+                                  data.address?.village || data.address?.county ||
+                                  data.display_name?.split(',')[0] || '';
+                capturedLocation = JSON.stringify({ lat: latitude, lng: longitude, name: shortName });
+            } catch (e) {
+                capturedLocation = JSON.stringify({ lat: latitude, lng: longitude });
+            }
+        },
+        () => {
+            // Location capture failed silently
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
 }
 
 function closeEditor() {
@@ -39,6 +70,7 @@ function closeEditor() {
     mediaRecorder = null;
     recordedChunks = [];
     uploadedContent = '';
+    capturedLocation = null;
 
     const modal = document.getElementById('modal');
     modal.classList.add('hidden');
@@ -547,7 +579,8 @@ async function saveTextFile() {
         type: 'text',
         content,
         folderId: currentFolderId,
-        dateCreated: currentFile?.dateCreated
+        dateCreated: currentFile?.dateCreated,
+        location: capturedLocation || currentFile?.location || ''
     });
 
     closeEditor();
@@ -564,7 +597,8 @@ async function saveMediaFile(type) {
         type,
         content,
         folderId: currentFolderId,
-        dateCreated: currentFile?.dateCreated
+        dateCreated: currentFile?.dateCreated,
+        location: capturedLocation || currentFile?.location || ''
     });
 
     uploadedContent = '';
@@ -588,7 +622,8 @@ async function saveSvgFile() {
         type: 'svg',
         content,
         folderId: currentFolderId,
-        dateCreated: currentFile?.dateCreated
+        dateCreated: currentFile?.dateCreated,
+        location: capturedLocation || currentFile?.location || ''
     });
 
     closeEditor();

@@ -2,6 +2,7 @@
 import { getAllFilesInFolder, deleteFile } from '../db.js';
 import { formatDate, truncateText } from '../utils.js';
 import { openEditor } from './noteEditor.js';
+import { openMetadataEditor } from './metadataEditor.js';
 
 export async function renderAssets(folderId) {
     const container = document.getElementById('assetView');
@@ -33,6 +34,15 @@ export async function renderAssets(folderId) {
         date.style.color = '#888';
         date.textContent = formatDate(file.dateModified);
 
+        const metaBtn = document.createElement('button');
+        metaBtn.textContent = 'i';
+        metaBtn.title = 'Edit metadata';
+        metaBtn.style.cssText = 'position:absolute;top:2px;right:28px;background:#666;color:white;border:none;cursor:pointer;padding:2px 8px;font-style:italic;font-weight:bold;border-radius:50%;';
+        metaBtn.onclick = async (e) => {
+            e.stopPropagation();
+            await openMetadataEditor(file.id, folderId);
+        };
+
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = '×';
         deleteBtn.style.cssText = 'position:absolute;top:2px;right:2px;background:red;color:white;border:none;cursor:pointer;padding:2px 6px;';
@@ -48,6 +58,7 @@ export async function renderAssets(folderId) {
         item.appendChild(preview);
         item.appendChild(name);
         item.appendChild(date);
+        item.appendChild(metaBtn);
         item.appendChild(deleteBtn);
         container.appendChild(item);
     }
