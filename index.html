@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Notes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>File Notes</h1>
+        <button id="newFolderBtn">New Folder</button>
+        <button id="newFileBtn">New File</button>
+    </header>
+
+    <main>
+        <aside id="sidebar">
+            <nav id="breadcrumbs"></nav>
+            <div id="folderTree"></div>
+        </aside>
+
+        <section id="content">
+            <div id="assetView"></div>
+        </section>
+    </main>
+
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
