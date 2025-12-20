@@ -1,6 +1,7 @@
 // Note editor component - create/edit files
 import { getFile, saveFile } from '../db.js';
 import { renderAssets } from './assetView.js';
+import { writeFileToFS, isFolderLinked, deleteFileFromFS } from '../fileSystem.js';
 
 let currentFile = null;
 let currentFolderId = null;
@@ -568,12 +569,27 @@ function handleAudioUpload(e) {
     reader.readAsDataURL(file);
 }
 
+// Ensure filename has proper extension
+function ensureExtension(name, type) {
+    if (name.includes('.')) return name;
+    const extensions = {
+        'text': '.txt',
+        'image': '.png',
+        'video': '.webm',
+        'audio': '.webm',
+        'svg': '.svg'
+    };
+    return name + (extensions[type] || '.txt');
+}
+
 // Save handlers
 async function saveTextFile() {
-    const name = document.getElementById('fileName').value.trim() || 'Untitled.txt';
+    let name = document.getElementById('fileName').value.trim() || 'Untitled';
+    name = ensureExtension(name, 'text');
     const content = document.getElementById('fileContent').value;
+    const oldName = currentFile?.name;
 
-    await saveFile({
+    const fileData = {
         id: currentFile?.id,
         name,
         type: 'text',
@@ -581,17 +597,30 @@ async function saveTextFile() {
         folderId: currentFolderId,
         dateCreated: currentFile?.dateCreated,
         location: capturedLocation || currentFile?.location || ''
-    });
+    };
+
+    const saved = await saveFile(fileData);
+
+    // Write to filesystem if folder is linked
+    if (isFolderLinked(currentFolderId)) {
+        // Delete old file if name changed
+        if (oldName && oldName !== name) {
+            await deleteFileFromFS(oldName, currentFolderId);
+        }
+        await writeFileToFS(saved);
+    }
 
     closeEditor();
     await renderAssets(currentFolderId);
 }
 
 async function saveMediaFile(type) {
-    const name = document.getElementById('fileName').value.trim() || `Untitled.${type}`;
+    let name = document.getElementById('fileName').value.trim() || 'Untitled';
+    name = ensureExtension(name, type);
     const content = uploadedContent || currentFile?.content || '';
+    const oldName = currentFile?.name;
 
-    await saveFile({
+    const fileData = {
         id: currentFile?.id,
         name,
         type,
@@ -599,7 +628,18 @@ async function saveMediaFile(type) {
         folderId: currentFolderId,
         dateCreated: currentFile?.dateCreated,
         location: capturedLocation || currentFile?.location || ''
-    });
+    };
+
+    const saved = await saveFile(fileData);
+
+    // Write to filesystem if folder is linked
+    if (isFolderLinked(currentFolderId)) {
+        // Delete old file if name changed
+        if (oldName && oldName !== name) {
+            await deleteFileFromFS(oldName, currentFolderId);
+        }
+        await writeFileToFS(saved);
+    }
 
     uploadedContent = '';
     closeEditor();
@@ -607,7 +647,9 @@ async function saveMediaFile(type) {
 }
 
 async function saveSvgFile() {
-    const name = document.getElementById('fileName').value.trim() || 'Drawing.svg';
+    let name = document.getElementById('fileName').value.trim() || 'Drawing';
+    name = ensureExtension(name, 'svg');
+    const oldName = currentFile?.name;
     const svg = getSvgCanvas();
     // Clone and remove the ID to avoid duplicate ID issues in preview
     const clone = svg.cloneNode(true);
@@ -616,7 +658,7 @@ async function saveSvgFile() {
     clone.setAttribute('style', 'background: white;');
     const content = clone.outerHTML;
 
-    await saveFile({
+    const fileData = {
         id: currentFile?.id,
         name,
         type: 'svg',
@@ -624,7 +666,18 @@ async function saveSvgFile() {
         folderId: currentFolderId,
         dateCreated: currentFile?.dateCreated,
         location: capturedLocation || currentFile?.location || ''
-    });
+    };
+
+    const saved = await saveFile(fileData);
+
+    // Write to filesystem if folder is linked
+    if (isFolderLinked(currentFolderId)) {
+        // Delete old file if name changed
+        if (oldName && oldName !== name) {
+            await deleteFileFromFS(oldName, currentFolderId);
+        }
+        await writeFileToFS(saved);
+    }
 
     closeEditor();
     await renderAssets(currentFolderId);

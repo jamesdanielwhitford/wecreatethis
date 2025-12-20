@@ -17,6 +17,39 @@ This ensures a new Claude session can pick up exactly where we left off.
 
 ## Current Implementation Status
 
+### Completed (Session 4 - Dec 2024)
+
+**Stage 7: File System Access API - COMPLETE**
+- `fileSystem.js` - Full bidirectional sync with local filesystem
+- "Open Folder" button in header (hidden on unsupported browsers)
+- Import folder and all contents (files + subfolders) into IndexedDB
+- Write files back to filesystem when created/edited in the app
+- Rename handling: deletes old file, writes new file
+- Subfolder creation syncs to filesystem
+- Folder-to-handle mapping stored in memory for write-back
+- Requests `readwrite` permission for full sync capability
+
+**Files Modified:**
+- `app.js` - Added Open Folder button handler
+- `index.html` - Added Open Folder button
+- `components/noteEditor.js` - Writes to filesystem on save, handles renames
+- `components/folderTree.js` - Creates folders on filesystem
+- `components/metadataEditor.js` - Syncs metadata changes (including renames) to filesystem
+- `service-worker.js` - Added fileSystem.js to cache, bumped to v5
+
+**Key Technical Decisions:**
+- Filenames always stored WITH extension in IndexedDB to match filesystem (prevents duplicate files on rename)
+- `ensureExtension()` helper adds default extension based on file type
+- NotFoundError on delete handled silently (file may not exist on disk)
+- Folder handles stored in Map for write-back capability
+- Only folders imported via "Open Folder" are linked; root level doesn't sync
+
+**Browser Support:**
+- Chrome/Edge desktop: Full support
+- Safari/Firefox: Button hidden (API not available)
+
+---
+
 ### Completed (Session 3 - Dec 2024)
 
 **Stage 6: PWA Integration - COMPLETE**
@@ -85,19 +118,15 @@ This ensures a new Claude session can pick up exactly where we left off.
 - Reverse geocoding fails silently, coordinates still saved
 
 **Known Limitations:**
-- No File System Access API yet (Stage 7)
 - Minimal styling - functional but not pretty
 - Nominatim API has usage limits (1 req/sec) - not an issue for single-user app
 - PWA icons are placeholder black squares - replace with real icons later
+- File System sync only works on Chrome/Edge desktop
+- Folder handles are stored in memory only - re-import folder after page refresh to re-link
 
 ---
 
 ## Next Steps
-
-### Stage 7: File System Access API (Optional)
-- Create `fileSystem.js`
-- "Open Folder" button for desktop browsers
-- Sync between local filesystem and IndexedDB
 
 ### Stage 8: Polish
 - LRU cache tracking in db.js

@@ -1,5 +1,5 @@
 // Service Worker for Local Files & Notes PWA
-const CACHE_NAME = 'file-notes-v1';
+const CACHE_NAME = 'file-notes-v5';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -7,6 +7,7 @@ const ASSETS_TO_CACHE = [
     '/app.js',
     '/db.js',
     '/utils.js',
+    '/fileSystem.js',
     '/components/folderTree.js',
     '/components/assetView.js',
     '/components/noteEditor.js',

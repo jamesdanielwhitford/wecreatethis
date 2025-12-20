@@ -2,6 +2,7 @@
 import { getFile, updateMetadata } from '../db.js';
 import { formatDate } from '../utils.js';
 import { renderAssets } from './assetView.js';
+import { writeFileToFS, isFolderLinked, deleteFileFromFS } from '../fileSystem.js';
 
 let currentFileId = null;
 let currentFolderId = null;
@@ -251,12 +252,27 @@ async function saveMetadata() {
         return;
     }
 
-    await updateMetadata(currentFileId, {
+    // Get old file to check if name changed
+    const oldFile = await getFile(currentFileId);
+    const oldName = oldFile?.name;
+
+    const updated = await updateMetadata(currentFileId, {
         name,
         description,
         location,
         tags
     });
+
+    // Sync to filesystem if folder is linked
+    if (isFolderLinked(currentFolderId)) {
+        // Delete old file if name changed
+        if (oldName && oldName !== name) {
+            await deleteFileFromFS(oldName, currentFolderId);
+        }
+        // Write updated file
+        const file = await getFile(currentFileId);
+        await writeFileToFS(file);
+    }
 
     closeMetadataEditor();
     await renderAssets(currentFolderId);

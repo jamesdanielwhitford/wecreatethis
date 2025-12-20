@@ -1,8 +1,9 @@
 // Main app initialization
 import { initDB } from './db.js';
-import { initFolderTree, setNavigateHandler, createNewFolder, getCurrentFolderId } from './components/folderTree.js';
+import { initFolderTree, setNavigateHandler, createNewFolder, getCurrentFolderId, navigateTo } from './components/folderTree.js';
 import { renderAssets } from './components/assetView.js';
 import { openEditor } from './components/noteEditor.js';
+import { isFileSystemAccessSupported, openDirectoryPicker, syncFolderToIndexedDB } from './fileSystem.js';
 
 async function init() {
     // Initialize database
@@ -21,6 +22,34 @@ async function init() {
     document.getElementById('newFileBtn').onclick = () => {
         openEditor(null, getCurrentFolderId());
     };
+
+    // Open Folder button - File System Access API
+    const openFolderBtn = document.getElementById('openFolderBtn');
+    if (isFileSystemAccessSupported()) {
+        openFolderBtn.onclick = async () => {
+            const dirHandle = await openDirectoryPicker();
+            if (dirHandle) {
+                openFolderBtn.disabled = true;
+                openFolderBtn.textContent = 'Importing...';
+
+                try {
+                    const results = await syncFolderToIndexedDB(dirHandle, getCurrentFolderId());
+                    alert(`Imported ${results.folders} folder(s) and ${results.files} file(s)`);
+                    // Refresh the view
+                    await navigateTo(getCurrentFolderId());
+                } catch (err) {
+                    console.error('Import error:', err);
+                    alert('Error importing folder: ' + err.message);
+                } finally {
+                    openFolderBtn.disabled = false;
+                    openFolderBtn.textContent = 'Open Folder';
+                }
+            }
+        };
+    } else {
+        // Hide button if not supported
+        openFolderBtn.style.display = 'none';
+    }
 }
 
 // Register service worker for PWA

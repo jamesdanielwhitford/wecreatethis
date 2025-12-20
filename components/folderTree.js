@@ -1,5 +1,6 @@
 // Folder tree component
 import { getRootFolders, getSubfolders, getFolderPath, saveFolder, deleteFolder } from '../db.js';
+import { registerNewFolder, isFolderLinked } from '../fileSystem.js';
 
 let currentFolderId = null;
 let onNavigate = null;
@@ -93,10 +94,15 @@ export async function createNewFolder() {
     const name = prompt('Enter folder name:');
     if (!name) return;
 
-    await saveFolder({
+    const folder = await saveFolder({
         name: name.trim(),
         parentId: currentFolderId
     });
+
+    // Create in filesystem if parent is linked
+    if (isFolderLinked(currentFolderId)) {
+        await registerNewFolder(folder.id, folder.name, currentFolderId);
+    }
 
     await renderFolderTree(currentFolderId);
 }
