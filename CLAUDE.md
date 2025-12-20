@@ -17,6 +17,24 @@ This ensures a new Claude session can pick up exactly where we left off.
 
 ## Current Implementation Status
 
+### Completed (Session 2 - Dec 2024)
+
+**Stage 5: Metadata Editor - COMPLETE**
+- `components/metadataEditor.js` - Full metadata editor with location picker
+- "i" button on each file in assetView opens metadata editor
+- Edit: title/filename, description, location, tags (comma-separated)
+- Read-only dates: created, modified, last accessed
+- Interactive Leaflet map for location picking (click to place marker, drag to adjust)
+- "Use My Location" button for GPS capture
+- Reverse geocoding via OpenStreetMap Nominatim API
+- Location stored as JSON: `{"lat": number, "lng": number, "name": string}`
+- Auto-capture location when creating new notes (all file types)
+
+**Dependencies Added:**
+- Leaflet 1.9.4 via CDN (map library)
+
+---
+
 ### Completed (Session 1 - Dec 2024)
 
 **Core Infrastructure:**
@@ -28,41 +46,40 @@ This ensures a new Claude session can pick up exactly where we left off.
 
 **Components:**
 - `components/folderTree.js` - Folder tree with breadcrumb navigation, create/delete folders
-- `components/assetView.js` - Grid display of files with type-specific previews, delete button
-- `components/noteEditor.js` - Full editor for all file types with media capture
+- `components/assetView.js` - Grid display of files with type-specific previews, delete button, metadata button
+- `components/noteEditor.js` - Full editor for all file types with media capture and auto-location
 
 **Features Working:**
 - Create/navigate/delete folders (nested supported)
 - Create/edit/delete files of all types (text, image, video, audio, SVG)
 - Text: textarea editor
-- Image: file upload OR camera capture (📷 Take Photo)
-- Video: file upload OR camera recording (🎬 Record Video)
-- Audio: file upload OR microphone recording (🎤 Record Audio)
+- Image: file upload OR camera capture
+- Video: file upload OR camera recording
+- Audio: file upload OR microphone recording
 - SVG: freehand drawing canvas with stroke color/width
 - All data persists in IndexedDB
 - Files display with appropriate previews in grid
+- Metadata editing with interactive map location picker
+- Auto-location capture on new file creation
 
 **Key Technical Decisions:**
 - IndexedDB doesn't index `null` values - we filter manually for root folders/files
 - SVG saves without `id` attribute to prevent duplicate ID conflicts in previews
 - Media streams properly cleaned up on modal close
 - ES modules require serving via HTTP (not file://)
+- Location stored as JSON string for backward compatibility with plain text
+- Leaflet map cleaned up on modal close to prevent memory leaks
+- Reverse geocoding fails silently, coordinates still saved
 
 **Known Limitations:**
-- No metadata editor yet (Stage 5)
 - No PWA/offline support yet (Stage 6)
 - No File System Access API yet (Stage 7)
 - Minimal styling - functional but not pretty
+- Nominatim API has usage limits (1 req/sec) - not an issue for single-user app
 
 ---
 
 ## Next Steps
-
-### Stage 5: Metadata Editor
-- Create `components/metadataEditor.js`
-- Add metadata button to each file in assetView
-- Modal to edit: title, description, location, tags
-- Display read-only dates (created, modified, accessed)
 
 ### Stage 6: PWA Integration
 - Create `manifest.json` with app name, icons, display mode
