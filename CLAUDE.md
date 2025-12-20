@@ -1,5 +1,93 @@
 # Project: Local-First Browser File and Note App (PWA)
 
+---
+
+## Session Continuity Protocol
+
+When the user says **"prepare for next session"**, Claude must:
+1. Update the "Current Implementation Status" section with what was completed
+2. Update the "Next Steps" section with remaining/new tasks
+3. Document any bugs found or design decisions made
+4. Commit changes with a descriptive message
+5. Confirm the CLAUDE.md is ready for a fresh session
+
+This ensures a new Claude session can pick up exactly where we left off.
+
+---
+
+## Current Implementation Status
+
+### Completed (Session 1 - Dec 2024)
+
+**Core Infrastructure:**
+- `index.html` - Main app shell with header, sidebar, content area, modal
+- `style.css` - Minimal functional CSS (no polish, just layout)
+- `utils.js` - UUID generation, date formatting, file type detection
+- `db.js` - Full IndexedDB wrapper with CRUD for files and folders
+- `app.js` - Main initialization, wires components together
+
+**Components:**
+- `components/folderTree.js` - Folder tree with breadcrumb navigation, create/delete folders
+- `components/assetView.js` - Grid display of files with type-specific previews, delete button
+- `components/noteEditor.js` - Full editor for all file types with media capture
+
+**Features Working:**
+- Create/navigate/delete folders (nested supported)
+- Create/edit/delete files of all types (text, image, video, audio, SVG)
+- Text: textarea editor
+- Image: file upload OR camera capture (📷 Take Photo)
+- Video: file upload OR camera recording (🎬 Record Video)
+- Audio: file upload OR microphone recording (🎤 Record Audio)
+- SVG: freehand drawing canvas with stroke color/width
+- All data persists in IndexedDB
+- Files display with appropriate previews in grid
+
+**Key Technical Decisions:**
+- IndexedDB doesn't index `null` values - we filter manually for root folders/files
+- SVG saves without `id` attribute to prevent duplicate ID conflicts in previews
+- Media streams properly cleaned up on modal close
+- ES modules require serving via HTTP (not file://)
+
+**Known Limitations:**
+- No metadata editor yet (Stage 5)
+- No PWA/offline support yet (Stage 6)
+- No File System Access API yet (Stage 7)
+- Minimal styling - functional but not pretty
+
+---
+
+## Next Steps
+
+### Stage 5: Metadata Editor
+- Create `components/metadataEditor.js`
+- Add metadata button to each file in assetView
+- Modal to edit: title, description, location, tags
+- Display read-only dates (created, modified, accessed)
+
+### Stage 6: PWA Integration
+- Create `manifest.json` with app name, icons, display mode
+- Create `service-worker.js` to cache app shell
+- Register service worker in app.js
+- Test offline functionality
+- Test "Add to Home Screen" on mobile
+
+### Stage 7: File System Access API (Optional)
+- Create `fileSystem.js`
+- "Open Folder" button for desktop browsers
+- Sync between local filesystem and IndexedDB
+
+### Stage 8: Polish
+- LRU cache tracking in db.js
+- Keyboard shortcuts (Escape to close, Ctrl+S to save)
+- Loading states and error handling
+- Better UI styling
+
+### Future (Not Started)
+- Stage 9: Cross-device sync via WebRTC
+- Stage 10: Embeddings for AI features
+
+---
+
 ## Overview
 
 This app is a **local-first, browser-based PWA** using vanilla JavaScript, HTML, and IndexedDB. It provides:
