@@ -17,6 +17,19 @@ This ensures a new Claude session can pick up exactly where we left off.
 
 ## Current Implementation Status
 
+### Completed (Session 3 - Dec 2024)
+
+**Stage 6: PWA Integration - COMPLETE**
+- `manifest.json` - PWA manifest with app name, icons, standalone display mode
+- `service-worker.js` - Caches all app shell assets + Leaflet CDN for offline use
+- `icons/icon-192.png` and `icons/icon-512.png` - Black square placeholder icons
+- Service worker registration added to `app.js`
+- Manifest link, theme-color meta, and apple-touch-icon added to `index.html`
+- Cache-first strategy with network fallback
+- Automatic cache cleanup on version update
+
+---
+
 ### Completed (Session 2 - Dec 2024)
 
 **Stage 5: Metadata Editor - COMPLETE**
@@ -72,21 +85,14 @@ This ensures a new Claude session can pick up exactly where we left off.
 - Reverse geocoding fails silently, coordinates still saved
 
 **Known Limitations:**
-- No PWA/offline support yet (Stage 6)
 - No File System Access API yet (Stage 7)
 - Minimal styling - functional but not pretty
 - Nominatim API has usage limits (1 req/sec) - not an issue for single-user app
+- PWA icons are placeholder black squares - replace with real icons later
 
 ---
 
 ## Next Steps
-
-### Stage 6: PWA Integration
-- Create `manifest.json` with app name, icons, display mode
-- Create `service-worker.js` to cache app shell
-- Register service worker in app.js
-- Test offline functionality
-- Test "Add to Home Screen" on mobile
 
 ### Stage 7: File System Access API (Optional)
 - Create `fileSystem.js`
@@ -135,6 +141,9 @@ project-root/
 │   ├─ assetView.js       # Render files in current folder (text, image, video, audio, SVG)
 │   ├─ noteEditor.js      # Create/Edit note modal logic
 │   └─ metadataEditor.js  # Edit file metadata modal logic
+├─ icons/
+│   ├─ icon-192.png       # PWA icon 192x192
+│   └─ icon-512.png       # PWA icon 512x512
 ├─ manifest.json          # PWA manifest
 └─ service-worker.js      # PWA service worker
 ```
