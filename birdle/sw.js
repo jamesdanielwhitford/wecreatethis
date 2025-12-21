@@ -1,10 +1,11 @@
-const CACHE_NAME = 'wecreatethis-v1';
+const CACHE_NAME = 'birdle-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/birdle/',
+  '/birdle/index.html',
+  '/birdle/game.js',
+  '/birdle/manifest.json',
+  '/birdle/icon-192.png',
+  '/birdle/icon-512.png'
 ];
 
 // Install - cache all assets
@@ -31,12 +32,6 @@ self.addEventListener('activate', (event) => {
 
 // Fetch - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
-  // Only handle requests within root scope (not subapps)
-  const url = new URL(event.request.url);
-  if (url.pathname.startsWith('/beautiful-mind/') || url.pathname.startsWith('/birdle/')) {
-    return; // Let subapp service workers handle these
-  }
-
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request).then((response) => {
@@ -50,7 +45,7 @@ self.addEventListener('fetch', (event) => {
       });
     }).catch(() => {
       if (event.request.mode === 'navigate') {
-        return caches.match('/index.html');
+        return caches.match('/birdle/index.html');
       }
     })
   );

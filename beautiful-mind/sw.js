@@ -1,10 +1,14 @@
-const CACHE_NAME = 'wecreatethis-v1';
+const CACHE_NAME = 'beautiful-mind-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/beautiful-mind/',
+  '/beautiful-mind/index.html',
+  '/beautiful-mind/app.js',
+  '/beautiful-mind/styles.css',
+  '/beautiful-mind/manifest.json',
+  '/beautiful-mind/icon-192.png',
+  '/beautiful-mind/icon-512.png',
+  '/beautiful-mind/apple-touch-icon.png',
+  'https://cdn.jsdelivr.net/npm/marked/marked.min.js'
 ];
 
 // Install - cache all assets
@@ -31,15 +35,10 @@ self.addEventListener('activate', (event) => {
 
 // Fetch - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
-  // Only handle requests within root scope (not subapps)
-  const url = new URL(event.request.url);
-  if (url.pathname.startsWith('/beautiful-mind/') || url.pathname.startsWith('/birdle/')) {
-    return; // Let subapp service workers handle these
-  }
-
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request).then((response) => {
+        // Cache successful responses for future
         if (response.ok && event.request.method === 'GET') {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -49,8 +48,9 @@ self.addEventListener('fetch', (event) => {
         return response;
       });
     }).catch(() => {
+      // Offline fallback for navigation
       if (event.request.mode === 'navigate') {
-        return caches.match('/index.html');
+        return caches.match('/beautiful-mind/index.html');
       }
     })
   );
