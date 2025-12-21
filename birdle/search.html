@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Search - Birdle</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+  <a href="index.html" class="back-btn">&larr; Back</a>
+  <h1>Search</h1>
+
+  <!-- Location / Country Filter -->
+  <div class="filter-row">
+    <select id="country-filter">
+      <option value="">Select country...</option>
+      <option value="US">United States</option>
+      <option value="CA">Canada</option>
+      <option value="GB">United Kingdom</option>
+      <option value="AU">Australia</option>
+      <option value="NZ">New Zealand</option>
+      <option value="ZA">South Africa</option>
+      <option value="IN">India</option>
+      <option value="DE">Germany</option>
+      <option value="FR">France</option>
+      <option value="MX">Mexico</option>
+    </select>
+    <button id="pick-location-btn">📍 Pick location</button>
+  </div>
+
+  <!-- Map Picker -->
+  <div id="map-container" style="display:none;">
+    <div id="map"></div>
+    <div class="map-actions">
+      <button id="map-cancel-btn">Cancel</button>
+      <button id="map-confirm-btn">Search here</button>
+    </div>
+  </div>
+
+  <!-- Sort & Filter Controls -->
+  <div class="filter-row">
+    <select id="sort-type">
+      <option value="nearest">Sort: Nearest</option>
+      <option value="alphabetical">Sort: A-Z</option>
+      <option value="recent">Recently Viewed</option>
+    </select>
+    <label class="checkbox-label">
+      <input type="checkbox" id="seen-filter"> Seen only
+    </label>
+  </div>
+
+  <!-- Loading State -->
+  <div id="loading" class="loading" style="display:none;">Loading birds...</div>
+
+  <!-- Bird List -->
+  <ul id="bird-list" class="bird-list"></ul>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="ebird.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

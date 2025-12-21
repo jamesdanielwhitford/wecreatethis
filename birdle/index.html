@@ -3,21 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#2d5a27">
+  <meta name="theme-color" content="#333">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Birdle">
   <title>Birdle</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="app">
-    <h1>Birdle</h1>
-    <p>Guess the bird!</p>
-    <div id="game"></div>
+  <h1>Birdle</h1>
+  <p>Bird Bingo Adventure</p>
+
+  <div class="button-container">
+    <a href="search.html" class="btn">
+      <span class="btn-icon">🔍</span>
+      <span class="btn-text">Search</span>
+      <span class="btn-desc">Find birds in your area</span>
+    </a>
+
+    <a href="games.html" class="btn">
+      <span class="btn-icon">🎮</span>
+      <span class="btn-text">Games</span>
+      <span class="btn-desc">Play bird bingo</span>
+    </a>
   </div>
-  <script src="game.js"></script>
+
+  <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/birdle/sw.js', { scope: '/birdle/' });

@@ -1,0 +1,233 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  padding: 20px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+h1 {
+  margin-bottom: 8px;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn {
+  display: block;
+  padding: 16px;
+  text-align: center;
+  text-decoration: none;
+  background: #333;
+  color: #fff;
+  border-radius: 8px;
+}
+
+.btn-icon {
+  font-size: 1.5rem;
+}
+
+.btn-text {
+  display: block;
+  font-size: 1.2rem;
+  margin-top: 4px;
+}
+
+.btn-desc {
+  display: block;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.back-btn {
+  display: inline-block;
+  margin-bottom: 16px;
+  text-decoration: none;
+  color: #333;
+}
+
+/* Search page */
+.filter-row {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.filter-row select,
+.filter-row button {
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.filter-row button {
+  background: #333;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+}
+
+/* Map picker */
+#map-container {
+  margin: 12px 0;
+}
+
+#map {
+  height: 200px;
+  border-radius: 4px;
+}
+
+.map-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.map-actions button {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#map-confirm-btn {
+  background: #333;
+  color: #fff;
+  border: none;
+}
+
+.recent-searches {
+  margin: 16px 0;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.recent-searches h3 {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.recent-searches ul {
+  list-style: none;
+}
+
+.recent-searches li {
+  margin: 4px 0;
+}
+
+.recent-searches a {
+  color: #333;
+  font-size: 14px;
+}
+
+.loading {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+/* Bird list */
+.bird-list {
+  list-style: none;
+  margin-top: 16px;
+}
+
+.bird-item {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+
+.bird-item a {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  text-decoration: none;
+  color: #333;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 16px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.remove-btn:hover {
+  color: #c00;
+}
+
+.bird-item .bird-name {
+  font-weight: 500;
+}
+
+.bird-item .bird-location {
+  font-size: 12px;
+  color: #666;
+}
+
+.bird-item.seen {
+  background: #e8f5e9;
+}
+
+.seen-badge {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.empty {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+/* Bird detail */
+.scientific-name {
+  font-style: italic;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.detail-row {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.detail-row .label {
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.seen-btn {
+  margin-top: 24px;
+  width: 100%;
+  cursor: pointer;
+  border: none;
+}
+
+.seen-btn.is-seen {
+  background: #4caf50;
+}

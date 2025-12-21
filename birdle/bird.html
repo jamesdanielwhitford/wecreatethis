@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Bird Detail - Birdle</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a href="search.html" class="back-btn">&larr; Back</a>
+
+  <div id="bird-detail">
+    <h1 id="bird-name">Loading...</h1>
+    <p id="bird-scientific" class="scientific-name"></p>
+
+    <div class="detail-row">
+      <span class="label">Location:</span>
+      <span id="bird-location"></span>
+    </div>
+
+    <div class="detail-row">
+      <span class="label">Last seen:</span>
+      <span id="bird-date"></span>
+    </div>
+
+    <div class="detail-row">
+      <span class="label">Count:</span>
+      <span id="bird-count"></span>
+    </div>
+
+    <button id="toggle-seen-btn" class="btn seen-btn">Mark as Seen</button>
+  </div>
+
+  <script src="ebird.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
