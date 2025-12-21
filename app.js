@@ -4,6 +4,7 @@ import { initFolderTree, setNavigateHandler, createNewFolder, getCurrentFolderId
 import { renderAssets } from './components/assetView.js';
 import { openEditor } from './components/noteEditor.js';
 import { isFileSystemAccessSupported, openDirectoryPicker, syncFolderToIndexedDB } from './fileSystem.js';
+import { initSyncUI } from './components/syncUI.js';
 
 async function init() {
     // Initialize database
@@ -50,6 +51,9 @@ async function init() {
         // Hide button if not supported
         openFolderBtn.style.display = 'none';
     }
+
+    // Initialize sync UI
+    initSyncUI();
 }
 
 // Register service worker for PWA

@@ -17,6 +17,68 @@ This ensures a new Claude session can pick up exactly where we left off.
 
 ## Current Implementation Status
 
+### Completed (Session 6 - Dec 2024)
+
+**Stage 9: WebRTC Cross-Device Sync - COMPLETE**
+- Full peer-to-peer sync between devices using WebRTC DataChannel
+- QR code pairing (no server required)
+- Last-write-wins conflict resolution
+- Full sync including media blobs (images, video, audio)
+
+**New Files Created:**
+- `sync/protocol.js` - Message types and serialization for sync protocol
+- `sync/chunker.js` - Blob chunking (64KB) and reassembly for large files
+- `sync/webrtc.js` - RTCPeerConnection wrapper with DataChannel
+- `sync/signaling.js` - SDP compression and QR code encoding/scanning
+- `sync/sync.js` - Sync orchestration and conflict resolution
+- `components/syncUI.js` - Sync button, modal, QR display/scanning UI
+
+**Files Modified:**
+- `db.js` - Added changeLog and meta stores (v2), change tracking on all write operations, backfill migration for existing files, new sync-related exports
+- `app.js` - Import and init syncUI
+- `index.html` - Added QRCode, jsQR, and pako CDN scripts
+- `service-worker.js` - Cache v14 with new sync files and CDN resources
+
+**Key Technical Decisions:**
+- Change log tracks all file/folder mutations with {entityType, entityId, operation, timestamp, deviceId, synced}
+- `skipChangeLog` parameter on write operations to prevent re-logging remote changes
+- `backfillChangeLog()` runs on init to create change entries for files that existed before sync was added
+- SDP compression: extract type/sdp separately, compress only SDP content, preserve JSON structure
+- Uses pako for gzip compression if available, with 'G:' or 'P:' prefix to indicate format
+- BarcodeDetector API for QR scanning (Chrome 83+), jsQR library fallback for Firefox/Safari/mobile
+- Files transferred serially (one at a time) to prevent chunk mixing between concurrent transfers
+- Files chunked to 64KB with 8-byte header (index + total count)
+- SHA-256 checksum for file integrity verification
+- Type validation on scanned QR codes with clear error messages
+
+**How Sync Works:**
+1. Device A clicks "Sync" → "Show QR Code" → generates WebRTC offer as QR
+2. Device B clicks "Sync" → "Scan QR Code" → scans offer, generates answer QR
+3. Device A clicks "Then scan their QR code" → scans answer QR → WebRTC connection established
+4. Both devices exchange change lists since last sync
+5. Conflicts resolved by timestamp (last-write-wins)
+6. Files transferred serially in chunks via DataChannel
+7. Changes marked as synced, UI refreshes
+
+**Bugs Fixed During Testing:**
+- CDN URLs for qrcode library were 404ing (removed version from path)
+- Added jsQR library for mobile browser QR scanning support
+- SDP compression was corrupting JSON structure (now compresses SDP content separately)
+- Added type validation to prevent scanning wrong QR code (offer vs answer)
+- Files created before sync feature had no change log entries (added backfill migration)
+- Multiple file transfers had chunks mixing together (changed to serial transfers)
+
+**Browser Support:**
+- Chrome/Edge 83+: Full support (native BarcodeDetector)
+- Firefox/Safari/Mobile: Full support via jsQR library fallback
+- Requires HTTPS or localhost for camera access
+
+**Testing Setup:**
+- Use mkcert to generate local HTTPS certs: `mkcert <your-ip> localhost 127.0.0.1`
+- Serve with: `npx http-server -S -C <cert>.pem -K <key>.pem -p 8443`
+
+---
+
 ### Completed (Session 5 - Dec 2024)
 
 **Stage 7.5: JSON Metadata Sidecar Files - COMPLETE**
@@ -154,16 +216,16 @@ This ensures a new Claude session can pick up exactly where we left off.
 
 ## Next Steps
 
-### Stage 8: Polish
-- LRU cache eviction logic in db.js (tracking already implemented)
+### Stage 8: UI Polish
+- Minimal CSS styling based on user's UX instructions (keep CSS as simple as possible)
 - Keyboard shortcuts (Escape to close, Ctrl+S to save)
 - Loading states and error handling
-- Better UI styling
+- LRU cache eviction logic in db.js (tracking already implemented)
 
 ### Future (Not Started)
 - Lazy loading: Only load folder structure on import, fetch file content on access (optimization if needed for large folders)
-- Stage 9: Cross-device sync via WebRTC
 - Stage 10: Embeddings for AI features
+- Persistent sync connections (keep WebRTC alive after initial sync for real-time updates without re-scanning QR codes)
 
 ---
 

@@ -1,5 +1,5 @@
 // Service Worker for Local Files & Notes PWA
-const CACHE_NAME = 'file-notes-v6';
+const CACHE_NAME = 'file-notes-v14';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -12,6 +12,12 @@ const ASSETS_TO_CACHE = [
     '/components/assetView.js',
     '/components/noteEditor.js',
     '/components/metadataEditor.js',
+    '/components/syncUI.js',
+    '/sync/protocol.js',
+    '/sync/chunker.js',
+    '/sync/webrtc.js',
+    '/sync/signaling.js',
+    '/sync/sync.js',
     '/icons/icon-192.png',
     '/icons/icon-512.png',
     '/manifest.json'
@@ -20,7 +26,10 @@ const ASSETS_TO_CACHE = [
 // External resources to cache (CDN)
 const EXTERNAL_ASSETS = [
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+    'https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js',
+    'https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js',
+    'https://cdn.jsdelivr.net/npm/pako/dist/pako.min.js'
 ];
 
 // Install event - cache app shell
