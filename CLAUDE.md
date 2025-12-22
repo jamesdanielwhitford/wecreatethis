@@ -4,7 +4,7 @@
 
 Build a bird spotting game that:
 1. Gets all birds recorded in a user's chosen region (country/state)
-2. Organizes birds by rarity (common, rare, super rare) based on observation frequency
+2. Organizes birds by rarity (common, rare, ultra) based on observation frequency
 3. Lets users create games with custom regions and date ranges
 4. Track birds seen within each game
 5. Share games with others via URL
@@ -64,21 +64,26 @@ birdle/
 - Create button (enabled when region selected)
 
 **Game Detail Page (`game.html`)**
+- Sticky navbar with back button and three-dot menu (⋮)
+- Menu options: Share Score, Share Game, Change Dates, Delete Game
 - Game header: title, eBird region link, date range
-- Game ended banner with Resume option
-- Score summary: Total, Common, Rare, Super Rare counts
-- Full bird list organized by rarity sections
+- Game ended banner (prompts user to use menu to change dates)
+- Score summary: Total, Common, Rare, Ultra counts
+- Bird lists organized by rarity sections (Common, Rare, Ultra)
+- **Collapsible sections**: Tap section header to expand/collapse, state persisted per game
+- **Sticky section headers**: Current rarity header sticks below navbar while scrolling
 - Tap bird to open action modal (mark seen/unseen)
-- Share button with two options:
-  - **Share Score**: Customizable (total, by rarity, bird list, timeframe)
-  - **Share Game**: Creates URL that others can use to create identical game
+- Share Score: Customizable (total, by rarity, bird list, timeframe)
+- Share Game: Creates URL that others can use to create identical game
+- Change Dates: Edit start/end dates, or set to "Forever"
+- Delete Game: Removes game with confirmation
 
 **Rarity Calculation**
 - Uses ranking-based approach (not threshold-based)
 - Birds sorted by recent observation count from eBird
-- Top 1/3 = Common (green)
-- Middle 1/3 = Rare (blue)
-- Bottom 1/3 = Super Rare (purple)
+- Top 1/3 = Common (green, #4caf50)
+- Middle 1/3 = Rare (blue, #2196f3)
+- Bottom 1/3 = Ultra (purple, #9c27b0)
 
 **Auto-Generated Game Titles**
 - Format: "Dec 22, 2024 - California, United States"
@@ -95,11 +100,12 @@ birdle/
 - `seenBirds` - array of species codes marked as seen (search)
 - `recentBirds` - array of recently viewed birds
 - `lastSearch` - last searched region/location
+- `collapsedSections` - object tracking collapsed state per game `{ gameId: { common: bool, rare: bool, ultra: bool } }`
 - `games` - array of game objects with:
   - id, title, regionCode, regionName
   - startDate, endDate
-  - birds (fetched on first open)
-  - seenBirds (with timestamps)
+  - birds (fetched on first open, each bird has `rarity: 'common'|'rare'|'ultra'`)
+  - seenBirds (with timestamps and rarity)
 
 ---
 
@@ -138,9 +144,14 @@ GET /data/obs/geo/recent?lat=&lng=&dist=&back=30  # Nearby (search page)
 ## Technical Notes
 
 ### Service Worker
-- Cache version: `birdle-v23`
+- Cache version: `birdle-v30`
 - Bump version when code changes
 - Caches all static assets for offline use
+
+### CSS Architecture
+- Uses CSS variable `--navbar-height: 48px` for consistent sticky positioning
+- Game navbar and rarity section headers both reference this variable
+- Rarity sections have light tinted backgrounds (green/blue/purple)
 
 ### Rarity Algorithm
 ```javascript
