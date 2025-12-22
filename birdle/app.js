@@ -880,7 +880,10 @@ const App = {
     const list = document.getElementById(listId);
     if (!list) return;
 
-    list.innerHTML = birds.map(bird => {
+    // Sort birds by count (most common first) within this rarity category
+    const sortedBirds = [...birds].sort((a, b) => b.count - a.count);
+
+    list.innerHTML = sortedBirds.map(bird => {
       const isSeen = seenCodes.includes(bird.speciesCode);
       return `
         <li class="${isSeen ? 'seen' : ''}" data-code="${bird.speciesCode}">
