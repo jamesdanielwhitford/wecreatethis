@@ -696,30 +696,29 @@ const App = {
       speciesCount[obs.speciesCode]++;
     });
 
-    // Calculate rarity based on observation count
-    const totalObs = observations.length;
-    const birds = Object.keys(speciesData).map(code => {
-      const count = speciesCount[code];
-      const frequency = count / totalObs;
+    // Build birds array with counts
+    const birds = Object.keys(speciesData).map(code => ({
+      ...speciesData[code],
+      count: speciesCount[code]
+    }));
 
-      let rarity;
-      if (frequency > 0.1) {
-        rarity = 'common';
-      } else if (frequency > 0.02) {
-        rarity = 'rare';
+    // Sort by count (most common first)
+    birds.sort((a, b) => b.count - a.count);
+
+    // Assign rarity based on ranking (top third = common, middle = rare, bottom = super rare)
+    const total = birds.length;
+    const commonThreshold = Math.floor(total / 3);
+    const rareThreshold = Math.floor(total * 2 / 3);
+
+    birds.forEach((bird, index) => {
+      if (index < commonThreshold) {
+        bird.rarity = 'common';
+      } else if (index < rareThreshold) {
+        bird.rarity = 'rare';
       } else {
-        rarity = 'superrare';
+        bird.rarity = 'superrare';
       }
-
-      return {
-        ...speciesData[code],
-        frequency,
-        rarity
-      };
     });
-
-    // Sort by frequency (most common first)
-    birds.sort((a, b) => b.frequency - a.frequency);
 
     return birds;
   },
