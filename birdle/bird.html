@@ -32,8 +32,38 @@
     </div>
 
     <button id="toggle-seen-btn" class="btn seen-btn">Mark as Seen</button>
+    <a id="google-link" class="btn google-btn" href="#" target="_blank">Search Google</a>
   </div>
 
+  <!-- Sighting Modal -->
+  <div id="sighting-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h3>Log Sighting</h3>
+      <div class="form-group">
+        <label for="sighting-date">Date</label>
+        <input type="date" id="sighting-date">
+      </div>
+      <div class="form-group">
+        <label>Location</label>
+        <select id="sighting-country">
+          <option value="">Select Country...</option>
+        </select>
+        <select id="sighting-state" disabled style="margin-top: 8px;">
+          <option value="">Select State/Province...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="sighting-notes">Notes (optional)</label>
+        <textarea id="sighting-notes" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="sighting-cancel-btn" class="modal-btn cancel">Cancel</button>
+        <button id="sighting-save-btn" class="modal-btn seen">Save Sighting</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="db.js"></script>
   <script src="ebird.js"></script>
   <script src="app.js"></script>
 </body>

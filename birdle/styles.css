@@ -706,3 +706,187 @@ h1 {
   border: 1px solid #ccc;
   border-radius: 4px;
 }
+
+/* Life List Page */
+.life-navbar {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: var(--navbar-height);
+  margin: -20px -20px 16px -20px;
+  padding: 0 20px;
+  z-index: 100;
+  border-bottom: 1px solid #eee;
+}
+
+.life-navbar h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.life-navbar .back-btn {
+  margin-bottom: 0;
+}
+
+.total-count {
+  font-size: 14px;
+  color: #666;
+}
+
+.life-main {
+  padding-bottom: 40px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.empty-state p {
+  margin-bottom: 16px;
+}
+
+/* Continent Sections */
+.continent-section {
+  margin-bottom: 8px;
+}
+
+.continent-title {
+  background: #333;
+  color: white;
+  padding: 12px 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: sticky;
+  top: var(--navbar-height);
+  z-index: 9;
+}
+
+.continent-title .toggle-arrow {
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.continent-title.collapsed .toggle-arrow {
+  transform: rotate(-90deg);
+}
+
+.continent-title.collapsed + .continent-content {
+  display: none;
+}
+
+.continent-count {
+  margin-left: auto;
+  opacity: 0.7;
+}
+
+/* Region Sections */
+.region-section {
+  border-bottom: 1px solid #eee;
+}
+
+.region-title {
+  background: #f5f5f5;
+  padding: 10px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.region-title .toggle-arrow {
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+.region-title.collapsed .toggle-arrow {
+  transform: rotate(-90deg);
+}
+
+.region-title.collapsed + .region-content {
+  display: none;
+}
+
+.region-count {
+  margin-left: auto;
+  color: #666;
+}
+
+/* Life List Bird Items */
+.life-bird {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.life-bird:hover {
+  background: #fafafa;
+}
+
+.sighting-count {
+  background: #e0e0e0;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #666;
+}
+
+/* Life List Modal Stats */
+.modal-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 16px 0;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* Google Search Button */
+.google-btn {
+  background: #4285f4;
+  margin-top: 12px;
+}
+
+.modal-btn.google {
+  background: #4285f4;
+  color: white;
+  text-decoration: none;
+  text-align: center;
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}

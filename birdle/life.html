@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Life List - Birdle</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="life-navbar">
+    <a href="index.html" class="back-btn">&larr;</a>
+    <h1>Life List</h1>
+    <span class="total-count" id="life-total">0 species</span>
+  </div>
+
+  <main class="life-main">
+    <div id="loading" class="loading">Loading your life list...</div>
+    <div id="empty-state" class="empty-state" style="display: none;">
+      <p>No sightings yet!</p>
+      <p>Start birding by searching for birds and logging your sightings.</p>
+      <a href="search.html" class="btn">Start Searching</a>
+    </div>
+    <div id="life-sections"></div>
+  </main>
+
+  <!-- Bird Detail Modal -->
+  <div id="bird-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h3 id="modal-bird-name"></h3>
+      <p id="modal-sci-name" class="scientific-name"></p>
+      <div class="modal-stats">
+        <div class="stat">
+          <span class="stat-label">Sightings</span>
+          <span class="stat-value" id="modal-sighting-count">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">First Seen</span>
+          <span class="stat-value" id="modal-first-date">-</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Location</span>
+          <span class="stat-value" id="modal-first-location">-</span>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <a id="modal-google-link" class="modal-btn google" href="#" target="_blank">
+          Search Google
+        </a>
+        <button id="modal-close-btn" class="modal-btn cancel">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="db.js"></script>
+  <script src="life.js"></script>
+</body>
+</html>

@@ -12,8 +12,14 @@ const App = {
   mapCircle: null,
   pickedLocation: null,
   pickedRadius: null,
+  currentBird: null,
 
-  init() {
+  async init() {
+    // Initialize IndexedDB
+    if (typeof BirdDB !== 'undefined') {
+      await BirdDB.init();
+    }
+
     const page = this.detectPage();
     if (page === 'search') this.initSearch();
     if (page === 'bird') this.initBirdDetail();
@@ -291,7 +297,7 @@ const App = {
   },
 
   // ===== BIRD DETAIL PAGE =====
-  initBirdDetail() {
+  async initBirdDetail() {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
 
@@ -308,9 +314,21 @@ const App = {
       return;
     }
 
+    this.currentBird = bird;
     this.addRecentBird(bird);
     this.renderBirdDetail(bird);
     this.bindDetailEvents(bird);
+
+    // Cache bird and update view count in IndexedDB
+    if (typeof BirdDB !== 'undefined') {
+      await BirdDB.cacheBird({
+        speciesCode: bird.speciesCode,
+        comName: bird.comName,
+        sciName: bird.sciName,
+        regions: []
+      }, 'search');
+      await BirdDB.updateBirdViewed(bird.speciesCode);
+    }
   },
 
   renderBirdDetail(bird) {
@@ -320,14 +338,120 @@ const App = {
     document.getElementById('bird-date').textContent = bird.obsDt || 'Unknown';
     document.getElementById('bird-count').textContent = bird.howMany || 'Not recorded';
 
+    // Set up Google search link
+    const googleLink = document.getElementById('google-link');
+    if (googleLink) {
+      const searchQuery = encodeURIComponent(bird.comName + ' bird');
+      googleLink.href = `https://www.google.com/search?q=${searchQuery}`;
+    }
+
     this.updateSeenButton(bird.speciesCode);
   },
 
   bindDetailEvents(bird) {
     const btn = document.getElementById('toggle-seen-btn');
-    btn?.addEventListener('click', () => {
-      this.toggleSeen(bird.speciesCode);
+    btn?.addEventListener('click', async () => {
+      if (this.seenBirds.includes(bird.speciesCode)) {
+        // Already seen - toggle off
+        this.toggleSeen(bird.speciesCode);
+      } else {
+        // Open sighting modal to log with date/location
+        await this.openSightingModal(bird);
+      }
     });
+
+    // Sighting modal events
+    document.getElementById('sighting-cancel-btn')?.addEventListener('click', () => {
+      document.getElementById('sighting-modal').style.display = 'none';
+    });
+
+    document.getElementById('sighting-save-btn')?.addEventListener('click', () => {
+      this.saveSighting(bird);
+    });
+
+    // Close modal on backdrop click
+    document.getElementById('sighting-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'sighting-modal') {
+        document.getElementById('sighting-modal').style.display = 'none';
+      }
+    });
+  },
+
+  async openSightingModal(bird) {
+    // Set today as default date
+    document.getElementById('sighting-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('sighting-notes').value = '';
+
+    // Load countries
+    const countrySelect = document.getElementById('sighting-country');
+    const stateSelect = document.getElementById('sighting-state');
+
+    countrySelect.innerHTML = '<option value="">Select Country...</option>';
+    stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
+    stateSelect.disabled = true;
+
+    const countries = await EBird.getCountries();
+    countries.forEach(c => {
+      countrySelect.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+    });
+
+    // Bind country change to load states
+    countrySelect.onchange = async () => {
+      if (countrySelect.value) {
+        stateSelect.innerHTML = '<option value="">Loading...</option>';
+        const states = await EBird.getStates(countrySelect.value);
+        stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
+        states.forEach(s => {
+          stateSelect.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+        });
+        stateSelect.disabled = false;
+      } else {
+        stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
+        stateSelect.disabled = true;
+      }
+    };
+
+    document.getElementById('sighting-modal').style.display = 'flex';
+  },
+
+  async saveSighting(bird) {
+    const date = document.getElementById('sighting-date').value;
+    const countrySelect = document.getElementById('sighting-country');
+    const stateSelect = document.getElementById('sighting-state');
+    const notes = document.getElementById('sighting-notes').value;
+
+    if (!date || !countrySelect.value) {
+      alert('Please select a date and country');
+      return;
+    }
+
+    const regionCode = stateSelect.value || countrySelect.value;
+    const regionName = stateSelect.value
+      ? stateSelect.options[stateSelect.selectedIndex].text
+      : countrySelect.options[countrySelect.selectedIndex].text;
+
+    // Save sighting to IndexedDB
+    if (typeof BirdDB !== 'undefined') {
+      await BirdDB.addSighting({
+        speciesCode: bird.speciesCode,
+        comName: bird.comName,
+        sciName: bird.sciName,
+        date: date,
+        regionCode: regionCode,
+        regionName: regionName,
+        notes: notes
+      });
+    }
+
+    // Mark as seen in search
+    if (!this.seenBirds.includes(bird.speciesCode)) {
+      this.seenBirds.push(bird.speciesCode);
+      localStorage.setItem('seenBirds', JSON.stringify(this.seenBirds));
+    }
+
+    // Close modal and update UI
+    document.getElementById('sighting-modal').style.display = 'none';
+    this.updateSeenButton(bird.speciesCode);
   },
 
   toggleSeen(speciesCode) {
@@ -853,12 +977,14 @@ const App = {
     return birds;
   },
 
-  renderGameBirds() {
+  async renderGameBirds() {
     document.getElementById('game-loading').style.display = 'none';
     document.getElementById('bird-sections').style.display = 'block';
 
     const birds = this.currentGame.birds || [];
-    const seenCodes = this.currentGame.seenBirds.map(s => s.speciesCode);
+
+    // Get seen birds from IndexedDB sightings that match this game's criteria
+    const seenCodes = await this.getSeenBirdsForGame();
 
     const common = birds.filter(b => b.rarity === 'common');
     const rare = birds.filter(b => b.rarity === 'rare');
@@ -873,7 +999,44 @@ const App = {
     this.renderBirdSection('ultra-birds', ultra, seenCodes);
 
     this.restoreCollapsedSections();
-    this.updateScoreSummary();
+    this.updateScoreSummary(seenCodes);
+  },
+
+  // Get birds that have been seen within this game's region and date range
+  async getSeenBirdsForGame() {
+    if (typeof BirdDB === 'undefined') {
+      // Fallback to old seenBirds if no IndexedDB
+      return this.currentGame.seenBirds?.map(s => s.speciesCode) || [];
+    }
+
+    const game = this.currentGame;
+    const allSightings = await BirdDB.getAllSightings();
+
+    // Filter sightings that match this game
+    const matchingSightings = allSightings.filter(sighting => {
+      // Check region - sighting region must be within or match game region
+      if (!this.regionMatches(sighting.regionCode, game.regionCode)) {
+        return false;
+      }
+
+      // Check date range
+      if (sighting.date < game.startDate) return false;
+      if (game.endDate && sighting.date > game.endDate) return false;
+
+      return true;
+    });
+
+    // Return unique species codes
+    const seenCodes = [...new Set(matchingSightings.map(s => s.speciesCode))];
+    return seenCodes;
+  },
+
+  // Check if sighting region is within or matches game region
+  regionMatches(sightingRegion, gameRegion) {
+    if (sightingRegion === gameRegion) return true;
+    if (sightingRegion.startsWith(gameRegion + '-')) return true;
+    if (!gameRegion.includes('-') && sightingRegion.startsWith(gameRegion + '-')) return true;
+    return false;
   },
 
   renderBirdSection(listId, birds, seenCodes) {
@@ -901,54 +1064,60 @@ const App = {
     });
   },
 
-  openBirdModal(speciesCode) {
+  async openBirdModal(speciesCode) {
     const bird = this.currentGame.birds.find(b => b.speciesCode === speciesCode);
     if (!bird) return;
 
     this.selectedBird = bird;
 
-    const isSeen = this.currentGame.seenBirds.some(s => s.speciesCode === speciesCode);
+    // Check if bird has been seen in this game's context
+    const seenCodes = await this.getSeenBirdsForGame();
+    const isSeen = seenCodes.includes(speciesCode);
     const isActive = this.isGameActive();
 
     document.getElementById('modal-bird-name').textContent = bird.comName;
     document.getElementById('modal-bird-rarity').textContent = bird.rarity;
     document.getElementById('modal-bird-rarity').className = `modal-rarity ${bird.rarity}`;
 
+    // Show "Log Sighting" button if not seen and game is active
     document.getElementById('modal-seen-btn').style.display = (!isSeen && isActive) ? 'block' : 'none';
-    document.getElementById('modal-unseen-btn').style.display = (isSeen && isActive) ? 'block' : 'none';
+    // Hide unseen button - sightings are permanent
+    document.getElementById('modal-unseen-btn').style.display = 'none';
 
     document.getElementById('bird-modal').style.display = 'flex';
   },
 
-  markBirdSeen(bird) {
+  async markBirdSeen(bird) {
     if (!bird) return;
 
-    this.currentGame.seenBirds.push({
-      speciesCode: bird.speciesCode,
-      comName: bird.comName,
-      rarity: bird.rarity,
-      seenAt: new Date().toISOString()
-    });
+    const game = this.currentGame;
 
-    this.saveGame();
+    // Save sighting to IndexedDB with game's region and today's date
+    if (typeof BirdDB !== 'undefined') {
+      const today = new Date().toISOString().split('T')[0];
+
+      await BirdDB.addSighting({
+        speciesCode: bird.speciesCode,
+        comName: bird.comName,
+        sciName: bird.sciName,
+        date: today,
+        regionCode: game.regionCode,
+        regionName: game.regionName
+      });
+    }
+
     document.getElementById('bird-modal').style.display = 'none';
     this.renderGameBirds();
   },
 
   markBirdUnseen(bird) {
-    if (!bird) return;
-
-    this.currentGame.seenBirds = this.currentGame.seenBirds.filter(
-      s => s.speciesCode !== bird.speciesCode
-    );
-
-    this.saveGame();
+    // Sightings are permanent - this function is now unused
     document.getElementById('bird-modal').style.display = 'none';
-    this.renderGameBirds();
   },
 
-  updateScoreSummary() {
-    const seen = this.currentGame.seenBirds;
+  updateScoreSummary(seenCodes) {
+    const birds = this.currentGame.birds || [];
+    const seen = birds.filter(b => seenCodes.includes(b.speciesCode));
 
     const total = seen.length;
     const common = seen.filter(s => s.rarity === 'common').length;
@@ -1020,31 +1189,56 @@ const App = {
     window.location.href = 'games.html';
   },
 
-  shareScore() {
+  async shareScore() {
     const includeTotal = document.getElementById('share-total').checked;
     const includeRarity = document.getElementById('share-rarity').checked;
     const includeList = document.getElementById('share-list').checked;
     const timeframe = document.getElementById('share-timeframe').value;
 
-    let seen = [...this.currentGame.seenBirds];
+    const game = this.currentGame;
+    const birds = game.birds || [];
 
-    // Filter by timeframe
+    // Get sightings that match this game
+    let sightings = [];
+    if (typeof BirdDB !== 'undefined') {
+      const allSightings = await BirdDB.getAllSightings();
+      sightings = allSightings.filter(s => {
+        if (!this.regionMatches(s.regionCode, game.regionCode)) return false;
+        if (s.date < game.startDate) return false;
+        if (game.endDate && s.date > game.endDate) return false;
+        return true;
+      });
+    }
+
+    // Apply additional timeframe filter
     const now = new Date();
     if (timeframe === 'today') {
       const today = now.toISOString().split('T')[0];
-      seen = seen.filter(s => s.seenAt.startsWith(today));
+      sightings = sightings.filter(s => s.date === today);
     } else if (timeframe === 'week') {
-      const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
-      seen = seen.filter(s => new Date(s.seenAt) >= weekAgo);
+      const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      sightings = sightings.filter(s => s.date >= weekAgo);
     } else if (timeframe === 'custom') {
       const from = document.getElementById('share-from-date').value;
       const to = document.getElementById('share-to-date').value;
-      if (from) seen = seen.filter(s => s.seenAt >= from);
-      if (to) seen = seen.filter(s => s.seenAt <= to + 'T23:59:59');
+      if (from) sightings = sightings.filter(s => s.date >= from);
+      if (to) sightings = sightings.filter(s => s.date <= to);
     }
 
+    // Get unique species and add rarity info from game birds
+    const seenCodes = [...new Set(sightings.map(s => s.speciesCode))];
+    const seen = seenCodes.map(code => {
+      const sighting = sightings.find(s => s.speciesCode === code);
+      const gameBird = birds.find(b => b.speciesCode === code);
+      return {
+        speciesCode: code,
+        comName: sighting?.comName || code,
+        rarity: gameBird?.rarity || 'common'
+      };
+    });
+
     // Build share text
-    let text = `🐦 Birdle: ${this.currentGame.title}\n\n`;
+    let text = `🐦 Birdle: ${game.title}\n\n`;
 
     if (includeTotal) {
       text += `Found: ${seen.length} birds\n`;
@@ -1062,7 +1256,7 @@ const App = {
     if (includeList && seen.length > 0) {
       text += `\nBirds:\n`;
       seen.forEach(s => {
-        const icon = s.rarity === 'common' ? '🟢' : s.rarity === 'rare' ? '🔵' : '🟣'; // ultra
+        const icon = s.rarity === 'common' ? '🟢' : s.rarity === 'rare' ? '🔵' : '🟣';
         text += `${icon} ${s.comName}\n`;
       });
     }
