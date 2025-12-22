@@ -320,6 +320,24 @@ h1 {
   cursor: pointer;
 }
 
+.region-selects {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.region-selects select {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.region-selects select:disabled {
+  background: #f5f5f5;
+  color: #999;
+}
+
 .create-btn {
   width: 100%;
   margin-top: 24px;

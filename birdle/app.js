@@ -369,12 +369,13 @@ const App = {
       const isEnded = endDate && new Date() > endDate;
       const seenCount = game.seenBirds?.length || 0;
       const status = isEnded ? 'Ended' : 'Active';
+      const region = game.regionName || game.regionCode || 'Unknown';
 
       return `
         <li>
           <a href="game.html?id=${index}">
             <span class="game-title">${game.title}</span>
-            <span class="game-info">${seenCount} birds found · ${status}</span>
+            <span class="game-info">${region} · ${seenCount} found · ${status}</span>
           </a>
         </li>
       `;
@@ -383,8 +384,10 @@ const App = {
 
   // ===== NEW GAME PAGE =====
   initNewGame() {
+    this.selectedRegion = null;
+    this.selectedRegionName = null;
     this.bindNewGameEvents();
-    this.initAreaMap();
+    this.loadCountries();
   },
 
   bindNewGameEvents() {
@@ -395,6 +398,9 @@ const App = {
     const endDateInput = document.getElementById('end-date');
     const noEndBtn = document.getElementById('no-end-btn');
     const createBtn = document.getElementById('create-game-btn');
+    const countrySelect = document.getElementById('country-select');
+    const stateSelect = document.getElementById('state-select');
+    const countySelect = document.getElementById('county-select');
 
     titleInput?.addEventListener('input', () => {
       this.validateNewGame();
@@ -418,80 +424,89 @@ const App = {
       endDateInput.value = '';
     });
 
+    countrySelect?.addEventListener('change', async (e) => {
+      const countryCode = e.target.value;
+      stateSelect.innerHTML = '<option value="">Loading...</option>';
+      stateSelect.disabled = true;
+      countySelect.innerHTML = '<option value="">Select County (optional)...</option>';
+      countySelect.disabled = true;
+
+      if (countryCode) {
+        this.selectedRegion = countryCode;
+        this.selectedRegionName = countrySelect.options[countrySelect.selectedIndex].text;
+        const states = await EBird.getStates(countryCode);
+        stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
+        states.forEach(s => {
+          stateSelect.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+        });
+        stateSelect.disabled = false;
+      } else {
+        this.selectedRegion = null;
+        this.selectedRegionName = null;
+      }
+      this.updateRegionInfo();
+      this.validateNewGame();
+    });
+
+    stateSelect?.addEventListener('change', async (e) => {
+      const stateCode = e.target.value;
+      countySelect.innerHTML = '<option value="">Loading...</option>';
+      countySelect.disabled = true;
+
+      if (stateCode) {
+        this.selectedRegion = stateCode;
+        this.selectedRegionName = stateSelect.options[stateSelect.selectedIndex].text;
+        const counties = await EBird.getCounties(stateCode);
+        countySelect.innerHTML = '<option value="">Select County (optional)...</option>';
+        counties.forEach(c => {
+          countySelect.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+        });
+        countySelect.disabled = false;
+      } else {
+        // Revert to country
+        const countryCode = countrySelect.value;
+        this.selectedRegion = countryCode;
+        this.selectedRegionName = countrySelect.options[countrySelect.selectedIndex].text;
+      }
+      this.updateRegionInfo();
+      this.validateNewGame();
+    });
+
+    countySelect?.addEventListener('change', (e) => {
+      const countyCode = e.target.value;
+      if (countyCode) {
+        this.selectedRegion = countyCode;
+        this.selectedRegionName = countySelect.options[countySelect.selectedIndex].text;
+      } else {
+        // Revert to state
+        const stateCode = stateSelect.value;
+        this.selectedRegion = stateCode;
+        this.selectedRegionName = stateSelect.options[stateSelect.selectedIndex].text;
+      }
+      this.updateRegionInfo();
+      this.validateNewGame();
+    });
+
     createBtn?.addEventListener('click', () => {
       this.createGame();
     });
   },
 
-  initAreaMap() {
-    this.map = L.map('map').setView([40, -95], 4);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(this.map);
-
-    // Update circle on zoom
-    this.map.on('zoomend', () => {
-      this.updateAreaCircle();
+  async loadCountries() {
+    const countrySelect = document.getElementById('country-select');
+    const countries = await EBird.getCountries();
+    countries.forEach(c => {
+      countrySelect.innerHTML += `<option value="${c.code}">${c.name}</option>`;
     });
-
-    this.map.on('moveend', () => {
-      this.updateAreaCircle();
-    });
-
-    // Center on user's location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          this.map.setView([latitude, longitude], 10);
-          this.updateAreaCircle();
-        },
-        () => {
-          this.updateAreaCircle();
-        }
-      );
-    } else {
-      this.updateAreaCircle();
-    }
-
-    setTimeout(() => this.map.invalidateSize(), 100);
   },
 
-  updateAreaCircle() {
-    const center = this.map.getCenter();
-    const bounds = this.map.getBounds();
-
-    // Calculate radius based on visible area (roughly 1/3 of the view)
-    const ne = bounds.getNorthEast();
-    const sw = bounds.getSouthWest();
-    const latDiff = Math.abs(ne.lat - sw.lat);
-    const rawRadius = (latDiff * 111) / 3; // km (111km per degree latitude)
-    const radius = Math.min(rawRadius, 50); // Cap at 50km (eBird API limit)
-
-    this.pickedLocation = { lat: center.lat, lng: center.lng };
-    this.pickedRadius = radius;
-
-    if (this.mapCircle) {
-      this.mapCircle.setLatLng(center);
-      this.mapCircle.setRadius(radius * 1000); // Leaflet uses meters
-    } else {
-      this.mapCircle = L.circle(center, {
-        radius: radius * 1000,
-        color: '#333',
-        fillColor: '#333',
-        fillOpacity: 0.1,
-        weight: 2
-      }).addTo(this.map);
+  updateRegionInfo() {
+    const regionInfo = document.getElementById('region-info');
+    if (regionInfo && this.selectedRegion) {
+      regionInfo.textContent = `Region: ${this.selectedRegionName} (${this.selectedRegion})`;
+    } else if (regionInfo) {
+      regionInfo.textContent = '';
     }
-
-    // Update area info
-    const areaInfo = document.getElementById('area-info');
-    if (areaInfo) {
-      const maxNote = radius >= 50 ? ' (max)' : '';
-      areaInfo.textContent = `Area: ~${radius.toFixed(1)} km radius${maxNote}`;
-    }
-
-    this.validateNewGame();
   },
 
   validateNewGame() {
@@ -499,10 +514,10 @@ const App = {
     const createBtn = document.getElementById('create-game-btn');
 
     const hasTitle = titleInput?.value.trim().length > 0;
-    const hasLocation = this.pickedLocation !== null;
+    const hasRegion = this.selectedRegion !== null;
 
     if (createBtn) {
-      createBtn.disabled = !(hasTitle && hasLocation);
+      createBtn.disabled = !(hasTitle && hasRegion);
     }
   },
 
@@ -512,17 +527,16 @@ const App = {
     const endDateInput = document.getElementById('end-date');
     const title = titleInput?.value.trim();
 
-    if (!title || !this.pickedLocation) {
-      alert('Please enter a title and pick an area');
+    if (!title || !this.selectedRegion) {
+      alert('Please enter a title and select a region');
       return;
     }
 
     const game = {
       id: Date.now(),
       title: title,
-      lat: this.pickedLocation.lat,
-      lng: this.pickedLocation.lng,
-      radius: this.pickedRadius,
+      regionCode: this.selectedRegion,
+      regionName: this.selectedRegionName,
       startDate: startDateInput?.value || new Date().toISOString().split('T')[0],
       endDate: endDateInput?.value || null, // null means forever
       createdAt: new Date().toISOString(),
@@ -571,8 +585,8 @@ const App = {
     document.getElementById('game-title').textContent = game.title;
 
     const locationLink = document.getElementById('game-location');
-    locationLink.href = `https://www.google.com/maps?q=${game.lat},${game.lng}`;
-    locationLink.textContent = `📍 ${game.lat.toFixed(3)}, ${game.lng.toFixed(3)}`;
+    locationLink.href = `https://ebird.org/region/${game.regionCode}`;
+    locationLink.textContent = `📍 ${game.regionName || game.regionCode}`;
 
     const datesEl = document.getElementById('game-dates');
     const start = new Date(game.startDate).toLocaleDateString();
@@ -669,8 +683,8 @@ const App = {
 
     const game = this.currentGame;
 
-    // Fetch birds for the area using historic data to calculate rarity
-    const birds = await this.fetchBirdsWithRarity(game.lat, game.lng, game.startDate);
+    // Fetch birds for the region with rarity based on observation frequency
+    const birds = await this.fetchBirdsWithRarity(game.regionCode);
 
     game.birds = birds;
     this.saveGame();
@@ -678,31 +692,40 @@ const App = {
     this.renderGameBirds();
   },
 
-  async fetchBirdsWithRarity(lat, lng, startDate) {
-    // Get recent observations for the area
-    const observations = await EBird.getNearbyObservations(lat, lng);
+  async fetchBirdsWithRarity(regionCode) {
+    // Get all species ever recorded in this region
+    const speciesCodes = await EBird.getSpeciesList(regionCode);
 
-    // Deduplicate and count observations per species
+    // Get recent observations to determine frequency/rarity
+    const observations = await EBird.getRecentObservations(regionCode);
+
+    // Count observations per species
     const speciesCount = {};
     const speciesData = {};
 
     observations.forEach(obs => {
       if (!speciesCount[obs.speciesCode]) {
         speciesCount[obs.speciesCode] = 0;
-        speciesData[obs.speciesCode] = {
-          speciesCode: obs.speciesCode,
-          comName: obs.comName,
-          sciName: obs.sciName
-        };
       }
       speciesCount[obs.speciesCode]++;
+      speciesData[obs.speciesCode] = {
+        speciesCode: obs.speciesCode,
+        comName: obs.comName,
+        sciName: obs.sciName
+      };
     });
 
-    // Build birds array with counts
-    const birds = Object.keys(speciesData).map(code => ({
-      ...speciesData[code],
-      count: speciesCount[code]
-    }));
+    // Build birds array - include all species from species list
+    // Species with no recent observations get count of 0 (super rare)
+    const birds = [];
+
+    // First add species we have data for from observations
+    Object.keys(speciesData).forEach(code => {
+      birds.push({
+        ...speciesData[code],
+        count: speciesCount[code]
+      });
+    });
 
     // Sort by count (most common first)
     birds.sort((a, b) => b.count - a.count);
@@ -908,9 +931,8 @@ const App = {
     // Encode game data in URL parameters
     const params = new URLSearchParams({
       title: game.title,
-      lat: game.lat.toString(),
-      lng: game.lng.toString(),
-      radius: game.radius.toString(),
+      region: game.regionCode,
+      regionName: game.regionName || '',
       start: game.startDate,
       end: game.endDate || ''
     });
@@ -945,13 +967,12 @@ const App = {
       const gameParams = new URLSearchParams(decoded);
 
       const title = gameParams.get('title');
-      const lat = parseFloat(gameParams.get('lat'));
-      const lng = parseFloat(gameParams.get('lng'));
-      const radius = parseFloat(gameParams.get('radius'));
+      const regionCode = gameParams.get('region');
+      const regionName = gameParams.get('regionName') || regionCode;
       const startDate = gameParams.get('start');
       const endDate = gameParams.get('end') || null;
 
-      if (!title || isNaN(lat) || isNaN(lng)) {
+      if (!title || !regionCode) {
         return false;
       }
 
@@ -959,9 +980,8 @@ const App = {
       const game = {
         id: Date.now(),
         title: title,
-        lat: lat,
-        lng: lng,
-        radius: radius,
+        regionCode: regionCode,
+        regionName: regionName,
         startDate: startDate,
         endDate: endDate,
         createdAt: new Date().toISOString(),

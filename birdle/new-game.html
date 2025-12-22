@@ -8,7 +8,6 @@
   <title>New Game - Birdle</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
   <a href="games.html" class="back-btn">&larr; Back</a>
@@ -23,12 +22,21 @@
     </div>
   </div>
 
-  <!-- Area Picker -->
+  <!-- Region Selector -->
   <div class="form-group">
-    <label>Choose Area</label>
-    <p class="hint">Zoom in for smaller area, zoom out for larger</p>
-    <div id="map"></div>
-    <p id="area-info" class="hint"></p>
+    <label>Choose Region</label>
+    <div class="region-selects">
+      <select id="country-select">
+        <option value="">Select Country...</option>
+      </select>
+      <select id="state-select" disabled>
+        <option value="">Select State/Province...</option>
+      </select>
+      <select id="county-select" disabled>
+        <option value="">Select County (optional)...</option>
+      </select>
+    </div>
+    <p id="region-info" class="hint"></p>
   </div>
 
   <!-- Start Date -->
@@ -54,7 +62,7 @@
   <!-- Create Button -->
   <button id="create-game-btn" class="btn create-btn" disabled>Create Game</button>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="ebird.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

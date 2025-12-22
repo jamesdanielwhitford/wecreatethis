@@ -11,15 +11,38 @@ const EBird = {
     return this.fetch(url);
   },
 
-  // Fetch recent observations near coordinates
-  async getNearbyObservations(lat, lng) {
-    const url = `${this.BASE_URL}/data/obs/geo/recent?lat=${lat}&lng=${lng}`;
+  // Fetch recent observations near coordinates (max 50km radius, last 30 days)
+  async getNearbyObservations(lat, lng, dist = 50) {
+    const maxDist = Math.min(dist, 50); // eBird API max is 50km
+    const url = `${this.BASE_URL}/data/obs/geo/recent?lat=${lat}&lng=${lng}&dist=${maxDist}&back=30`;
+    return this.fetch(url);
+  },
+
+  // Fetch all species ever recorded in a region
+  async getSpeciesList(regionCode) {
+    const url = `${this.BASE_URL}/product/spplist/${regionCode}`;
     return this.fetch(url);
   },
 
   // Fetch historic observations for a specific date
   async getHistoricObservations(regionCode, year, month, day) {
     const url = `${this.BASE_URL}/data/obs/${regionCode}/historic/${year}/${month}/${day}`;
+    return this.fetch(url);
+  },
+
+  // Region hierarchy endpoints
+  async getCountries() {
+    const url = `${this.BASE_URL}/ref/region/list/country/world`;
+    return this.fetch(url);
+  },
+
+  async getStates(countryCode) {
+    const url = `${this.BASE_URL}/ref/region/list/subnational1/${countryCode}`;
+    return this.fetch(url);
+  },
+
+  async getCounties(stateCode) {
+    const url = `${this.BASE_URL}/ref/region/list/subnational2/${stateCode}`;
     return this.fetch(url);
   },
 
