@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>New Game - Birdle</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+  <a href="games.html" class="back-btn">&larr; Back</a>
+  <h1>New Game</h1>
+
+  <!-- Title -->
+  <div class="form-group">
+    <label for="game-title">Game Title</label>
+    <div class="input-row">
+      <input type="text" id="game-title" placeholder="Enter game name...">
+      <button id="use-date-btn">Today</button>
+    </div>
+  </div>
+
+  <!-- Area Picker -->
+  <div class="form-group">
+    <label>Choose Area</label>
+    <p class="hint">Zoom in for smaller area, zoom out for larger</p>
+    <div id="map"></div>
+    <p id="area-info" class="hint"></p>
+  </div>
+
+  <!-- Start Date -->
+  <div class="form-group">
+    <label for="start-date">Start Date</label>
+    <div class="input-row">
+      <input type="date" id="start-date">
+      <button id="start-now-btn">Now</button>
+    </div>
+    <p class="hint">Leave blank to start immediately</p>
+  </div>
+
+  <!-- End Date -->
+  <div class="form-group">
+    <label for="end-date">End Date</label>
+    <div class="input-row">
+      <input type="date" id="end-date">
+      <button id="no-end-btn">Forever</button>
+    </div>
+    <p class="hint">Leave blank to play forever</p>
+  </div>
+
+  <!-- Create Button -->
+  <button id="create-game-btn" class="btn create-btn" disabled>Create Game</button>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

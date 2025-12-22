@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Game - Birdle</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a href="games.html" class="back-btn">&larr; Back</a>
+
+  <!-- Game Header -->
+  <div class="game-header">
+    <h1 id="game-title">Loading...</h1>
+    <a id="game-location" class="location-link" href="#" target="_blank"></a>
+    <p id="game-dates" class="game-dates"></p>
+  </div>
+
+  <!-- Game Ended Banner -->
+  <div id="game-ended-banner" class="ended-banner" style="display:none;">
+    <p>This game has ended</p>
+    <button id="resume-game-btn">Resume Game</button>
+  </div>
+
+  <!-- Score Summary -->
+  <div class="score-summary">
+    <div class="score-item">
+      <span id="total-found" class="score-number">0</span>
+      <span class="score-label">Found</span>
+    </div>
+    <div class="score-item common">
+      <span id="common-found" class="score-number">0</span>
+      <span class="score-label">Common</span>
+    </div>
+    <div class="score-item rare">
+      <span id="rare-found" class="score-number">0</span>
+      <span class="score-label">Rare</span>
+    </div>
+    <div class="score-item superrare">
+      <span id="superrare-found" class="score-number">0</span>
+      <span class="score-label">Super Rare</span>
+    </div>
+    <button id="share-btn" class="share-btn">Share</button>
+  </div>
+
+  <!-- Loading State -->
+  <div id="game-loading" class="loading">Loading birds for this area...</div>
+
+  <!-- Bird Lists -->
+  <div id="bird-sections" style="display:none;">
+    <div class="bird-section">
+      <h3 class="section-title common">Common <span id="common-count"></span></h3>
+      <ul id="common-birds" class="game-bird-list"></ul>
+    </div>
+
+    <div class="bird-section">
+      <h3 class="section-title rare">Rare <span id="rare-count"></span></h3>
+      <ul id="rare-birds" class="game-bird-list"></ul>
+    </div>
+
+    <div class="bird-section">
+      <h3 class="section-title superrare">Super Rare <span id="superrare-count"></span></h3>
+      <ul id="superrare-birds" class="game-bird-list"></ul>
+    </div>
+  </div>
+
+  <!-- Bird Action Modal -->
+  <div id="bird-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3 id="modal-bird-name"></h3>
+      <p id="modal-bird-rarity" class="modal-rarity"></p>
+      <button id="modal-seen-btn" class="modal-btn seen">Mark as Seen</button>
+      <button id="modal-unseen-btn" class="modal-btn" style="display:none;">Mark as Not Seen</button>
+      <button id="modal-cancel-btn" class="modal-btn cancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Share Modal -->
+  <div id="share-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3>Share Score</h3>
+
+      <div class="share-options">
+        <label class="checkbox-label">
+          <input type="checkbox" id="share-total" checked> Total birds found
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="share-rarity" checked> Birds by rarity
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="share-list" checked> List of birds
+        </label>
+      </div>
+
+      <div class="share-timeframe">
+        <label>Timeframe:</label>
+        <select id="share-timeframe">
+          <option value="all">All time</option>
+          <option value="today">Today</option>
+          <option value="week">This week</option>
+          <option value="custom">Custom dates</option>
+        </select>
+      </div>
+
+      <div id="custom-dates" style="display:none;">
+        <input type="date" id="share-from-date">
+        <input type="date" id="share-to-date">
+      </div>
+
+      <button id="do-share-btn" class="modal-btn seen">Share</button>
+      <button id="share-cancel-btn" class="modal-btn cancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Resume Modal -->
+  <div id="resume-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3>Resume Game</h3>
+      <p>Choose a new end date:</p>
+      <div class="input-row">
+        <input type="date" id="resume-end-date">
+        <button id="resume-forever-btn">Forever</button>
+      </div>
+      <button id="do-resume-btn" class="modal-btn seen">Resume</button>
+      <button id="resume-cancel-btn" class="modal-btn cancel">Cancel</button>
+    </div>
+  </div>
+
+  <script src="ebird.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
