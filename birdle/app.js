@@ -596,12 +596,27 @@ const App = {
   },
 
   bindGameEvents() {
-    // Share button
+    // Share button -> opens share menu
     document.getElementById('share-btn')?.addEventListener('click', () => {
+      document.getElementById('share-menu-modal').style.display = 'flex';
+    });
+
+    // Share menu options
+    document.getElementById('share-menu-cancel')?.addEventListener('click', () => {
+      document.getElementById('share-menu-modal').style.display = 'none';
+    });
+
+    document.getElementById('share-score-option')?.addEventListener('click', () => {
+      document.getElementById('share-menu-modal').style.display = 'none';
       document.getElementById('share-modal').style.display = 'flex';
     });
 
-    // Share modal
+    document.getElementById('share-game-option')?.addEventListener('click', () => {
+      document.getElementById('share-menu-modal').style.display = 'none';
+      this.shareGame();
+    });
+
+    // Share score modal
     document.getElementById('share-cancel-btn')?.addEventListener('click', () => {
       document.getElementById('share-modal').style.display = 'none';
     });
@@ -884,7 +899,98 @@ const App = {
     }
 
     document.getElementById('share-modal').style.display = 'none';
+  },
+
+  shareGame() {
+    const game = this.currentGame;
+
+    // Encode game data in URL parameters
+    const params = new URLSearchParams({
+      title: game.title,
+      lat: game.lat.toString(),
+      lng: game.lng.toString(),
+      radius: game.radius.toString(),
+      start: game.startDate,
+      end: game.endDate || ''
+    });
+
+    const baseUrl = window.location.origin + '/birdle/game.html';
+    const shareUrl = `${baseUrl}?join=${btoa(params.toString())}`;
+
+    const text = `🐦 Join my Birdle game: "${game.title}"\n\n${shareUrl}`;
+
+    if (navigator.share) {
+      navigator.share({
+        title: `Birdle: ${game.title}`,
+        text: `Join my Birdle game: "${game.title}"`,
+        url: shareUrl
+      });
+    } else {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Game link copied to clipboard!');
+      });
+    }
+  },
+
+  // Check for shared game URL and create game
+  checkForSharedGame() {
+    const params = new URLSearchParams(window.location.search);
+    const joinData = params.get('join');
+
+    if (!joinData) return false;
+
+    try {
+      const decoded = atob(joinData);
+      const gameParams = new URLSearchParams(decoded);
+
+      const title = gameParams.get('title');
+      const lat = parseFloat(gameParams.get('lat'));
+      const lng = parseFloat(gameParams.get('lng'));
+      const radius = parseFloat(gameParams.get('radius'));
+      const startDate = gameParams.get('start');
+      const endDate = gameParams.get('end') || null;
+
+      if (!title || isNaN(lat) || isNaN(lng)) {
+        return false;
+      }
+
+      // Create new game from shared data
+      const game = {
+        id: Date.now(),
+        title: title,
+        lat: lat,
+        lng: lng,
+        radius: radius,
+        startDate: startDate,
+        endDate: endDate,
+        createdAt: new Date().toISOString(),
+        birds: null,
+        seenBirds: [],
+        sharedFrom: true
+      };
+
+      this.games.unshift(game);
+      localStorage.setItem('games', JSON.stringify(this.games));
+
+      // Redirect to the new game without the join parameter
+      window.location.href = `game.html?id=0`;
+      return true;
+
+    } catch (e) {
+      console.error('Failed to parse shared game:', e);
+      return false;
+    }
   }
 };
 
-document.addEventListener('DOMContentLoaded', () => App.init());
+// Check for shared game before normal init
+document.addEventListener('DOMContentLoaded', () => {
+  // If on game page, check for shared game first
+  if (window.location.pathname.includes('game.html') &&
+      window.location.search.includes('join=')) {
+    if (App.checkForSharedGame()) {
+      return; // Will redirect
+    }
+  }
+  App.init();
+});
