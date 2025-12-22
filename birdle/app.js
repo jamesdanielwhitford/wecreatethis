@@ -293,7 +293,7 @@ const App = {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   },
 
-  renderBirdList() {
+  async renderBirdList() {
     const list = document.getElementById('bird-list');
     if (!list) return;
 
@@ -306,9 +306,16 @@ const App = {
       birds = this.sortBirds(this.birds);
     }
 
+    // Get all sightings to determine seen status
+    let seenCodes = [];
+    if (typeof BirdDB !== 'undefined') {
+      const allSightings = await BirdDB.getAllSightings();
+      seenCodes = [...new Set(allSightings.map(s => s.speciesCode))];
+    }
+
     const seenFilter = document.getElementById('seen-filter');
     if (seenFilter?.checked) {
-      birds = birds.filter(b => this.seenBirds.includes(b.speciesCode));
+      birds = birds.filter(b => seenCodes.includes(b.speciesCode));
     }
 
     // Filter by search query
@@ -330,7 +337,7 @@ const App = {
     }
 
     list.innerHTML = birds.map(bird => {
-      const isSeen = this.seenBirds.includes(bird.speciesCode);
+      const isSeen = seenCodes.includes(bird.speciesCode);
       const showRemove = this.currentSort === 'recent';
       return `
         <li class="bird-item ${isSeen ? 'seen' : ''}" data-code="${bird.speciesCode}">
@@ -409,6 +416,7 @@ const App = {
     this.addRecentBird(bird);
     this.renderBirdDetail(bird);
     this.bindDetailEvents(bird);
+    await this.loadBirdSightings(bird);
 
     // Cache bird and update view count in IndexedDB
     if (typeof BirdDB !== 'undefined') {
@@ -427,7 +435,6 @@ const App = {
     document.getElementById('bird-scientific').textContent = bird.sciName || '';
     document.getElementById('bird-location').textContent = bird.locName || 'Unknown';
     document.getElementById('bird-date').textContent = bird.obsDt || 'Unknown';
-    document.getElementById('bird-count').textContent = bird.howMany || 'Not recorded';
 
     // Set up Google search link
     const googleLink = document.getElementById('google-link');
@@ -435,20 +442,55 @@ const App = {
       const searchQuery = encodeURIComponent(bird.comName + ' bird');
       googleLink.href = `https://www.google.com/search?q=${searchQuery}`;
     }
+  },
 
-    this.updateSeenButton(bird.speciesCode);
+  async loadBirdSightings(bird) {
+    const listEl = document.getElementById('sightings-list');
+    if (!listEl || typeof BirdDB === 'undefined') return;
+
+    const sightings = await BirdDB.getSightingsForBird(bird.speciesCode);
+
+    if (sightings.length === 0) {
+      listEl.innerHTML = '<p class="empty">No sightings yet</p>';
+      return;
+    }
+
+    // Sort by date descending (most recent first)
+    sightings.sort((a, b) => b.date.localeCompare(a.date));
+
+    listEl.innerHTML = sightings.map(s => `
+      <div class="sighting-item" data-id="${s.id}">
+        <div class="sighting-info">
+          <span class="sighting-date">${new Date(s.date).toLocaleDateString()}</span>
+          <span class="sighting-location">${s.regionName || s.regionCode}</span>
+          ${s.notes ? `<span class="sighting-notes">${s.notes}</span>` : ''}
+        </div>
+        <button class="delete-sighting-btn" data-id="${s.id}">✕</button>
+      </div>
+    `).join('');
+
+    // Bind delete buttons
+    listEl.querySelectorAll('.delete-sighting-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (confirm('Delete this sighting?')) {
+          await this.deleteSighting(parseInt(btn.dataset.id));
+        }
+      });
+    });
+  },
+
+  async deleteSighting(sightingId) {
+    if (typeof BirdDB !== 'undefined') {
+      await BirdDB.deleteSighting(sightingId);
+      await this.loadBirdSightings(this.currentBird);
+    }
   },
 
   bindDetailEvents(bird) {
-    const btn = document.getElementById('toggle-seen-btn');
-    btn?.addEventListener('click', async () => {
-      if (this.seenBirds.includes(bird.speciesCode)) {
-        // Already seen - toggle off
-        this.toggleSeen(bird.speciesCode);
-      } else {
-        // Open sighting modal to log with date/location
-        await this.openSightingModal(bird);
-      }
+    // Add sighting button
+    document.getElementById('add-sighting-btn')?.addEventListener('click', () => {
+      this.openSightingModal(bird);
     });
 
     // Sighting modal events
@@ -534,35 +576,9 @@ const App = {
       });
     }
 
-    // Mark as seen in search
-    if (!this.seenBirds.includes(bird.speciesCode)) {
-      this.seenBirds.push(bird.speciesCode);
-      localStorage.setItem('seenBirds', JSON.stringify(this.seenBirds));
-    }
-
-    // Close modal and update UI
+    // Close modal and refresh sightings list
     document.getElementById('sighting-modal').style.display = 'none';
-    this.updateSeenButton(bird.speciesCode);
-  },
-
-  toggleSeen(speciesCode) {
-    const index = this.seenBirds.indexOf(speciesCode);
-    if (index === -1) {
-      this.seenBirds.push(speciesCode);
-    } else {
-      this.seenBirds.splice(index, 1);
-    }
-    localStorage.setItem('seenBirds', JSON.stringify(this.seenBirds));
-    this.updateSeenButton(speciesCode);
-  },
-
-  updateSeenButton(speciesCode) {
-    const btn = document.getElementById('toggle-seen-btn');
-    if (!btn) return;
-
-    const isSeen = this.seenBirds.includes(speciesCode);
-    btn.textContent = isSeen ? '✓ Seen' : 'Mark as Seen';
-    btn.classList.toggle('is-seen', isSeen);
+    await this.loadBirdSightings(bird);
   },
 
   // ===== GAMES LIST PAGE =====
@@ -959,12 +975,30 @@ const App = {
       document.getElementById('bird-modal').style.display = 'none';
     });
 
-    document.getElementById('modal-seen-btn')?.addEventListener('click', () => {
-      this.markBirdSeen(this.selectedBird);
+    document.getElementById('modal-add-sighting-btn')?.addEventListener('click', () => {
+      this.openGameSightingModal();
     });
 
-    document.getElementById('modal-unseen-btn')?.addEventListener('click', () => {
-      this.markBirdUnseen(this.selectedBird);
+    // Game sighting modal
+    document.getElementById('game-sighting-cancel-btn')?.addEventListener('click', () => {
+      document.getElementById('game-sighting-modal').style.display = 'none';
+    });
+
+    document.getElementById('game-sighting-save-btn')?.addEventListener('click', () => {
+      this.saveGameSighting();
+    });
+
+    // Close modals on backdrop click
+    document.getElementById('bird-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'bird-modal') {
+        document.getElementById('bird-modal').style.display = 'none';
+      }
+    });
+
+    document.getElementById('game-sighting-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'game-sighting-modal') {
+        document.getElementById('game-sighting-modal').style.display = 'none';
+      }
     });
 
     // Game bird search
@@ -1183,51 +1217,131 @@ const App = {
     if (!bird) return;
 
     this.selectedBird = bird;
-
-    // Check if bird has been seen in this game's context
-    const seenCodes = await this.getSeenBirdsForGame();
-    const isSeen = seenCodes.includes(speciesCode);
+    const game = this.currentGame;
     const isActive = this.isGameActive();
 
     document.getElementById('modal-bird-name').textContent = bird.comName;
     document.getElementById('modal-bird-rarity').textContent = bird.rarity;
     document.getElementById('modal-bird-rarity').className = `modal-rarity ${bird.rarity}`;
 
-    // Show "Log Sighting" button if not seen and game is active
-    document.getElementById('modal-seen-btn').style.display = (!isSeen && isActive) ? 'block' : 'none';
-    // Hide unseen button - sightings are permanent
-    document.getElementById('modal-unseen-btn').style.display = 'none';
+    // Set up Google search link
+    const googleLink = document.getElementById('modal-google-link');
+    if (googleLink) {
+      const searchQuery = encodeURIComponent(bird.comName + ' bird');
+      googleLink.href = `https://www.google.com/search?q=${searchQuery}`;
+    }
+
+    // Load and display sightings that match this game
+    await this.loadGameBirdSightings(bird);
+
+    // Show add sighting button if game is active
+    const addBtn = document.getElementById('modal-add-sighting-btn');
+    if (addBtn) {
+      addBtn.style.display = isActive ? 'block' : 'none';
+    }
 
     document.getElementById('bird-modal').style.display = 'flex';
   },
 
-  async markBirdSeen(bird) {
-    if (!bird) return;
+  async loadGameBirdSightings(bird) {
+    const listEl = document.getElementById('modal-sightings-list');
+    if (!listEl || typeof BirdDB === 'undefined') return;
 
     const game = this.currentGame;
+    const allSightings = await BirdDB.getSightingsForBird(bird.speciesCode);
 
-    // Save sighting to IndexedDB with game's region and today's date
+    // Filter to sightings that match this game's criteria
+    const gameSightings = allSightings.filter(sighting => {
+      if (!this.regionMatches(sighting.regionCode, game.regionCode)) return false;
+      if (sighting.date < game.startDate) return false;
+      if (game.endDate && sighting.date > game.endDate) return false;
+      return true;
+    });
+
+    if (gameSightings.length === 0) {
+      listEl.innerHTML = '<p class="empty">No sightings in this game yet</p>';
+      return;
+    }
+
+    // Sort by date descending
+    gameSightings.sort((a, b) => b.date.localeCompare(a.date));
+
+    listEl.innerHTML = gameSightings.map(s => `
+      <div class="sighting-item" data-id="${s.id}">
+        <div class="sighting-info">
+          <span class="sighting-date">${new Date(s.date).toLocaleDateString()}</span>
+          <span class="sighting-location">${s.regionName || s.regionCode}</span>
+          ${s.notes ? `<span class="sighting-notes">${s.notes}</span>` : ''}
+        </div>
+        <button class="delete-sighting-btn" data-id="${s.id}">✕</button>
+      </div>
+    `).join('');
+
+    // Bind delete buttons
+    listEl.querySelectorAll('.delete-sighting-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (confirm('Delete this sighting?')) {
+          await this.deleteGameSighting(parseInt(btn.dataset.id));
+        }
+      });
+    });
+  },
+
+  async deleteGameSighting(sightingId) {
     if (typeof BirdDB !== 'undefined') {
-      const today = new Date().toISOString().split('T')[0];
+      await BirdDB.deleteSighting(sightingId);
+      await this.loadGameBirdSightings(this.selectedBird);
+      // Refresh the game birds list to update seen status
+      await this.renderGameBirds();
+    }
+  },
 
+  openGameSightingModal() {
+    const bird = this.selectedBird;
+    const game = this.currentGame;
+    if (!bird) return;
+
+    document.getElementById('game-sighting-bird-name').textContent = bird.comName;
+    document.getElementById('game-sighting-region').textContent = game.regionName || game.regionCode;
+    document.getElementById('game-sighting-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('game-sighting-notes').value = '';
+
+    document.getElementById('game-sighting-modal').style.display = 'flex';
+  },
+
+  async saveGameSighting() {
+    const bird = this.selectedBird;
+    const game = this.currentGame;
+    if (!bird) return;
+
+    const date = document.getElementById('game-sighting-date').value;
+    const notes = document.getElementById('game-sighting-notes').value;
+
+    if (!date) {
+      alert('Please select a date');
+      return;
+    }
+
+    // Save sighting with game's region
+    if (typeof BirdDB !== 'undefined') {
       await BirdDB.addSighting({
         speciesCode: bird.speciesCode,
         comName: bird.comName,
         sciName: bird.sciName,
-        date: today,
+        date: date,
         regionCode: game.regionCode,
-        regionName: game.regionName
+        regionName: game.regionName,
+        notes: notes
       });
     }
 
-    document.getElementById('bird-modal').style.display = 'none';
-    this.renderGameBirds();
+    // Close sighting modal and refresh
+    document.getElementById('game-sighting-modal').style.display = 'none';
+    await this.loadGameBirdSightings(bird);
+    await this.renderGameBirds();
   },
 
-  markBirdUnseen(bird) {
-    // Sightings are permanent - this function is now unused
-    document.getElementById('bird-modal').style.display = 'none';
-  },
 
   updateScoreSummary(seenCodes) {
     const birds = this.currentGame.birds || [];

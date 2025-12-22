@@ -17,22 +17,27 @@
     <p id="bird-scientific" class="scientific-name"></p>
 
     <div class="detail-row">
-      <span class="label">Location:</span>
+      <span class="label">eBird Location:</span>
       <span id="bird-location"></span>
     </div>
 
     <div class="detail-row">
-      <span class="label">Last seen:</span>
+      <span class="label">eBird Date:</span>
       <span id="bird-date"></span>
     </div>
 
-    <div class="detail-row">
-      <span class="label">Count:</span>
-      <span id="bird-count"></span>
-    </div>
-
-    <button id="toggle-seen-btn" class="btn seen-btn">Mark as Seen</button>
     <a id="google-link" class="btn google-btn" href="#" target="_blank">Search Google</a>
+
+    <!-- Sightings Section -->
+    <div class="sightings-section">
+      <div class="sightings-header">
+        <h2>Your Sightings</h2>
+        <button id="add-sighting-btn" class="btn-small">+ Add</button>
+      </div>
+      <div id="sightings-list" class="sightings-list">
+        <p class="empty">No sightings yet</p>
+      </div>
+    </div>
   </div>
 
   <!-- Sighting Modal -->

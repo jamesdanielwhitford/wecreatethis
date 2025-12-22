@@ -293,6 +293,56 @@ const BirdDB = {
     return sightings.length;
   },
 
+  async deleteSighting(sightingId) {
+    await this.ready();
+
+    // Get sighting first to update bird cache
+    const sighting = await this.getSighting(sightingId);
+
+    // Delete the sighting
+    await new Promise((resolve, reject) => {
+      const tx = this.db.transaction('sightings', 'readwrite');
+      const request = tx.objectStore('sightings').delete(sightingId);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+
+    // Check if bird still has other sightings
+    if (sighting) {
+      const remaining = await this.getSightingsForBird(sighting.speciesCode);
+      if (remaining.length === 0) {
+        // Update bird cache to mark as not having sightings
+        const bird = await this.getBird(sighting.speciesCode);
+        if (bird) {
+          bird.hasSightings = false;
+          await new Promise((resolve, reject) => {
+            const tx = this.db.transaction('birds', 'readwrite');
+            const request = tx.objectStore('birds').put(bird);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+          });
+        }
+      }
+    }
+
+    return true;
+  },
+
+  async getSighting(sightingId) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('sightings', 'readonly');
+      const request = tx.objectStore('sightings').get(sightingId);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async hasSightings(speciesCode) {
+    const count = await this.getSightingCount(speciesCode);
+    return count > 0;
+  },
+
   // ===== CACHE METADATA =====
 
   async setCacheMeta(key, speciesCodes) {

@@ -929,3 +929,134 @@ h1 {
   gap: 8px;
   margin-top: 16px;
 }
+
+/* Sightings Section (Bird Detail) */
+.sightings-section {
+  margin-top: 24px;
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.sightings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sightings-header h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Sightings List */
+.sightings-list {
+  margin: 8px 0;
+}
+
+.sightings-list .empty {
+  color: #666;
+  font-size: 14px;
+  text-align: center;
+  padding: 16px;
+}
+
+.sighting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.sighting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.sighting-date {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.sighting-location {
+  font-size: 12px;
+  color: #666;
+}
+
+.sighting-notes {
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.delete-sighting-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin: -4px -8px -4px 8px;
+}
+
+.delete-sighting-btn:hover {
+  color: #c00;
+}
+
+/* Modal Sightings (Game) */
+.modal-sightings {
+  margin: 16px 0;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.modal-sightings h4 {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #666;
+  margin: 0 0 8px 0;
+}
+
+.modal-sightings .sightings-list {
+  margin: 0;
+}
+
+.modal-sightings .sighting-item {
+  background: #fff;
+}
+
+.modal-sightings .empty {
+  padding: 8px;
+  margin: 0;
+}
+
+/* Modal Subtitle */
+.modal-subtitle {
+  color: #666;
+  font-size: 14px;
+  margin: -8px 0 16px 0;
+}
+
+/* Hint Text */
+.hint {
+  font-size: 12px;
+  color: #666;
+  margin: 8px 0;
+}
