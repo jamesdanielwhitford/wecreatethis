@@ -1,5 +1,6 @@
 :root {
   --navbar-height: 48px;
+  --fab-container-height: 100px;
 }
 
 * {
@@ -302,6 +303,7 @@ h1 {
 .games-list {
   list-style: none;
   margin-top: 16px;
+  padding-bottom: var(--fab-container-height);
 }
 
 .games-list li {
@@ -340,7 +342,7 @@ h1 {
   transform: translateX(-50%);
   width: 100%;
   max-width: 400px;
-  height: 100px;
+  height: var(--fab-container-height);
   display: flex;
   justify-content: center;
   align-items: flex-end;
