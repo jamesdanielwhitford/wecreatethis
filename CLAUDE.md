@@ -3,9 +3,9 @@
 ## Project Goal
 
 Build a bird spotting game that:
-1. Gets birds that may appear in a user's chosen area
-2. Organizes birds by rarity (common, rare, super rare)
-3. Lets users create games with custom areas and date ranges
+1. Gets all birds recorded in a user's chosen region (country/state)
+2. Organizes birds by rarity (common, rare, super rare) based on observation frequency
+3. Lets users create games with custom regions and date ranges
 4. Track birds seen within each game
 5. Share games with others via URL
 
@@ -21,12 +21,12 @@ birdle/
 ├── search.html     # Bird search with filters and map picker
 ├── bird.html       # Bird detail page with seen toggle
 ├── games.html      # Games list with FAB to create new
-├── new-game.html   # Create new game with map area picker
+├── new-game.html   # Create new game with region selector
 ├── game.html       # Game detail - bird lists, scoring, sharing
 ├── styles.css      # Minimal styling
 ├── app.js          # Main app logic
 ├── ebird.js        # eBird API module
-├── sw.js           # Service worker for PWA (v14)
+├── sw.js           # Service worker for PWA (v23)
 ├── manifest.json   # PWA manifest
 ├── icon-192.png    # App icon
 └── icon-512.png    # App icon large
@@ -40,9 +40,6 @@ birdle/
 **Search Page (`search.html`)**
 - Country dropdown filter
 - Map location picker (Leaflet + OpenStreetMap)
-  - Opens at user's current location
-  - Tap to move marker
-  - "Search here" to find birds
 - Sort options: Nearest, A-Z, Recently Viewed
 - "Seen only" filter checkbox
 - Bird list from eBird API
@@ -52,28 +49,22 @@ birdle/
 - Bird name, scientific name, location, date, count
 - "Mark as Seen" toggle (persisted in localStorage)
 
-**Recently Viewed**
-- Birds viewed are tracked (unlimited list)
-- Accessible via sort dropdown
-- Remove button (✕) to delete from list
-
 **Games List Page (`games.html`)**
-- List of all created games with title and info
+- List of all created games
+- Title on first line, region/found/status on second line
 - FAB (+) button to create new game
-- Empty state when no games exist
 
 **New Game Page (`new-game.html`)**
-- Title input field
-- Map area picker with circle overlay
-  - Circle resizes based on zoom level
-  - **Maximum 50km radius** (eBird API limit)
-  - Shows "(max)" indicator when at limit
-- Start date picker (defaults to today)
-- End date picker with "Forever" option
-- Create button (disabled until valid)
+- Auto-generated title placeholder (date + region, grey italic)
+- "Use My Location" button for auto-detection
+- Cascading region selectors: Country → State/Province
+- Auto-detects user's region on page load
+- Start date (defaults to today)
+- End date with "Forever" option
+- Create button (enabled when region selected)
 
 **Game Detail Page (`game.html`)**
-- Game header: title, Google Maps link, date range
+- Game header: title, eBird region link, date range
 - Game ended banner with Resume option
 - Score summary: Total, Common, Rare, Super Rare counts
 - Full bird list organized by rarity sections
@@ -84,28 +75,28 @@ birdle/
 
 **Rarity Calculation**
 - Uses ranking-based approach (not threshold-based)
-- Birds sorted by observation count from eBird
+- Birds sorted by recent observation count from eBird
 - Top 1/3 = Common (green)
 - Middle 1/3 = Rare (blue)
 - Bottom 1/3 = Super Rare (purple)
 
-**Share Game Feature**
-- Encodes game params (title, lat, lng, radius, dates) in base64
-- URL format: `?join={base64_encoded_params}`
-- Recipient opens URL, game is created on their device
+**Auto-Generated Game Titles**
+- Format: "Dec 22, 2024 - California, United States"
+- Shows as grey italic placeholder
+- Updates as region is selected
+- Used if user leaves title blank
 
-**Resume Game Feature**
-- When game end date passes, shows "Game ended" banner
-- Resume button opens modal to pick new end date
-- "Forever" option removes end date entirely
+**Location Detection**
+- Uses browser geolocation API
+- Reverse geocodes via OpenStreetMap Nominatim
+- Auto-selects country and state dropdowns
 
 **Data Persistence (localStorage)**
 - `seenBirds` - array of species codes marked as seen (search)
 - `recentBirds` - array of recently viewed birds
 - `lastSearch` - last searched region/location
-- `currentBirds` - current bird list for detail page
 - `games` - array of game objects with:
-  - id, title, lat, lng, radius
+  - id, title, regionCode, regionName
   - startDate, endDate
   - birds (fetched on first open)
   - seenBirds (with timestamps)
@@ -115,79 +106,72 @@ birdle/
 ## eBird API
 
 ### Authentication
-
-- API key stored in ebird.js
-- Include key in header: `x-ebirdapitoken: YOUR_KEY`
+- API key stored in ebird.js: `rut6699v8fce`
+- Header: `x-ebirdapitoken: YOUR_KEY`
 
 ### Base URL
-
 ```
 https://api.ebird.org/v2
 ```
 
-### Key Constraints
-
-- **Maximum radius: 50km** for nearby observations
-- Rate limits apply (not publicly documented)
-
 ### Endpoints Used
 
-**Recent Nearby Observations**
+**Region Hierarchy**
 ```
-GET /data/obs/geo/recent?lat={lat}&lng={lng}&dist={km}
-```
-- dist max is 50km
-- Returns recent observations near coordinates
-
-**Recent Observations in Region**
-```
-GET /data/obs/{regionCode}/recent
+GET /ref/region/list/country/world          # All countries
+GET /ref/region/list/subnational1/{country} # States/provinces
 ```
 
-**Historic Observations on a Date**
+**Species List**
 ```
-GET /data/obs/{regionCode}/historic/{year}/{month}/{day}
+GET /product/spplist/{regionCode}  # All species ever recorded
 ```
 
-### Region Codes
-
-- Country: `US`, `CA`, `GB`
-- State/Province: `US-NY`, `US-CA`, `CA-BC`
-- County: `US-NY-005` (Bronx County)
+**Recent Observations**
+```
+GET /data/obs/{regionCode}/recent  # Recent observations for rarity calc
+GET /data/obs/geo/recent?lat=&lng=&dist=&back=30  # Nearby (search page)
+```
 
 ---
 
 ## Technical Notes
 
 ### Service Worker
-
-- Cache version must be bumped when code changes
-- Current version: `birdle-v14`
+- Cache version: `birdle-v23`
+- Bump version when code changes
 - Caches all static assets for offline use
 
 ### Rarity Algorithm
-
 ```javascript
-// Sort birds by observation count (most seen first)
+// Get species from region, count from recent observations
+const speciesCodes = await EBird.getSpeciesList(regionCode);
+const observations = await EBird.getRecentObservations(regionCode);
+
+// Count and sort by frequency
 birds.sort((a, b) => b.count - a.count);
 
 // Split into thirds by ranking
-const total = birds.length;
 const commonThreshold = Math.floor(total / 3);
 const rareThreshold = Math.floor(total * 2 / 3);
-
-birds.forEach((bird, index) => {
-  if (index < commonThreshold) bird.rarity = 'common';
-  else if (index < rareThreshold) bird.rarity = 'rare';
-  else bird.rarity = 'superrare';
-});
 ```
 
-### Map Circle Limit
-
+### Location Detection
 ```javascript
-const rawRadius = (latDiff * 111) / 3; // Based on view
-const radius = Math.min(rawRadius, 50); // Cap at 50km
+// GPS → Reverse geocode → Match to eBird regions
+const position = await navigator.geolocation.getCurrentPosition();
+const response = await fetch(
+  `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
+);
+// Match country_code and state to dropdown options
+```
+
+### Share Game URL
+```javascript
+const params = new URLSearchParams({
+  title, region: regionCode, regionName, start, end
+});
+const shareUrl = `${baseUrl}?join=${btoa(params.toString())}`;
 ```
 
 ---
@@ -197,3 +181,4 @@ const radius = Math.min(rawRadius, 50); // Cap at 50km
 - eBird API Docs: https://documenter.getpostman.com/view/664302/S1ENwy59
 - Get API Key: https://ebird.org/api/keygen
 - Leaflet.js: https://leafletjs.com/
+- OpenStreetMap Nominatim: https://nominatim.openstreetmap.org/

@@ -383,16 +383,25 @@ const App = {
   },
 
   // ===== NEW GAME PAGE =====
-  initNewGame() {
+  async initNewGame() {
     this.selectedRegion = null;
     this.selectedRegionName = null;
     this.bindNewGameEvents();
-    this.loadCountries();
+    await this.loadCountries();
+    this.updateRegionInfo(); // Set initial placeholder to date
+
+    // Set default start date to today
+    const startDateInput = document.getElementById('start-date');
+    if (startDateInput) {
+      startDateInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    // Auto-detect user's region
+    this.detectLocation();
   },
 
   bindNewGameEvents() {
     const titleInput = document.getElementById('game-title');
-    const useDateBtn = document.getElementById('use-date-btn');
     const startDateInput = document.getElementById('start-date');
     const startNowBtn = document.getElementById('start-now-btn');
     const endDateInput = document.getElementById('end-date');
@@ -400,19 +409,8 @@ const App = {
     const createBtn = document.getElementById('create-game-btn');
     const countrySelect = document.getElementById('country-select');
     const stateSelect = document.getElementById('state-select');
-    const countySelect = document.getElementById('county-select');
 
     titleInput?.addEventListener('input', () => {
-      this.validateNewGame();
-    });
-
-    useDateBtn?.addEventListener('click', () => {
-      const today = new Date().toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      });
-      titleInput.value = today;
       this.validateNewGame();
     });
 
@@ -428,8 +426,6 @@ const App = {
       const countryCode = e.target.value;
       stateSelect.innerHTML = '<option value="">Loading...</option>';
       stateSelect.disabled = true;
-      countySelect.innerHTML = '<option value="">Select County (optional)...</option>';
-      countySelect.disabled = true;
 
       if (countryCode) {
         this.selectedRegion = countryCode;
@@ -448,20 +444,11 @@ const App = {
       this.validateNewGame();
     });
 
-    stateSelect?.addEventListener('change', async (e) => {
+    stateSelect?.addEventListener('change', (e) => {
       const stateCode = e.target.value;
-      countySelect.innerHTML = '<option value="">Loading...</option>';
-      countySelect.disabled = true;
-
       if (stateCode) {
         this.selectedRegion = stateCode;
         this.selectedRegionName = stateSelect.options[stateSelect.selectedIndex].text;
-        const counties = await EBird.getCounties(stateCode);
-        countySelect.innerHTML = '<option value="">Select County (optional)...</option>';
-        counties.forEach(c => {
-          countySelect.innerHTML += `<option value="${c.code}">${c.name}</option>`;
-        });
-        countySelect.disabled = false;
       } else {
         // Revert to country
         const countryCode = countrySelect.value;
@@ -472,24 +459,77 @@ const App = {
       this.validateNewGame();
     });
 
-    countySelect?.addEventListener('change', (e) => {
-      const countyCode = e.target.value;
-      if (countyCode) {
-        this.selectedRegion = countyCode;
-        this.selectedRegionName = countySelect.options[countySelect.selectedIndex].text;
-      } else {
-        // Revert to state
-        const stateCode = stateSelect.value;
-        this.selectedRegion = stateCode;
-        this.selectedRegionName = stateSelect.options[stateSelect.selectedIndex].text;
-      }
-      this.updateRegionInfo();
-      this.validateNewGame();
+    document.getElementById('use-location-btn')?.addEventListener('click', () => {
+      this.detectLocation();
     });
 
     createBtn?.addEventListener('click', () => {
       this.createGame();
     });
+  },
+
+  async detectLocation() {
+    const btn = document.getElementById('use-location-btn');
+    const regionInfo = document.getElementById('region-info');
+
+    btn.disabled = true;
+    btn.textContent = '📍 Detecting...';
+    regionInfo.textContent = 'Getting your location...';
+
+    try {
+      // Get GPS coordinates
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: false,
+          timeout: 10000
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+      regionInfo.textContent = 'Finding region...';
+
+      // Reverse geocode using OpenStreetMap Nominatim
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=5`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const data = await response.json();
+
+      const countryCode = data.address?.country_code?.toUpperCase();
+      const state = data.address?.state;
+
+      if (!countryCode) {
+        throw new Error('Could not determine country');
+      }
+
+      // Select country
+      const countrySelect = document.getElementById('country-select');
+      countrySelect.value = countryCode;
+      countrySelect.dispatchEvent(new Event('change'));
+
+      // Wait for states to load, then try to match state
+      if (state) {
+        setTimeout(() => {
+          const stateSelect = document.getElementById('state-select');
+          const stateOption = Array.from(stateSelect.options).find(opt =>
+            opt.text.toLowerCase() === state.toLowerCase()
+          );
+          if (stateOption) {
+            stateSelect.value = stateOption.value;
+            stateSelect.dispatchEvent(new Event('change'));
+          }
+        }, 500);
+      }
+
+      btn.textContent = '📍 Use My Location';
+      btn.disabled = false;
+
+    } catch (error) {
+      console.error('Location detection failed:', error);
+      regionInfo.textContent = 'Could not detect location. Please select manually.';
+      btn.textContent = '📍 Use My Location';
+      btn.disabled = false;
+    }
   },
 
   async loadCountries() {
@@ -502,22 +542,54 @@ const App = {
 
   updateRegionInfo() {
     const regionInfo = document.getElementById('region-info');
-    if (regionInfo && this.selectedRegion) {
-      regionInfo.textContent = `Region: ${this.selectedRegionName} (${this.selectedRegion})`;
-    } else if (regionInfo) {
-      regionInfo.textContent = '';
+    const titleInput = document.getElementById('game-title');
+
+    // Always update title placeholder with auto-generated title
+    if (titleInput) {
+      titleInput.placeholder = this.generateAutoTitle();
+    }
+
+    if (this.selectedRegion) {
+      if (regionInfo) {
+        regionInfo.textContent = `Region: ${this.selectedRegionName} (${this.selectedRegion})`;
+      }
+    } else {
+      if (regionInfo) {
+        regionInfo.textContent = '';
+      }
     }
   },
 
-  validateNewGame() {
-    const titleInput = document.getElementById('game-title');
-    const createBtn = document.getElementById('create-game-btn');
+  generateAutoTitle() {
+    const today = new Date().toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
 
-    const hasTitle = titleInput?.value.trim().length > 0;
+    // Get country name from select
+    const countrySelect = document.getElementById('country-select');
+    const stateSelect = document.getElementById('state-select');
+
+    let location = '';
+    if (stateSelect?.value) {
+      const stateName = stateSelect.options[stateSelect.selectedIndex].text;
+      const countryName = countrySelect.options[countrySelect.selectedIndex].text;
+      location = `${stateName}, ${countryName}`;
+    } else if (countrySelect?.value) {
+      location = countrySelect.options[countrySelect.selectedIndex].text;
+    }
+
+    return location ? `${today} - ${location}` : today;
+  },
+
+  validateNewGame() {
+    const createBtn = document.getElementById('create-game-btn');
     const hasRegion = this.selectedRegion !== null;
 
+    // Only need region - title can be auto-generated
     if (createBtn) {
-      createBtn.disabled = !(hasTitle && hasRegion);
+      createBtn.disabled = !hasRegion;
     }
   },
 
@@ -525,12 +597,15 @@ const App = {
     const titleInput = document.getElementById('game-title');
     const startDateInput = document.getElementById('start-date');
     const endDateInput = document.getElementById('end-date');
-    const title = titleInput?.value.trim();
+    const customTitle = titleInput?.value.trim();
 
-    if (!title || !this.selectedRegion) {
-      alert('Please enter a title and select a region');
+    if (!this.selectedRegion) {
+      alert('Please select a region');
       return;
     }
+
+    // Use custom title or auto-generate one
+    const title = customTitle || this.generateAutoTitle();
 
     const game = {
       id: Date.now(),

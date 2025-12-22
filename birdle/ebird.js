@@ -41,11 +41,6 @@ const EBird = {
     return this.fetch(url);
   },
 
-  async getCounties(stateCode) {
-    const url = `${this.BASE_URL}/ref/region/list/subnational2/${stateCode}`;
-    return this.fetch(url);
-  },
-
   // Internal fetch with auth header
   async fetch(url) {
     if (!this.API_KEY) {

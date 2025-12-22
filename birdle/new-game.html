@@ -16,24 +16,20 @@
   <!-- Title -->
   <div class="form-group">
     <label for="game-title">Game Title</label>
-    <div class="input-row">
-      <input type="text" id="game-title" placeholder="Enter game name...">
-      <button id="use-date-btn">Today</button>
-    </div>
+    <input type="text" id="game-title" placeholder="">
+    <p class="hint">Leave blank to use auto-generated title</p>
   </div>
 
   <!-- Region Selector -->
   <div class="form-group">
     <label>Choose Region</label>
+    <button id="use-location-btn" class="location-btn">📍 Use My Location</button>
     <div class="region-selects">
       <select id="country-select">
         <option value="">Select Country...</option>
       </select>
       <select id="state-select" disabled>
         <option value="">Select State/Province...</option>
-      </select>
-      <select id="county-select" disabled>
-        <option value="">Select County (optional)...</option>
       </select>
     </div>
     <p id="region-info" class="hint"></p>
