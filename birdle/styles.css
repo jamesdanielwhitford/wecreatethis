@@ -581,6 +581,34 @@ h1 {
 .score-item.rare .score-number { color: #2196f3; }
 .score-item.ultra .score-number { color: #9c27b0; }
 
+.score-item {
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 8px 4px;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.score-item:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.score-item:active {
+  transform: scale(0.95);
+}
+
+.score-item.active {
+  background: #333;
+}
+
+.score-item.active .score-number,
+.score-item.active .score-label {
+  color: #fff;
+}
+
+.score-item.common.active { background: #4caf50; }
+.score-item.rare.active { background: #2196f3; }
+.score-item.ultra.active { background: #9c27b0; }
+
 /* Bird Sections */
 .bird-section {
   margin-bottom: 24px;

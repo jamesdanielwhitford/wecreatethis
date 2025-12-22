@@ -861,6 +861,7 @@ const App = {
   currentGame: null,
   currentGameIndex: null,
   selectedBird: null,
+  scoreFilter: null, // null = show all, 'all' = all seen, 'common'/'rare'/'ultra' = seen in that rarity
 
   initGameDetail() {
     const params = new URLSearchParams(window.location.search);
@@ -921,6 +922,28 @@ const App = {
   },
 
   bindGameEvents() {
+    // Score filter toggles
+    document.querySelectorAll('.score-item').forEach(item => {
+      item.style.cursor = 'pointer';
+      item.addEventListener('click', () => {
+        const filter = item.classList.contains('common') ? 'common'
+          : item.classList.contains('rare') ? 'rare'
+          : item.classList.contains('ultra') ? 'ultra'
+          : 'all';
+
+        // Toggle off if clicking same filter
+        if (this.scoreFilter === filter) {
+          this.scoreFilter = null;
+          document.querySelectorAll('.score-item').forEach(i => i.classList.remove('active'));
+        } else {
+          this.scoreFilter = filter;
+          document.querySelectorAll('.score-item').forEach(i => i.classList.remove('active'));
+          item.classList.add('active');
+        }
+        this.renderGameBirds();
+      });
+    });
+
     // Menu toggle
     const menuBtn = document.getElementById('menu-btn');
     const menuDropdown = document.getElementById('menu-dropdown');
@@ -1126,9 +1149,9 @@ const App = {
     document.getElementById('rare-count').textContent = `(${rare.length})`;
     document.getElementById('ultra-count').textContent = `(${ultra.length})`;
 
-    this.renderBirdSection('common-birds', common, seenCodes);
-    this.renderBirdSection('rare-birds', rare, seenCodes);
-    this.renderBirdSection('ultra-birds', ultra, seenCodes);
+    this.renderBirdSection('common-birds', common, seenCodes, 'common');
+    this.renderBirdSection('rare-birds', rare, seenCodes, 'rare');
+    this.renderBirdSection('ultra-birds', ultra, seenCodes, 'ultra');
 
     this.restoreCollapsedSections();
     this.updateScoreSummary(seenCodes);
@@ -1171,7 +1194,7 @@ const App = {
     return false;
   },
 
-  renderBirdSection(listId, birds, seenCodes) {
+  renderBirdSection(listId, birds, seenCodes, rarity) {
     const list = document.getElementById(listId);
     if (!list) return;
 
@@ -1184,13 +1207,34 @@ const App = {
       );
     }
 
+    // Filter by score filter (seen only)
+    if (this.scoreFilter) {
+      if (this.scoreFilter === 'all') {
+        // Show all seen birds across all rarities
+        filteredBirds = filteredBirds.filter(b => seenCodes.includes(b.speciesCode));
+      } else if (this.scoreFilter === rarity) {
+        // Show only seen birds in this specific rarity
+        filteredBirds = filteredBirds.filter(b => seenCodes.includes(b.speciesCode));
+      } else {
+        // Different rarity filter is active, hide this section's birds
+        filteredBirds = [];
+      }
+    }
+
     // Sort birds by count (most common first) within this rarity category
     const sortedBirds = [...filteredBirds].sort((a, b) => b.count - a.count);
 
     if (sortedBirds.length === 0) {
-      list.innerHTML = this.gameSearchQuery
-        ? '<li class="empty">No matches</li>'
-        : '';
+      if (this.scoreFilter && this.scoreFilter !== rarity && this.scoreFilter !== 'all') {
+        // Different rarity filter active, just hide the list
+        list.innerHTML = '';
+      } else if (this.scoreFilter) {
+        list.innerHTML = '<li class="empty">No sightings yet</li>';
+      } else if (this.gameSearchQuery) {
+        list.innerHTML = '<li class="empty">No matches</li>';
+      } else {
+        list.innerHTML = '';
+      }
       return;
     }
 
