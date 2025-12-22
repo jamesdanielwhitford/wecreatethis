@@ -734,6 +734,13 @@ const App = {
       this.markBirdUnseen(this.selectedBird);
     });
 
+    // Section collapse toggles
+    document.querySelectorAll('.section-title').forEach(title => {
+      title.addEventListener('click', () => {
+        this.toggleSection(title.dataset.section);
+      });
+    });
+
     // Resume game
     document.getElementById('resume-game-btn')?.addEventListener('click', () => {
       document.getElementById('resume-modal').style.display = 'flex';
@@ -816,7 +823,7 @@ const App = {
       } else if (index < rareThreshold) {
         bird.rarity = 'rare';
       } else {
-        bird.rarity = 'superrare';
+        bird.rarity = 'ultra';
       }
     });
 
@@ -832,16 +839,17 @@ const App = {
 
     const common = birds.filter(b => b.rarity === 'common');
     const rare = birds.filter(b => b.rarity === 'rare');
-    const superrare = birds.filter(b => b.rarity === 'superrare');
+    const ultra = birds.filter(b => b.rarity === 'ultra');
 
     document.getElementById('common-count').textContent = `(${common.length})`;
     document.getElementById('rare-count').textContent = `(${rare.length})`;
-    document.getElementById('superrare-count').textContent = `(${superrare.length})`;
+    document.getElementById('ultra-count').textContent = `(${ultra.length})`;
 
     this.renderBirdSection('common-birds', common, seenCodes);
     this.renderBirdSection('rare-birds', rare, seenCodes);
-    this.renderBirdSection('superrare-birds', superrare, seenCodes);
+    this.renderBirdSection('ultra-birds', ultra, seenCodes);
 
+    this.restoreCollapsedSections();
     this.updateScoreSummary();
   },
 
@@ -919,12 +927,39 @@ const App = {
     const total = seen.length;
     const common = seen.filter(s => s.rarity === 'common').length;
     const rare = seen.filter(s => s.rarity === 'rare').length;
-    const superrare = seen.filter(s => s.rarity === 'superrare').length;
+    const ultra = seen.filter(s => s.rarity === 'ultra').length;
 
     document.getElementById('total-found').textContent = total;
     document.getElementById('common-found').textContent = common;
     document.getElementById('rare-found').textContent = rare;
-    document.getElementById('superrare-found').textContent = superrare;
+    document.getElementById('ultra-found').textContent = ultra;
+  },
+
+  toggleSection(section) {
+    const title = document.querySelector(`.section-title[data-section="${section}"]`);
+    if (!title) return;
+
+    title.classList.toggle('collapsed');
+
+    // Save collapsed state
+    const collapsed = JSON.parse(localStorage.getItem('collapsedSections') || '{}');
+    const gameId = this.currentGame.id;
+    if (!collapsed[gameId]) collapsed[gameId] = {};
+    collapsed[gameId][section] = title.classList.contains('collapsed');
+    localStorage.setItem('collapsedSections', JSON.stringify(collapsed));
+  },
+
+  restoreCollapsedSections() {
+    const collapsed = JSON.parse(localStorage.getItem('collapsedSections') || '{}');
+    const gameId = this.currentGame.id;
+    if (!collapsed[gameId]) return;
+
+    Object.keys(collapsed[gameId]).forEach(section => {
+      if (collapsed[gameId][section]) {
+        const title = document.querySelector(`.section-title[data-section="${section}"]`);
+        if (title) title.classList.add('collapsed');
+      }
+    });
   },
 
   saveGame() {
@@ -974,16 +1009,16 @@ const App = {
     if (includeRarity) {
       const common = seen.filter(s => s.rarity === 'common').length;
       const rare = seen.filter(s => s.rarity === 'rare').length;
-      const superrare = seen.filter(s => s.rarity === 'superrare').length;
+      const ultra = seen.filter(s => s.rarity === 'ultra').length;
       text += `🟢 Common: ${common}\n`;
       text += `🔵 Rare: ${rare}\n`;
-      text += `🟣 Super Rare: ${superrare}\n`;
+      text += `🟣 Ultra: ${ultra}\n`;
     }
 
     if (includeList && seen.length > 0) {
       text += `\nBirds:\n`;
       seen.forEach(s => {
-        const icon = s.rarity === 'common' ? '🟢' : s.rarity === 'rare' ? '🔵' : '🟣';
+        const icon = s.rarity === 'common' ? '🟢' : s.rarity === 'rare' ? '🔵' : '🟣'; // ultra
         text += `${icon} ${s.comName}\n`;
       });
     }

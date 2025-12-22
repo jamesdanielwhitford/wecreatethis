@@ -39,9 +39,9 @@
       <span id="rare-found" class="score-number">0</span>
       <span class="score-label">Rare</span>
     </div>
-    <div class="score-item superrare">
-      <span id="superrare-found" class="score-number">0</span>
-      <span class="score-label">Super Rare</span>
+    <div class="score-item ultra">
+      <span id="ultra-found" class="score-number">0</span>
+      <span class="score-label">Ultra</span>
     </div>
     <button id="share-btn" class="share-btn">Share</button>
   </div>
@@ -52,18 +52,27 @@
   <!-- Bird Lists -->
   <div id="bird-sections" style="display:none;">
     <div class="bird-section">
-      <h3 class="section-title common">Common <span id="common-count"></span></h3>
+      <h3 class="section-title common" data-section="common">
+        <span class="toggle-arrow">▼</span>
+        Common <span id="common-count"></span>
+      </h3>
       <ul id="common-birds" class="game-bird-list"></ul>
     </div>
 
     <div class="bird-section">
-      <h3 class="section-title rare">Rare <span id="rare-count"></span></h3>
+      <h3 class="section-title rare" data-section="rare">
+        <span class="toggle-arrow">▼</span>
+        Rare <span id="rare-count"></span>
+      </h3>
       <ul id="rare-birds" class="game-bird-list"></ul>
     </div>
 
     <div class="bird-section">
-      <h3 class="section-title superrare">Super Rare <span id="superrare-count"></span></h3>
-      <ul id="superrare-birds" class="game-bird-list"></ul>
+      <h3 class="section-title ultra" data-section="ultra">
+        <span class="toggle-arrow">▼</span>
+        Ultra <span id="ultra-count"></span>
+      </h3>
+      <ul id="ultra-birds" class="game-bird-list"></ul>
     </div>
   </div>
 

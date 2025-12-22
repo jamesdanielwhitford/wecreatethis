@@ -452,7 +452,7 @@ h1 {
 
 .score-item.common .score-number { color: #4caf50; }
 .score-item.rare .score-number { color: #2196f3; }
-.score-item.superrare .score-number { color: #9c27b0; }
+.score-item.ultra .score-number { color: #9c27b0; }
 
 .share-btn {
   padding: 8px 12px;
@@ -475,11 +475,29 @@ h1 {
   padding: 8px 0;
   border-bottom: 2px solid #eee;
   margin-bottom: 8px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title .toggle-arrow {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+}
+
+.section-title.collapsed .toggle-arrow {
+  transform: rotate(-90deg);
+}
+
+.section-title.collapsed + .game-bird-list {
+  display: none;
 }
 
 .section-title.common { border-color: #4caf50; color: #4caf50; }
 .section-title.rare { border-color: #2196f3; color: #2196f3; }
-.section-title.superrare { border-color: #9c27b0; color: #9c27b0; }
+.section-title.ultra { border-color: #9c27b0; color: #9c27b0; }
 
 .game-bird-list {
   list-style: none;
