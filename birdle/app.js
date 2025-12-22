@@ -673,9 +673,12 @@ const App = {
     const game = this.currentGame;
     const now = new Date();
     const endDate = game.endDate ? new Date(game.endDate) : null;
+    const banner = document.getElementById('game-ended-banner');
 
     if (endDate && now > endDate) {
-      document.getElementById('game-ended-banner').style.display = 'block';
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
     }
   },
 
@@ -687,24 +690,39 @@ const App = {
   },
 
   bindGameEvents() {
-    // Share button -> opens share menu
-    document.getElementById('share-btn')?.addEventListener('click', () => {
-      document.getElementById('share-menu-modal').style.display = 'flex';
+    // Menu toggle
+    const menuBtn = document.getElementById('menu-btn');
+    const menuDropdown = document.getElementById('menu-dropdown');
+
+    menuBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menuDropdown.style.display = menuDropdown.style.display === 'none' ? 'block' : 'none';
     });
 
-    // Share menu options
-    document.getElementById('share-menu-cancel')?.addEventListener('click', () => {
-      document.getElementById('share-menu-modal').style.display = 'none';
+    // Close menu when clicking outside
+    document.addEventListener('click', () => {
+      menuDropdown.style.display = 'none';
     });
 
-    document.getElementById('share-score-option')?.addEventListener('click', () => {
-      document.getElementById('share-menu-modal').style.display = 'none';
+    // Menu options
+    document.getElementById('menu-share-score')?.addEventListener('click', () => {
+      menuDropdown.style.display = 'none';
       document.getElementById('share-modal').style.display = 'flex';
     });
 
-    document.getElementById('share-game-option')?.addEventListener('click', () => {
-      document.getElementById('share-menu-modal').style.display = 'none';
+    document.getElementById('menu-share-game')?.addEventListener('click', () => {
+      menuDropdown.style.display = 'none';
       this.shareGame();
+    });
+
+    document.getElementById('menu-change-dates')?.addEventListener('click', () => {
+      menuDropdown.style.display = 'none';
+      this.openDatesModal();
+    });
+
+    document.getElementById('menu-delete-game')?.addEventListener('click', () => {
+      menuDropdown.style.display = 'none';
+      document.getElementById('delete-modal').style.display = 'flex';
     });
 
     // Share score modal
@@ -741,21 +759,26 @@ const App = {
       });
     });
 
-    // Resume game
-    document.getElementById('resume-game-btn')?.addEventListener('click', () => {
-      document.getElementById('resume-modal').style.display = 'flex';
+    // Change dates modal
+    document.getElementById('dates-cancel-btn')?.addEventListener('click', () => {
+      document.getElementById('dates-modal').style.display = 'none';
     });
 
-    document.getElementById('resume-cancel-btn')?.addEventListener('click', () => {
-      document.getElementById('resume-modal').style.display = 'none';
+    document.getElementById('edit-forever-btn')?.addEventListener('click', () => {
+      document.getElementById('edit-end-date').value = '';
     });
 
-    document.getElementById('resume-forever-btn')?.addEventListener('click', () => {
-      document.getElementById('resume-end-date').value = '';
+    document.getElementById('do-save-dates-btn')?.addEventListener('click', () => {
+      this.saveDates();
     });
 
-    document.getElementById('do-resume-btn')?.addEventListener('click', () => {
-      this.resumeGame();
+    // Delete modal
+    document.getElementById('delete-cancel-btn')?.addEventListener('click', () => {
+      document.getElementById('delete-modal').style.display = 'none';
+    });
+
+    document.getElementById('do-delete-btn')?.addEventListener('click', () => {
+      this.deleteGame();
     });
   },
 
@@ -967,13 +990,31 @@ const App = {
     localStorage.setItem('games', JSON.stringify(this.games));
   },
 
-  resumeGame() {
-    const endDateInput = document.getElementById('resume-end-date');
-    this.currentGame.endDate = endDateInput.value || null;
+  openDatesModal() {
+    document.getElementById('edit-start-date').value = this.currentGame.startDate;
+    document.getElementById('edit-end-date').value = this.currentGame.endDate || '';
+    document.getElementById('dates-modal').style.display = 'flex';
+  },
+
+  saveDates() {
+    const startDate = document.getElementById('edit-start-date').value;
+    const endDate = document.getElementById('edit-end-date').value;
+
+    this.currentGame.startDate = startDate;
+    this.currentGame.endDate = endDate || null;
     this.saveGame();
 
-    document.getElementById('resume-modal').style.display = 'none';
-    document.getElementById('game-ended-banner').style.display = 'none';
+    // Update header display
+    this.renderGameHeader();
+    this.checkGameStatus();
+
+    document.getElementById('dates-modal').style.display = 'none';
+  },
+
+  deleteGame() {
+    this.games.splice(this.currentGameIndex, 1);
+    localStorage.setItem('games', JSON.stringify(this.games));
+    window.location.href = 'games.html';
   },
 
   shareScore() {

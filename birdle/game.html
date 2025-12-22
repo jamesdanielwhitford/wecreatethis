@@ -10,7 +10,17 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <a href="games.html" class="back-btn">&larr; Back</a>
+  <!-- Sticky Navbar -->
+  <nav class="game-navbar">
+    <a href="games.html" class="back-btn">&larr; Back</a>
+    <button id="menu-btn" class="menu-btn">⋮</button>
+    <div id="menu-dropdown" class="menu-dropdown" style="display:none;">
+      <button id="menu-share-score">Share Score</button>
+      <button id="menu-share-game">Share Game</button>
+      <button id="menu-change-dates">Change Dates</button>
+      <button id="menu-delete-game" class="danger">Delete Game</button>
+    </div>
+  </nav>
 
   <!-- Game Header -->
   <div class="game-header">
@@ -21,8 +31,7 @@
 
   <!-- Game Ended Banner -->
   <div id="game-ended-banner" class="ended-banner" style="display:none;">
-    <p>This game has ended</p>
-    <button id="resume-game-btn">Resume Game</button>
+    <p>This game has ended. Use the menu to change dates.</p>
   </div>
 
   <!-- Score Summary -->
@@ -43,7 +52,6 @@
       <span id="ultra-found" class="score-number">0</span>
       <span class="score-label">Ultra</span>
     </div>
-    <button id="share-btn" class="share-btn">Share</button>
   </div>
 
   <!-- Loading State -->
@@ -87,16 +95,6 @@
     </div>
   </div>
 
-  <!-- Share Menu Modal -->
-  <div id="share-menu-modal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <h3>Share</h3>
-      <button id="share-score-option" class="modal-btn">Share Score</button>
-      <button id="share-game-option" class="modal-btn">Share Game</button>
-      <button id="share-menu-cancel" class="modal-btn cancel">Cancel</button>
-    </div>
-  </div>
-
   <!-- Share Score Modal -->
   <div id="share-modal" class="modal" style="display:none;">
     <div class="modal-content">
@@ -134,17 +132,33 @@
     </div>
   </div>
 
-  <!-- Resume Modal -->
-  <div id="resume-modal" class="modal" style="display:none;">
+  <!-- Change Dates Modal -->
+  <div id="dates-modal" class="modal" style="display:none;">
     <div class="modal-content">
-      <h3>Resume Game</h3>
-      <p>Choose a new end date:</p>
-      <div class="input-row">
-        <input type="date" id="resume-end-date">
-        <button id="resume-forever-btn">Forever</button>
+      <h3>Change Dates</h3>
+      <div class="form-group">
+        <label>Start Date</label>
+        <input type="date" id="edit-start-date">
       </div>
-      <button id="do-resume-btn" class="modal-btn seen">Resume</button>
-      <button id="resume-cancel-btn" class="modal-btn cancel">Cancel</button>
+      <div class="form-group">
+        <label>End Date</label>
+        <div class="input-row">
+          <input type="date" id="edit-end-date">
+          <button id="edit-forever-btn">Forever</button>
+        </div>
+      </div>
+      <button id="do-save-dates-btn" class="modal-btn seen">Save</button>
+      <button id="dates-cancel-btn" class="modal-btn cancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3>Delete Game?</h3>
+      <p>This will permanently delete this game and all progress.</p>
+      <button id="do-delete-btn" class="modal-btn danger">Delete</button>
+      <button id="delete-cancel-btn" class="modal-btn cancel">Cancel</button>
     </div>
   </div>
 
