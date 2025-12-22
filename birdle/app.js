@@ -465,7 +465,8 @@ const App = {
     const ne = bounds.getNorthEast();
     const sw = bounds.getSouthWest();
     const latDiff = Math.abs(ne.lat - sw.lat);
-    const radius = (latDiff * 111) / 3; // km (111km per degree latitude)
+    const rawRadius = (latDiff * 111) / 3; // km (111km per degree latitude)
+    const radius = Math.min(rawRadius, 50); // Cap at 50km (eBird API limit)
 
     this.pickedLocation = { lat: center.lat, lng: center.lng };
     this.pickedRadius = radius;
@@ -486,7 +487,8 @@ const App = {
     // Update area info
     const areaInfo = document.getElementById('area-info');
     if (areaInfo) {
-      areaInfo.textContent = `Area: ~${radius.toFixed(1)} km radius`;
+      const maxNote = radius >= 50 ? ' (max)' : '';
+      areaInfo.textContent = `Area: ~${radius.toFixed(1)} km radius${maxNote}`;
     }
 
     this.validateNewGame();
