@@ -1,4 +1,4 @@
-const CACHE_NAME = 'birdle-v30';
+const CACHE_NAME = 'birdle-v31';
 const ASSETS = [
   '/birdle/',
   '/birdle/index.html',
@@ -37,23 +37,30 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch - serve from cache, fallback to network
+// Fetch - network first, fallback to cache (ensures updates when online)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).then((response) => {
-        if (response.ok && event.request.method === 'GET') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, clone);
-          });
-        }
-        return response;
-      });
-    }).catch(() => {
-      if (event.request.mode === 'navigate') {
-        return caches.match('/birdle/index.html');
+    fetch(event.request).then((response) => {
+      // Cache successful GET requests
+      if (response.ok && event.request.method === 'GET') {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, clone);
+        });
       }
+      return response;
+    }).catch(() => {
+      // Network failed, try cache
+      return caches.match(event.request).then((cached) => {
+        if (cached) {
+          return cached;
+        }
+        // No cache, return offline page for navigation
+        if (event.request.mode === 'navigate') {
+          return caches.match('/birdle/index.html');
+        }
+        throw new Error('No network and no cache available');
+      });
     })
   );
 });
