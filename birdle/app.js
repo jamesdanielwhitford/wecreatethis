@@ -13,6 +13,8 @@ const App = {
   pickedLocation: null,
   pickedRadius: null,
   currentBird: null,
+  searchQuery: '',
+  gameSearchQuery: '',
 
   async init() {
     // Initialize IndexedDB
@@ -64,15 +66,48 @@ const App = {
 
   bindSearchEvents() {
     const countryFilter = document.getElementById('country-filter');
+    const stateFilter = document.getElementById('state-filter');
     const sortType = document.getElementById('sort-type');
     const seenFilter = document.getElementById('seen-filter');
+    const birdSearch = document.getElementById('bird-search');
+    const useLocationBtn = document.getElementById('use-location-btn');
     const pickLocationBtn = document.getElementById('pick-location-btn');
     const mapCancelBtn = document.getElementById('map-cancel-btn');
     const mapConfirmBtn = document.getElementById('map-confirm-btn');
 
-    countryFilter?.addEventListener('change', (e) => {
-      if (e.target.value) {
-        this.searchByRegion(e.target.value);
+    // Use My Location button
+    useLocationBtn?.addEventListener('click', () => {
+      this.useMyLocation();
+    });
+
+    // Country filter - load states when country selected
+    countryFilter?.addEventListener('change', async (e) => {
+      const countryCode = e.target.value;
+      stateFilter.innerHTML = '<option value="">State/Province...</option>';
+      stateFilter.disabled = true;
+
+      if (countryCode) {
+        // Load states for this country
+        const states = await EBird.getStates(countryCode);
+        if (states.length > 0) {
+          states.forEach(s => {
+            stateFilter.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+          });
+          stateFilter.disabled = false;
+        }
+        // Search by country
+        this.searchByRegion(countryCode);
+      }
+    });
+
+    // State filter - search by state when selected
+    stateFilter?.addEventListener('change', (e) => {
+      const stateCode = e.target.value;
+      const countryCode = countryFilter.value;
+      if (stateCode) {
+        this.searchByRegion(stateCode);
+      } else if (countryCode) {
+        this.searchByRegion(countryCode);
       }
     });
 
@@ -82,6 +117,12 @@ const App = {
     });
 
     seenFilter?.addEventListener('change', () => {
+      this.renderBirdList();
+    });
+
+    // Bird search filter
+    birdSearch?.addEventListener('input', (e) => {
+      this.searchQuery = e.target.value.toLowerCase();
       this.renderBirdList();
     });
 
@@ -96,6 +137,46 @@ const App = {
     mapConfirmBtn?.addEventListener('click', () => {
       this.confirmMapLocation();
     });
+  },
+
+  async useMyLocation() {
+    const btn = document.getElementById('use-location-btn');
+    btn.disabled = true;
+    btn.textContent = '📍 Detecting...';
+
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: false,
+          timeout: 10000
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+      this.userLocation = { lat: latitude, lng: longitude };
+
+      // Save and search
+      localStorage.setItem('lastSearch', JSON.stringify({
+        type: 'location',
+        lat: latitude,
+        lng: longitude
+      }));
+
+      this.showLoading(true);
+      const birds = await EBird.getNearbyObservations(latitude, longitude);
+      this.birds = this.deduplicateBirds(birds);
+      this.showLoading(false);
+      this.renderBirdList();
+
+      btn.textContent = '📍 Use My Location';
+      btn.disabled = false;
+
+    } catch (error) {
+      console.error('Location error:', error);
+      alert('Could not get your location. Please try picking on the map.');
+      btn.textContent = '📍 Use My Location';
+      btn.disabled = false;
+    }
   },
 
   openMapPicker() {
@@ -230,10 +311,20 @@ const App = {
       birds = birds.filter(b => this.seenBirds.includes(b.speciesCode));
     }
 
+    // Filter by search query
+    if (this.searchQuery) {
+      birds = birds.filter(b =>
+        b.comName.toLowerCase().includes(this.searchQuery) ||
+        (b.sciName && b.sciName.toLowerCase().includes(this.searchQuery))
+      );
+    }
+
     if (birds.length === 0) {
-      const msg = this.currentSort === 'recent'
-        ? 'No recently viewed birds'
-        : 'No birds found';
+      const msg = this.searchQuery
+        ? 'No birds match your search'
+        : this.currentSort === 'recent'
+          ? 'No recently viewed birds'
+          : 'No birds found';
       list.innerHTML = `<li class="empty">${msg}</li>`;
       return;
     }
@@ -876,6 +967,13 @@ const App = {
       this.markBirdUnseen(this.selectedBird);
     });
 
+    // Game bird search
+    const gameBirdSearch = document.getElementById('game-bird-search');
+    gameBirdSearch?.addEventListener('input', (e) => {
+      this.gameSearchQuery = e.target.value.toLowerCase();
+      this.renderGameBirds();
+    });
+
     // Section collapse toggles
     document.querySelectorAll('.section-title').forEach(title => {
       title.addEventListener('click', () => {
@@ -1043,8 +1141,24 @@ const App = {
     const list = document.getElementById(listId);
     if (!list) return;
 
+    // Filter by search query
+    let filteredBirds = birds;
+    if (this.gameSearchQuery) {
+      filteredBirds = birds.filter(b =>
+        b.comName.toLowerCase().includes(this.gameSearchQuery) ||
+        (b.sciName && b.sciName.toLowerCase().includes(this.gameSearchQuery))
+      );
+    }
+
     // Sort birds by count (most common first) within this rarity category
-    const sortedBirds = [...birds].sort((a, b) => b.count - a.count);
+    const sortedBirds = [...filteredBirds].sort((a, b) => b.count - a.count);
+
+    if (sortedBirds.length === 0) {
+      list.innerHTML = this.gameSearchQuery
+        ? '<li class="empty">No matches</li>'
+        : '';
+      return;
+    }
 
     list.innerHTML = sortedBirds.map(bird => {
       const isSeen = seenCodes.includes(bird.speciesCode);

@@ -14,8 +14,11 @@
   <a href="index.html" class="back-btn">&larr; Back</a>
   <h1>Search</h1>
 
-  <!-- Location / Country Filter -->
-  <div class="filter-row">
+  <!-- Location Button -->
+  <button id="use-location-btn" class="location-btn">📍 Use My Location</button>
+
+  <!-- Region Filters -->
+  <div class="filter-row region-filters">
     <select id="country-filter">
       <option value="">Select country...</option>
       <option value="US">United States</option>
@@ -29,7 +32,12 @@
       <option value="FR">France</option>
       <option value="MX">Mexico</option>
     </select>
-    <button id="pick-location-btn">📍 Pick location</button>
+    <select id="state-filter" disabled>
+      <option value="">State/Province...</option>
+    </select>
+  </div>
+  <div class="filter-row">
+    <button id="pick-location-btn" class="pick-location-btn">📍 Pick on map</button>
   </div>
 
   <!-- Map Picker -->
@@ -53,6 +61,11 @@
     </label>
   </div>
 
+  <!-- Search within list -->
+  <div class="search-bar">
+    <input type="text" id="bird-search" placeholder="Search birds...">
+  </div>
+
   <!-- Loading State -->
   <div id="loading" class="loading" style="display:none;">Loading birds...</div>
 
@@ -60,6 +73,7 @@
   <ul id="bird-list" class="bird-list"></ul>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="db.js"></script>
   <script src="ebird.js"></script>
   <script src="app.js"></script>
 </body>
