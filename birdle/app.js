@@ -2006,7 +2006,13 @@ const App = {
       day: 'numeric'
     });
     document.getElementById('daily-date').textContent = dateStr;
-    document.getElementById('daily-location').textContent = challenge.locationName;
+
+    // Set location as clickable Google search link
+    const searchQuery = encodeURIComponent(`where to see ${challenge.bird.comName} near me`);
+    const searchUrl = `https://www.google.com/search?q=${searchQuery}`;
+    const locationLink = document.getElementById('daily-location');
+    locationLink.textContent = 'Find it near you →';
+    locationLink.href = searchUrl;
 
     // Set bird info
     document.getElementById('target-bird-name').textContent = challenge.bird.comName;
@@ -2115,8 +2121,27 @@ const App = {
     const challenge = this.liferChallenge;
     if (!challenge) return;
 
-    const preview = this.generateLiferShareText();
-    document.getElementById('share-preview').textContent = preview;
+    // Generate HTML preview with clickable link
+    const dateStr = new Date(challenge.date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+
+    const searchQuery = encodeURIComponent(`where to see ${challenge.bird.comName} near me`);
+    const searchUrl = `https://www.google.com/search?q=${searchQuery}`;
+
+    let html = `<strong>Birdle Lifer Challenge - ${dateStr}</strong><br><br>`;
+
+    if (challenge.found) {
+      html += `New lifer: ${challenge.bird.comName}!<br>`;
+    } else {
+      html += `Target: ${challenge.bird.comName}<br>`;
+      html += `Still searching...<br>`;
+    }
+
+    html += `<br><a href="${searchUrl}" target="_blank" style="color: #2196f3; text-decoration: none;">Find it near you →</a>`;
+
+    document.getElementById('share-preview').innerHTML = html;
     document.getElementById('share-modal').style.display = 'flex';
   },
 
@@ -2129,8 +2154,7 @@ const App = {
       day: 'numeric'
     });
 
-    let text = `Birdle Lifer Challenge - ${dateStr}\n`;
-    text += `${challenge.locationName}\n\n`;
+    let text = `Birdle Lifer Challenge - ${dateStr}\n\n`;
 
     if (challenge.found) {
       text += `New lifer: ${challenge.bird.comName}!\n`;
@@ -2138,6 +2162,9 @@ const App = {
       text += `Target: ${challenge.bird.comName}\n`;
       text += `Still searching...\n`;
     }
+
+    const searchQuery = encodeURIComponent(`where to see ${challenge.bird.comName} near me`);
+    text += `\nhttps://www.google.com/search?q=${searchQuery}`;
 
     return text;
   },

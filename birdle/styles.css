@@ -1106,6 +1106,16 @@ h1 {
   color: #666;
 }
 
+.daily-location a {
+  color: #2196f3;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.daily-location a:hover {
+  text-decoration: underline;
+}
+
 /* Daily Error State */
 .daily-error {
   text-align: center;
@@ -1219,4 +1229,6 @@ h1 {
   font-size: 13px;
   white-space: pre-wrap;
   line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
