@@ -1,4 +1,5 @@
 // Birdle - Bird Bingo App
+console.log('=== app.js loaded, version 39 ===');
 
 const App = {
   birds: [],
@@ -2182,12 +2183,23 @@ const App = {
 
 // Check for shared game before normal init
 document.addEventListener('DOMContentLoaded', () => {
-  // If on game page, check for shared game first
-  if (window.location.pathname.includes('game.html') &&
-      window.location.search.includes('join=')) {
-    if (App.checkForSharedGame()) {
-      return; // Will redirect
+  console.log('=== Birdle App Starting ===');
+  console.log('Current page:', window.location.pathname);
+  console.log('App object exists:', typeof App !== 'undefined');
+
+  try {
+    // If on game page, check for shared game first
+    if (window.location.pathname.includes('game.html') &&
+        window.location.search.includes('join=')) {
+      if (App.checkForSharedGame()) {
+        return; // Will redirect
+      }
     }
+    console.log('Calling App.init()...');
+    App.init();
+    console.log('App.init() completed');
+  } catch (error) {
+    console.error('Error initializing app:', error);
+    alert('Error loading app. Please refresh the page.\n\n' + error.message);
   }
-  App.init();
 });
