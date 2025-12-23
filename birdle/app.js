@@ -34,13 +34,16 @@ const App = {
   detectPage() {
     const path = window.location.pathname;
     // Support both with and without .html extension
+    // Order matters - check more specific paths first
+    if (path.includes('new-game')) return 'new-game';
+    if (path.includes('games')) return 'games';
     if (path.includes('search')) return 'search';
     if (path.includes('daily')) return 'daily';
-    if (path.includes('new-game')) return 'new-game';
-    if (path.includes('bird') && !path.includes('games')) return 'bird';
-    if (path.includes('game') && !path.includes('games') && !path.includes('new-game')) return 'game';
-    if (path.includes('games')) return 'games';
     if (path.includes('life')) return 'life';
+    // Check for 'bird.html' or 'bird?' (query params) to avoid matching 'birdle'
+    if (path.match(/bird(\.html|\?)/)) return 'bird';
+    // Check for 'game.html' or 'game?' to avoid matching 'games' or 'new-game'
+    if (path.match(/\/game(\.html|\?)/)) return 'game';
     return 'home';
   },
 
