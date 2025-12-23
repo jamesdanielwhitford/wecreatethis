@@ -1088,3 +1088,135 @@ h1 {
   color: #666;
   margin: 8px 0;
 }
+
+/* ===== LIFER CHALLENGE ===== */
+
+/* Lifer Header */
+.daily-header {
+  margin-bottom: 16px;
+}
+
+.daily-date {
+  font-size: 14px;
+  color: #666;
+}
+
+.daily-location {
+  font-size: 12px;
+  color: #666;
+}
+
+/* Daily Error State */
+.daily-error {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.daily-error p {
+  margin-bottom: 16px;
+}
+
+/* Daily Score - uses same style as game score-summary */
+.daily-score-summary {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.daily-score-summary .score-item {
+  text-align: center;
+  flex: 1;
+}
+
+/* Daily Bird List - uses same style as game-bird-list */
+.daily-bird-list {
+  list-style: none;
+}
+
+.daily-bird-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.daily-bird-item .bird-info {
+  flex: 1;
+}
+
+.daily-bird-item .bird-name {
+  font-weight: 500;
+  display: block;
+}
+
+.daily-bird-item .bird-rarity {
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.daily-bird-item .bird-rarity.common { color: #4caf50; }
+.daily-bird-item .bird-rarity.rare { color: #2196f3; }
+.daily-bird-item .bird-rarity.ultra { color: #9c27b0; }
+
+.daily-bird-item.found {
+  background: #f0fff0;
+}
+
+.daily-bird-item .found-check {
+  color: #4caf50;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+.daily-found-btn {
+  padding: 8px 16px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.daily-found-btn:disabled {
+  background: #ccc;
+  cursor: default;
+}
+
+/* Daily Completed Banner */
+.daily-completed {
+  background: #e8f5e9;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.daily-completed h2 {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #2e7d32;
+}
+
+.daily-completed p {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+/* Share Preview */
+.share-preview {
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}

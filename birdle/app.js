@@ -28,12 +28,14 @@ const App = {
     if (page === 'games') this.initGames();
     if (page === 'new-game') this.initNewGame();
     if (page === 'game') this.initGameDetail();
+    if (page === 'daily') this.initDaily();
   },
 
   detectPage() {
     const path = window.location.pathname;
     if (path.includes('search.html')) return 'search';
     if (path.includes('bird.html')) return 'bird';
+    if (path.includes('daily.html')) return 'daily';
     if (path.includes('new-game.html')) return 'new-game';
     if (path.includes('game.html') && !path.includes('games.html') && !path.includes('new-game.html')) return 'game';
     if (path.includes('games.html')) return 'games';
@@ -1621,6 +1623,425 @@ const App = {
       console.error('Failed to parse shared game:', e);
       return false;
     }
+  },
+
+  // ===== LIFER CHALLENGE =====
+  liferChallenge: null,
+  liferSightingId: null,
+
+  async initDaily() {
+    this.bindLiferEvents();
+    await this.loadOrCreateLiferChallenge();
+  },
+
+  bindLiferEvents() {
+    // Menu toggle
+    const menuBtn = document.getElementById('menu-btn');
+    const menuDropdown = document.getElementById('menu-dropdown');
+
+    menuBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menuDropdown.style.display = menuDropdown.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', () => {
+      if (menuDropdown) menuDropdown.style.display = 'none';
+    });
+
+    // Menu share
+    document.getElementById('menu-share-score')?.addEventListener('click', () => {
+      menuDropdown.style.display = 'none';
+      this.openLiferShareModal();
+    });
+
+    // Retry location button
+    document.getElementById('retry-location-btn')?.addEventListener('click', () => {
+      document.getElementById('daily-error').style.display = 'none';
+      document.getElementById('daily-loading').style.display = 'block';
+      this.loadOrCreateLiferChallenge();
+    });
+
+    // Found button - toggles on/off
+    document.getElementById('found-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleLiferFound();
+    });
+
+    // Bird item click - open modal
+    document.getElementById('target-bird-item')?.addEventListener('click', (e) => {
+      if (e.target.closest('.daily-found-btn')) return;
+      this.openLiferBirdModal();
+    });
+
+    // Share complete button
+    document.getElementById('share-complete-btn')?.addEventListener('click', () => {
+      this.openLiferShareModal();
+    });
+
+    // Share modal
+    document.getElementById('share-cancel-btn')?.addEventListener('click', () => {
+      document.getElementById('share-modal').style.display = 'none';
+    });
+
+    document.getElementById('do-share-btn')?.addEventListener('click', () => {
+      this.shareLiferScore();
+    });
+
+    // Bird detail modal
+    document.getElementById('modal-cancel-btn')?.addEventListener('click', () => {
+      document.getElementById('bird-modal').style.display = 'none';
+    });
+
+    document.getElementById('modal-found-btn')?.addEventListener('click', () => {
+      this.toggleLiferFound();
+      document.getElementById('bird-modal').style.display = 'none';
+    });
+
+    document.getElementById('modal-unfound-btn')?.addEventListener('click', () => {
+      this.toggleLiferFound();
+      document.getElementById('bird-modal').style.display = 'none';
+    });
+
+    // Close modals on backdrop click
+    document.getElementById('share-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'share-modal') {
+        document.getElementById('share-modal').style.display = 'none';
+      }
+    });
+
+    document.getElementById('bird-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'bird-modal') {
+        document.getElementById('bird-modal').style.display = 'none';
+      }
+    });
+  },
+
+  async loadOrCreateLiferChallenge() {
+    const today = new Date().toISOString().split('T')[0];
+    const stored = localStorage.getItem('liferChallenge');
+
+    if (stored) {
+      const challenge = JSON.parse(stored);
+      if (challenge.date === today) {
+        this.liferChallenge = challenge;
+        this.renderLiferChallenge();
+        return;
+      }
+    }
+
+    // Need to create new challenge for today
+    await this.generateLiferChallenge();
+  },
+
+  async generateLiferChallenge() {
+    document.getElementById('daily-loading').style.display = 'block';
+    document.getElementById('daily-error').style.display = 'none';
+    document.getElementById('daily-no-birds').style.display = 'none';
+    document.getElementById('daily-content').style.display = 'none';
+
+    try {
+      // Get user's location
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: false,
+          timeout: 15000
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+
+      // Get nearby birds
+      const observations = await EBird.getNearbyObservations(latitude, longitude, 50);
+
+      if (observations.length === 0) {
+        throw new Error('No birds found nearby');
+      }
+
+      // Get user's life list (species they've already seen)
+      let lifeListCodes = [];
+      if (typeof BirdDB !== 'undefined') {
+        const allSightings = await BirdDB.getAllSightings();
+        lifeListCodes = [...new Set(allSightings.map(s => s.speciesCode))];
+      }
+
+      // Deduplicate and count observations
+      const speciesCount = {};
+      const speciesData = {};
+
+      observations.forEach(obs => {
+        if (!speciesCount[obs.speciesCode]) {
+          speciesCount[obs.speciesCode] = 0;
+        }
+        speciesCount[obs.speciesCode]++;
+        speciesData[obs.speciesCode] = {
+          speciesCode: obs.speciesCode,
+          comName: obs.comName,
+          sciName: obs.sciName
+        };
+      });
+
+      // Build birds array with counts, excluding life list birds
+      const birds = Object.keys(speciesData)
+        .filter(code => !lifeListCodes.includes(code))
+        .map(code => ({
+          ...speciesData[code],
+          count: speciesCount[code]
+        }));
+
+      // Sort by count (most common first) - pick the most common bird not on life list
+      birds.sort((a, b) => b.count - a.count);
+
+      if (birds.length === 0) {
+        // User has seen all nearby birds!
+        document.getElementById('daily-loading').style.display = 'none';
+        document.getElementById('daily-no-birds').style.display = 'block';
+        return;
+      }
+
+      // Select the most common bird not on life list
+      const targetBird = birds[0];
+
+      // Assign rarity based on where it falls in the full list
+      const total = Object.keys(speciesData).length;
+      const allBirdsSorted = Object.keys(speciesData)
+        .map(code => ({ code, count: speciesCount[code] }))
+        .sort((a, b) => b.count - a.count);
+
+      const targetIndex = allBirdsSorted.findIndex(b => b.code === targetBird.speciesCode);
+      const commonThreshold = Math.floor(total / 3);
+      const rareThreshold = Math.floor(total * 2 / 3);
+
+      if (targetIndex < commonThreshold) {
+        targetBird.rarity = 'common';
+      } else if (targetIndex < rareThreshold) {
+        targetBird.rarity = 'rare';
+      } else {
+        targetBird.rarity = 'ultra';
+      }
+
+      // Reverse geocode for location name
+      let locationName = 'Your Area';
+      let regionCode = 'US';
+      let regionName = 'Your Area';
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10`,
+          { headers: { 'Accept-Language': 'en' } }
+        );
+        const data = await response.json();
+        locationName = data.address?.city || data.address?.town || data.address?.county || data.address?.state || 'Your Area';
+
+        const countryCode = data.address?.country_code?.toUpperCase() || 'US';
+        const state = data.address?.state;
+
+        if (countryCode && state) {
+          const states = await EBird.getStates(countryCode);
+          const stateMatch = states.find(s => s.name.toLowerCase() === state.toLowerCase());
+          if (stateMatch) {
+            regionCode = stateMatch.code;
+            regionName = stateMatch.name;
+          } else {
+            regionCode = countryCode;
+            regionName = data.address?.country || countryCode;
+          }
+        } else if (countryCode) {
+          regionCode = countryCode;
+          regionName = data.address?.country || countryCode;
+        }
+      } catch (e) {
+        console.error('Geocoding failed:', e);
+      }
+
+      // Create challenge
+      const challenge = {
+        date: new Date().toISOString().split('T')[0],
+        lat: latitude,
+        lng: longitude,
+        locationName: locationName,
+        regionCode: regionCode,
+        regionName: regionName,
+        bird: targetBird,
+        found: false,
+        sightingId: null,
+        createdAt: new Date().toISOString()
+      };
+
+      this.liferChallenge = challenge;
+      localStorage.setItem('liferChallenge', JSON.stringify(challenge));
+
+      this.renderLiferChallenge();
+
+    } catch (error) {
+      console.error('Failed to create lifer challenge:', error);
+      document.getElementById('daily-loading').style.display = 'none';
+      document.getElementById('daily-error').style.display = 'block';
+    }
+  },
+
+  renderLiferChallenge() {
+    const challenge = this.liferChallenge;
+    if (!challenge) return;
+
+    document.getElementById('daily-loading').style.display = 'none';
+    document.getElementById('daily-error').style.display = 'none';
+    document.getElementById('daily-no-birds').style.display = 'none';
+    document.getElementById('daily-content').style.display = 'block';
+
+    // Set header info
+    const dateStr = new Date(challenge.date).toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    });
+    document.getElementById('daily-date').textContent = dateStr;
+    document.getElementById('daily-location').textContent = challenge.locationName;
+
+    // Set bird info
+    document.getElementById('target-bird-name').textContent = challenge.bird.comName;
+    const rarityEl = document.getElementById('target-bird-rarity');
+    rarityEl.textContent = challenge.bird.rarity.charAt(0).toUpperCase() + challenge.bird.rarity.slice(1);
+    rarityEl.className = `bird-rarity ${challenge.bird.rarity}`;
+
+    // Update found state
+    this.updateLiferFoundState();
+  },
+
+  updateLiferFoundState() {
+    const challenge = this.liferChallenge;
+    if (!challenge) return;
+
+    const item = document.getElementById('target-bird-item');
+    const btn = document.getElementById('found-btn');
+    const check = document.getElementById('found-check');
+    const completedBanner = document.getElementById('daily-completed');
+
+    if (challenge.found) {
+      item?.classList.add('found');
+      if (btn) {
+        btn.textContent = 'Undo';
+        btn.style.background = '#999';
+      }
+      if (check) check.style.display = 'inline';
+      if (completedBanner) completedBanner.style.display = 'block';
+    } else {
+      item?.classList.remove('found');
+      if (btn) {
+        btn.textContent = 'Found';
+        btn.style.background = '#333';
+      }
+      if (check) check.style.display = 'none';
+      if (completedBanner) completedBanner.style.display = 'none';
+    }
+  },
+
+  async toggleLiferFound() {
+    const challenge = this.liferChallenge;
+    if (!challenge) return;
+
+    if (challenge.found) {
+      // Undo - remove sighting
+      if (challenge.sightingId && typeof BirdDB !== 'undefined') {
+        await BirdDB.deleteSighting(challenge.sightingId);
+      }
+      challenge.found = false;
+      challenge.sightingId = null;
+    } else {
+      // Mark as found - add sighting
+      if (typeof BirdDB !== 'undefined') {
+        const sightingId = await BirdDB.addSighting({
+          speciesCode: challenge.bird.speciesCode,
+          comName: challenge.bird.comName,
+          sciName: challenge.bird.sciName,
+          date: challenge.date,
+          regionCode: challenge.regionCode,
+          regionName: challenge.regionName,
+          notes: 'Lifer Challenge'
+        });
+        challenge.sightingId = sightingId;
+      }
+      challenge.found = true;
+    }
+
+    localStorage.setItem('liferChallenge', JSON.stringify(challenge));
+    this.updateLiferFoundState();
+  },
+
+  openLiferBirdModal() {
+    const challenge = this.liferChallenge;
+    if (!challenge) return;
+
+    const bird = challenge.bird;
+
+    document.getElementById('modal-bird-name').textContent = bird.comName;
+    document.getElementById('modal-bird-rarity').textContent = bird.rarity.charAt(0).toUpperCase() + bird.rarity.slice(1);
+    document.getElementById('modal-bird-rarity').className = `modal-rarity ${bird.rarity}`;
+    document.getElementById('modal-bird-scientific').textContent = bird.sciName || '';
+
+    // Set up Google search link
+    const googleLink = document.getElementById('modal-google-link');
+    if (googleLink) {
+      const searchQuery = encodeURIComponent(bird.comName + ' bird');
+      googleLink.href = `https://www.google.com/search?q=${searchQuery}`;
+    }
+
+    // Update button states based on found status
+    const foundBtn = document.getElementById('modal-found-btn');
+    const unfoundBtn = document.getElementById('modal-unfound-btn');
+
+    if (challenge.found) {
+      foundBtn.style.display = 'none';
+      unfoundBtn.style.display = 'block';
+    } else {
+      foundBtn.style.display = 'block';
+      unfoundBtn.style.display = 'none';
+    }
+
+    document.getElementById('bird-modal').style.display = 'flex';
+  },
+
+  openLiferShareModal() {
+    const challenge = this.liferChallenge;
+    if (!challenge) return;
+
+    const preview = this.generateLiferShareText();
+    document.getElementById('share-preview').textContent = preview;
+    document.getElementById('share-modal').style.display = 'flex';
+  },
+
+  generateLiferShareText() {
+    const challenge = this.liferChallenge;
+    if (!challenge) return '';
+
+    const dateStr = new Date(challenge.date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+
+    let text = `Birdle Lifer Challenge - ${dateStr}\n`;
+    text += `${challenge.locationName}\n\n`;
+
+    if (challenge.found) {
+      text += `New lifer: ${challenge.bird.comName}!\n`;
+    } else {
+      text += `Target: ${challenge.bird.comName}\n`;
+      text += `Still searching...\n`;
+    }
+
+    return text;
+  },
+
+  shareLiferScore() {
+    const text = this.generateLiferShareText();
+
+    if (navigator.share) {
+      navigator.share({ text });
+    } else {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Copied to clipboard!');
+      });
+    }
+
+    document.getElementById('share-modal').style.display = 'none';
   }
 };
 
