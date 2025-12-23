@@ -818,15 +818,16 @@ const App = {
       const { latitude, longitude } = position.coords;
       regionInfo.textContent = 'Finding region...';
 
-      // Reverse geocode using OpenStreetMap Nominatim
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=5`,
-        { headers: { 'Accept-Language': 'en' } }
-      );
-      const data = await response.json();
+      // Get nearby observations to determine region
+      const nearby = await EBird.getNearbyObservations(latitude, longitude, 10);
 
-      const countryCode = data.address?.country_code?.toUpperCase();
-      const state = data.address?.state;
+      if (!nearby || nearby.length === 0) {
+        throw new Error('Could not determine region from nearby observations');
+      }
+
+      // Extract region codes from observations
+      const countryCode = nearby[0].countryCode;
+      const stateCode = nearby[0].subnational1Code;
 
       if (!countryCode) {
         throw new Error('Could not determine country');
@@ -837,17 +838,12 @@ const App = {
       countrySelect.value = countryCode;
       countrySelect.dispatchEvent(new Event('change'));
 
-      // Wait for states to load, then try to match state
-      if (state) {
+      // Wait for states to load, then select state if available
+      if (stateCode) {
         setTimeout(() => {
           const stateSelect = document.getElementById('state-select');
-          const stateOption = Array.from(stateSelect.options).find(opt =>
-            opt.text.toLowerCase() === state.toLowerCase()
-          );
-          if (stateOption) {
-            stateSelect.value = stateOption.value;
-            stateSelect.dispatchEvent(new Event('change'));
-          }
+          stateSelect.value = stateCode;
+          stateSelect.dispatchEvent(new Event('change'));
         }, 500);
       }
 
@@ -1956,37 +1952,15 @@ const App = {
         targetBird.rarity = 'ultra';
       }
 
-      // Reverse geocode for location name
-      let locationName = 'Your Area';
-      let regionCode = 'US';
-      let regionName = 'Your Area';
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10`,
-          { headers: { 'Accept-Language': 'en' } }
-        );
-        const data = await response.json();
-        locationName = data.address?.city || data.address?.town || data.address?.county || data.address?.state || 'Your Area';
+      // Try to get region from observations
+      let locationName = 'Nearby';
+      let regionCode = observations[0]?.subnational1Code || observations[0]?.countryCode || 'WORLD';
+      let regionName = observations[0]?.subnational1Name || observations[0]?.countryName || 'Your Area';
 
-        const countryCode = data.address?.country_code?.toUpperCase() || 'US';
-        const state = data.address?.state;
-
-        if (countryCode && state) {
-          const states = await EBird.getStates(countryCode);
-          const stateMatch = states.find(s => s.name.toLowerCase() === state.toLowerCase());
-          if (stateMatch) {
-            regionCode = stateMatch.code;
-            regionName = stateMatch.name;
-          } else {
-            regionCode = countryCode;
-            regionName = data.address?.country || countryCode;
-          }
-        } else if (countryCode) {
-          regionCode = countryCode;
-          regionName = data.address?.country || countryCode;
-        }
-      } catch (e) {
-        console.error('Geocoding failed:', e);
+      // Extract city/location name from first observation if available
+      if (observations[0]?.locName) {
+        const locParts = observations[0].locName.split(',');
+        locationName = locParts[0].trim() || 'Nearby';
       }
 
       // Create challenge
