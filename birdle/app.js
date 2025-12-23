@@ -1,5 +1,5 @@
 // Birdle - Bird Bingo App
-console.log('=== app.js loaded, version 41 ===');
+console.log('=== app.js loaded, version 42 ===');
 
 const App = {
   birds: [],
@@ -76,6 +76,7 @@ const App = {
   },
 
   bindSearchEvents() {
+    console.log('=== bindSearchEvents() ===');
     const countryFilter = document.getElementById('country-filter');
     const stateFilter = document.getElementById('state-filter');
     const sortType = document.getElementById('sort-type');
@@ -86,8 +87,11 @@ const App = {
     const mapCancelBtn = document.getElementById('map-cancel-btn');
     const mapConfirmBtn = document.getElementById('map-confirm-btn');
 
+    console.log('useLocationBtn found:', !!useLocationBtn);
+
     // Use My Location button
     useLocationBtn?.addEventListener('click', () => {
+      console.log('=== Use My Location button clicked! ===');
       this.useMyLocation();
     });
 
