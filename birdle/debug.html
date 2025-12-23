@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug - Birdle</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    button {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    button:hover {
+      background: #c0392b;
+    }
+    .success {
+      background: #27ae60;
+    }
+    .success:hover {
+      background: #229954;
+    }
+    #output {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 Birdle Debug Tools</h1>
+
+  <h2>Service Worker Management</h2>
+  <button onclick="unregisterSW()">🗑️ Unregister All Service Workers</button>
+  <button onclick="clearCaches()">🧹 Clear All Caches</button>
+  <button onclick="clearAll()">💣 Nuclear Reset (SW + Caches + LocalStorage)</button>
+  <button class="success" onclick="checkStatus()">✓ Check Status</button>
+
+  <div id="output"></div>
+
+  <hr style="margin: 30px 0;">
+  <a href="index.html">← Back to Home</a>
+
+  <script>
+    const output = document.getElementById('output');
+
+    function log(msg) {
+      console.log(msg);
+      output.textContent += msg + '\n';
+    }
+
+    async function unregisterSW() {
+      output.textContent = '';
+      log('Unregistering service workers...');
+
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        log(`Found ${registrations.length} service worker(s)`);
+
+        for (let registration of registrations) {
+          await registration.unregister();
+          log('✓ Unregistered: ' + registration.scope);
+        }
+
+        log('\n✅ All service workers unregistered!');
+        log('Reload the page to start fresh.');
+      } else {
+        log('❌ Service workers not supported');
+      }
+    }
+
+    async function clearCaches() {
+      output.textContent = '';
+      log('Clearing caches...');
+
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        log(`Found ${cacheNames.length} cache(s): ${cacheNames.join(', ')}`);
+
+        for (let name of cacheNames) {
+          await caches.delete(name);
+          log('✓ Deleted cache: ' + name);
+        }
+
+        log('\n✅ All caches cleared!');
+      } else {
+        log('❌ Cache API not supported');
+      }
+    }
+
+    async function clearAll() {
+      output.textContent = '';
+      log('🚀 Starting nuclear reset...\n');
+
+      // Unregister service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) {
+          await registration.unregister();
+          log('✓ Unregistered SW: ' + registration.scope);
+        }
+      }
+
+      // Clear caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        for (let name of cacheNames) {
+          await caches.delete(name);
+          log('✓ Deleted cache: ' + name);
+        }
+      }
+
+      // Clear localStorage
+      localStorage.clear();
+      log('✓ Cleared localStorage');
+
+      // Clear sessionStorage
+      sessionStorage.clear();
+      log('✓ Cleared sessionStorage');
+
+      log('\n💥 NUCLEAR RESET COMPLETE!');
+      log('Reload the page to start completely fresh.');
+    }
+
+    async function checkStatus() {
+      output.textContent = '';
+      log('=== SYSTEM STATUS ===\n');
+
+      // Service Workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        log(`Service Workers: ${registrations.length}`);
+        registrations.forEach(r => {
+          log(`  - ${r.scope}`);
+          log(`    Active: ${r.active ? 'Yes' : 'No'}`);
+          log(`    Waiting: ${r.waiting ? 'Yes' : 'No'}`);
+        });
+      } else {
+        log('Service Workers: Not supported');
+      }
+
+      log('');
+
+      // Caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        log(`Caches: ${cacheNames.length}`);
+        cacheNames.forEach(name => log(`  - ${name}`));
+      } else {
+        log('Caches: Not supported');
+      }
+
+      log('');
+
+      // LocalStorage
+      log(`LocalStorage items: ${localStorage.length}`);
+
+      log('');
+
+      // Browser info
+      log('Protocol: ' + window.location.protocol);
+      log('Secure Context: ' + window.isSecureContext);
+      log('Geolocation: ' + ('geolocation' in navigator ? 'Available' : 'Not available'));
+    }
+  </script>
+</body>
+</html>

@@ -42,8 +42,29 @@
 
   <script src="app.js?v=40"></script>
   <script>
+    // Force service worker update
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/birdle/sw.js', { scope: '/birdle/' });
+      // Get all registrations and update them
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(registration => {
+          console.log('Updating service worker...');
+          registration.update();
+        });
+      });
+
+      // Register service worker with update checking
+      navigator.serviceWorker.register('/birdle/sw.js', {
+        scope: '/birdle/',
+        updateViaCache: 'none'  // Don't cache the service worker file itself
+      }).then(registration => {
+        console.log('Service worker registered, checking for updates...');
+        registration.update();
+
+        // Check for updates every 5 seconds during development
+        setInterval(() => {
+          registration.update();
+        }, 5000);
+      });
     }
   </script>
 </body>
