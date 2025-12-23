@@ -1235,6 +1235,9 @@ const App = {
 
     const birds = this.currentGame.birds || [];
 
+    // Store birds for detail page
+    localStorage.setItem('currentBirds', JSON.stringify(birds));
+
     // Get seen birds from IndexedDB sightings that match this game's criteria
     const seenCodes = await this.getSeenBirdsForGame();
 
