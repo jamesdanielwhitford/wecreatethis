@@ -52,10 +52,12 @@
     <!-- Target Bird -->
     <ul class="daily-bird-list">
       <li class="daily-bird-item" id="target-bird-item">
-        <div class="bird-info">
-          <span class="bird-name" id="target-bird-name">Loading...</span>
-          <span class="bird-rarity" id="target-bird-rarity"></span>
-        </div>
+        <a href="#" id="target-bird-link" class="bird-detail-link">
+          <div class="bird-info">
+            <span class="bird-name" id="target-bird-name">Loading...</span>
+            <span class="bird-rarity" id="target-bird-rarity"></span>
+          </div>
+        </a>
         <button class="daily-found-btn" id="found-btn">Found</button>
         <span class="found-check" id="found-check" style="display:none;">&#10003;</span>
       </li>
@@ -76,22 +78,6 @@
       <div class="share-preview" id="share-preview"></div>
       <button id="do-share-btn" class="modal-btn seen">Share</button>
       <button id="share-cancel-btn" class="modal-btn cancel">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Bird Detail Modal -->
-  <div id="bird-modal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <h3 id="modal-bird-name"></h3>
-      <p id="modal-bird-rarity" class="modal-rarity"></p>
-      <p id="modal-bird-scientific" class="scientific-name"></p>
-
-      <div class="modal-actions">
-        <button id="modal-found-btn" class="modal-btn seen">Mark as Found</button>
-        <button id="modal-unfound-btn" class="modal-btn" style="display:none;">Undo</button>
-        <a id="modal-google-link" class="modal-btn google" href="#" target="_blank">Search Google</a>
-        <button id="modal-cancel-btn" class="modal-btn cancel">Close</button>
-      </div>
     </div>
   </div>
 

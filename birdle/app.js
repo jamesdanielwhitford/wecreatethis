@@ -492,6 +492,16 @@ const App = {
       const referrer = document.referrer;
       if (referrer.includes('/life')) {
         backBtn.href = 'life';
+      } else if (referrer.includes('/daily')) {
+        backBtn.href = 'daily';
+      } else if (referrer.includes('/game?')) {
+        // Extract game ID from referrer and go back to that game
+        const match = referrer.match(/game\?id=(\d+)/);
+        if (match) {
+          backBtn.href = `game?id=${match[1]}`;
+        } else {
+          backBtn.href = 'games';
+        }
       } else {
         backBtn.href = 'search';
       }
@@ -1111,37 +1121,6 @@ const App = {
       this.shareScore();
     });
 
-    // Bird modal
-    document.getElementById('modal-cancel-btn')?.addEventListener('click', () => {
-      document.getElementById('bird-modal').style.display = 'none';
-    });
-
-    document.getElementById('modal-add-sighting-btn')?.addEventListener('click', () => {
-      this.openGameSightingModal();
-    });
-
-    // Game sighting modal
-    document.getElementById('game-sighting-cancel-btn')?.addEventListener('click', () => {
-      document.getElementById('game-sighting-modal').style.display = 'none';
-    });
-
-    document.getElementById('game-sighting-save-btn')?.addEventListener('click', () => {
-      this.saveGameSighting();
-    });
-
-    // Close modals on backdrop click
-    document.getElementById('bird-modal')?.addEventListener('click', (e) => {
-      if (e.target.id === 'bird-modal') {
-        document.getElementById('bird-modal').style.display = 'none';
-      }
-    });
-
-    document.getElementById('game-sighting-modal')?.addEventListener('click', (e) => {
-      if (e.target.id === 'game-sighting-modal') {
-        document.getElementById('game-sighting-modal').style.display = 'none';
-      }
-    });
-
     // Game bird search
     const gameBirdSearch = document.getElementById('game-bird-search');
     gameBirdSearch?.addEventListener('input', (e) => {
@@ -1359,149 +1338,14 @@ const App = {
     list.innerHTML = sortedBirds.map(bird => {
       const isSeen = seenCodes.includes(bird.speciesCode);
       return `
-        <li class="${isSeen ? 'seen' : ''}" data-code="${bird.speciesCode}">
-          <span class="bird-name">${bird.comName}</span>
-          ${isSeen ? '<span class="seen-check">✓</span>' : ''}
+        <li class="${isSeen ? 'seen' : ''}">
+          <a href="bird?code=${bird.speciesCode}">
+            <span class="bird-name">${bird.comName}</span>
+            ${isSeen ? '<span class="seen-check">✓</span>' : ''}
+          </a>
         </li>
       `;
     }).join('');
-
-    list.querySelectorAll('li').forEach(li => {
-      li.addEventListener('click', () => {
-        const code = li.dataset.code;
-        this.openBirdModal(code);
-      });
-    });
-  },
-
-  async openBirdModal(speciesCode) {
-    const bird = this.currentGame.birds.find(b => b.speciesCode === speciesCode);
-    if (!bird) return;
-
-    this.selectedBird = bird;
-    const game = this.currentGame;
-    const isActive = this.isGameActive();
-
-    document.getElementById('modal-bird-name').textContent = bird.comName;
-    document.getElementById('modal-bird-rarity').textContent = bird.rarity;
-    document.getElementById('modal-bird-rarity').className = `modal-rarity ${bird.rarity}`;
-
-    // Set up Google search link
-    const googleLink = document.getElementById('modal-google-link');
-    if (googleLink) {
-      const searchQuery = encodeURIComponent(bird.comName + ' bird');
-      googleLink.href = `https://www.google.com/search?q=${searchQuery}`;
-    }
-
-    // Load and display sightings that match this game
-    await this.loadGameBirdSightings(bird);
-
-    // Show add sighting button if game is active
-    const addBtn = document.getElementById('modal-add-sighting-btn');
-    if (addBtn) {
-      addBtn.style.display = isActive ? 'block' : 'none';
-    }
-
-    document.getElementById('bird-modal').style.display = 'flex';
-  },
-
-  async loadGameBirdSightings(bird) {
-    const listEl = document.getElementById('modal-sightings-list');
-    if (!listEl || typeof BirdDB === 'undefined') return;
-
-    const game = this.currentGame;
-    const allSightings = await BirdDB.getSightingsForBird(bird.speciesCode);
-
-    // Filter to sightings that match this game's criteria
-    const gameSightings = allSightings.filter(sighting => {
-      if (!this.regionMatches(sighting.regionCode, game.regionCode)) return false;
-      if (sighting.date < game.startDate) return false;
-      if (game.endDate && sighting.date > game.endDate) return false;
-      return true;
-    });
-
-    if (gameSightings.length === 0) {
-      listEl.innerHTML = '<p class="empty">No sightings in this game yet</p>';
-      return;
-    }
-
-    // Sort by date descending
-    gameSightings.sort((a, b) => b.date.localeCompare(a.date));
-
-    listEl.innerHTML = gameSightings.map(s => `
-      <div class="sighting-item" data-id="${s.id}">
-        <div class="sighting-info">
-          <span class="sighting-date">${new Date(s.date).toLocaleDateString()}</span>
-          <span class="sighting-location">${s.regionName || s.regionCode}</span>
-          ${s.notes ? `<span class="sighting-notes">${s.notes}</span>` : ''}
-        </div>
-        <button class="delete-sighting-btn" data-id="${s.id}">✕</button>
-      </div>
-    `).join('');
-
-    // Bind delete buttons
-    listEl.querySelectorAll('.delete-sighting-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        if (confirm('Delete this sighting?')) {
-          await this.deleteGameSighting(parseInt(btn.dataset.id));
-        }
-      });
-    });
-  },
-
-  async deleteGameSighting(sightingId) {
-    if (typeof BirdDB !== 'undefined') {
-      await BirdDB.deleteSighting(sightingId);
-      await this.loadGameBirdSightings(this.selectedBird);
-      // Refresh the game birds list to update seen status
-      await this.renderGameBirds();
-    }
-  },
-
-  openGameSightingModal() {
-    const bird = this.selectedBird;
-    const game = this.currentGame;
-    if (!bird) return;
-
-    document.getElementById('game-sighting-bird-name').textContent = bird.comName;
-    document.getElementById('game-sighting-region').textContent = game.regionName || game.regionCode;
-    document.getElementById('game-sighting-date').value = new Date().toISOString().split('T')[0];
-    document.getElementById('game-sighting-notes').value = '';
-
-    document.getElementById('game-sighting-modal').style.display = 'flex';
-  },
-
-  async saveGameSighting() {
-    const bird = this.selectedBird;
-    const game = this.currentGame;
-    if (!bird) return;
-
-    const date = document.getElementById('game-sighting-date').value;
-    const notes = document.getElementById('game-sighting-notes').value;
-
-    if (!date) {
-      alert('Please select a date');
-      return;
-    }
-
-    // Save sighting with game's region
-    if (typeof BirdDB !== 'undefined') {
-      await BirdDB.addSighting({
-        speciesCode: bird.speciesCode,
-        comName: bird.comName,
-        sciName: bird.sciName,
-        date: date,
-        regionCode: game.regionCode,
-        regionName: game.regionName,
-        notes: notes
-      });
-    }
-
-    // Close sighting modal and refresh
-    document.getElementById('game-sighting-modal').style.display = 'none';
-    await this.loadGameBirdSightings(bird);
-    await this.renderGameBirds();
   },
 
 
@@ -1784,11 +1628,6 @@ const App = {
     });
 
     // Bird item click - open modal
-    document.getElementById('target-bird-item')?.addEventListener('click', (e) => {
-      if (e.target.closest('.daily-found-btn')) return;
-      this.openLiferBirdModal();
-    });
-
     // Share complete button
     document.getElementById('share-complete-btn')?.addEventListener('click', () => {
       this.openLiferShareModal();
@@ -1803,31 +1642,10 @@ const App = {
       this.shareLiferScore();
     });
 
-    // Bird detail modal
-    document.getElementById('modal-cancel-btn')?.addEventListener('click', () => {
-      document.getElementById('bird-modal').style.display = 'none';
-    });
-
-    document.getElementById('modal-found-btn')?.addEventListener('click', () => {
-      this.toggleLiferFound();
-      document.getElementById('bird-modal').style.display = 'none';
-    });
-
-    document.getElementById('modal-unfound-btn')?.addEventListener('click', () => {
-      this.toggleLiferFound();
-      document.getElementById('bird-modal').style.display = 'none';
-    });
-
     // Close modals on backdrop click
     document.getElementById('share-modal')?.addEventListener('click', (e) => {
       if (e.target.id === 'share-modal') {
         document.getElementById('share-modal').style.display = 'none';
-      }
-    });
-
-    document.getElementById('bird-modal')?.addEventListener('click', (e) => {
-      if (e.target.id === 'bird-modal') {
-        document.getElementById('bird-modal').style.display = 'none';
       }
     });
   },
@@ -2029,6 +1847,12 @@ const App = {
     rarityEl.textContent = challenge.bird.rarity.charAt(0).toUpperCase() + challenge.bird.rarity.slice(1);
     rarityEl.className = `bird-rarity ${challenge.bird.rarity}`;
 
+    // Set bird detail link
+    const birdLink = document.getElementById('target-bird-link');
+    if (birdLink) {
+      birdLink.href = `bird?code=${challenge.bird.speciesCode}`;
+    }
+
     // Update found state
     this.updateLiferFoundState();
   },
@@ -2091,39 +1915,6 @@ const App = {
 
     localStorage.setItem('liferChallenge', JSON.stringify(challenge));
     this.updateLiferFoundState();
-  },
-
-  openLiferBirdModal() {
-    const challenge = this.liferChallenge;
-    if (!challenge) return;
-
-    const bird = challenge.bird;
-
-    document.getElementById('modal-bird-name').textContent = bird.comName;
-    document.getElementById('modal-bird-rarity').textContent = bird.rarity.charAt(0).toUpperCase() + bird.rarity.slice(1);
-    document.getElementById('modal-bird-rarity').className = `modal-rarity ${bird.rarity}`;
-    document.getElementById('modal-bird-scientific').textContent = bird.sciName || '';
-
-    // Set up Google search link
-    const googleLink = document.getElementById('modal-google-link');
-    if (googleLink) {
-      const searchQuery = encodeURIComponent(bird.comName + ' bird');
-      googleLink.href = `https://www.google.com/search?q=${searchQuery}`;
-    }
-
-    // Update button states based on found status
-    const foundBtn = document.getElementById('modal-found-btn');
-    const unfoundBtn = document.getElementById('modal-unfound-btn');
-
-    if (challenge.found) {
-      foundBtn.style.display = 'none';
-      unfoundBtn.style.display = 'block';
-    } else {
-      foundBtn.style.display = 'block';
-      unfoundBtn.style.display = 'none';
-    }
-
-    document.getElementById('bird-modal').style.display = 'flex';
   },
 
   openLiferShareModal() {
