@@ -1,5 +1,5 @@
 // Birdle - Bird Bingo App
-console.log('=== app.js loaded, version 40 ===');
+console.log('=== app.js loaded, version 41 ===');
 
 const App = {
   birds: [],
@@ -1754,8 +1754,11 @@ const App = {
   liferSightingId: null,
 
   async initDaily() {
+    console.log('=== initDaily() called ===');
     this.bindLiferEvents();
+    console.log('Events bound, loading/creating challenge...');
     await this.loadOrCreateLiferChallenge();
+    console.log('Challenge loaded/created');
   },
 
   bindLiferEvents() {
@@ -1841,41 +1844,81 @@ const App = {
   },
 
   async loadOrCreateLiferChallenge() {
+    console.log('=== loadOrCreateLiferChallenge() ===');
     const today = new Date().toISOString().split('T')[0];
+    console.log('Today:', today);
     const stored = localStorage.getItem('liferChallenge');
+    console.log('Stored challenge:', stored ? 'exists' : 'none');
 
     if (stored) {
       const challenge = JSON.parse(stored);
+      console.log('Stored challenge date:', challenge.date);
       if (challenge.date === today) {
+        console.log('Using stored challenge from today');
         this.liferChallenge = challenge;
         this.renderLiferChallenge();
         return;
       }
+      console.log('Stored challenge is old, creating new one');
     }
 
     // Need to create new challenge for today
+    console.log('Generating new challenge...');
     await this.generateLiferChallenge();
   },
 
   async generateLiferChallenge() {
+    console.log('=== generateLiferChallenge() START ===');
     document.getElementById('daily-loading').style.display = 'block';
     document.getElementById('daily-error').style.display = 'none';
     document.getElementById('daily-no-birds').style.display = 'none';
     document.getElementById('daily-content').style.display = 'none';
 
+    console.log('Checking geolocation support...');
+    console.log('navigator.geolocation exists:', !!navigator.geolocation);
+    console.log('Protocol:', window.location.protocol);
+    console.log('isSecureContext:', window.isSecureContext);
+
     if (!navigator.geolocation) {
+      console.error('Geolocation not supported!');
       document.getElementById('daily-loading').style.display = 'none';
       document.getElementById('daily-error').style.display = 'block';
       document.getElementById('daily-error').innerHTML = '<p>Geolocation is not supported by your browser.</p>';
       return;
     }
 
+    // Check permissions if available
+    if (navigator.permissions) {
+      try {
+        const result = await navigator.permissions.query({ name: 'geolocation' });
+        console.log('Geolocation permission state:', result.state);
+        if (result.state === 'denied') {
+          console.error('Geolocation permission denied!');
+          document.getElementById('daily-loading').style.display = 'none';
+          document.getElementById('daily-error').style.display = 'block';
+          document.getElementById('daily-error').innerHTML = '<p>Location permission denied.</p><button id="retry-location-btn" class="btn-small">Try Again</button>';
+          return;
+        }
+      } catch (e) {
+        console.log('Permissions API query failed:', e);
+      }
+    }
+
     try {
+      console.log('Requesting geolocation...');
       // Get user's location
       const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
-          resolve,
-          reject,
+          (pos) => {
+            console.log('Geolocation SUCCESS:', pos.coords);
+            resolve(pos);
+          },
+          (err) => {
+            console.error('Geolocation ERROR:', err);
+            console.error('Error code:', err.code);
+            console.error('Error message:', err.message);
+            reject(err);
+          },
           {
             enableHighAccuracy: true,
             timeout: 30000,
