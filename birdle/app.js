@@ -57,6 +57,14 @@ const App = {
       this.searchByRegion(lastSearch.code);
     } else if (lastSearch.type === 'location') {
       this.userLocation = { lat: lastSearch.lat, lng: lastSearch.lng };
+
+      // Show location info
+      const locationInfo = document.getElementById('location-info');
+      if (locationInfo) {
+        locationInfo.textContent = `📍 ${lastSearch.lat.toFixed(4)}, ${lastSearch.lng.toFixed(4)} (50km radius)`;
+        locationInfo.style.display = 'block';
+      }
+
       this.showLoading(true);
       EBird.getNearbyObservations(lastSearch.lat, lastSearch.lng).then(birds => {
         this.birds = this.deduplicateBirds(birds);
@@ -177,6 +185,13 @@ const App = {
         lat: latitude,
         lng: longitude
       }));
+
+      // Show location info
+      const locationInfo = document.getElementById('location-info');
+      if (locationInfo) {
+        locationInfo.textContent = `📍 ${latitude.toFixed(4)}, ${longitude.toFixed(4)} (50km radius)`;
+        locationInfo.style.display = 'block';
+      }
 
       this.showLoading(true);
       const birds = await EBird.getNearbyObservations(latitude, longitude);
@@ -300,6 +315,12 @@ const App = {
   },
 
   async searchByRegion(regionCode) {
+    // Hide location info when switching to region search
+    const locationInfo = document.getElementById('location-info');
+    if (locationInfo) {
+      locationInfo.style.display = 'none';
+    }
+
     this.showLoading(true);
     localStorage.setItem('lastSearch', JSON.stringify({ type: 'region', code: regionCode }));
     const birds = await EBird.getRecentObservations(regionCode);
