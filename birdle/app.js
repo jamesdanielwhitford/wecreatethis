@@ -1,5 +1,5 @@
 // Birdle - Bird Bingo App
-console.log('=== app.js loaded, version 39 ===');
+console.log('=== app.js loaded, version 40 ===');
 
 const App = {
   birds: [],
