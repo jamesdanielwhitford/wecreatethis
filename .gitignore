@@ -1,0 +1,5 @@
+# SSL certificates (mkcert)
+*.pem
+
+# Environment variables
+.env

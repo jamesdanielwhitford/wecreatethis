@@ -1,0 +1,1222 @@
+:root {
+  --navbar-height: 48px;
+  --fab-container-height: 100px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  padding: 20px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+h1 {
+  margin-bottom: 8px;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn {
+  display: block;
+  padding: 16px;
+  text-align: center;
+  text-decoration: none;
+  background: #333;
+  color: #fff;
+  border-radius: 8px;
+}
+
+.btn-icon {
+  font-size: 1.5rem;
+}
+
+.btn-text {
+  display: block;
+  font-size: 1.2rem;
+  margin-top: 4px;
+}
+
+.btn-desc {
+  display: block;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.back-btn {
+  display: inline-block;
+  margin-bottom: 16px;
+  text-decoration: none;
+  color: #333;
+}
+
+/* Game Navbar */
+.game-navbar {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: var(--navbar-height);
+  margin: -20px -20px 16px -20px;
+  padding: 0 20px;
+  z-index: 100;
+  border-bottom: 1px solid #eee;
+}
+
+.game-navbar .back-btn {
+  margin-bottom: 0;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: #333;
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  overflow: hidden;
+  min-width: 160px;
+}
+
+.menu-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.menu-dropdown button:hover {
+  background: #f5f5f5;
+}
+
+.menu-dropdown button.danger {
+  color: #c00;
+}
+
+.menu-dropdown button.danger:hover {
+  background: #fee;
+}
+
+/* Search page */
+.filter-row {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.filter-row select,
+.filter-row button {
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.filter-row button {
+  background: #333;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+}
+
+/* Region filters */
+.region-filters {
+  flex-wrap: wrap;
+}
+
+.region-filters select {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Search bar */
+.search-bar {
+  margin: 12px 0;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #333;
+}
+
+.pick-location-btn {
+  width: 100%;
+  padding: 8px;
+  background: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* Map picker */
+#map-container {
+  margin: 12px 0;
+}
+
+#map {
+  height: 200px;
+  border-radius: 4px;
+}
+
+.map-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.map-actions button {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#map-confirm-btn {
+  background: #333;
+  color: #fff;
+  border: none;
+}
+
+.recent-searches {
+  margin: 16px 0;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.recent-searches h3 {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.recent-searches ul {
+  list-style: none;
+}
+
+.recent-searches li {
+  margin: 4px 0;
+}
+
+.recent-searches a {
+  color: #333;
+  font-size: 14px;
+}
+
+.loading {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+/* Bird list */
+.bird-list {
+  list-style: none;
+  margin-top: 16px;
+}
+
+.bird-item {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+
+.bird-item a {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  text-decoration: none;
+  color: #333;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 16px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.remove-btn:hover {
+  color: #c00;
+}
+
+.bird-item .bird-name {
+  font-weight: 500;
+}
+
+.bird-item .bird-location {
+  font-size: 12px;
+  color: #666;
+}
+
+.bird-item.seen {
+  background: #e8f5e9;
+}
+
+.seen-badge {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.empty {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+/* Bird detail */
+.scientific-name {
+  font-style: italic;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.detail-row {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.detail-row .label {
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.seen-btn {
+  margin-top: 24px;
+  width: 100%;
+  cursor: pointer;
+  border: none;
+}
+
+.seen-btn.is-seen {
+  background: #4caf50;
+}
+
+/* Games list */
+.games-list {
+  list-style: none;
+  margin-top: 16px;
+  padding-bottom: var(--fab-container-height);
+}
+
+.games-list li {
+  border-bottom: 1px solid #eee;
+}
+
+.games-list a {
+  display: block;
+  padding: 12px 0;
+  text-decoration: none;
+  color: #333;
+}
+
+.games-list .game-title {
+  display: block;
+  font-weight: 500;
+}
+
+.games-list .game-info {
+  display: block;
+  font-size: 12px;
+  color: #666;
+}
+
+.games-list .empty {
+  color: #666;
+  text-align: center;
+  padding: 40px 0;
+}
+
+/* FAB (floating action button) */
+.fab-container {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 400px;
+  height: var(--fab-container-height);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 24px;
+  background: linear-gradient(to bottom, transparent 0%, #fff 50%);
+  pointer-events: none;
+}
+
+.fab {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  background: #333;
+  border-radius: 50%;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  pointer-events: auto;
+}
+
+.fab::before,
+.fab::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  background: #fff;
+  border-radius: 2px;
+}
+
+.fab::before {
+  width: 24px;
+  height: 3px;
+  transform: translate(-50%, -50%);
+}
+
+.fab::after {
+  width: 3px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+}
+
+/* New game form */
+.form-group {
+  margin: 20px 0;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.form-group > input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.form-group > input[type="text"]::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.form-group .hint {
+  font-size: 12px;
+  color: #666;
+  margin: 4px 0;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.input-row input {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.input-row button {
+  padding: 10px 16px;
+  background: #eee;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.location-btn {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.location-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.region-selects {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.region-selects select {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.region-selects select:disabled {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.create-btn {
+  width: 100%;
+  margin-top: 24px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+}
+
+.create-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Game Detail Page */
+.game-header {
+  margin-bottom: 16px;
+}
+
+.location-link {
+  display: inline-block;
+  color: #0066cc;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.game-dates {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.ended-banner {
+  background: #fff3cd;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 16px;
+  color: #856404;
+  font-size: 14px;
+}
+
+/* Score Summary */
+.score-summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.score-item {
+  text-align: center;
+  flex: 1;
+}
+
+.score-number {
+  display: block;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.score-label {
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.score-item.common .score-number { color: #4caf50; }
+.score-item.rare .score-number { color: #2196f3; }
+.score-item.ultra .score-number { color: #9c27b0; }
+
+.score-item {
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 8px 4px;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.score-item:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.score-item:active {
+  transform: scale(0.95);
+}
+
+.score-item.active {
+  background: #333;
+}
+
+.score-item.active .score-number,
+.score-item.active .score-label {
+  color: #fff;
+}
+
+.score-item.common.active { background: #4caf50; }
+.score-item.rare.active { background: #2196f3; }
+.score-item.ultra.active { background: #9c27b0; }
+
+/* Bird Sections */
+.bird-section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 14px;
+  text-transform: uppercase;
+  padding: 8px 0;
+  border-bottom: 2px solid #eee;
+  margin-bottom: 0;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: sticky;
+  top: var(--navbar-height);
+  background: #fff;
+  z-index: 50;
+  margin-left: -20px;
+  margin-right: -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.section-title .toggle-arrow {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+}
+
+.section-title.collapsed .toggle-arrow {
+  transform: rotate(-90deg);
+}
+
+.section-title.collapsed + .game-bird-list {
+  display: none;
+}
+
+.section-title.common { border-color: #4caf50; color: #4caf50; background: #f0fff0; }
+.section-title.rare { border-color: #2196f3; color: #2196f3; background: #f0f7ff; }
+.section-title.ultra { border-color: #9c27b0; color: #9c27b0; background: #f8f0ff; }
+
+.game-bird-list {
+  list-style: none;
+}
+
+.game-bird-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.game-bird-list li.seen {
+  background: #f0fff0;
+}
+
+.game-bird-list .bird-name {
+  font-weight: 500;
+}
+
+.game-bird-list .seen-check {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+/* Modals */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.modal-content h3 {
+  margin-bottom: 16px;
+}
+
+.modal-rarity {
+  font-size: 12px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.modal-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.modal-btn.seen {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+}
+
+.modal-btn.cancel {
+  background: #f5f5f5;
+  border: none;
+}
+
+.modal-btn.danger {
+  background: #c00;
+  color: #fff;
+  border: none;
+}
+
+.share-options {
+  margin-bottom: 16px;
+}
+
+.share-options .checkbox-label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.share-timeframe {
+  margin-bottom: 16px;
+}
+
+.share-timeframe select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+#custom-dates {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+#custom-dates input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Life List Page */
+.life-navbar {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: var(--navbar-height);
+  margin: -20px -20px 16px -20px;
+  padding: 0 20px;
+  z-index: 100;
+  border-bottom: 1px solid #eee;
+}
+
+.life-navbar h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.life-navbar .back-btn {
+  margin-bottom: 0;
+}
+
+.total-count {
+  font-size: 14px;
+  color: #666;
+}
+
+.life-main {
+  padding-bottom: 40px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.empty-state p {
+  margin-bottom: 16px;
+}
+
+/* Continent Sections */
+.continent-section {
+  margin-bottom: 8px;
+}
+
+.continent-title {
+  background: #333;
+  color: white;
+  padding: 12px 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: sticky;
+  top: var(--navbar-height);
+  z-index: 9;
+}
+
+.continent-title .toggle-arrow {
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.continent-title.collapsed .toggle-arrow {
+  transform: rotate(-90deg);
+}
+
+.continent-title.collapsed + .continent-content {
+  display: none;
+}
+
+.continent-count {
+  margin-left: auto;
+  opacity: 0.7;
+}
+
+/* Region Sections */
+.region-section {
+  border-bottom: 1px solid #eee;
+}
+
+.region-title {
+  background: #f5f5f5;
+  padding: 10px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.region-title .toggle-arrow {
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+.region-title.collapsed .toggle-arrow {
+  transform: rotate(-90deg);
+}
+
+.region-title.collapsed + .region-content {
+  display: none;
+}
+
+.region-count {
+  margin-left: auto;
+  color: #666;
+}
+
+/* Life List Bird Items */
+.life-bird {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.life-bird:hover {
+  background: #fafafa;
+}
+
+.sighting-count {
+  background: #e0e0e0;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #666;
+}
+
+/* Life List Modal Stats */
+.modal-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 16px 0;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* Google Search Button */
+.google-btn {
+  background: #4285f4;
+  margin-top: 12px;
+}
+
+.modal-btn.google {
+  background: #4285f4;
+  color: white;
+  text-decoration: none;
+  text-align: center;
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* Sightings Section (Bird Detail) */
+.sightings-section {
+  margin-top: 24px;
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.sightings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sightings-header h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Sightings List */
+.sightings-list {
+  margin: 8px 0;
+}
+
+.sightings-list .empty {
+  color: #666;
+  font-size: 14px;
+  text-align: center;
+  padding: 16px;
+}
+
+.sighting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.sighting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.sighting-date {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.sighting-location {
+  font-size: 12px;
+  color: #666;
+}
+
+.sighting-notes {
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.delete-sighting-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin: -4px -8px -4px 8px;
+}
+
+.delete-sighting-btn:hover {
+  color: #c00;
+}
+
+/* Modal Sightings (Game) */
+.modal-sightings {
+  margin: 16px 0;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.modal-sightings h4 {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #666;
+  margin: 0 0 8px 0;
+}
+
+.modal-sightings .sightings-list {
+  margin: 0;
+}
+
+.modal-sightings .sighting-item {
+  background: #fff;
+}
+
+.modal-sightings .empty {
+  padding: 8px;
+  margin: 0;
+}
+
+/* Modal Subtitle */
+.modal-subtitle {
+  color: #666;
+  font-size: 14px;
+  margin: -8px 0 16px 0;
+}
+
+/* Hint Text */
+.hint {
+  font-size: 12px;
+  color: #666;
+  margin: 8px 0;
+}
+
+/* ===== LIFER CHALLENGE ===== */
+
+/* Lifer Header */
+.daily-header {
+  margin-bottom: 16px;
+}
+
+.daily-date {
+  font-size: 14px;
+  color: #666;
+}
+
+.daily-location {
+  font-size: 12px;
+  color: #666;
+}
+
+/* Daily Error State */
+.daily-error {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.daily-error p {
+  margin-bottom: 16px;
+}
+
+/* Daily Score - uses same style as game score-summary */
+.daily-score-summary {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.daily-score-summary .score-item {
+  text-align: center;
+  flex: 1;
+}
+
+/* Daily Bird List - uses same style as game-bird-list */
+.daily-bird-list {
+  list-style: none;
+}
+
+.daily-bird-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.daily-bird-item .bird-info {
+  flex: 1;
+}
+
+.daily-bird-item .bird-name {
+  font-weight: 500;
+  display: block;
+}
+
+.daily-bird-item .bird-rarity {
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.daily-bird-item .bird-rarity.common { color: #4caf50; }
+.daily-bird-item .bird-rarity.rare { color: #2196f3; }
+.daily-bird-item .bird-rarity.ultra { color: #9c27b0; }
+
+.daily-bird-item.found {
+  background: #f0fff0;
+}
+
+.daily-bird-item .found-check {
+  color: #4caf50;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+.daily-found-btn {
+  padding: 8px 16px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.daily-found-btn:disabled {
+  background: #ccc;
+  cursor: default;
+}
+
+/* Daily Completed Banner */
+.daily-completed {
+  background: #e8f5e9;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.daily-completed h2 {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #2e7d32;
+}
+
+.daily-completed p {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+/* Share Preview */
+.share-preview {
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}

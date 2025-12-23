@@ -1,12 +1,12 @@
 {
-  "name": "We Create This",
-  "short_name": "WCT",
-  "description": "App hub",
-  "start_url": "/",
-  "scope": "/",
+  "name": "Beautiful Mind",
+  "short_name": "Notes",
+  "description": "Simple offline notes app",
+  "start_url": "/beautiful-mind/",
+  "scope": "/beautiful-mind/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#333333",
+  "background_color": "#e8e6e0",
+  "theme_color": "#5a4a3a",
   "icons": [
     {
       "src": "icon-192.png",

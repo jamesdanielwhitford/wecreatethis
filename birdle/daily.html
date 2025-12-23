@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Lifer Challenge - Birdle</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Sticky Navbar -->
+  <nav class="game-navbar">
+    <a href="index.html" class="back-btn">&larr; Home</a>
+    <button id="menu-btn" class="menu-btn">&#8942;</button>
+    <div id="menu-dropdown" class="menu-dropdown" style="display:none;">
+      <button id="menu-share-score">Share</button>
+    </div>
+  </nav>
+
+  <!-- Challenge Header -->
+  <div class="daily-header">
+    <h1>Lifer Challenge</h1>
+    <p id="daily-date" class="daily-date"></p>
+    <p id="daily-location" class="daily-location"></p>
+  </div>
+
+  <!-- Loading State -->
+  <div id="daily-loading" class="loading">
+    <p>Getting your location...</p>
+  </div>
+
+  <!-- Location Error State -->
+  <div id="daily-error" class="daily-error" style="display:none;">
+    <p>Could not get your location.</p>
+    <button id="retry-location-btn" class="btn-small">Try Again</button>
+  </div>
+
+  <!-- No Birds State -->
+  <div id="daily-no-birds" class="daily-error" style="display:none;">
+    <p>No new birds to find nearby!</p>
+    <p class="hint">You've seen all the common birds in your area.</p>
+  </div>
+
+  <!-- Challenge Content -->
+  <div id="daily-content" style="display:none;">
+    <p class="hint" style="margin-bottom: 16px;">Find this bird to add it to your life list</p>
+
+    <!-- Target Bird -->
+    <ul class="daily-bird-list">
+      <li class="daily-bird-item" id="target-bird-item">
+        <div class="bird-info">
+          <span class="bird-name" id="target-bird-name">Loading...</span>
+          <span class="bird-rarity" id="target-bird-rarity"></span>
+        </div>
+        <button class="daily-found-btn" id="found-btn">Found</button>
+        <span class="found-check" id="found-check" style="display:none;">&#10003;</span>
+      </li>
+    </ul>
+
+    <!-- Completed Banner -->
+    <div id="daily-completed" class="daily-completed" style="display:none;">
+      <h2>New Lifer!</h2>
+      <p id="completed-text">Added to your life list.</p>
+      <button id="share-complete-btn" class="modal-btn seen">Share</button>
+    </div>
+  </div>
+
+  <!-- Share Modal -->
+  <div id="share-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3>Share</h3>
+      <div class="share-preview" id="share-preview"></div>
+      <button id="do-share-btn" class="modal-btn seen">Share</button>
+      <button id="share-cancel-btn" class="modal-btn cancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Bird Detail Modal -->
+  <div id="bird-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3 id="modal-bird-name"></h3>
+      <p id="modal-bird-rarity" class="modal-rarity"></p>
+      <p id="modal-bird-scientific" class="scientific-name"></p>
+
+      <div class="modal-actions">
+        <button id="modal-found-btn" class="modal-btn seen">Mark as Found</button>
+        <button id="modal-unfound-btn" class="modal-btn" style="display:none;">Undo</button>
+        <a id="modal-google-link" class="modal-btn google" href="#" target="_blank">Search Google</a>
+        <button id="modal-cancel-btn" class="modal-btn cancel">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="db.js"></script>
+  <script src="ebird.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,284 +1,233 @@
-# Simple Offline Notes App
+# Bird Bingo App (Birdle)
 
-## Overview
-A vanilla JS/HTML/CSS offline notes app supporting text, image, video, and audio notes. Uses File System Access API on desktop browsers and IndexedDB fallback for mobile browsers (Safari/iOS).
+## Project Goal
 
-## Features
-- **Four note types:** Text (markdown), Image, Video, Audio
-- **Dual storage:** File System API (desktop) / IndexedDB (mobile)
-- **Content-first UX:** Write/capture first, add metadata after
-- **E-reader theme:** Paper grain texture, serif fonts, system dark/light mode
-- **Export/Import:** Transfer notes between devices via JSON
-- **Folder organization:** Create and manage folders for notes
-- **Media capture:** Camera/microphone recording for image/video/audio notes
+Build a bird spotting game that:
+1. Gets all birds recorded in a user's chosen region (country/state)
+2. Organizes birds by rarity (common, rare, ultra) based on observation frequency
+3. Lets users create games with custom regions and date ranges
+4. Track birds seen within each game via sightings
+5. Share games with others via URL
+6. Maintain a Life List of all birds ever seen
 
 ---
 
-## File Structure
+## Current Implementation
+
+### App Structure
 
 ```
-wecreatethis/
-├── CLAUDE.md           # This documentation
-├── index.html          # App shell with canvas for grain effect
-├── app.js              # All JavaScript logic (~1700 lines)
-└── styles.css          # All styles (~880 lines)
+birdle/
+├── index.html      # Home page with Search, Games, Life List buttons
+├── search.html     # Bird search with filters and map picker
+├── bird.html       # Bird detail page with sightings management
+├── games.html      # Games list with FAB to create new
+├── new-game.html   # Create new game with region selector
+├── game.html       # Game detail - bird lists, scoring, sharing
+├── life.html       # Life List - all birds seen by continent/region
+├── life.js         # Life List page logic
+├── styles.css      # App styling
+├── app.js          # Main app logic
+├── db.js           # IndexedDB module for caching and sightings
+├── ebird.js        # eBird API module
+├── sw.js           # Service worker for PWA (v35)
+├── manifest.json   # PWA manifest
+├── icon-192.png    # App icon
+└── icon-512.png    # App icon large
 ```
 
-## User's Notes Structure (Desktop - File System)
+### Completed Features
 
-```
-selected-folder/
-├── Work/
-│   ├── Meeting Notes.md              # Text note with YAML frontmatter
-│   ├── Whiteboard.jpg                # Image note
-│   ├── Whiteboard.jpg.meta.json      # Image metadata sidecar
-│   ├── Demo.mp4                       # Video note
-│   └── Demo.mp4.meta.json            # Video metadata sidecar
-└── Personal/
-    ├── Voice Memo.webm               # Audio note
-    ├── Voice Memo.webm.meta.json     # Audio metadata sidecar
-    └── Journal.md                    # Text note
-```
+**Home Page (`index.html`)**
+- Three main buttons: Search, Games, Life List
+
+**Search Page (`search.html`)**
+- "Use My Location" button for quick GPS-based search
+- Country dropdown filter
+- State/Province dropdown (loads when country selected)
+- Search bar to filter bird list
+- Map location picker (Leaflet + OpenStreetMap)
+- Sort options: Nearest, A-Z, Recently Viewed
+- "Seen only" filter checkbox
+- Bird list from eBird API
+- Seen status derived from IndexedDB sightings
+
+**Bird Detail Page (`bird.html`)**
+- Bird name, scientific name, location, date
+- Google search link
+- **Sightings Section**: View all sightings for this bird
+  - Add new sighting with date, country, state, notes
+  - Delete individual sightings
+  - Sightings sorted by date (most recent first)
+
+**Games List Page (`games.html`)**
+- List of all created games
+- Title on first line, region/found/status on second line
+- FAB (+) button to create new game
+
+**New Game Page (`new-game.html`)**
+- Auto-generated title placeholder (date + region, grey italic)
+- "Use My Location" button for auto-detection
+- Cascading region selectors: Country → State/Province
+- Auto-detects user's region on page load
+- Start date (defaults to today)
+- End date with "Forever" option
+- Create button (enabled when region selected)
+
+**Game Detail Page (`game.html`)**
+- Sticky navbar with back button and three-dot menu (⋮)
+- Menu options: Share Score, Share Game, Change Dates, Delete Game
+- Game header: title, eBird region link, date range
+- Game ended banner (prompts user to use menu to change dates)
+- **Score summary with filter toggle**: Click any score to filter birds
+  - Click Total → show all seen birds
+  - Click Common/Rare/Ultra → show only seen birds in that rarity
+  - Click again to toggle off filter
+  - Visual feedback with colored active states
+- Search bar to filter within bird list
+- Bird lists organized by rarity sections (Common, Rare, Ultra)
+- **Collapsible sections**: Tap section header to expand/collapse
+- **Sticky section headers**: Current rarity header sticks below navbar
+- **Bird Modal**: Tap bird to open modal with:
+  - Sightings list (filtered to this game's region/date range)
+  - Add sighting button (uses game's region)
+  - Delete sightings
+  - Google search link
+- Share Score: Customizable (total, by rarity, bird list, timeframe)
+- Share Game: Creates URL that others can use to create identical game
+- Change Dates: Edit start/end dates, or set to "Forever"
+- Delete Game: Removes game with confirmation
+
+**Life List Page (`life.html`)**
+- Shows all birds with sightings, organized by continent
+- Expandable continent → region → bird hierarchy
+- Bird count per continent and region
+- Click bird to view sighting details
+
+**Sightings System**
+- Sightings are the source of truth for "seen" status
+- Each sighting has: date, regionCode, regionName, notes
+- Games derive seen status by filtering sightings to match region/date range
+- Deleting a sighting updates game status in real-time
+- Multiple sightings per bird supported
+
+**Rarity Calculation**
+- Uses ranking-based approach (not threshold-based)
+- Birds sorted by recent observation count from eBird
+- Top 1/3 = Common (green, #4caf50)
+- Middle 1/3 = Rare (blue, #2196f3)
+- Bottom 1/3 = Ultra (purple, #9c27b0)
 
 ---
 
-## Storage Architecture
+## IndexedDB Schema (db.js)
 
-### Desktop (Chrome, Edge, Opera)
-- Uses **File System Access API** for real folder/file storage
-- Directory handle persisted in IndexedDB
-- Notes are actual files on disk (portable, accessible via Finder/Explorer)
+### Object Stores
 
-### Mobile (Safari, iOS Chrome, Firefox)
-- Uses **IndexedDB** as full storage backend
-- Binary data stored as ArrayBuffer (iOS Safari compatibility)
-- All notes contained within browser storage
+**birds** - Cached bird data
+- `speciesCode` (keyPath)
+- `comName`, `sciName`, `familyName`
+- `continent`, `regions[]`
+- `lastViewed`, `viewCount`
+- `hasSightings` (boolean)
+- `cachedAt`, `source`
 
-### Storage Abstraction
+**sightings** - Individual sighting records
+- `id` (auto-increment keyPath)
+- `speciesCode`, `comName`, `sciName`
+- `date`, `time`
+- `regionCode`, `regionName`
+- `lat`, `lng`, `notes`
+- `createdAt`
+- Indexes: `speciesCode`, `date`, `regionCode`
+
+**cache_meta** - Tracks which birds belong to which cache
+- `key` (keyPath) - e.g., `game_123_birds`
+- `speciesCodes[]`
+- `updatedAt`
+
+### Key Functions
+
 ```javascript
-const USE_FILESYSTEM = 'showDirectoryPicker' in window;
-const storage = USE_FILESYSTEM ? fsStorage : idbStorage;
+BirdDB.addSighting({ speciesCode, comName, date, regionCode, regionName, notes })
+BirdDB.getSightingsForBird(speciesCode)
+BirdDB.getAllSightings()
+BirdDB.deleteSighting(sightingId)
+BirdDB.getSighting(sightingId)
+BirdDB.hasSightings(speciesCode)
+BirdDB.getBirdsByContinent() // For life list
+BirdDB.getContinent(regionCode) // Maps region to continent
 ```
-
-Both backends implement the same interface:
-- `init()` - Initialize storage
-- `selectFolder()` - Select storage location (desktop only)
-- `getAllNotes()` - Get all notes
-- `saveTextNote(folder, filename, content, meta)` - Save text note
-- `saveBinaryNote(folder, filename, blob, meta)` - Save binary note
-- `readNote(note)` - Read note content
-- `deleteNote(note)` - Delete note
-- `deleteFolder(folderPath)` - Delete folder and contents
-- `updateMeta(note, meta)` - Update note metadata
-- `exportAll()` - Export all notes as JSON
-- `importAll(data)` - Import notes from JSON
-- `getStorageName()` - Get storage display name
 
 ---
 
-## Data Models
+## eBird API
 
-### Text Notes (Markdown with YAML Frontmatter)
-```markdown
----
-title: My Meeting Notes
-tags: work, important
-description: Q1 Planning Session
-createdAt: 2025-01-15T10:30:00Z
----
+### Authentication
+- API key stored in ebird.js: `rut6699v8fce`
+- Header: `x-ebirdapitoken: YOUR_KEY`
 
-# Meeting Notes
-
-Content here...
+### Base URL
+```
+https://api.ebird.org/v2
 ```
 
-### Binary Notes (Sidecar .meta.json)
-```json
-{
-  "title": "Whiteboard Photo",
-  "tags": ["meeting", "diagrams"],
-  "description": "Architecture diagram",
-  "createdAt": "2025-01-15T10:30:00Z",
-  "updatedAt": "2025-01-15T10:30:00Z"
-}
+### Endpoints Used
+
+**Region Hierarchy**
+```
+GET /ref/region/list/country/world          # All countries
+GET /ref/region/list/subnational1/{country} # States/provinces
 ```
 
-### IndexedDB Note Object (Mobile)
+**Species List**
+```
+GET /product/spplist/{regionCode}  # All species ever recorded
+```
+
+**Recent Observations**
+```
+GET /data/obs/{regionCode}/recent  # Recent observations for rarity calc
+GET /data/obs/geo/recent?lat=&lng=&dist=&back=30  # Nearby (search page)
+```
+
+---
+
+## Technical Notes
+
+### Service Worker
+- Cache version: `birdle-v35`
+- Bump version when code changes
+- Network-first strategy with cache fallback
+- Caches all static assets for offline use
+
+### CSS Architecture
+- Uses CSS variable `--navbar-height: 48px` for consistent sticky positioning
+- Game navbar and rarity section headers both reference this variable
+- Rarity sections have light tinted backgrounds (green/blue/purple)
+- Score items are clickable with active states for filtering
+
+### Region Matching (for game sightings)
 ```javascript
-{
-  id: "folder/filename.jpg",
-  name: "filename.jpg",
-  folder: "folder",
-  type: "image",
-  data: ArrayBuffer,        // Binary data (not Blob - iOS Safari fix)
-  mimeType: "image/jpeg",
-  meta: { title, tags, description },
-  createdAt: "...",
-  updatedAt: "..."
+// Sighting region must be within or match game region
+regionMatches(sightingRegion, gameRegion) {
+  if (sightingRegion === gameRegion) return true;
+  if (sightingRegion.startsWith(gameRegion + '-')) return true;
+  return false;
 }
 ```
 
-### Supported File Types
-- **Text:** `.md`, `.txt`
-- **Image:** `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`
-- **Video:** `.mp4`, `.webm`, `.mov`
-- **Audio:** `.mp3`, `.m4a`, `.webm`, `.wav`, `.ogg`
+### Data Flow
+1. User adds sighting → saved to IndexedDB `sightings` store
+2. Game page loads → queries all sightings → filters by region/date → determines seen status
+3. Search page loads → queries all sightings → extracts unique species codes → marks as seen
+4. Life list → queries birds with `hasSightings: true` → groups by continent
 
 ---
 
-## Views & Routes
+## Resources
 
-### Navigation View (`#/` or `#/notes`)
-- Folder tree with expand/collapse
-- Notes listed with type icons
-- "+ New" button with type selector menu
-- Settings gear icon (storage location, export/import)
-- Delete folder capability (trash icon on hover)
-
-### View Note (`#/view/{path}`)
-- Note title and metadata display
-- Content rendering by type:
-  - Text: Rendered markdown (using marked.js)
-  - Image: `<img>` element
-  - Video: `<video controls>`
-  - Audio: `<audio controls>`
-- Edit and Delete buttons
-
-### Add Note (`#/new?type={type}`)
-**Content-first UX:**
-- **Text:** Full-page distraction-free editor, save bar at bottom
-- **Image:** Camera capture or file picker, then preview with save options
-- **Video:** Record or select file, then preview with save options
-- **Audio:** Record or select file, then preview with save options
-
-Expandable metadata panel (title, tags, description) via "More" button.
-
-### Edit Note (`#/edit/{path}`)
-- Pre-filled form with existing content/metadata
-- Binary notes: option to replace file
-
----
-
-## Theme System
-
-### E-Reader Theme
-- Paper grain texture via canvas (intensity: 12)
-- Serif fonts (Georgia, Times New Roman)
-- System dark/light mode detection via `prefers-color-scheme`
-
-### CSS Variables
-```css
-:root {
-  --bg: #e8e6e0;
-  --text: #2a2826;
-  --text-muted: #5a5855;
-  --surface: rgba(255, 255, 255, 0.7);
-  --accent: #5a4a3a;
-  --danger: #8b3a3a;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1a1a1a;
-    --text: #d4d4d4;
-    --accent: #a89a8a;
-    /* etc. */
-  }
-}
-```
-
-### Grain Effect
-- Generated on canvas element covering viewport
-- Regenerates on resize and theme change
-- Uses `clientWidth`/`clientHeight` to avoid scrollbar issues
-
----
-
-## Export/Import
-
-### Export Format (JSON)
-```javascript
-[
-  {
-    id: "folder/note.md",
-    name: "note.md",
-    folder: "folder",
-    type: "text",
-    content: "---\ntitle: ...\n---\nContent..."  // Full file with frontmatter
-  },
-  {
-    id: "folder/image.jpg",
-    name: "image.jpg",
-    folder: "folder",
-    type: "image",
-    data: "data:image/jpeg;base64,...",  // Base64 encoded
-    meta: { title, tags, description, ... }
-  }
-]
-```
-
-### Workflow
-1. **Export:** Settings → Export → Downloads `notes-export-YYYY-MM-DD.json`
-2. **Transfer:** Share file via email/cloud/AirDrop
-3. **Import:** Settings → Import → Select JSON file → Notes saved to storage
-
----
-
-## Technical Decisions
-
-### ArrayBuffer vs Blob (iOS Safari Fix)
-iOS Safari has issues storing Blob objects in IndexedDB. Solution:
-- Convert Blob to ArrayBuffer before storing
-- Store mimeType separately
-- Reconstruct Blob when reading
-
-### Defensive Database Initialization
-All IndexedDB methods call `await openDB()` first:
-- `openDB()` is idempotent (returns immediately if already open)
-- Prevents null reference errors
-- Safe even if called multiple times
-
-### Why Sidecar Files?
-- Can't embed metadata in binary files
-- Keeps original files unmodified
-- Simple to read/write
-- Standard pattern
-
-### Why Hash Routing?
-- No server required
-- Works offline
-- Simple implementation
-- Native browser support
-
----
-
-## Browser Compatibility
-
-### Full Support (File System API)
-- Chrome 86+ (desktop)
-- Edge 86+ (desktop)
-- Opera 72+ (desktop)
-
-### IndexedDB Fallback
-- Safari (macOS & iOS)
-- Chrome (Android & iOS)
-- Firefox (all platforms)
-
----
-
-## Known Limitations
-
-1. **No sync between devices** - IndexedDB is local to each browser
-2. **Mobile storage is browser-only** - Can't access files in system file manager
-3. **Export required for backup** - Mobile notes exist only in IndexedDB
-
----
-
-## Future Enhancements (Not Implemented)
-- Search functionality
-- Tag filtering
-- Sort options
-- Service Worker for true offline
-- PWA manifest for installation
-- Cloud sync (Firebase, Supabase)
-- End-to-end encryption
+- eBird API Docs: https://documenter.getpostman.com/view/664302/S1ENwy59
+- Get API Key: https://ebird.org/api/keygen
+- Leaflet.js: https://leafletjs.com/
+- OpenStreetMap Nominatim: https://nominatim.openstreetmap.org/

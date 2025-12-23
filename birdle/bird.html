@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Bird Detail - Birdle</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a href="search.html" class="back-btn">&larr; Back</a>
+
+  <div id="bird-detail">
+    <h1 id="bird-name">Loading...</h1>
+    <p id="bird-scientific" class="scientific-name"></p>
+
+    <div class="detail-row">
+      <span class="label">eBird Location:</span>
+      <span id="bird-location"></span>
+    </div>
+
+    <div class="detail-row">
+      <span class="label">eBird Date:</span>
+      <span id="bird-date"></span>
+    </div>
+
+    <a id="google-link" class="btn google-btn" href="#" target="_blank">Search Google</a>
+
+    <!-- Sightings Section -->
+    <div class="sightings-section">
+      <div class="sightings-header">
+        <h2>Your Sightings</h2>
+        <button id="add-sighting-btn" class="btn-small">+ Add</button>
+      </div>
+      <div id="sightings-list" class="sightings-list">
+        <p class="empty">No sightings yet</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sighting Modal -->
+  <div id="sighting-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h3>Log Sighting</h3>
+      <div class="form-group">
+        <label for="sighting-date">Date</label>
+        <input type="date" id="sighting-date">
+      </div>
+      <div class="form-group">
+        <label>Location</label>
+        <select id="sighting-country">
+          <option value="">Select Country...</option>
+        </select>
+        <select id="sighting-state" disabled style="margin-top: 8px;">
+          <option value="">Select State/Province...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="sighting-notes">Notes (optional)</label>
+        <textarea id="sighting-notes" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="sighting-cancel-btn" class="modal-btn cancel">Cancel</button>
+        <button id="sighting-save-btn" class="modal-btn seen">Save Sighting</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="db.js"></script>
+  <script src="ebird.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
