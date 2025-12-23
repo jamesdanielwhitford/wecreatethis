@@ -18,7 +18,8 @@ Build a bird spotting game that:
 
 ```
 birdle/
-├── index.html      # Home page with Search, Games, Life List buttons
+├── index.html      # Home page with Lifer Challenge, Search, Games, Life List
+├── daily.html      # Lifer Challenge - find one new bird for life list
 ├── search.html     # Bird search with filters and map picker
 ├── bird.html       # Bird detail page with sightings management
 ├── games.html      # Games list with FAB to create new
@@ -30,7 +31,7 @@ birdle/
 ├── app.js          # Main app logic
 ├── db.js           # IndexedDB module for caching and sightings
 ├── ebird.js        # eBird API module
-├── sw.js           # Service worker for PWA (v35)
+├── sw.js           # Service worker for PWA (v37)
 ├── manifest.json   # PWA manifest
 ├── icon-192.png    # App icon
 └── icon-512.png    # App icon large
@@ -39,7 +40,20 @@ birdle/
 ### Completed Features
 
 **Home Page (`index.html`)**
-- Three main buttons: Search, Games, Life List
+- Four main buttons: Lifer Challenge, Search, Games, Life List
+
+**Lifer Challenge (`daily.html`)**
+- Uses GPS to get user's current location
+- Fetches nearby birds from eBird API (50km radius, last 30 days)
+- Filters out birds already on user's life list
+- Selects the most common bird NOT on life list as the target
+- User can toggle "Found" on/off (in case of accidental tap)
+- When marked found, adds sighting to IndexedDB (integrates with Life List)
+- Challenge resets daily (based on date)
+- No manual reset option - deterministic based on location + date
+- Shows "No new birds to find nearby!" if user has seen all common birds
+- Share functionality for score
+- Stored in localStorage as `liferChallenge`
 
 **Search Page (`search.html`)**
 - "Use My Location" button for quick GPS-based search
@@ -100,9 +114,10 @@ birdle/
 
 **Life List Page (`life.html`)**
 - Shows all birds with sightings, organized by continent
-- Expandable continent → region → bird hierarchy
-- Bird count per continent and region
-- Click bird to view sighting details
+- 3-level hierarchy: Continent → Country → Sub-region (state/province)
+- Sub-regions properly nested under parent countries (e.g., Gauteng under South Africa)
+- Bird count per continent, country, and sub-region
+- Click bird to view sighting details in modal
 
 **Sightings System**
 - Sightings are the source of truth for "seen" status
@@ -196,7 +211,7 @@ GET /data/obs/geo/recent?lat=&lng=&dist=&back=30  # Nearby (search page)
 ## Technical Notes
 
 ### Service Worker
-- Cache version: `birdle-v35`
+- Cache version: `birdle-v37`
 - Bump version when code changes
 - Network-first strategy with cache fallback
 - Caches all static assets for offline use
@@ -221,7 +236,29 @@ regionMatches(sightingRegion, gameRegion) {
 1. User adds sighting → saved to IndexedDB `sightings` store
 2. Game page loads → queries all sightings → filters by region/date → determines seen status
 3. Search page loads → queries all sightings → extracts unique species codes → marks as seen
-4. Life list → queries birds with `hasSightings: true` → groups by continent
+4. Life list → queries all sightings → groups by continent → country → sub-region
+5. Lifer Challenge → gets nearby birds → filters out life list species → picks most common remaining bird
+
+### Lifer Challenge Data Model (localStorage)
+```javascript
+{
+  date: "2024-12-23",           // Resets daily
+  lat: 37.7749,
+  lng: -122.4194,
+  locationName: "San Francisco",
+  regionCode: "US-CA",
+  regionName: "California",
+  bird: {
+    speciesCode: "...",
+    comName: "...",
+    sciName: "...",
+    rarity: "common|rare|ultra"
+  },
+  found: false,
+  sightingId: null,             // ID of sighting in IndexedDB (for undo)
+  createdAt: "..."
+}
+```
 
 ---
 

@@ -1,1 +1,0 @@
-add a new game mode in the home page of birdle called daily challenge, this uses the users current location, uses nearby birds form the api, and selects three bords for the user to try find that day, one common, one rare, one ultra, the user can like tick off if they found the bird or not and share the brids they found and score with other players etc 
