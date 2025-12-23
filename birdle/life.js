@@ -109,9 +109,11 @@ const LifeList = {
 
         for (const bird of birds) {
           html += `
-            <li class="bird-item life-bird" data-code="${bird.speciesCode}">
-              <span class="bird-name">${bird.comName}</span>
-              <span class="sighting-count">${bird.count}</span>
+            <li class="bird-item life-bird">
+              <a href="bird?code=${bird.speciesCode}">
+                <span class="bird-name">${bird.comName}</span>
+                <span class="sighting-count">${bird.count}</span>
+              </a>
             </li>
           `;
         }
@@ -155,40 +157,6 @@ const LifeList = {
         title.classList.toggle('collapsed');
       });
     });
-
-    // Bird item click
-    document.querySelectorAll('.life-bird').forEach(item => {
-      item.addEventListener('click', () => {
-        this.openBirdModal(item.dataset.code);
-      });
-    });
-  },
-
-  async openBirdModal(speciesCode) {
-    const bird = await BirdDB.getBird(speciesCode);
-    const sightings = await BirdDB.getSightingsForBird(speciesCode);
-    const firstSighting = await BirdDB.getFirstSighting(speciesCode);
-
-    document.getElementById('modal-bird-name').textContent = bird?.comName || speciesCode;
-    document.getElementById('modal-sci-name').textContent = bird?.sciName || '';
-    document.getElementById('modal-sighting-count').textContent = sightings.length;
-
-    if (firstSighting) {
-      document.getElementById('modal-first-date').textContent =
-        new Date(firstSighting.date).toLocaleDateString();
-      document.getElementById('modal-first-location').textContent =
-        firstSighting.regionName || firstSighting.regionCode;
-    } else {
-      document.getElementById('modal-first-date').textContent = '-';
-      document.getElementById('modal-first-location').textContent = '-';
-    }
-
-    // Google search link
-    const searchQuery = encodeURIComponent((bird?.comName || speciesCode) + ' bird');
-    document.getElementById('modal-google-link').href =
-      `https://www.google.com/search?q=${searchQuery}`;
-
-    document.getElementById('bird-modal').style.display = 'flex';
   }
 };
 

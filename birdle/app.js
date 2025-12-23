@@ -486,6 +486,17 @@ const App = {
 
   // ===== BIRD DETAIL PAGE =====
   async initBirdDetail() {
+    // Set up back button based on referrer
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) {
+      const referrer = document.referrer;
+      if (referrer.includes('/life')) {
+        backBtn.href = 'life';
+      } else {
+        backBtn.href = 'search';
+      }
+    }
+
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
 
@@ -523,8 +534,6 @@ const App = {
   renderBirdDetail(bird) {
     document.getElementById('bird-name').textContent = bird.comName;
     document.getElementById('bird-scientific').textContent = bird.sciName || '';
-    document.getElementById('bird-location').textContent = bird.locName || 'Unknown';
-    document.getElementById('bird-date').textContent = bird.obsDt || 'Unknown';
 
     // Set up Google search link
     const googleLink = document.getElementById('google-link');
