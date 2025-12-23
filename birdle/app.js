@@ -33,6 +33,7 @@ const App = {
 
   detectPage() {
     const path = window.location.pathname;
+    const fullUrl = window.location.pathname + window.location.search;
     // Support both with and without .html extension
     // Order matters - check more specific paths first
     if (path.includes('new-game')) return 'new-game';
@@ -40,10 +41,10 @@ const App = {
     if (path.includes('search')) return 'search';
     if (path.includes('daily')) return 'daily';
     if (path.includes('life')) return 'life';
-    // Check for 'bird.html' or 'bird?' (query params) to avoid matching 'birdle'
-    if (path.match(/bird(\.html|\?)/)) return 'bird';
-    // Check for 'game.html' or 'game?' to avoid matching 'games' or 'new-game'
-    if (path.match(/\/game(\.html|\?)/)) return 'game';
+    // Check for 'bird.html', 'bird?', or '/bird' to avoid matching 'birdle'
+    if (path.match(/\/bird(\.html)?$/) || fullUrl.includes('bird?')) return 'bird';
+    // Check for 'game.html', 'game?', or '/game' to avoid matching 'games' or 'new-game'
+    if (path.match(/\/game(\.html)?$/) || fullUrl.includes('game?')) return 'game';
     return 'home';
   },
 
