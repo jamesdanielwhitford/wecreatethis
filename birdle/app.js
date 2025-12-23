@@ -1587,11 +1587,25 @@ const App = {
 
   // ===== LIFER CHALLENGE =====
   liferChallenge: null,
-  liferSightingId: null,
 
   async initDaily() {
     this.bindLiferEvents();
     await this.loadOrCreateLiferChallenge();
+
+    // Refresh challenge state when user returns to the page (e.g., after adding a sighting)
+    window.addEventListener('pageshow', async (e) => {
+      // Only refresh if returning from back/forward navigation
+      if (e.persisted || performance.navigation.type === 2) {
+        await this.updateLiferFoundState();
+      }
+    });
+
+    // Also refresh when page becomes visible (mobile app switching)
+    document.addEventListener('visibilitychange', async () => {
+      if (!document.hidden && this.liferChallenge) {
+        await this.updateLiferFoundState();
+      }
+    });
   },
 
   bindLiferEvents() {
@@ -1621,13 +1635,6 @@ const App = {
       this.loadOrCreateLiferChallenge();
     });
 
-    // Found button - toggles on/off
-    document.getElementById('found-btn')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleLiferFound();
-    });
-
-    // Bird item click - open modal
     // Share complete button
     document.getElementById('share-complete-btn')?.addEventListener('click', () => {
       this.openLiferShareModal();
@@ -1800,15 +1807,13 @@ const App = {
         regionCode: regionCode,
         regionName: regionName,
         bird: targetBird,
-        found: false,
-        sightingId: null,
         createdAt: new Date().toISOString()
       };
 
       this.liferChallenge = challenge;
       localStorage.setItem('liferChallenge', JSON.stringify(challenge));
 
-      this.renderLiferChallenge();
+      await this.renderLiferChallenge();
 
     } catch (error) {
       console.error('Failed to create lifer challenge:', error);
@@ -1817,7 +1822,7 @@ const App = {
     }
   },
 
-  renderLiferChallenge() {
+  async renderLiferChallenge() {
     const challenge = this.liferChallenge;
     if (!challenge) return;
 
@@ -1850,76 +1855,50 @@ const App = {
     // Set bird detail link
     const birdLink = document.getElementById('target-bird-link');
     if (birdLink) {
-      birdLink.href = `bird?code=${challenge.bird.speciesCode}`;
+      birdLink.href = `bird?code=${challenge.bird.speciesCode}&from=daily`;
     }
 
-    // Update found state
-    this.updateLiferFoundState();
+    // Check and update found state based on sightings
+    await this.updateLiferFoundState();
   },
 
-  updateLiferFoundState() {
+  async updateLiferFoundState() {
     const challenge = this.liferChallenge;
     if (!challenge) return;
 
     const item = document.getElementById('target-bird-item');
-    const btn = document.getElementById('found-btn');
     const check = document.getElementById('found-check');
     const completedBanner = document.getElementById('daily-completed');
 
-    if (challenge.found) {
+    // Check if user has any sightings for this bird on this date
+    let hasFoundBird = false;
+    if (typeof BirdDB !== 'undefined') {
+      const sightings = await BirdDB.getSightingsForBird(challenge.bird.speciesCode);
+      // Check if any sighting matches the challenge date
+      hasFoundBird = sightings.some(s => s.date === challenge.date);
+    }
+
+    if (hasFoundBird) {
       item?.classList.add('found');
-      if (btn) {
-        btn.textContent = 'Undo';
-        btn.style.background = '#999';
-      }
       if (check) check.style.display = 'inline';
       if (completedBanner) completedBanner.style.display = 'block';
     } else {
       item?.classList.remove('found');
-      if (btn) {
-        btn.textContent = 'Found';
-        btn.style.background = '#333';
-      }
       if (check) check.style.display = 'none';
       if (completedBanner) completedBanner.style.display = 'none';
     }
   },
 
-  async toggleLiferFound() {
+  async openLiferShareModal() {
     const challenge = this.liferChallenge;
     if (!challenge) return;
 
-    if (challenge.found) {
-      // Undo - remove sighting
-      if (challenge.sightingId && typeof BirdDB !== 'undefined') {
-        await BirdDB.deleteSighting(challenge.sightingId);
-      }
-      challenge.found = false;
-      challenge.sightingId = null;
-    } else {
-      // Mark as found - add sighting
-      if (typeof BirdDB !== 'undefined') {
-        const sightingId = await BirdDB.addSighting({
-          speciesCode: challenge.bird.speciesCode,
-          comName: challenge.bird.comName,
-          sciName: challenge.bird.sciName,
-          date: challenge.date,
-          regionCode: challenge.regionCode,
-          regionName: challenge.regionName,
-          notes: 'Lifer Challenge'
-        });
-        challenge.sightingId = sightingId;
-      }
-      challenge.found = true;
+    // Check if user has found the bird
+    let hasFoundBird = false;
+    if (typeof BirdDB !== 'undefined') {
+      const sightings = await BirdDB.getSightingsForBird(challenge.bird.speciesCode);
+      hasFoundBird = sightings.some(s => s.date === challenge.date);
     }
-
-    localStorage.setItem('liferChallenge', JSON.stringify(challenge));
-    this.updateLiferFoundState();
-  },
-
-  openLiferShareModal() {
-    const challenge = this.liferChallenge;
-    if (!challenge) return;
 
     // Generate HTML preview with clickable link
     const dateStr = new Date(challenge.date).toLocaleDateString('en-US', {
@@ -1932,7 +1911,7 @@ const App = {
 
     let html = `<strong>Birdle Lifer Challenge - ${dateStr}</strong><br><br>`;
 
-    if (challenge.found) {
+    if (hasFoundBird) {
       html += `New lifer: ${challenge.bird.comName}!<br>`;
     } else {
       html += `Target: ${challenge.bird.comName}<br>`;
@@ -1945,9 +1924,16 @@ const App = {
     document.getElementById('share-modal').style.display = 'flex';
   },
 
-  generateLiferShareText() {
+  async generateLiferShareText() {
     const challenge = this.liferChallenge;
     if (!challenge) return '';
+
+    // Check if user has found the bird
+    let hasFoundBird = false;
+    if (typeof BirdDB !== 'undefined') {
+      const sightings = await BirdDB.getSightingsForBird(challenge.bird.speciesCode);
+      hasFoundBird = sightings.some(s => s.date === challenge.date);
+    }
 
     const dateStr = new Date(challenge.date).toLocaleDateString('en-US', {
       month: 'short',
@@ -1956,7 +1942,7 @@ const App = {
 
     let text = `Birdle Lifer Challenge - ${dateStr}\n\n`;
 
-    if (challenge.found) {
+    if (hasFoundBird) {
       text += `New lifer: ${challenge.bird.comName}!\n`;
     } else {
       text += `Target: ${challenge.bird.comName}\n`;
@@ -1969,8 +1955,8 @@ const App = {
     return text;
   },
 
-  shareLiferScore() {
-    const text = this.generateLiferShareText();
+  async shareLiferScore() {
+    const text = await this.generateLiferShareText();
 
     if (navigator.share) {
       navigator.share({ text });
