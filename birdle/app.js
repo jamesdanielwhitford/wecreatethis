@@ -154,12 +154,41 @@ const App = {
     btn.disabled = true;
     btn.textContent = '📍 Detecting...';
 
+    // Extensive debugging
+    console.log('=== Geolocation Debug Info ===');
+    console.log('User Agent:', navigator.userAgent);
+    console.log('Protocol:', window.location.protocol);
+    console.log('Hostname:', window.location.hostname);
+    console.log('navigator.geolocation exists:', !!navigator.geolocation);
+    console.log('isSecureContext:', window.isSecureContext);
+
     // Check if geolocation is supported
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.');
+      const msg = 'Geolocation is not supported by your browser.\n\n' +
+                  'Protocol: ' + window.location.protocol + '\n' +
+                  'Secure Context: ' + window.isSecureContext;
+      alert(msg);
+      console.error(msg);
       btn.textContent = '📍 Use My Location';
       btn.disabled = false;
       return;
+    }
+
+    // Check permissions API if available
+    if (navigator.permissions) {
+      try {
+        const result = await navigator.permissions.query({ name: 'geolocation' });
+        console.log('Permission state:', result.state);
+
+        if (result.state === 'denied') {
+          alert('Location permission is blocked.\n\nPlease:\n1. Click the lock/info icon in your address bar\n2. Allow location access\n3. Refresh and try again');
+          btn.textContent = '📍 Use My Location';
+          btn.disabled = false;
+          return;
+        }
+      } catch (e) {
+        console.log('Permissions API not available or query failed:', e);
+      }
     }
 
     try {

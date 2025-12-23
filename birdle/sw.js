@@ -1,4 +1,4 @@
-const CACHE_NAME = 'birdle-v38';
+const CACHE_NAME = 'birdle-v39';
 const ASSETS = [
   '/birdle/',
   '/birdle/index.html',
@@ -16,7 +16,8 @@ const ASSETS = [
   '/birdle/ebird.js',
   '/birdle/manifest.json',
   '/birdle/icon-192.png',
-  '/birdle/icon-512.png'
+  '/birdle/icon-512.png',
+  '/birdle/_headers'
 ];
 
 // Install - cache all assets
