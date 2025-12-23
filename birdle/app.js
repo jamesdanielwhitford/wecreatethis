@@ -1,5 +1,5 @@
 // Birdle - Bird Bingo App
-console.log('=== app.js loaded, version 42 ===');
+console.log('=== app.js loaded, version 43 ===');
 
 const App = {
   birds: [],
@@ -24,6 +24,7 @@ const App = {
     }
 
     const page = this.detectPage();
+    console.log('Detected page type:', page);
     if (page === 'search') this.initSearch();
     if (page === 'bird') this.initBirdDetail();
     if (page === 'games') this.initGames();
@@ -34,17 +35,21 @@ const App = {
 
   detectPage() {
     const path = window.location.pathname;
-    if (path.includes('search.html')) return 'search';
-    if (path.includes('bird.html')) return 'bird';
-    if (path.includes('daily.html')) return 'daily';
-    if (path.includes('new-game.html')) return 'new-game';
-    if (path.includes('game.html') && !path.includes('games.html') && !path.includes('new-game.html')) return 'game';
-    if (path.includes('games.html')) return 'games';
+    console.log('Detecting page from path:', path);
+    // Support both with and without .html extension
+    if (path.includes('search')) return 'search';
+    if (path.includes('daily')) return 'daily';
+    if (path.includes('new-game')) return 'new-game';
+    if (path.includes('bird') && !path.includes('games')) return 'bird';
+    if (path.includes('game') && !path.includes('games') && !path.includes('new-game')) return 'game';
+    if (path.includes('games')) return 'games';
+    if (path.includes('life')) return 'life';
     return 'home';
   },
 
   // ===== SEARCH PAGE =====
   initSearch() {
+    console.log('=== initSearch() called ===');
     this.bindSearchEvents();
     this.restoreLastSearch();
   },
