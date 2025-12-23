@@ -1,5 +1,4 @@
 // Birdle - Bird Bingo App
-console.log('=== app.js loaded, version 43 ===');
 
 const App = {
   birds: [],
@@ -24,7 +23,6 @@ const App = {
     }
 
     const page = this.detectPage();
-    console.log('Detected page type:', page);
     if (page === 'search') this.initSearch();
     if (page === 'bird') this.initBirdDetail();
     if (page === 'games') this.initGames();
@@ -35,7 +33,6 @@ const App = {
 
   detectPage() {
     const path = window.location.pathname;
-    console.log('Detecting page from path:', path);
     // Support both with and without .html extension
     if (path.includes('search')) return 'search';
     if (path.includes('daily')) return 'daily';
@@ -49,7 +46,6 @@ const App = {
 
   // ===== SEARCH PAGE =====
   initSearch() {
-    console.log('=== initSearch() called ===');
     this.bindSearchEvents();
     this.restoreLastSearch();
   },
@@ -81,7 +77,6 @@ const App = {
   },
 
   bindSearchEvents() {
-    console.log('=== bindSearchEvents() ===');
     const countryFilter = document.getElementById('country-filter');
     const stateFilter = document.getElementById('state-filter');
     const sortType = document.getElementById('sort-type');
@@ -92,11 +87,8 @@ const App = {
     const mapCancelBtn = document.getElementById('map-cancel-btn');
     const mapConfirmBtn = document.getElementById('map-confirm-btn');
 
-    console.log('useLocationBtn found:', !!useLocationBtn);
-
     // Use My Location button
     useLocationBtn?.addEventListener('click', () => {
-      console.log('=== Use My Location button clicked! ===');
       this.useMyLocation();
     });
 
@@ -164,21 +156,9 @@ const App = {
     btn.disabled = true;
     btn.textContent = '📍 Detecting...';
 
-    // Extensive debugging
-    console.log('=== Geolocation Debug Info ===');
-    console.log('User Agent:', navigator.userAgent);
-    console.log('Protocol:', window.location.protocol);
-    console.log('Hostname:', window.location.hostname);
-    console.log('navigator.geolocation exists:', !!navigator.geolocation);
-    console.log('isSecureContext:', window.isSecureContext);
-
     // Check if geolocation is supported
     if (!navigator.geolocation) {
-      const msg = 'Geolocation is not supported by your browser.\n\n' +
-                  'Protocol: ' + window.location.protocol + '\n' +
-                  'Secure Context: ' + window.isSecureContext;
-      alert(msg);
-      console.error(msg);
+      alert('Geolocation is not supported by your browser.');
       btn.textContent = '📍 Use My Location';
       btn.disabled = false;
       return;
@@ -188,8 +168,6 @@ const App = {
     if (navigator.permissions) {
       try {
         const result = await navigator.permissions.query({ name: 'geolocation' });
-        console.log('Permission state:', result.state);
-
         if (result.state === 'denied') {
           alert('Location permission is blocked.\n\nPlease:\n1. Click the lock/info icon in your address bar\n2. Allow location access\n3. Refresh and try again');
           btn.textContent = '📍 Use My Location';
@@ -197,7 +175,7 @@ const App = {
           return;
         }
       } catch (e) {
-        console.log('Permissions API not available or query failed:', e);
+        // Permissions API not available, continue anyway
       }
     }
 
@@ -242,10 +220,6 @@ const App = {
       btn.disabled = false;
 
     } catch (error) {
-      console.error('Location error:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
-
       let errorMessage = 'Could not get your location.\n\n';
 
       if (error.code === 1) {
@@ -1763,11 +1737,8 @@ const App = {
   liferSightingId: null,
 
   async initDaily() {
-    console.log('=== initDaily() called ===');
     this.bindLiferEvents();
-    console.log('Events bound, loading/creating challenge...');
     await this.loadOrCreateLiferChallenge();
-    console.log('Challenge loaded/created');
   },
 
   bindLiferEvents() {
@@ -1853,43 +1824,29 @@ const App = {
   },
 
   async loadOrCreateLiferChallenge() {
-    console.log('=== loadOrCreateLiferChallenge() ===');
     const today = new Date().toISOString().split('T')[0];
-    console.log('Today:', today);
     const stored = localStorage.getItem('liferChallenge');
-    console.log('Stored challenge:', stored ? 'exists' : 'none');
 
     if (stored) {
       const challenge = JSON.parse(stored);
-      console.log('Stored challenge date:', challenge.date);
       if (challenge.date === today) {
-        console.log('Using stored challenge from today');
         this.liferChallenge = challenge;
         this.renderLiferChallenge();
         return;
       }
-      console.log('Stored challenge is old, creating new one');
     }
 
     // Need to create new challenge for today
-    console.log('Generating new challenge...');
     await this.generateLiferChallenge();
   },
 
   async generateLiferChallenge() {
-    console.log('=== generateLiferChallenge() START ===');
     document.getElementById('daily-loading').style.display = 'block';
     document.getElementById('daily-error').style.display = 'none';
     document.getElementById('daily-no-birds').style.display = 'none';
     document.getElementById('daily-content').style.display = 'none';
 
-    console.log('Checking geolocation support...');
-    console.log('navigator.geolocation exists:', !!navigator.geolocation);
-    console.log('Protocol:', window.location.protocol);
-    console.log('isSecureContext:', window.isSecureContext);
-
     if (!navigator.geolocation) {
-      console.error('Geolocation not supported!');
       document.getElementById('daily-loading').style.display = 'none';
       document.getElementById('daily-error').style.display = 'block';
       document.getElementById('daily-error').innerHTML = '<p>Geolocation is not supported by your browser.</p>';
@@ -1900,34 +1857,23 @@ const App = {
     if (navigator.permissions) {
       try {
         const result = await navigator.permissions.query({ name: 'geolocation' });
-        console.log('Geolocation permission state:', result.state);
         if (result.state === 'denied') {
-          console.error('Geolocation permission denied!');
           document.getElementById('daily-loading').style.display = 'none';
           document.getElementById('daily-error').style.display = 'block';
           document.getElementById('daily-error').innerHTML = '<p>Location permission denied.</p><button id="retry-location-btn" class="btn-small">Try Again</button>';
           return;
         }
       } catch (e) {
-        console.log('Permissions API query failed:', e);
+        // Permissions API not available, continue anyway
       }
     }
 
     try {
-      console.log('Requesting geolocation...');
       // Get user's location
       const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            console.log('Geolocation SUCCESS:', pos.coords);
-            resolve(pos);
-          },
-          (err) => {
-            console.error('Geolocation ERROR:', err);
-            console.error('Error code:', err.code);
-            console.error('Error message:', err.message);
-            reject(err);
-          },
+          resolve,
+          reject,
           {
             enableHighAccuracy: true,
             timeout: 30000,
@@ -2235,21 +2181,15 @@ const App = {
 
 // Check for shared game before normal init
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('=== Birdle App Starting ===');
-  console.log('Current page:', window.location.pathname);
-  console.log('App object exists:', typeof App !== 'undefined');
-
   try {
     // If on game page, check for shared game first
-    if (window.location.pathname.includes('game.html') &&
+    if (window.location.pathname.includes('game') &&
         window.location.search.includes('join=')) {
       if (App.checkForSharedGame()) {
         return; // Will redirect
       }
     }
-    console.log('Calling App.init()...');
     App.init();
-    console.log('App.init() completed');
   } catch (error) {
     console.error('Error initializing app:', error);
     alert('Error loading app. Please refresh the page.\n\n' + error.message);
