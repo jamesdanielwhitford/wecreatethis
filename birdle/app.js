@@ -146,12 +146,26 @@ const App = {
     btn.disabled = true;
     btn.textContent = '📍 Detecting...';
 
+    // Check if geolocation is supported
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
+      btn.textContent = '📍 Use My Location';
+      btn.disabled = false;
+      return;
+    }
+
     try {
+      // Request permission explicitly first (helps with debugging)
       const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: false,
-          timeout: 10000
-        });
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          reject,
+          {
+            enableHighAccuracy: true,
+            timeout: 30000,
+            maximumAge: 60000
+          }
+        );
       });
 
       const { latitude, longitude } = position.coords;
@@ -175,7 +189,37 @@ const App = {
 
     } catch (error) {
       console.error('Location error:', error);
-      alert('Could not get your location. Please try picking on the map.');
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+
+      let errorMessage = 'Could not get your location.\n\n';
+
+      if (error.code === 1) {
+        // PERMISSION_DENIED
+        errorMessage += 'Location permission denied.\n\n';
+        errorMessage += 'To fix:\n';
+        errorMessage += '• Click the location icon in your address bar\n';
+        errorMessage += '• Allow location access for this site\n';
+        errorMessage += '• Refresh the page and try again';
+      } else if (error.code === 2) {
+        // POSITION_UNAVAILABLE
+        errorMessage += 'Location unavailable.\n\n';
+        errorMessage += 'Please check:\n';
+        errorMessage += '• Location services are enabled on your device\n';
+        errorMessage += '• You have a GPS signal\n';
+        errorMessage += '\nOr use "Pick on map" instead.';
+      } else if (error.code === 3) {
+        // TIMEOUT
+        errorMessage += 'Location request timed out.\n\n';
+        errorMessage += 'This might happen if:\n';
+        errorMessage += '• Your device is searching for GPS signal\n';
+        errorMessage += '• Your connection is slow\n';
+        errorMessage += '\nTry again or use "Pick on map".';
+      } else {
+        errorMessage += 'Unknown error.\n\nPlease try using "Pick on map" instead.';
+      }
+
+      alert(errorMessage);
       btn.textContent = '📍 Use My Location';
       btn.disabled = false;
     }
@@ -204,8 +248,14 @@ const App = {
           this.map.setView([latitude, longitude], 10);
           this.setMapMarker(latitude, longitude);
         },
-        () => {
-          // Default to world view if location fails
+        (error) => {
+          console.warn('Map centering failed:', error);
+          // Default to world view if location fails (silent failure is ok here)
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 300000
         }
       );
     }
@@ -705,6 +755,11 @@ const App = {
     const btn = document.getElementById('use-location-btn');
     const regionInfo = document.getElementById('region-info');
 
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
+      return;
+    }
+
     btn.disabled = true;
     btn.textContent = '📍 Detecting...';
     regionInfo.textContent = 'Getting your location...';
@@ -712,10 +767,15 @@ const App = {
     try {
       // Get GPS coordinates
       const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: false,
-          timeout: 10000
-        });
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          reject,
+          {
+            enableHighAccuracy: true,
+            timeout: 30000,
+            maximumAge: 60000
+          }
+        );
       });
 
       const { latitude, longitude } = position.coords;
@@ -759,7 +819,20 @@ const App = {
 
     } catch (error) {
       console.error('Location detection failed:', error);
-      regionInfo.textContent = 'Could not detect location. Please select manually.';
+
+      let errorMessage = 'Could not detect location. ';
+
+      if (error.code === 1) {
+        errorMessage += 'Location permission denied. Please allow location access and try again.';
+      } else if (error.code === 2) {
+        errorMessage += 'Position unavailable. Please check your location settings.';
+      } else if (error.code === 3) {
+        errorMessage += 'Request timed out. Please try again.';
+      } else {
+        errorMessage += 'Please select your region manually.';
+      }
+
+      regionInfo.textContent = errorMessage;
       btn.textContent = '📍 Use My Location';
       btn.disabled = false;
     }
@@ -1739,13 +1812,25 @@ const App = {
     document.getElementById('daily-no-birds').style.display = 'none';
     document.getElementById('daily-content').style.display = 'none';
 
+    if (!navigator.geolocation) {
+      document.getElementById('daily-loading').style.display = 'none';
+      document.getElementById('daily-error').style.display = 'block';
+      document.getElementById('daily-error').innerHTML = '<p>Geolocation is not supported by your browser.</p>';
+      return;
+    }
+
     try {
       // Get user's location
       const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: false,
-          timeout: 15000
-        });
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          reject,
+          {
+            enableHighAccuracy: true,
+            timeout: 30000,
+            maximumAge: 60000
+          }
+        );
       });
 
       const { latitude, longitude } = position.coords;
