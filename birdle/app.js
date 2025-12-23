@@ -728,16 +728,67 @@ const App = {
     this.selectedRegionName = null;
     this.bindNewGameEvents();
     await this.loadCountries();
-    this.updateRegionInfo(); // Set initial placeholder to date
 
-    // Set default start date to today
-    const startDateInput = document.getElementById('start-date');
-    if (startDateInput) {
-      startDateInput.value = new Date().toISOString().split('T')[0];
+    // Check for shared game parameters
+    const params = new URLSearchParams(window.location.search);
+    const sharedTitle = params.get('title');
+    const sharedRegion = params.get('region');
+    const sharedRegionName = params.get('regionName');
+    const sharedStart = params.get('start');
+    const sharedEnd = params.get('end');
+
+    if (sharedTitle && sharedRegion) {
+      // Pre-fill form with shared game data
+      const titleInput = document.getElementById('game-title');
+      const startDateInput = document.getElementById('start-date');
+      const endDateInput = document.getElementById('end-date');
+
+      if (titleInput) titleInput.value = sharedTitle;
+      if (startDateInput && sharedStart) startDateInput.value = sharedStart;
+      if (endDateInput && sharedEnd) endDateInput.value = sharedEnd;
+
+      // Set the region
+      this.selectedRegion = sharedRegion;
+      this.selectedRegionName = sharedRegionName || sharedRegion;
+
+      // Pre-select country and state if applicable
+      const countryCode = sharedRegion.split('-')[0];
+      const countrySelect = document.getElementById('country-select');
+      const stateSelect = document.getElementById('state-select');
+
+      if (countrySelect) {
+        countrySelect.value = countryCode;
+
+        // Load states for this country
+        if (stateSelect) {
+          stateSelect.innerHTML = '<option value="">Loading...</option>';
+          stateSelect.disabled = true;
+
+          const states = await EBird.getStates(countryCode);
+          stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
+          states.forEach(s => {
+            stateSelect.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+          });
+          stateSelect.disabled = false;
+
+          // If shared region is a state, select it
+          if (sharedRegion.includes('-')) {
+            stateSelect.value = sharedRegion;
+          }
+        }
+      }
+
+      this.updateRegionInfo();
+      this.validateNewGame();
+    } else {
+      // Normal flow: set default start date and auto-detect
+      this.updateRegionInfo(); // Set initial placeholder to date
+      const startDateInput = document.getElementById('start-date');
+      if (startDateInput) {
+        startDateInput.value = new Date().toISOString().split('T')[0];
+      }
+      this.detectLocation();
     }
-
-    // Auto-detect user's region
-    this.detectLocation();
   },
 
   bindNewGameEvents() {
@@ -1513,24 +1564,28 @@ const App = {
   shareGame() {
     const game = this.currentGame;
 
-    // Encode game data in URL parameters
+    // Create readable URL parameters for new-game page
     const params = new URLSearchParams({
       title: game.title,
       region: game.regionCode,
       regionName: game.regionName || '',
-      start: game.startDate,
-      end: game.endDate || ''
+      start: game.startDate
     });
 
-    const baseUrl = window.location.origin + '/birdle/game';
-    const shareUrl = `${baseUrl}?join=${btoa(params.toString())}`;
+    if (game.endDate) {
+      params.set('end', game.endDate);
+    }
 
-    const text = `🐦 Join my Birdle game: "${game.title}"\n\n${shareUrl}`;
+    const baseUrl = window.location.origin + '/birdle/new-game';
+    const shareUrl = `${baseUrl}?${params.toString()}`;
+
+    const endDateText = game.endDate ? new Date(game.endDate).toLocaleDateString() : 'Forever';
+    const text = `🐦 Join my Birdle game!\n\n"${game.title}"\n${game.regionName}\n${new Date(game.startDate).toLocaleDateString()} - ${endDateText}\n\n${shareUrl}`;
 
     if (navigator.share) {
       navigator.share({
         title: `Birdle: ${game.title}`,
-        text: `Join my Birdle game: "${game.title}"`,
+        text: text,
         url: shareUrl
       });
     } else {
@@ -1540,53 +1595,6 @@ const App = {
     }
   },
 
-  // Check for shared game URL and create game
-  checkForSharedGame() {
-    const params = new URLSearchParams(window.location.search);
-    const joinData = params.get('join');
-
-    if (!joinData) return false;
-
-    try {
-      const decoded = atob(joinData);
-      const gameParams = new URLSearchParams(decoded);
-
-      const title = gameParams.get('title');
-      const regionCode = gameParams.get('region');
-      const regionName = gameParams.get('regionName') || regionCode;
-      const startDate = gameParams.get('start');
-      const endDate = gameParams.get('end') || null;
-
-      if (!title || !regionCode) {
-        return false;
-      }
-
-      // Create new game from shared data
-      const game = {
-        id: Date.now(),
-        title: title,
-        regionCode: regionCode,
-        regionName: regionName,
-        startDate: startDate,
-        endDate: endDate,
-        createdAt: new Date().toISOString(),
-        birds: null,
-        seenBirds: [],
-        sharedFrom: true
-      };
-
-      this.games.unshift(game);
-      localStorage.setItem('games', JSON.stringify(this.games));
-
-      // Redirect to the new game without the join parameter
-      window.location.href = `game?id=0`;
-      return true;
-
-    } catch (e) {
-      console.error('Failed to parse shared game:', e);
-      return false;
-    }
-  },
 
   // ===== LIFER CHALLENGE =====
   liferChallenge: null,
@@ -1973,16 +1981,8 @@ const App = {
   }
 };
 
-// Check for shared game before normal init
 document.addEventListener('DOMContentLoaded', () => {
   try {
-    // If on game page, check for shared game first
-    if (window.location.pathname.includes('game') &&
-        window.location.search.includes('join=')) {
-      if (App.checkForSharedGame()) {
-        return; // Will redirect
-      }
-    }
     App.init();
   } catch (error) {
     console.error('Error initializing app:', error);
