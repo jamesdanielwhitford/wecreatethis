@@ -431,7 +431,7 @@ const App = {
       const showRemove = this.currentSort === 'recent';
       return `
         <li class="bird-item ${isSeen ? 'seen' : ''}" data-code="${bird.speciesCode}">
-          <a href="bird.html?code=${bird.speciesCode}">
+          <a href="bird?code=${bird.speciesCode}">
             <span class="bird-name">${bird.comName}</span>
             <span class="bird-location">${bird.locName || ''}</span>
             ${isSeen ? '<span class="seen-badge">✓</span>' : ''}
@@ -694,7 +694,7 @@ const App = {
 
       return `
         <li>
-          <a href="game.html?id=${index}">
+          <a href="game?id=${index}">
             <span class="game-title">${game.title}</span>
             <span class="game-info">${region} · ${seenCount} found · ${status}</span>
           </a>
@@ -963,7 +963,7 @@ const App = {
     localStorage.setItem('games', JSON.stringify(this.games));
 
     // Navigate to game detail
-    window.location.href = `game.html?id=0`;
+    window.location.href = `game?id=0`;
   },
 
   // ===== GAME DETAIL PAGE =====
@@ -1567,7 +1567,7 @@ const App = {
   deleteGame() {
     this.games.splice(this.currentGameIndex, 1);
     localStorage.setItem('games', JSON.stringify(this.games));
-    window.location.href = 'games.html';
+    window.location.href = 'games';
   },
 
   async shareScore() {
@@ -1666,7 +1666,7 @@ const App = {
       end: game.endDate || ''
     });
 
-    const baseUrl = window.location.origin + '/birdle/game.html';
+    const baseUrl = window.location.origin + '/birdle/game';
     const shareUrl = `${baseUrl}?join=${btoa(params.toString())}`;
 
     const text = `🐦 Join my Birdle game: "${game.title}"\n\n${shareUrl}`;
@@ -1723,7 +1723,7 @@ const App = {
       localStorage.setItem('games', JSON.stringify(this.games));
 
       // Redirect to the new game without the join parameter
-      window.location.href = `game.html?id=0`;
+      window.location.href = `game?id=0`;
       return true;
 
     } catch (e) {
