@@ -28,9 +28,15 @@
     </p>
   </div>
 
+  <!-- Initial State - No location yet -->
+  <div id="daily-initial" class="daily-error" style="display:none;">
+    <p>Enable location to get your daily challenge</p>
+    <button id="enable-location-btn" class="btn">📍 Use My Location</button>
+  </div>
+
   <!-- Loading State -->
-  <div id="daily-loading" class="loading">
-    <p>Getting your location...</p>
+  <div id="daily-loading" class="loading" style="display:none;">
+    <p>Finding your challenge...</p>
   </div>
 
   <!-- Location Error State -->
@@ -80,8 +86,9 @@
     </div>
   </div>
 
-  <script src="db.js?v=49"></script>
-  <script src="ebird.js?v=49"></script>
-  <script src="app.js?v=49"></script>
+  <script src="location.js?v=70"></script>
+  <script src="db.js?v=70"></script>
+  <script src="ebird.js?v=70"></script>
+  <script src="app.js?v=70"></script>
 </body>
 </html>

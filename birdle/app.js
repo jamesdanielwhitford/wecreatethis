@@ -51,10 +51,55 @@ const App = {
   // ===== SEARCH PAGE =====
   initSearch() {
     this.bindSearchEvents();
+    this.updateSearchLocationButton();
     this.restoreLastSearch();
   },
 
+  // Update location button text based on cache state
+  updateSearchLocationButton() {
+    const btn = document.getElementById('use-location-btn');
+    if (btn && typeof LocationService !== 'undefined') {
+      btn.textContent = LocationService.getButtonText();
+    }
+  },
+
   restoreLastSearch() {
+    // First check if we have a cached location from LocationService
+    if (typeof LocationService !== 'undefined') {
+      const cached = LocationService.getCached();
+      if (cached) {
+        const locationInfo = document.getElementById('location-info');
+        const displayName = LocationService.getRegionDisplayName(cached);
+
+        if (locationInfo) {
+          locationInfo.textContent = `📍 ${displayName}`;
+          locationInfo.style.display = 'block';
+        }
+
+        this.showLoading(true);
+
+        // Use GPS coords if available, otherwise use region
+        if (LocationService.hasValidCoordinates(cached)) {
+          this.userLocation = { lat: cached.lat, lng: cached.lng };
+          EBird.getNearbyObservations(cached.lat, cached.lng).then(birds => {
+            this.birds = this.deduplicateBirds(birds);
+            this.showLoading(false);
+            this.renderBirdList();
+          });
+        } else {
+          // Use region-based search for manual locations
+          const regionCode = LocationService.getRegionCode(cached);
+          EBird.getRecentObservations(regionCode).then(birds => {
+            this.birds = this.deduplicateBirds(birds);
+            this.showLoading(false);
+            this.renderBirdList();
+          });
+        }
+        return;
+      }
+    }
+
+    // Fallback to lastSearch localStorage
     const lastSearch = JSON.parse(localStorage.getItem('lastSearch') || 'null');
     if (!lastSearch) return;
 
@@ -64,7 +109,6 @@ const App = {
     } else if (lastSearch.type === 'location') {
       this.userLocation = { lat: lastSearch.lat, lng: lastSearch.lng };
 
-      // Show location info
       const locationInfo = document.getElementById('location-info');
       if (locationInfo) {
         locationInfo.textContent = `📍 ${lastSearch.lat.toFixed(4)}, ${lastSearch.lng.toFixed(4)} (50km radius)`;
@@ -160,99 +204,47 @@ const App = {
     btn.disabled = true;
     btn.textContent = '📍 Detecting...';
 
-    // Check if geolocation is supported
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.');
+    if (typeof LocationService === 'undefined') {
+      alert('Location service not available.');
       btn.textContent = '📍 Use My Location';
       btn.disabled = false;
       return;
     }
 
-    // Check permissions API if available
-    if (navigator.permissions) {
-      try {
-        const result = await navigator.permissions.query({ name: 'geolocation' });
-        if (result.state === 'denied') {
-          alert('Location permission is blocked.\n\nPlease:\n1. Click the lock/info icon in your address bar\n2. Allow location access\n3. Refresh and try again');
-          btn.textContent = '📍 Use My Location';
-          btn.disabled = false;
-          return;
-        }
-      } catch (e) {
-        // Permissions API not available, continue anyway
-      }
-    }
-
     try {
-      // Request permission explicitly first (helps with debugging)
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          resolve,
-          reject,
-          {
-            enableHighAccuracy: true,
-            timeout: 30000,
-            maximumAge: 60000
-          }
-        );
-      });
+      // Get location (force refresh to get new GPS)
+      const location = await LocationService.getLocation(true);
 
-      const { latitude, longitude } = position.coords;
-      this.userLocation = { lat: latitude, lng: longitude };
+      const { lat, lng } = location;
+      this.userLocation = { lat, lng };
 
-      // Save and search
+      // Save search location
       localStorage.setItem('lastSearch', JSON.stringify({
         type: 'location',
-        lat: latitude,
-        lng: longitude
+        lat,
+        lng
       }));
 
       // Show location info
       const locationInfo = document.getElementById('location-info');
       if (locationInfo) {
-        locationInfo.textContent = `📍 ${latitude.toFixed(4)}, ${longitude.toFixed(4)} (50km radius)`;
+        const displayName = LocationService.getRegionDisplayName(location);
+        locationInfo.textContent = `📍 ${displayName} (50km radius)`;
         locationInfo.style.display = 'block';
       }
 
       this.showLoading(true);
-      const birds = await EBird.getNearbyObservations(latitude, longitude);
+      const birds = await EBird.getNearbyObservations(lat, lng);
       this.birds = this.deduplicateBirds(birds);
       this.showLoading(false);
       this.renderBirdList();
 
-      btn.textContent = '📍 Use My Location';
+      btn.textContent = LocationService.getButtonText();
       btn.disabled = false;
 
     } catch (error) {
-      let errorMessage = 'Could not get your location.\n\n';
-
-      if (error.code === 1) {
-        // PERMISSION_DENIED
-        errorMessage += 'Location permission denied.\n\n';
-        errorMessage += 'To fix:\n';
-        errorMessage += '• Click the location icon in your address bar\n';
-        errorMessage += '• Allow location access for this site\n';
-        errorMessage += '• Refresh the page and try again';
-      } else if (error.code === 2) {
-        // POSITION_UNAVAILABLE
-        errorMessage += 'Location unavailable.\n\n';
-        errorMessage += 'Please check:\n';
-        errorMessage += '• Location services are enabled on your device\n';
-        errorMessage += '• You have a GPS signal\n';
-        errorMessage += '\nOr use "Pick on map" instead.';
-      } else if (error.code === 3) {
-        // TIMEOUT
-        errorMessage += 'Location request timed out.\n\n';
-        errorMessage += 'This might happen if:\n';
-        errorMessage += '• Your device is searching for GPS signal\n';
-        errorMessage += '• Your connection is slow\n';
-        errorMessage += '\nTry again or use "Pick on map".';
-      } else {
-        errorMessage += 'Unknown error.\n\nPlease try using "Pick on map" instead.';
-      }
-
-      alert(errorMessage);
-      btn.textContent = '📍 Use My Location';
+      alert(error.message || 'Could not get your location. Please try using "Pick on map" instead.');
+      btn.textContent = LocationService.getButtonText();
       btn.disabled = false;
     }
   },
@@ -515,8 +507,25 @@ const App = {
       return;
     }
 
+    // Try to find bird from multiple sources
+    let bird = null;
+
+    // 1. Check currentBirds (from search/game)
     const birds = JSON.parse(localStorage.getItem('currentBirds') || '[]');
-    const bird = birds.find(b => b.speciesCode === code);
+    bird = birds.find(b => b.speciesCode === code);
+
+    // 2. Check lifer challenge
+    if (!bird) {
+      const liferChallenge = JSON.parse(localStorage.getItem('liferChallenge') || 'null');
+      if (liferChallenge?.bird?.speciesCode === code) {
+        bird = liferChallenge.bird;
+      }
+    }
+
+    // 3. Check IndexedDB cache
+    if (!bird && typeof BirdDB !== 'undefined') {
+      bird = await BirdDB.getBird(code);
+    }
 
     if (!bird) {
       document.getElementById('bird-name').textContent = 'Bird not found';
@@ -653,6 +662,76 @@ const App = {
       }
     };
 
+    // Determine which region to pre-select
+    let preSelectRegion = null;
+
+    // Check URL params for game context (from=game&gameId=X)
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromContext = urlParams.get('from');
+    const gameIdParam = urlParams.get('gameId');
+
+    if (fromContext === 'game' && gameIdParam) {
+      const gameId = parseInt(gameIdParam);
+      const games = JSON.parse(localStorage.getItem('games') || '[]');
+      const game = games.find(g => g.id === gameId);
+      if (game && game.regionCode) {
+        // Parse game region code (could be country or state)
+        if (game.regionCode.includes('-')) {
+          // It's a state code like "US-CA"
+          const parts = game.regionCode.split('-');
+          preSelectRegion = {
+            countryCode: parts[0],
+            stateCode: game.regionCode
+          };
+        } else {
+          // It's a country code
+          preSelectRegion = {
+            countryCode: game.regionCode,
+            stateCode: null
+          };
+        }
+      }
+    }
+
+    // Fallback to cached location if not from game
+    if (!preSelectRegion && typeof LocationService !== 'undefined') {
+      const cached = LocationService.getCached();
+      if (cached && cached.countryCode) {
+        preSelectRegion = {
+          countryCode: cached.countryCode,
+          stateCode: cached.stateCode
+        };
+      }
+    }
+
+    // Apply pre-selection
+    if (preSelectRegion && preSelectRegion.countryCode) {
+      // Use selectedIndex for reliable visual update
+      for (let i = 0; i < countrySelect.options.length; i++) {
+        if (countrySelect.options[i].value === preSelectRegion.countryCode) {
+          countrySelect.selectedIndex = i;
+          break;
+        }
+      }
+      // Load states
+      stateSelect.innerHTML = '<option value="">Loading...</option>';
+      const states = await EBird.getStates(preSelectRegion.countryCode);
+      stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
+      states.forEach(s => {
+        stateSelect.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+      });
+      stateSelect.disabled = false;
+      // Pre-select state if available
+      if (preSelectRegion.stateCode) {
+        for (let i = 0; i < stateSelect.options.length; i++) {
+          if (stateSelect.options[i].value === preSelectRegion.stateCode) {
+            stateSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+    }
+
     document.getElementById('sighting-modal').style.display = 'flex';
   },
 
@@ -691,11 +770,12 @@ const App = {
   },
 
   // ===== GAMES LIST PAGE =====
-  initGames() {
+  async initGames() {
+    await BirdDB.init();
     this.renderGamesList();
   },
 
-  renderGamesList() {
+  async renderGamesList() {
     const list = document.getElementById('games-list');
     if (!list) return;
 
@@ -704,16 +784,31 @@ const App = {
       return;
     }
 
+    // Get all sightings once for efficiency
+    const allSightings = await BirdDB.getAllSightings();
+
     list.innerHTML = this.games.map((game, index) => {
       const endDate = game.endDate ? new Date(game.endDate) : null;
       const isEnded = endDate && new Date() > endDate;
-      const seenCount = game.seenBirds?.length || 0;
       const status = isEnded ? 'Ended' : 'Active';
       const region = game.regionName || game.regionCode || 'Unknown';
 
+      // Calculate seen count from sightings
+      const matchingSightings = allSightings.filter(sighting => {
+        // Check region
+        if (!this.regionMatches(sighting.regionCode, game.regionCode)) {
+          return false;
+        }
+        // Check date range
+        if (sighting.date < game.startDate) return false;
+        if (game.endDate && sighting.date > game.endDate) return false;
+        return true;
+      });
+      const seenCount = new Set(matchingSightings.map(s => s.speciesCode)).size;
+
       return `
         <li>
-          <a href="game?id=${index}">
+          <a href="game?id=${game.id}">
             <span class="game-title">${game.title}</span>
             <span class="game-info">${region} · ${seenCount} found · ${status}</span>
           </a>
@@ -781,13 +876,14 @@ const App = {
       this.updateRegionInfo();
       this.validateNewGame();
     } else {
-      // Normal flow: set default start date and auto-detect
+      // Normal flow: set default start date (no auto-detect - wait for user click)
       this.updateRegionInfo(); // Set initial placeholder to date
       const startDateInput = document.getElementById('start-date');
       if (startDateInput) {
         startDateInput.value = new Date().toISOString().split('T')[0];
       }
-      this.detectLocation();
+      // Update button text and auto-fill from cache if available
+      this.initLocationButton();
     }
   },
 
@@ -859,85 +955,82 @@ const App = {
     });
   },
 
+  // Initialize location button with correct text and auto-fill from cache
+  initLocationButton() {
+    const btn = document.getElementById('use-location-btn');
+    if (!btn) return;
+
+    // Update button text based on cache state
+    if (typeof LocationService !== 'undefined') {
+      btn.textContent = LocationService.getButtonText();
+
+      // If we have cached location, auto-fill the form
+      const cached = LocationService.getCached();
+      if (cached) {
+        this.applyLocationToForm(cached);
+      }
+    }
+  },
+
+  // Apply location data to the new game form
+  async applyLocationToForm(location) {
+    const countrySelect = document.getElementById('country-select');
+    const regionInfo = document.getElementById('region-info');
+
+    if (!countrySelect || !location.countryCode) return;
+
+    // Select country
+    countrySelect.value = location.countryCode;
+    countrySelect.dispatchEvent(new Event('change'));
+
+    // Wait for states to load, then select state if available
+    if (location.stateCode) {
+      setTimeout(() => {
+        const stateSelect = document.getElementById('state-select');
+        if (stateSelect) {
+          stateSelect.value = location.stateCode;
+          stateSelect.dispatchEvent(new Event('change'));
+        }
+      }, 500);
+    }
+
+    if (regionInfo) {
+      regionInfo.textContent = `Region: ${LocationService.getRegionDisplayName(location)}`;
+    }
+  },
+
   async detectLocation() {
     const btn = document.getElementById('use-location-btn');
     const regionInfo = document.getElementById('region-info');
 
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.');
+    if (typeof LocationService === 'undefined') {
+      alert('Location service not available.');
       return;
     }
 
     btn.disabled = true;
     btn.textContent = '📍 Detecting...';
-    regionInfo.textContent = 'Getting your location...';
+    if (regionInfo) regionInfo.textContent = 'Getting your location...';
 
     try {
-      // Get GPS coordinates
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          resolve,
-          reject,
-          {
-            enableHighAccuracy: true,
-            timeout: 30000,
-            maximumAge: 60000
-          }
-        );
-      });
+      // Force refresh to get new GPS location
+      const location = await LocationService.getLocation(true);
 
-      const { latitude, longitude } = position.coords;
-      regionInfo.textContent = 'Finding region...';
+      if (regionInfo) regionInfo.textContent = 'Finding region...';
 
-      // Get nearby observations to determine region
-      const nearby = await EBird.getNearbyObservations(latitude, longitude, 10);
+      // Apply to form
+      await this.applyLocationToForm(location);
 
-      if (!nearby || nearby.length === 0) {
-        throw new Error('Could not determine region from nearby observations');
-      }
-
-      // Extract region codes from observations
-      const countryCode = nearby[0].countryCode;
-      const stateCode = nearby[0].subnational1Code;
-
-      if (!countryCode) {
-        throw new Error('Could not determine country');
-      }
-
-      // Select country
-      const countrySelect = document.getElementById('country-select');
-      countrySelect.value = countryCode;
-      countrySelect.dispatchEvent(new Event('change'));
-
-      // Wait for states to load, then select state if available
-      if (stateCode) {
-        setTimeout(() => {
-          const stateSelect = document.getElementById('state-select');
-          stateSelect.value = stateCode;
-          stateSelect.dispatchEvent(new Event('change'));
-        }, 500);
-      }
-
-      btn.textContent = '📍 Use My Location';
+      btn.textContent = LocationService.getButtonText();
       btn.disabled = false;
 
     } catch (error) {
       console.error('Location detection failed:', error);
 
-      let errorMessage = 'Could not detect location. ';
-
-      if (error.code === 1) {
-        errorMessage += 'Location permission denied. Please allow location access and try again.';
-      } else if (error.code === 2) {
-        errorMessage += 'Position unavailable. Please check your location settings.';
-      } else if (error.code === 3) {
-        errorMessage += 'Request timed out. Please try again.';
-      } else {
-        errorMessage += 'Please select your region manually.';
+      if (regionInfo) {
+        regionInfo.textContent = error.message || 'Could not detect location. Please select your region manually.';
       }
-
-      regionInfo.textContent = errorMessage;
-      btn.textContent = '📍 Use My Location';
+      btn.textContent = LocationService.getButtonText();
       btn.disabled = false;
     }
   },
@@ -1033,7 +1126,7 @@ const App = {
     localStorage.setItem('games', JSON.stringify(this.games));
 
     // Navigate to game detail
-    window.location.href = `game?id=0`;
+    window.location.href = `game?id=${game.id}`;
   },
 
   // ===== GAME DETAIL PAGE =====
@@ -1044,9 +1137,11 @@ const App = {
 
   initGameDetail() {
     const params = new URLSearchParams(window.location.search);
-    const index = parseInt(params.get('id'));
+    const gameId = parseInt(params.get('id'));
 
-    if (isNaN(index) || !this.games[index]) {
+    // Find game by id (timestamp) instead of array index
+    const index = this.games.findIndex(g => g.id === gameId);
+    if (index === -1) {
       document.getElementById('game-title').textContent = 'Game not found';
       return;
     }
@@ -1389,11 +1484,12 @@ const App = {
       return;
     }
 
+    const gameId = this.currentGame.id;
     list.innerHTML = sortedBirds.map(bird => {
       const isSeen = seenCodes.includes(bird.speciesCode);
       return `
         <li class="${isSeen ? 'seen' : ''}">
-          <a href="bird?code=${bird.speciesCode}">
+          <a href="bird?code=${bird.speciesCode}&from=game&gameId=${gameId}">
             <span class="bird-name">${bird.comName}</span>
             ${isSeen ? '<span class="seen-check">✓</span>' : ''}
           </a>
@@ -1639,11 +1735,14 @@ const App = {
       this.openLiferShareModal();
     });
 
+    // Enable location button (initial state)
+    document.getElementById('enable-location-btn')?.addEventListener('click', () => {
+      this.requestLocationForChallenge();
+    });
+
     // Retry location button
     document.getElementById('retry-location-btn')?.addEventListener('click', () => {
-      document.getElementById('daily-error').style.display = 'none';
-      document.getElementById('daily-loading').style.display = 'block';
-      this.loadOrCreateLiferChallenge();
+      this.requestLocationForChallenge();
     });
 
     // Share complete button
@@ -1668,10 +1767,40 @@ const App = {
     });
   },
 
+  // Request location permission for lifer challenge
+  async requestLocationForChallenge() {
+    document.getElementById('daily-initial').style.display = 'none';
+    document.getElementById('daily-error').style.display = 'none';
+    document.getElementById('daily-loading').style.display = 'block';
+
+    try {
+      // Force GPS request
+      const location = await LocationService.getLocation(true);
+      await this.generateLiferChallenge(location);
+    } catch (error) {
+      console.error('Location request failed:', error);
+      document.getElementById('daily-loading').style.display = 'none';
+      document.getElementById('daily-error').style.display = 'block';
+      document.getElementById('daily-error').innerHTML = `<p>${error.message}</p><button id="retry-location-btn" class="btn-small">Try Again</button>`;
+      // Re-bind retry button since we replaced innerHTML
+      document.getElementById('retry-location-btn')?.addEventListener('click', () => {
+        this.requestLocationForChallenge();
+      });
+    }
+  },
+
   async loadOrCreateLiferChallenge() {
     const today = new Date().toISOString().split('T')[0];
     const stored = localStorage.getItem('liferChallenge');
 
+    // Get current cached location
+    let cachedLocation = null;
+    if (typeof LocationService !== 'undefined') {
+      cachedLocation = LocationService.getCached();
+    }
+
+    // Check for existing valid challenge - only check date, not location
+    // Once a challenge is set for today, keep it (even if found or location changed)
     if (stored) {
       const challenge = JSON.parse(stored);
       if (challenge.date === today) {
@@ -1681,56 +1810,43 @@ const App = {
       }
     }
 
-    // Need to create new challenge for today
-    await this.generateLiferChallenge();
+    // Need to create new challenge (new day)
+    if (cachedLocation) {
+      // Use cached location - no GPS request needed
+      document.getElementById('daily-loading').style.display = 'block';
+      await this.generateLiferChallenge(cachedLocation);
+      return;
+    }
+
+    // No cached location - show initial state with button
+    document.getElementById('daily-initial').style.display = 'block';
+    document.getElementById('daily-loading').style.display = 'none';
   },
 
-  async generateLiferChallenge() {
+  async generateLiferChallenge(location) {
+    document.getElementById('daily-initial').style.display = 'none';
     document.getElementById('daily-loading').style.display = 'block';
     document.getElementById('daily-error').style.display = 'none';
     document.getElementById('daily-no-birds').style.display = 'none';
     document.getElementById('daily-content').style.display = 'none';
 
-    if (!navigator.geolocation) {
-      document.getElementById('daily-loading').style.display = 'none';
-      document.getElementById('daily-error').style.display = 'block';
-      document.getElementById('daily-error').innerHTML = '<p>Geolocation is not supported by your browser.</p>';
-      return;
-    }
-
-    // Check permissions if available
-    if (navigator.permissions) {
-      try {
-        const result = await navigator.permissions.query({ name: 'geolocation' });
-        if (result.state === 'denied') {
-          document.getElementById('daily-loading').style.display = 'none';
-          document.getElementById('daily-error').style.display = 'block';
-          document.getElementById('daily-error').innerHTML = '<p>Location permission denied.</p><button id="retry-location-btn" class="btn-small">Try Again</button>';
-          return;
-        }
-      } catch (e) {
-        // Permissions API not available, continue anyway
-      }
-    }
-
     try {
-      // Get user's location
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          resolve,
-          reject,
-          {
-            enableHighAccuracy: true,
-            timeout: 30000,
-            maximumAge: 60000
-          }
-        );
-      });
+      let observations;
+      let latitude = location.lat;
+      let longitude = location.lng;
 
-      const { latitude, longitude } = position.coords;
-
-      // Get nearby birds
-      const observations = await EBird.getNearbyObservations(latitude, longitude, 50);
+      // Check if we have valid GPS coordinates or need to use region
+      if (LocationService.hasValidCoordinates(location)) {
+        // Use GPS-based search
+        observations = await EBird.getNearbyObservations(latitude, longitude, 50);
+      } else {
+        // Use region-based search
+        const regionCode = LocationService.getRegionCode(location);
+        observations = await EBird.getRecentObservations(regionCode);
+        // Set coordinates to 0 for region-based
+        latitude = 0;
+        longitude = 0;
+      }
 
       if (observations.length === 0) {
         throw new Error('No birds found nearby');
@@ -1798,15 +1914,25 @@ const App = {
         targetBird.rarity = 'ultra';
       }
 
-      // Try to get region from observations
-      let locationName = 'Nearby';
-      let regionCode = observations[0]?.subnational1Code || observations[0]?.countryCode || 'WORLD';
-      let regionName = observations[0]?.subnational1Name || observations[0]?.countryName || 'Your Area';
+      // Get region info - prefer input location for manual locations
+      let locationName, regionCode, regionName;
 
-      // Extract city/location name from first observation if available
-      if (observations[0]?.locName) {
-        const locParts = observations[0].locName.split(',');
-        locationName = locParts[0].trim() || 'Nearby';
+      if (!LocationService.hasValidCoordinates(location) && location.countryCode) {
+        // Manual location - use the location's region info
+        locationName = LocationService.getRegionDisplayName(location);
+        regionCode = LocationService.getRegionCode(location);
+        regionName = location.stateName || location.countryName || 'Your Area';
+      } else {
+        // GPS location - get from observations
+        locationName = 'Nearby';
+        regionCode = observations[0]?.subnational1Code || observations[0]?.countryCode || 'WORLD';
+        regionName = observations[0]?.subnational1Name || observations[0]?.countryName || 'Your Area';
+
+        // Extract city/location name from first observation if available
+        if (observations[0]?.locName) {
+          const locParts = observations[0].locName.split(',');
+          locationName = locParts[0].trim() || 'Nearby';
+        }
       }
 
       // Create challenge
@@ -1830,6 +1956,11 @@ const App = {
       console.error('Failed to create lifer challenge:', error);
       document.getElementById('daily-loading').style.display = 'none';
       document.getElementById('daily-error').style.display = 'block';
+      document.getElementById('daily-error').innerHTML = `<p>${error.message || 'Could not load challenge.'}</p><button id="retry-location-btn" class="btn-small">Try Again</button>`;
+      // Re-bind retry button
+      document.getElementById('retry-location-btn')?.addEventListener('click', () => {
+        this.requestLocationForChallenge();
+      });
     }
   },
 
@@ -1837,6 +1968,7 @@ const App = {
     const challenge = this.liferChallenge;
     if (!challenge) return;
 
+    document.getElementById('daily-initial').style.display = 'none';
     document.getElementById('daily-loading').style.display = 'none';
     document.getElementById('daily-error').style.display = 'none';
     document.getElementById('daily-no-birds').style.display = 'none';

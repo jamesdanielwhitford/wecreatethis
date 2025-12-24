@@ -38,7 +38,7 @@ const LifeList = {
       species.regions.add(sighting.regionCode);
     }
 
-    // Group birds by continent and region
+    // Group birds by continent, country, and region
     const structure = {};
 
     for (const [code, data] of speciesMap) {
@@ -51,13 +51,40 @@ const LifeList = {
 
       // Use the most recent sighting's region for grouping
       const sortedSightings = [...data.sightings].sort((a, b) => b.date.localeCompare(a.date));
-      const primaryRegion = sortedSightings[0].regionName || sortedSightings[0].regionCode;
+      const sighting = sortedSightings[0];
 
-      if (!structure[continent][primaryRegion]) {
-        structure[continent][primaryRegion] = [];
+      // Extract country from regionCode (e.g., "ZA" from "ZA-GT", or just "ZA")
+      const regionCode = sighting.regionCode || '';
+      const countryCode = regionCode.includes('-') ? regionCode.split('-')[0] : regionCode;
+
+      // Get country name - try to look it up or derive from sighting
+      let countryName = countryCode;
+      // Check if sighting has country info stored
+      if (sighting.countryName) {
+        countryName = sighting.countryName;
+      } else {
+        // Try to get from cached countries or use code
+        const countries = await EBird.getCountries();
+        const country = countries.find(c => c.code === countryCode);
+        if (country) countryName = country.name;
       }
 
-      structure[continent][primaryRegion].push({
+      // Get subregion name (state/province) if it's a state-level code
+      const subRegion = regionCode.includes('-')
+        ? (sighting.regionName || regionCode)
+        : null;
+
+      if (!structure[continent][countryName]) {
+        structure[continent][countryName] = {};
+      }
+
+      // If we have a subregion, nest under it; otherwise put directly under country
+      const regionKey = subRegion || '_country';
+      if (!structure[continent][countryName][regionKey]) {
+        structure[continent][countryName][regionKey] = [];
+      }
+
+      structure[continent][countryName][regionKey].push({
         speciesCode: code,
         comName: data.comName,
         sciName: data.sciName,
@@ -77,9 +104,13 @@ const LifeList = {
 
     let html = '';
     for (const continent of sortedContinents) {
-      const regions = structure[continent];
+      const countries = structure[continent];
       let continentTotal = 0;
-      Object.values(regions).forEach(birds => continentTotal += birds.length);
+      for (const country of Object.values(countries)) {
+        for (const birds of Object.values(country)) {
+          continentTotal += birds.length;
+        }
+      }
 
       html += `
         <div class="continent-section">
@@ -91,34 +122,77 @@ const LifeList = {
           <div class="continent-content">
       `;
 
-      // Sort regions alphabetically
-      const sortedRegions = Object.keys(regions).sort();
-      for (const region of sortedRegions) {
-        const birds = regions[region];
-        birds.sort((a, b) => a.comName.localeCompare(b.comName));
-
-        html += `
-          <div class="region-section">
-            <div class="region-title" data-region="${region}">
-              <span class="toggle-arrow">▼</span>
-              <span class="region-name">${region}</span>
-              <span class="region-count">(${birds.length})</span>
-            </div>
-            <ul class="bird-list region-content">
-        `;
-
-        for (const bird of birds) {
-          html += `
-            <li class="bird-item life-bird">
-              <a href="bird?code=${bird.speciesCode}">
-                <span class="bird-name">${bird.comName}</span>
-                <span class="sighting-count">${bird.count}</span>
-              </a>
-            </li>
-          `;
+      // Sort countries alphabetically
+      const sortedCountries = Object.keys(countries).sort();
+      for (const country of sortedCountries) {
+        const regions = countries[country];
+        let countryTotal = 0;
+        for (const birds of Object.values(regions)) {
+          countryTotal += birds.length;
         }
 
-        html += `</ul></div>`;
+        html += `
+          <div class="country-section">
+            <div class="country-title" data-country="${country}">
+              <span class="toggle-arrow">▼</span>
+              <span class="country-name">${country}</span>
+              <span class="country-count">(${countryTotal})</span>
+            </div>
+            <div class="country-content">
+        `;
+
+        // Sort regions alphabetically, but put _country (country-level sightings) first
+        const sortedRegions = Object.keys(regions).sort((a, b) => {
+          if (a === '_country') return -1;
+          if (b === '_country') return 1;
+          return a.localeCompare(b);
+        });
+
+        for (const region of sortedRegions) {
+          const birds = regions[region];
+          birds.sort((a, b) => a.comName.localeCompare(b.comName));
+
+          // For _country, show birds directly under country without sub-header
+          if (region === '_country') {
+            html += `<ul class="bird-list country-birds">`;
+            for (const bird of birds) {
+              html += `
+                <li class="bird-item life-bird">
+                  <a href="bird?code=${bird.speciesCode}">
+                    <span class="bird-name">${bird.comName}</span>
+                    <span class="sighting-count">${bird.count}</span>
+                  </a>
+                </li>
+              `;
+            }
+            html += `</ul>`;
+          } else {
+            html += `
+              <div class="region-section">
+                <div class="region-title" data-region="${region}">
+                  <span class="toggle-arrow">▼</span>
+                  <span class="region-name">${region}</span>
+                  <span class="region-count">(${birds.length})</span>
+                </div>
+                <ul class="bird-list region-content">
+            `;
+
+            for (const bird of birds) {
+              html += `
+                <li class="bird-item life-bird">
+                  <a href="bird?code=${bird.speciesCode}">
+                    <span class="bird-name">${bird.comName}</span>
+                    <span class="sighting-count">${bird.count}</span>
+                  </a>
+                </li>
+              `;
+            }
+
+            html += `</ul></div>`;
+          }
+        }
+
+        html += `</div></div>`;
       }
 
       html += `</div></div>`;
@@ -146,6 +220,14 @@ const LifeList = {
     // Continent collapse toggle
     document.querySelectorAll('.continent-title').forEach(title => {
       title.addEventListener('click', () => {
+        title.classList.toggle('collapsed');
+      });
+    });
+
+    // Country collapse toggle
+    document.querySelectorAll('.country-title').forEach(title => {
+      title.addEventListener('click', (e) => {
+        e.stopPropagation();
         title.classList.toggle('collapsed');
       });
     });
