@@ -9,10 +9,6 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="styles.css">
-  <!-- QR Code library -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <!-- jsQR for QR scanning -->
-  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
   <style>
     .sync-container {
       max-width: 400px;
@@ -39,6 +35,7 @@
       color: #666;
       margin-bottom: 20px;
       line-height: 1.5;
+      text-align: center;
     }
 
     .sync-buttons {
@@ -67,84 +64,16 @@
       background: #2196f3;
     }
 
-    #qr-container {
-      display: none;
-      text-align: center;
+    .step-section {
       margin: 20px 0;
-    }
-
-    #qr-canvas {
-      max-width: 100%;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    #qr-instruction {
-      margin-top: 15px;
-      color: #666;
-    }
-
-    #scan-container {
-      display: none;
-      text-align: center;
-      margin: 20px 0;
-    }
-
-    #scan-video {
-      max-width: 100%;
-      border-radius: 10px;
-      background: #000;
-    }
-
-    #status-text {
-      margin: 15px 0;
       padding: 15px;
-      background: #f5f5f5;
+      background: #f9f9f9;
       border-radius: 10px;
-      color: #333;
     }
 
-    #progress-text {
-      margin: 10px 0;
-      color: #666;
-      font-size: 14px;
-    }
-
-    /* Copy/Paste fallback */
-    .fallback-section {
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid #ddd;
-    }
-
-    .fallback-section h3 {
+    .step-section h3 {
+      margin: 0 0 10px 0;
       font-size: 16px;
-      margin-bottom: 10px;
-    }
-
-    .code-area {
-      width: 100%;
-      height: 100px;
-      font-family: monospace;
-      font-size: 12px;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      resize: none;
-    }
-
-    .copy-btn, .paste-btn {
-      margin-top: 10px;
-      padding: 10px 20px;
-      background: #666;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .copy-btn:hover, .paste-btn:hover {
-      background: #555;
     }
 
     .step-indicator {
@@ -160,16 +89,41 @@
       margin-right: 8px;
     }
 
-    .action-btn {
-      display: block;
+    .step-indicator.blue {
+      background: #2196f3;
+    }
+
+    .code-area {
       width: 100%;
+      height: 80px;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      resize: none;
+      box-sizing: border-box;
+    }
+
+    .code-area:focus {
+      border-color: #4caf50;
+      outline: none;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
       margin-top: 10px;
+    }
+
+    .action-btn {
+      flex: 1;
       padding: 12px;
       background: #4caf50;
       color: white;
       border: none;
       border-radius: 8px;
-      font-size: 16px;
+      font-size: 14px;
       cursor: pointer;
     }
 
@@ -184,6 +138,38 @@
     .action-btn.secondary:hover {
       background: #1e88e5;
     }
+
+    .action-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    #status-section {
+      display: none;
+      margin: 20px 0;
+      padding: 20px;
+      background: #f0f7f0;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    #status-section.error {
+      background: #fef0f0;
+    }
+
+    #status-text {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    #progress-text {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
@@ -196,64 +182,63 @@
   <!-- Sync Header -->
   <div class="sync-header">
     <h1>Sync Devices</h1>
-    <p>Sync sightings and games between devices</p>
+    <p>Transfer sightings and games between devices</p>
   </div>
 
   <div class="sync-container">
-    <p class="sync-intro">
-      Connect directly to another device using QR codes. No account or server needed!
-    </p>
-
+    <!-- Start View -->
     <div id="start-view">
+      <p class="sync-intro">
+        Connect directly to another device. No account needed!
+      </p>
       <div class="sync-buttons">
-        <button id="show-qr-btn">Show QR Code</button>
-        <button id="scan-qr-btn" class="secondary">Scan QR Code</button>
+        <button id="start-sync-btn">Start Sync</button>
+        <button id="join-sync-btn" class="secondary">Join Sync</button>
       </div>
     </div>
 
-    <div id="qr-container">
-      <canvas id="qr-canvas"></canvas>
-      <p id="qr-instruction"></p>
-      <button id="scan-answer-btn" class="action-btn secondary" style="display: none;">
-        Scan their QR code
-      </button>
+    <!-- Initiator View (Device A) -->
+    <div id="initiator-view" class="hidden">
+      <div class="step-section">
+        <h3><span class="step-indicator">1</span> Send this code to the other device</h3>
+        <textarea id="offer-code" class="code-area" readonly placeholder="Generating..."></textarea>
+        <div class="btn-row">
+          <button id="copy-offer-btn" class="action-btn">Copy Code</button>
+        </div>
+      </div>
+
+      <div class="step-section">
+        <h3><span class="step-indicator blue">2</span> Paste their response here</h3>
+        <textarea id="answer-input" class="code-area" placeholder="Paste the response code here..."></textarea>
+        <div class="btn-row">
+          <button id="connect-btn" class="action-btn secondary">Connect</button>
+        </div>
+      </div>
     </div>
 
-    <div id="scan-container">
-      <video id="scan-video" autoplay playsinline></video>
-      <p>Point camera at QR code</p>
-    </div>
-
-    <div id="status-text" style="display: none;"></div>
-    <div id="progress-text"></div>
-
-    <!-- Copy/Paste Fallback -->
-    <div class="fallback-section" id="fallback-section" style="display: none;">
-      <h3>No camera? Use copy/paste:</h3>
-
-      <div id="offer-code-section" style="display: none;">
-        <p><span class="step-indicator">1</span> Copy this code and send it to the other device:</p>
-        <textarea id="offer-code" class="code-area" readonly></textarea>
-        <button id="copy-offer-btn" class="copy-btn">Copy Code</button>
+    <!-- Joiner View (Device B) -->
+    <div id="joiner-view" class="hidden">
+      <div class="step-section">
+        <h3><span class="step-indicator">1</span> Paste the code from the other device</h3>
+        <textarea id="offer-input" class="code-area" placeholder="Paste the sync code here..."></textarea>
+        <div class="btn-row">
+          <button id="generate-response-btn" class="action-btn">Generate Response</button>
+        </div>
       </div>
 
-      <div id="paste-answer-section" style="display: none;">
-        <p><span class="step-indicator">2</span> Paste their response code here:</p>
-        <textarea id="paste-answer" class="code-area" placeholder="Paste the response code here..."></textarea>
-        <button id="submit-answer-btn" class="paste-btn">Connect</button>
-      </div>
-
-      <div id="paste-offer-section" style="display: none;">
-        <p><span class="step-indicator">1</span> Paste the code from the other device:</p>
-        <textarea id="paste-offer" class="code-area" placeholder="Paste the QR code data here..."></textarea>
-        <button id="submit-offer-btn" class="paste-btn">Generate Response</button>
-      </div>
-
-      <div id="answer-code-section" style="display: none;">
-        <p><span class="step-indicator">2</span> Copy this response and send it back:</p>
+      <div id="response-section" class="step-section hidden">
+        <h3><span class="step-indicator blue">2</span> Send this response back</h3>
         <textarea id="answer-code" class="code-area" readonly></textarea>
-        <button id="copy-answer-btn" class="copy-btn">Copy Response</button>
+        <div class="btn-row">
+          <button id="copy-answer-btn" class="action-btn secondary">Copy Response</button>
+        </div>
       </div>
+    </div>
+
+    <!-- Status Section -->
+    <div id="status-section">
+      <div id="status-text">Connecting...</div>
+      <div id="progress-text"></div>
     </div>
   </div>
 
@@ -262,56 +247,41 @@
   <script src="sync/signaling.js?v=74"></script>
   <script src="sync/sync.js?v=74"></script>
   <script>
-    // Sync page logic
     (function() {
       let peer = null;
       let syncManager = null;
-      let isInitiator = false;
-      let cleanupScanner = null;
 
-      const showQRBtn = document.getElementById('show-qr-btn');
-      const scanQRBtn = document.getElementById('scan-qr-btn');
-      const qrContainer = document.getElementById('qr-container');
-      const qrCanvas = document.getElementById('qr-canvas');
-      const qrInstruction = document.getElementById('qr-instruction');
-      const scanAnswerBtn = document.getElementById('scan-answer-btn');
-      const scanContainer = document.getElementById('scan-container');
-      const scanVideo = document.getElementById('scan-video');
+      // Elements
+      const startView = document.getElementById('start-view');
+      const initiatorView = document.getElementById('initiator-view');
+      const joinerView = document.getElementById('joiner-view');
+      const statusSection = document.getElementById('status-section');
       const statusText = document.getElementById('status-text');
       const progressText = document.getElementById('progress-text');
-      const startView = document.getElementById('start-view');
-      const fallbackSection = document.getElementById('fallback-section');
 
-      // Fallback elements
-      const offerCodeSection = document.getElementById('offer-code-section');
+      // Initiator elements
+      const startSyncBtn = document.getElementById('start-sync-btn');
       const offerCode = document.getElementById('offer-code');
       const copyOfferBtn = document.getElementById('copy-offer-btn');
-      const pasteAnswerSection = document.getElementById('paste-answer-section');
-      const pasteAnswer = document.getElementById('paste-answer');
-      const submitAnswerBtn = document.getElementById('submit-answer-btn');
-      const pasteOfferSection = document.getElementById('paste-offer-section');
-      const pasteOffer = document.getElementById('paste-offer');
-      const submitOfferBtn = document.getElementById('submit-offer-btn');
-      const answerCodeSection = document.getElementById('answer-code-section');
+      const answerInput = document.getElementById('answer-input');
+      const connectBtn = document.getElementById('connect-btn');
+
+      // Joiner elements
+      const joinSyncBtn = document.getElementById('join-sync-btn');
+      const offerInput = document.getElementById('offer-input');
+      const generateResponseBtn = document.getElementById('generate-response-btn');
+      const responseSection = document.getElementById('response-section');
       const answerCode = document.getElementById('answer-code');
       const copyAnswerBtn = document.getElementById('copy-answer-btn');
 
-      // Initialize
-      BirdDB.init().then(() => {
-        console.log('Database initialized');
-      });
+      // Initialize DB
+      BirdDB.init();
 
-      // Check if QR scanning is supported
-      if (!SyncSignaling.isQRScannerSupported()) {
-        scanQRBtn.textContent = 'Scan (not supported)';
-        scanQRBtn.disabled = true;
-      }
-
-      // Show QR Code (initiator)
-      showQRBtn.addEventListener('click', async () => {
-        isInitiator = true;
-        startView.style.display = 'none';
-        updateStatus('Creating connection...');
+      // Start Sync (Initiator)
+      startSyncBtn.addEventListener('click', async () => {
+        startView.classList.add('hidden');
+        initiatorView.classList.remove('hidden');
+        offerCode.value = 'Generating connection code...';
 
         try {
           peer = new PeerConnection();
@@ -322,76 +292,55 @@
           };
 
           const offer = await peer.createOffer();
-          const qrData = SyncSignaling.encodeForQR(offer);
-
-          // Generate QR code
-          await SyncSignaling.generateQRCode(qrData, qrCanvas);
-
-          qrContainer.style.display = 'block';
-          qrInstruction.textContent = 'Have the other device scan this QR code';
-          scanAnswerBtn.style.display = 'block';
-
-          // Show fallback
-          fallbackSection.style.display = 'block';
-          offerCodeSection.style.display = 'block';
-          offerCode.value = qrData;
-
+          const encoded = SyncSignaling.encodeForQR(offer);
+          offerCode.value = encoded;
         } catch (e) {
           console.error('Failed to create offer:', e);
-          updateStatus('Error: ' + e.message);
+          offerCode.value = 'Error: ' + e.message;
         }
       });
 
-      // Scan their answer
-      scanAnswerBtn.addEventListener('click', async () => {
-        qrContainer.style.display = 'none';
-        scanContainer.style.display = 'block';
-        pasteAnswerSection.style.display = 'block';
-        updateStatus('Scanning for response...');
+      // Copy offer code
+      copyOfferBtn.addEventListener('click', () => {
+        offerCode.select();
+        document.execCommand('copy');
+        copyOfferBtn.textContent = 'Copied!';
+        setTimeout(() => copyOfferBtn.textContent = 'Copy Code', 2000);
+      });
+
+      // Connect with answer
+      connectBtn.addEventListener('click', async () => {
+        const code = answerInput.value.trim();
+        if (!code) return;
 
         try {
-          cleanupScanner = await SyncSignaling.startQRScanner(scanVideo, async (qrData) => {
-            await handleScannedAnswer(qrData);
-          });
+          const answer = SyncSignaling.decodeFromQR(code);
+          if (answer.type !== 'answer') {
+            throw new Error('Invalid response code');
+          }
+          await peer.acceptAnswer(answer);
+          showStatus('Connecting...');
         } catch (e) {
-          console.error('Failed to start scanner:', e);
-          updateStatus('Camera not available. Use copy/paste instead.');
+          console.error('Failed to process answer:', e);
+          showStatus('Error: Invalid response code', true);
         }
       });
 
-      // Scan QR Code (receiver)
-      scanQRBtn.addEventListener('click', async () => {
-        isInitiator = false;
-        startView.style.display = 'none';
-        scanContainer.style.display = 'block';
-        fallbackSection.style.display = 'block';
-        pasteOfferSection.style.display = 'block';
-        updateStatus('Scanning for QR code...');
-
-        try {
-          cleanupScanner = await SyncSignaling.startQRScanner(scanVideo, async (qrData) => {
-            await handleScannedOffer(qrData);
-          });
-        } catch (e) {
-          console.error('Failed to start scanner:', e);
-          updateStatus('Camera not available. Use copy/paste instead.');
-        }
+      // Join Sync (Joiner)
+      joinSyncBtn.addEventListener('click', () => {
+        startView.classList.add('hidden');
+        joinerView.classList.remove('hidden');
       });
 
-      async function handleScannedOffer(qrData) {
-        if (cleanupScanner) {
-          cleanupScanner();
-          cleanupScanner = null;
-        }
-        scanContainer.style.display = 'none';
-
-        updateStatus('Processing...');
+      // Generate response
+      generateResponseBtn.addEventListener('click', async () => {
+        const code = offerInput.value.trim();
+        if (!code) return;
 
         try {
-          const offer = SyncSignaling.decodeFromQR(qrData);
-
+          const offer = SyncSignaling.decodeFromQR(code);
           if (offer.type !== 'offer') {
-            throw new Error('Invalid QR code - expected offer');
+            throw new Error('Invalid sync code');
           }
 
           peer = new PeerConnection();
@@ -402,60 +351,33 @@
           };
 
           const answer = await peer.acceptOffer(offer);
-          const answerQR = SyncSignaling.encodeForQR(answer);
+          const encoded = SyncSignaling.encodeForQR(answer);
 
-          // Show answer QR
-          await SyncSignaling.generateQRCode(answerQR, qrCanvas);
-
-          qrContainer.style.display = 'block';
-          qrInstruction.textContent = 'Have the other device scan this response';
-          scanAnswerBtn.style.display = 'none';
-
-          // Show fallback
-          pasteOfferSection.style.display = 'none';
-          answerCodeSection.style.display = 'block';
-          answerCode.value = answerQR;
-
+          answerCode.value = encoded;
+          responseSection.classList.remove('hidden');
         } catch (e) {
           console.error('Failed to process offer:', e);
-          updateStatus('Error: Invalid QR code');
+          showStatus('Error: Invalid sync code', true);
         }
-      }
+      });
 
-      async function handleScannedAnswer(qrData) {
-        if (cleanupScanner) {
-          cleanupScanner();
-          cleanupScanner = null;
-        }
-        scanContainer.style.display = 'none';
-
-        updateStatus('Connecting...');
-
-        try {
-          const answer = SyncSignaling.decodeFromQR(qrData);
-
-          if (answer.type !== 'answer') {
-            throw new Error('Invalid QR code - expected answer');
-          }
-
-          await peer.acceptAnswer(answer);
-          // DataChannel open will trigger startSyncProcess
-
-        } catch (e) {
-          console.error('Failed to process answer:', e);
-          updateStatus('Error: Invalid response code');
-        }
-      }
+      // Copy answer code
+      copyAnswerBtn.addEventListener('click', () => {
+        answerCode.select();
+        document.execCommand('copy');
+        copyAnswerBtn.textContent = 'Copied!';
+        setTimeout(() => copyAnswerBtn.textContent = 'Copy Response', 2000);
+      });
 
       function startSyncProcess() {
-        qrContainer.style.display = 'none';
-        scanContainer.style.display = 'none';
-        fallbackSection.style.display = 'none';
+        initiatorView.classList.add('hidden');
+        joinerView.classList.add('hidden');
+        showStatus('Connected! Syncing...');
 
         syncManager = new BirdleSync();
 
         syncManager.onStatusChange = (status) => {
-          updateStatus(status);
+          statusText.textContent = status;
         };
 
         syncManager.onProgress = (msg) => {
@@ -463,60 +385,31 @@
         };
 
         syncManager.onComplete = () => {
-          progressText.textContent = 'Sync complete! Returning home...';
+          statusText.textContent = 'Sync complete!';
+          progressText.textContent = 'Returning home...';
           setTimeout(() => {
-            window.location.href = 'index.html';
+            window.location.href = 'index';
           }, 2000);
         };
 
         syncManager.onError = (error) => {
-          updateStatus('Error: ' + error.message);
+          showStatus('Error: ' + error.message, true);
         };
 
         syncManager.startSync(peer);
       }
 
-      function updateStatus(message) {
-        statusText.style.display = 'block';
+      function showStatus(message, isError = false) {
+        initiatorView.classList.add('hidden');
+        joinerView.classList.add('hidden');
+        statusSection.style.display = 'block';
+        statusSection.classList.toggle('error', isError);
         statusText.textContent = message;
+        progressText.textContent = '';
       }
 
-      // Copy/Paste fallback handlers
-      copyOfferBtn.addEventListener('click', () => {
-        offerCode.select();
-        document.execCommand('copy');
-        copyOfferBtn.textContent = 'Copied!';
-        setTimeout(() => {
-          copyOfferBtn.textContent = 'Copy Code';
-        }, 2000);
-      });
-
-      copyAnswerBtn.addEventListener('click', () => {
-        answerCode.select();
-        document.execCommand('copy');
-        copyAnswerBtn.textContent = 'Copied!';
-        setTimeout(() => {
-          copyAnswerBtn.textContent = 'Copy Response';
-        }, 2000);
-      });
-
-      submitOfferBtn.addEventListener('click', async () => {
-        const qrData = pasteOffer.value.trim();
-        if (qrData) {
-          await handleScannedOffer(qrData);
-        }
-      });
-
-      submitAnswerBtn.addEventListener('click', async () => {
-        const qrData = pasteAnswer.value.trim();
-        if (qrData) {
-          await handleScannedAnswer(qrData);
-        }
-      });
-
-      // Cleanup on page unload
+      // Cleanup
       window.addEventListener('beforeunload', () => {
-        if (cleanupScanner) cleanupScanner();
         if (syncManager) syncManager.abort();
         if (peer) peer.close();
       });
