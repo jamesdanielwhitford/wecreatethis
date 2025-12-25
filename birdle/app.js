@@ -29,6 +29,7 @@ const App = {
     if (page === 'new-game') this.initNewGame();
     if (page === 'game') this.initGameDetail();
     if (page === 'daily') this.initDaily();
+    if (page === 'bingo') this.initBingo();
   },
 
   detectPage() {
@@ -40,6 +41,7 @@ const App = {
     if (path.includes('games')) return 'games';
     if (path.includes('search')) return 'search';
     if (path.includes('daily')) return 'daily';
+    if (path.includes('bingo')) return 'bingo';
     if (path.includes('life')) return 'life';
     // Check for 'bird.html', 'bird?', or '/bird' to avoid matching 'birdle'
     if (path.match(/\/bird(\.html)?$/) || fullUrl.includes('bird?')) return 'bird';
@@ -486,6 +488,8 @@ const App = {
         backBtn.href = 'life';
       } else if (referrer.includes('/daily')) {
         backBtn.href = 'daily';
+      } else if (referrer.includes('/bingo')) {
+        backBtn.href = 'bingo';
       } else if (referrer.includes('/game?')) {
         // Extract game ID from referrer and go back to that game
         const match = referrer.match(/game\?id=(\d+)/);
@@ -554,12 +558,94 @@ const App = {
     document.getElementById('bird-name').textContent = bird.comName;
     document.getElementById('bird-scientific').textContent = bird.sciName || '';
 
-    // Set up Google search link
-    const googleLink = document.getElementById('google-link');
-    if (googleLink) {
-      const searchQuery = encodeURIComponent(bird.comName + ' bird');
-      googleLink.href = `https://www.google.com/search?q=${searchQuery}`;
+    // Set up eBird species link
+    const ebirdLink = document.getElementById('ebird-link');
+    if (ebirdLink) {
+      ebirdLink.href = `https://ebird.org/species/${bird.speciesCode}`;
     }
+
+    // Fetch and display bird image from Wikipedia
+    this.loadBirdImage(bird);
+  },
+
+  async loadBirdImage(bird) {
+    const container = document.getElementById('bird-image-container');
+    const img = document.getElementById('bird-image');
+    console.log('loadBirdImage called for:', bird.comName);
+    if (!container || !img) {
+      console.log('Container or img not found');
+      return;
+    }
+
+    try {
+      // Try common name first, then scientific name
+      console.log('Fetching image for:', bird.comName);
+      let imageUrl = await this.fetchWikipediaImage(bird.comName);
+      console.log('Common name result:', imageUrl);
+
+      if (!imageUrl && bird.sciName) {
+        console.log('Trying scientific name:', bird.sciName);
+        imageUrl = await this.fetchWikipediaImage(bird.sciName);
+        console.log('Scientific name result:', imageUrl);
+      }
+
+      if (imageUrl) {
+        console.log('Setting image URL:', imageUrl);
+        img.alt = bird.comName;
+        img.src = imageUrl;
+        // Show container immediately - image will load
+        container.style.display = 'block';
+        // Hide on error
+        img.onerror = () => {
+          console.log('Image failed to load');
+          container.style.display = 'none';
+        };
+        // Click to open fullscreen
+        img.onclick = () => {
+          const lightbox = document.getElementById('image-lightbox');
+          const lightboxImg = document.getElementById('lightbox-image');
+          if (lightbox && lightboxImg) {
+            // Use larger image for lightbox
+            lightboxImg.src = imageUrl.replace('/400px-', '/800px-');
+            lightboxImg.alt = bird.comName;
+            lightbox.style.display = 'flex';
+          }
+        };
+      } else {
+        console.log('No image URL found');
+      }
+
+      // Close lightbox on click
+      const lightbox = document.getElementById('image-lightbox');
+      if (lightbox) {
+        lightbox.onclick = () => {
+          lightbox.style.display = 'none';
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to load bird image:', error);
+    }
+  },
+
+  async fetchWikipediaImage(searchTerm) {
+    try {
+      const title = encodeURIComponent(searchTerm.replace(/ /g, '_'));
+      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages&pithumbsize=400&format=json&origin=*&redirects=1`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      const pages = data.query?.pages;
+      if (pages) {
+        const page = Object.values(pages)[0];
+        if (page.thumbnail?.source) {
+          return page.thumbnail.source;
+        }
+      }
+    } catch (error) {
+      // Silently fail
+    }
+    return null;
   },
 
   async loadBirdSightings(bird) {
@@ -665,7 +751,7 @@ const App = {
     // Determine which region to pre-select
     let preSelectRegion = null;
 
-    // Check URL params for game context (from=game&gameId=X)
+    // Check URL params for context (from=game&gameId=X or from=bingo)
     const urlParams = new URLSearchParams(window.location.search);
     const fromContext = urlParams.get('from');
     const gameIdParam = urlParams.get('gameId');
@@ -691,9 +777,26 @@ const App = {
           };
         }
       }
+    } else if (fromContext === 'bingo') {
+      // Check bingo card for region
+      const bingoCard = JSON.parse(localStorage.getItem('bingoCard') || 'null');
+      if (bingoCard && bingoCard.regionCode) {
+        if (bingoCard.regionCode.includes('-')) {
+          const parts = bingoCard.regionCode.split('-');
+          preSelectRegion = {
+            countryCode: parts[0],
+            stateCode: bingoCard.regionCode
+          };
+        } else {
+          preSelectRegion = {
+            countryCode: bingoCard.regionCode,
+            stateCode: null
+          };
+        }
+      }
     }
 
-    // Fallback to cached location if not from game
+    // Fallback to cached location if not from game/bingo
     if (!preSelectRegion && typeof LocationService !== 'undefined') {
       const cached = LocationService.getCached();
       if (cached && cached.countryCode) {
@@ -2100,6 +2203,528 @@ const App = {
 
   async shareLiferScore() {
     const text = await this.generateLiferShareText();
+
+    if (navigator.share) {
+      navigator.share({ text });
+    } else {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Copied to clipboard!');
+      });
+    }
+
+    document.getElementById('share-modal').style.display = 'none';
+  },
+
+  // ===== BIRD BINGO =====
+  bingoCard: null,
+
+  async initBingo() {
+    this.bindBingoEvents();
+    await this.loadOrCreateBingoCard();
+
+    // Refresh bingo state when user returns (e.g., after adding a sighting)
+    window.addEventListener('pageshow', async (e) => {
+      if (e.persisted || performance.navigation.type === 2) {
+        await this.updateBingoState();
+      }
+    });
+
+    document.addEventListener('visibilitychange', async () => {
+      if (!document.hidden && this.bingoCard) {
+        await this.updateBingoState();
+      }
+    });
+  },
+
+  bindBingoEvents() {
+    // Menu toggle
+    const menuBtn = document.getElementById('menu-btn');
+    const menuDropdown = document.getElementById('menu-dropdown');
+
+    menuBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menuDropdown.style.display = menuDropdown.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', () => {
+      if (menuDropdown) menuDropdown.style.display = 'none';
+    });
+
+    // Menu options
+    document.getElementById('menu-share-score')?.addEventListener('click', () => {
+      menuDropdown.style.display = 'none';
+      this.openBingoShareModal();
+    });
+
+    document.getElementById('menu-new-game')?.addEventListener('click', () => {
+      menuDropdown.style.display = 'none';
+      document.getElementById('new-game-modal').style.display = 'flex';
+    });
+
+    // Share modal
+    document.getElementById('share-cancel-btn')?.addEventListener('click', () => {
+      document.getElementById('share-modal').style.display = 'none';
+    });
+
+    document.getElementById('do-share-btn')?.addEventListener('click', () => {
+      this.shareBingoScore();
+    });
+
+    // Share button in bingo winner banner
+    document.getElementById('bingo-share-btn')?.addEventListener('click', () => {
+      this.openBingoShareModal();
+    });
+
+    document.getElementById('share-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'share-modal') {
+        document.getElementById('share-modal').style.display = 'none';
+      }
+    });
+
+    // New game modal
+    document.getElementById('confirm-new-game-btn')?.addEventListener('click', () => {
+      document.getElementById('new-game-modal').style.display = 'none';
+      this.startNewBingoGame();
+    });
+
+    document.getElementById('cancel-new-game-btn')?.addEventListener('click', () => {
+      document.getElementById('new-game-modal').style.display = 'none';
+    });
+
+    // Close modal on backdrop click
+    document.getElementById('new-game-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'new-game-modal') {
+        document.getElementById('new-game-modal').style.display = 'none';
+      }
+    });
+
+    // Enable location button
+    document.getElementById('enable-location-btn')?.addEventListener('click', () => {
+      this.requestLocationForBingo();
+    });
+
+    // Retry button
+    document.getElementById('retry-btn')?.addEventListener('click', () => {
+      this.requestLocationForBingo();
+    });
+  },
+
+  async requestLocationForBingo() {
+    document.getElementById('bingo-initial').style.display = 'none';
+    document.getElementById('bingo-error').style.display = 'none';
+    document.getElementById('bingo-loading').style.display = 'block';
+
+    try {
+      const location = await LocationService.getLocation(true);
+      await this.generateBingoCard(location);
+    } catch (error) {
+      console.error('Location request failed:', error);
+      document.getElementById('bingo-loading').style.display = 'none';
+      document.getElementById('bingo-error').style.display = 'block';
+    }
+  },
+
+  async loadOrCreateBingoCard() {
+    const stored = localStorage.getItem('bingoCard');
+
+    if (stored) {
+      this.bingoCard = JSON.parse(stored);
+      await this.renderBingoCard();
+      return;
+    }
+
+    // No existing card - check for cached location
+    let cachedLocation = null;
+    if (typeof LocationService !== 'undefined') {
+      cachedLocation = LocationService.getCached();
+    }
+
+    if (cachedLocation) {
+      document.getElementById('bingo-loading').style.display = 'block';
+      await this.generateBingoCard(cachedLocation);
+    } else {
+      document.getElementById('bingo-initial').style.display = 'block';
+    }
+  },
+
+  async startNewBingoGame() {
+    // Clear existing card
+    localStorage.removeItem('bingoCard');
+    this.bingoCard = null;
+
+    // Get cached location
+    let cachedLocation = null;
+    if (typeof LocationService !== 'undefined') {
+      cachedLocation = LocationService.getCached();
+    }
+
+    if (cachedLocation) {
+      document.getElementById('bingo-content').style.display = 'none';
+      document.getElementById('bingo-loading').style.display = 'block';
+      await this.generateBingoCard(cachedLocation);
+    } else {
+      document.getElementById('bingo-content').style.display = 'none';
+      document.getElementById('bingo-initial').style.display = 'block';
+    }
+  },
+
+  async generateBingoCard(location) {
+    document.getElementById('bingo-initial').style.display = 'none';
+    document.getElementById('bingo-loading').style.display = 'block';
+    document.getElementById('bingo-error').style.display = 'none';
+    document.getElementById('bingo-content').style.display = 'none';
+
+    try {
+      let observations;
+
+      // Get nearby birds
+      if (LocationService.hasValidCoordinates(location)) {
+        observations = await EBird.getNearbyObservations(location.lat, location.lng, 50);
+      } else {
+        const regionCode = LocationService.getRegionCode(location);
+        observations = await EBird.getRecentObservations(regionCode);
+      }
+
+      if (observations.length < 24) {
+        throw new Error('Not enough birds found nearby');
+      }
+
+      // Count observations per species (for sorting by commonality)
+      const speciesCount = {};
+      const speciesData = {};
+
+      observations.forEach(obs => {
+        if (!speciesCount[obs.speciesCode]) {
+          speciesCount[obs.speciesCode] = 0;
+        }
+        speciesCount[obs.speciesCode]++;
+        speciesData[obs.speciesCode] = {
+          speciesCode: obs.speciesCode,
+          comName: obs.comName,
+          sciName: obs.sciName
+        };
+      });
+
+      // Build array and sort by count (most common first)
+      const birds = Object.keys(speciesData)
+        .map(code => ({
+          ...speciesData[code],
+          count: speciesCount[code]
+        }))
+        .sort((a, b) => b.count - a.count);
+
+      // Take top 100 most common birds as the pool, then randomly pick 24
+      const birdPool = birds.slice(0, Math.min(100, birds.length));
+      this.shuffleArray(birdPool);
+      const cardBirds = birdPool.slice(0, 24);
+
+      // Pick random position for free tile (0-24)
+      const freePosition = Math.floor(Math.random() * 25);
+
+      // Build 25-tile grid
+      const grid = [];
+      let birdIndex = 0;
+      for (let i = 0; i < 25; i++) {
+        if (i === freePosition) {
+          grid.push({ isFree: true, comName: 'FREE' });
+        } else {
+          grid.push({
+            isFree: false,
+            speciesCode: cardBirds[birdIndex].speciesCode,
+            comName: cardBirds[birdIndex].comName,
+            sciName: cardBirds[birdIndex].sciName
+          });
+          birdIndex++;
+        }
+      }
+
+      // Create bingo card object
+      const card = {
+        startDate: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString(),
+        locationName: LocationService.getRegionDisplayName(location),
+        regionCode: LocationService.getRegionCode(location),
+        grid: grid,
+        bingoAchieved: null // Will store date/time when bingo is achieved
+      };
+
+      this.bingoCard = card;
+      localStorage.setItem('bingoCard', JSON.stringify(card));
+
+      // Store birds for detail page navigation
+      localStorage.setItem('currentBirds', JSON.stringify(cardBirds));
+
+      await this.renderBingoCard();
+
+    } catch (error) {
+      console.error('Failed to generate bingo card:', error);
+      document.getElementById('bingo-loading').style.display = 'none';
+      document.getElementById('bingo-error').style.display = 'block';
+    }
+  },
+
+  shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  },
+
+  async renderBingoCard() {
+    const card = this.bingoCard;
+    if (!card) return;
+
+    document.getElementById('bingo-loading').style.display = 'none';
+    document.getElementById('bingo-initial').style.display = 'none';
+    document.getElementById('bingo-error').style.display = 'none';
+    document.getElementById('bingo-content').style.display = 'block';
+
+    // Set header info - show date and time since sightings are time-based
+    const startDateStr = new Date(card.createdAt).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+    document.getElementById('bingo-date').textContent = `Started ${startDateStr}`;
+    document.getElementById('bingo-location').textContent = card.locationName || '';
+
+    // Store birds for navigation
+    const cardBirds = card.grid.filter(g => !g.isFree);
+    localStorage.setItem('currentBirds', JSON.stringify(cardBirds));
+
+    // Update the grid and found state
+    await this.updateBingoState();
+  },
+
+  async updateBingoState() {
+    const card = this.bingoCard;
+    if (!card) return;
+
+    // Get sightings created after the bingo card was created
+    let sightings = [];
+    if (typeof BirdDB !== 'undefined') {
+      const allSightings = await BirdDB.getAllSightings();
+      const cardCreatedAt = new Date(card.createdAt);
+      sightings = allSightings.filter(s => {
+        const sightingCreatedAt = new Date(s.createdAt);
+        return sightingCreatedAt >= cardCreatedAt;
+      });
+    }
+    const seenCodes = new Set(sightings.map(s => s.speciesCode));
+
+    // Render grid
+    const gridEl = document.getElementById('bingo-grid');
+    gridEl.innerHTML = '';
+
+    const foundBirds = [];
+
+    card.grid.forEach((cell, index) => {
+      const cellEl = document.createElement('div');
+      cellEl.className = 'bingo-cell';
+      cellEl.dataset.index = index;
+
+      if (cell.isFree) {
+        cellEl.classList.add('free');
+        cellEl.textContent = 'FREE';
+      } else {
+        cellEl.textContent = cell.comName;
+
+        if (seenCodes.has(cell.speciesCode)) {
+          cellEl.classList.add('found');
+          foundBirds.push(cell);
+        }
+
+        // Click to navigate to bird detail
+        cellEl.addEventListener('click', () => {
+          window.location.href = `bird?code=${cell.speciesCode}&from=bingo`;
+        });
+      }
+
+      gridEl.appendChild(cellEl);
+    });
+
+    // Update found count
+    document.getElementById('found-count').textContent = foundBirds.length;
+
+    // Render found birds list
+    const foundListEl = document.getElementById('found-list');
+    if (foundBirds.length === 0) {
+      foundListEl.innerHTML = '<li class="empty">No birds found yet. Tap a bird to log a sighting!</li>';
+    } else {
+      foundListEl.innerHTML = foundBirds.map(bird =>
+        `<li><a href="bird?code=${bird.speciesCode}&from=bingo" style="color: inherit; text-decoration: none;">${bird.comName}</a></li>`
+      ).join('');
+    }
+
+    // Check for bingo
+    const bingoResult = this.checkBingo(card.grid, seenCodes);
+    const winnerEl = document.getElementById('bingo-winner');
+
+    if (bingoResult.hasBingo) {
+      // Record bingo time if not already recorded
+      if (!card.bingoAchieved) {
+        card.bingoAchieved = new Date().toISOString();
+        localStorage.setItem('bingoCard', JSON.stringify(card));
+      }
+
+      // Show winner banner
+      const bingoTimeStr = new Date(card.bingoAchieved).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+      document.getElementById('bingo-time').textContent = `Achieved ${bingoTimeStr}`;
+      winnerEl.style.display = 'block';
+
+      // Highlight winning line(s)
+      bingoResult.winningCells.forEach(index => {
+        const cell = gridEl.children[index];
+        if (cell) cell.classList.add('bingo-line');
+      });
+    } else {
+      winnerEl.style.display = 'none';
+    }
+  },
+
+  checkBingo(grid, seenCodes) {
+    // Check if a cell is "marked" (free or seen)
+    const isMarked = (index) => {
+      const cell = grid[index];
+      return cell.isFree || seenCodes.has(cell.speciesCode);
+    };
+
+    const winningCells = new Set();
+    let hasBingo = false;
+
+    // Check rows (5 rows)
+    for (let row = 0; row < 5; row++) {
+      const indices = [row * 5, row * 5 + 1, row * 5 + 2, row * 5 + 3, row * 5 + 4];
+      if (indices.every(isMarked)) {
+        hasBingo = true;
+        indices.forEach(i => winningCells.add(i));
+      }
+    }
+
+    // Check columns (5 columns)
+    for (let col = 0; col < 5; col++) {
+      const indices = [col, col + 5, col + 10, col + 15, col + 20];
+      if (indices.every(isMarked)) {
+        hasBingo = true;
+        indices.forEach(i => winningCells.add(i));
+      }
+    }
+
+    // Check diagonals
+    const diagonal1 = [0, 6, 12, 18, 24]; // top-left to bottom-right
+    const diagonal2 = [4, 8, 12, 16, 20]; // top-right to bottom-left
+
+    if (diagonal1.every(isMarked)) {
+      hasBingo = true;
+      diagonal1.forEach(i => winningCells.add(i));
+    }
+
+    if (diagonal2.every(isMarked)) {
+      hasBingo = true;
+      diagonal2.forEach(i => winningCells.add(i));
+    }
+
+    return {
+      hasBingo,
+      winningCells: [...winningCells]
+    };
+  },
+
+  async openBingoShareModal() {
+    const card = this.bingoCard;
+    if (!card) return;
+
+    // Get found birds
+    let sightings = [];
+    if (typeof BirdDB !== 'undefined') {
+      const allSightings = await BirdDB.getAllSightings();
+      const cardCreatedAt = new Date(card.createdAt);
+      sightings = allSightings.filter(s => {
+        const sightingCreatedAt = new Date(s.createdAt);
+        return sightingCreatedAt >= cardCreatedAt;
+      });
+    }
+    const seenCodes = new Set(sightings.map(s => s.speciesCode));
+
+    const foundBirds = card.grid.filter(cell => !cell.isFree && seenCodes.has(cell.speciesCode));
+    const bingoResult = this.checkBingo(card.grid, seenCodes);
+
+    // Build preview text
+    let html = `<strong>Bird Bingo</strong><br>`;
+    html += `${card.locationName}<br><br>`;
+
+    if (bingoResult.hasBingo && card.bingoAchieved) {
+      const bingoTimeStr = new Date(card.bingoAchieved).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+      html += `<strong>BINGO!</strong> ${bingoTimeStr}<br><br>`;
+    }
+
+    html += `Found ${foundBirds.length}/24 birds:<br>`;
+    if (foundBirds.length > 0) {
+      foundBirds.forEach(bird => {
+        html += `• ${bird.comName}<br>`;
+      });
+    } else {
+      html += `<em>No birds found yet</em><br>`;
+    }
+
+    document.getElementById('share-preview').innerHTML = html;
+    document.getElementById('share-modal').style.display = 'flex';
+  },
+
+  async shareBingoScore() {
+    const card = this.bingoCard;
+    if (!card) return;
+
+    // Get found birds
+    let sightings = [];
+    if (typeof BirdDB !== 'undefined') {
+      const allSightings = await BirdDB.getAllSightings();
+      const cardCreatedAt = new Date(card.createdAt);
+      sightings = allSightings.filter(s => {
+        const sightingCreatedAt = new Date(s.createdAt);
+        return sightingCreatedAt >= cardCreatedAt;
+      });
+    }
+    const seenCodes = new Set(sightings.map(s => s.speciesCode));
+
+    const foundBirds = card.grid.filter(cell => !cell.isFree && seenCodes.has(cell.speciesCode));
+    const bingoResult = this.checkBingo(card.grid, seenCodes);
+
+    // Build share text
+    let text = `Bird Bingo\n`;
+    text += `${card.locationName}\n\n`;
+
+    if (bingoResult.hasBingo && card.bingoAchieved) {
+      const bingoTimeStr = new Date(card.bingoAchieved).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+      text += `BINGO! ${bingoTimeStr}\n\n`;
+    }
+
+    text += `Found ${foundBirds.length}/24 birds:\n`;
+    if (foundBirds.length > 0) {
+      foundBirds.forEach(bird => {
+        text += `• ${bird.comName}\n`;
+      });
+    } else {
+      text += `No birds found yet\n`;
+    }
 
     if (navigator.share) {
       navigator.share({ text });

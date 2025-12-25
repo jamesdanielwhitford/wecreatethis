@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Bird Bingo - Birdle</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Sticky Navbar -->
+  <nav class="game-navbar">
+    <a href="index" class="back-btn">&larr; Home</a>
+    <button id="menu-btn" class="menu-btn">&#8942;</button>
+    <div id="menu-dropdown" class="menu-dropdown" style="display:none;">
+      <button id="menu-share-score">Share Score</button>
+      <button id="menu-new-game">New Game</button>
+    </div>
+  </nav>
+
+  <!-- Bingo Header -->
+  <div class="bingo-header">
+    <h1>Bird Bingo</h1>
+    <p id="bingo-date" class="bingo-date"></p>
+    <p id="bingo-location" class="bingo-location"></p>
+  </div>
+
+  <!-- Initial State - No location -->
+  <div id="bingo-initial" class="daily-error" style="display:none;">
+    <p>Enable location to generate your bingo card</p>
+    <button id="enable-location-btn" class="btn">Use My Location</button>
+  </div>
+
+  <!-- Loading State -->
+  <div id="bingo-loading" class="loading" style="display:none;">
+    <p>Generating bingo card...</p>
+  </div>
+
+  <!-- Error State -->
+  <div id="bingo-error" class="daily-error" style="display:none;">
+    <p>Could not generate bingo card.</p>
+    <button id="retry-btn" class="btn-small">Try Again</button>
+  </div>
+
+  <!-- Bingo Content -->
+  <div id="bingo-content" style="display:none;">
+    <!-- Bingo Grid -->
+    <div id="bingo-grid" class="bingo-grid">
+      <!-- 25 cells rendered by JS -->
+    </div>
+
+    <!-- Bingo Winner Banner -->
+    <div id="bingo-winner" class="bingo-winner" style="display:none;">
+      <h2>BINGO!</h2>
+      <p id="bingo-time"></p>
+      <button id="bingo-share-btn" class="modal-btn seen" style="margin-top: 12px;">Share Score</button>
+    </div>
+
+    <!-- Found Birds List -->
+    <div id="found-section" class="found-section">
+      <h3>Birds Found (<span id="found-count">0</span>/24)</h3>
+      <ul id="found-list" class="found-list"></ul>
+    </div>
+  </div>
+
+  <!-- Share Modal -->
+  <div id="share-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3>Share Score</h3>
+      <div class="share-preview" id="share-preview"></div>
+      <div class="modal-actions">
+        <button id="do-share-btn" class="modal-btn seen">Share</button>
+        <button id="share-cancel-btn" class="modal-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Game Confirmation Modal -->
+  <div id="new-game-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3>Start New Game?</h3>
+      <p>This will reset your current bingo card and progress.</p>
+      <div class="modal-actions">
+        <button id="confirm-new-game-btn" class="modal-btn danger">New Game</button>
+        <button id="cancel-new-game-btn" class="modal-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="location.js?v=72"></script>
+  <script src="db.js?v=72"></script>
+  <script src="ebird.js?v=72"></script>
+  <script src="app.js?v=72"></script>
+</body>
+</html>

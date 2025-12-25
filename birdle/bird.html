@@ -12,11 +12,19 @@
 <body>
   <a href="#" id="back-btn" class="back-btn">&larr; Back</a>
 
+  <!-- Fullscreen image viewer -->
+  <div id="image-lightbox" class="image-lightbox" style="display:none;">
+    <img id="lightbox-image" alt="">
+  </div>
+
   <div id="bird-detail">
+    <div id="bird-image-container" class="bird-image-container" style="display:none;">
+      <img id="bird-image" alt="" loading="lazy">
+    </div>
     <h1 id="bird-name">Loading...</h1>
     <p id="bird-scientific" class="scientific-name"></p>
 
-    <a id="google-link" class="btn google-btn" href="#" target="_blank">Search Google</a>
+    <a id="ebird-link" class="btn google-btn" href="#" target="_blank">View on eBird</a>
 
     <!-- Sightings Section -->
     <div class="sightings-section">
@@ -58,9 +66,9 @@
     </div>
   </div>
 
-  <script src="location.js?v=70"></script>
-  <script src="db.js?v=70"></script>
-  <script src="ebird.js?v=70"></script>
-  <script src="app.js?v=70"></script>
+  <script src="location.js?v=72"></script>
+  <script src="db.js?v=72"></script>
+  <script src="ebird.js?v=72"></script>
+  <script src="app.js?v=72"></script>
 </body>
 </html>
