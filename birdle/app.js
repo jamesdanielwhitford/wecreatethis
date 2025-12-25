@@ -2414,8 +2414,8 @@ const App = {
         }))
         .sort((a, b) => b.count - a.count);
 
-      // Take top 100 most common birds as the pool, then randomly pick 24
-      const birdPool = birds.slice(0, Math.min(100, birds.length));
+      // Take top 50 most common birds as the pool, then randomly pick 24
+      const birdPool = birds.slice(0, Math.min(50, birds.length));
       this.shuffleArray(birdPool);
       const cardBirds = birdPool.slice(0, 24);
 
