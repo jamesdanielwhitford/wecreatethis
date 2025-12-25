@@ -2,7 +2,20 @@
 // Centralized bird caching system
 
 const DB_NAME = 'birdle-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
+
+// Generate UUID for sync
+function generateSyncId() {
+  if (crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older browsers
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 const BirdDB = {
   db: null,
@@ -21,6 +34,7 @@ const BirdDB = {
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
+        const oldVersion = event.oldVersion;
 
         // Birds store - cached bird data
         if (!db.objectStoreNames.contains('birds')) {
@@ -36,6 +50,13 @@ const BirdDB = {
           sightingsStore.createIndex('speciesCode', 'speciesCode');
           sightingsStore.createIndex('date', 'date');
           sightingsStore.createIndex('regionCode', 'regionCode');
+          sightingsStore.createIndex('syncId', 'syncId', { unique: true });
+        } else if (oldVersion < 2) {
+          // Upgrade: add syncId index to existing sightings store
+          const sightingsStore = event.target.transaction.objectStore('sightings');
+          if (!sightingsStore.indexNames.contains('syncId')) {
+            sightingsStore.createIndex('syncId', 'syncId', { unique: true });
+          }
         }
 
         // Cache metadata store - tracks which birds belong to which cache
@@ -182,6 +203,7 @@ const BirdDB = {
     await this.ready();
 
     const sighting = {
+      syncId: sightingData.syncId || generateSyncId(),
       speciesCode: sightingData.speciesCode,
       comName: sightingData.comName,
       sciName: sightingData.sciName || '',
@@ -192,7 +214,7 @@ const BirdDB = {
       lat: sightingData.lat || null,
       lng: sightingData.lng || null,
       notes: sightingData.notes || '',
-      createdAt: new Date()
+      createdAt: sightingData.createdAt || new Date().toISOString()
     };
 
     // Add sighting
@@ -499,6 +521,75 @@ const BirdDB = {
     }
 
     return toDelete.length;
+  },
+
+  // ===== SYNC OPERATIONS =====
+
+  async getSightingBySyncId(syncId) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('sightings', 'readonly');
+      const index = tx.objectStore('sightings').index('syncId');
+      const request = index.get(syncId);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async importSighting(sightingData) {
+    // Import a sighting from sync (preserves syncId and createdAt)
+    await this.ready();
+
+    // Check if already exists
+    const existing = await this.getSightingBySyncId(sightingData.syncId);
+    if (existing) {
+      return { imported: false, reason: 'exists' };
+    }
+
+    // Add the sighting
+    await this.addSighting(sightingData);
+    return { imported: true };
+  },
+
+  async getAllSightingsForSync() {
+    // Get all sightings with full data for sync export
+    const sightings = await this.getAllSightings();
+    return sightings.map(s => ({
+      syncId: s.syncId,
+      speciesCode: s.speciesCode,
+      comName: s.comName,
+      sciName: s.sciName,
+      date: s.date,
+      time: s.time,
+      regionCode: s.regionCode,
+      regionName: s.regionName,
+      lat: s.lat,
+      lng: s.lng,
+      notes: s.notes,
+      createdAt: s.createdAt
+    }));
+  },
+
+  async migrateSightingsForSync() {
+    // Add syncId to any existing sightings that don't have one
+    await this.ready();
+    const allSightings = await this.getAllSightings();
+    let migrated = 0;
+
+    for (const sighting of allSightings) {
+      if (!sighting.syncId) {
+        sighting.syncId = generateSyncId();
+        await new Promise((resolve, reject) => {
+          const tx = this.db.transaction('sightings', 'readwrite');
+          const request = tx.objectStore('sightings').put(sighting);
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        });
+        migrated++;
+      }
+    }
+
+    return migrated;
   }
 };
 

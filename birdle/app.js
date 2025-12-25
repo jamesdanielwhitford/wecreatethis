@@ -1213,6 +1213,7 @@ const App = {
     // Use custom title or auto-generate one
     const title = customTitle || this.generateAutoTitle();
 
+    const now = new Date().toISOString();
     const game = {
       id: Date.now(),
       title: title,
@@ -1220,7 +1221,8 @@ const App = {
       regionName: this.selectedRegionName,
       startDate: startDateInput?.value || new Date().toISOString().split('T')[0],
       endDate: endDateInput?.value || null, // null means forever
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      dateModified: now,
       birds: null, // Will be populated when game is first opened
       seenBirds: [] // Birds seen in this game with timestamps
     };
@@ -1645,6 +1647,7 @@ const App = {
   },
 
   saveGame() {
+    this.currentGame.dateModified = new Date().toISOString();
     this.games[this.currentGameIndex] = this.currentGame;
     localStorage.setItem('games', JSON.stringify(this.games));
   },

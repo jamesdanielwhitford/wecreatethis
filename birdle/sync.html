@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Sync - Birdle</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <!-- QR Code library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <!-- jsQR for QR scanning -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
+  <style>
+    .sync-container {
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .sync-header {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .sync-header h1 {
+      margin: 0 0 5px 0;
+      font-size: 24px;
+    }
+
+    .sync-header p {
+      margin: 0;
+      color: #666;
+    }
+
+    .sync-intro {
+      color: #666;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .sync-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .sync-buttons button {
+      flex: 1;
+      padding: 15px;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: #4caf50;
+      color: white;
+    }
+
+    .sync-buttons button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .sync-buttons button.secondary {
+      background: #2196f3;
+    }
+
+    #qr-container {
+      display: none;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    #qr-canvas {
+      max-width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    #qr-instruction {
+      margin-top: 15px;
+      color: #666;
+    }
+
+    #scan-container {
+      display: none;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    #scan-video {
+      max-width: 100%;
+      border-radius: 10px;
+      background: #000;
+    }
+
+    #status-text {
+      margin: 15px 0;
+      padding: 15px;
+      background: #f5f5f5;
+      border-radius: 10px;
+      color: #333;
+    }
+
+    #progress-text {
+      margin: 10px 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    /* Copy/Paste fallback */
+    .fallback-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+    }
+
+    .fallback-section h3 {
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .code-area {
+      width: 100%;
+      height: 100px;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      resize: none;
+    }
+
+    .copy-btn, .paste-btn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: #666;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .copy-btn:hover, .paste-btn:hover {
+      background: #555;
+    }
+
+    .step-indicator {
+      display: inline-block;
+      background: #4caf50;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 24px;
+      font-size: 14px;
+      margin-right: 8px;
+    }
+
+    .action-btn {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .action-btn:hover {
+      background: #43a047;
+    }
+
+    .action-btn.secondary {
+      background: #2196f3;
+    }
+
+    .action-btn.secondary:hover {
+      background: #1e88e5;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sticky Navbar -->
+  <nav class="game-navbar">
+    <a href="index" class="back-btn">&larr; Home</a>
+    <span></span>
+  </nav>
+
+  <!-- Sync Header -->
+  <div class="sync-header">
+    <h1>Sync Devices</h1>
+    <p>Sync sightings and games between devices</p>
+  </div>
+
+  <div class="sync-container">
+    <p class="sync-intro">
+      Connect directly to another device using QR codes. No account or server needed!
+    </p>
+
+    <div id="start-view">
+      <div class="sync-buttons">
+        <button id="show-qr-btn">Show QR Code</button>
+        <button id="scan-qr-btn" class="secondary">Scan QR Code</button>
+      </div>
+    </div>
+
+    <div id="qr-container">
+      <canvas id="qr-canvas"></canvas>
+      <p id="qr-instruction"></p>
+      <button id="scan-answer-btn" class="action-btn secondary" style="display: none;">
+        Scan their QR code
+      </button>
+    </div>
+
+    <div id="scan-container">
+      <video id="scan-video" autoplay playsinline></video>
+      <p>Point camera at QR code</p>
+    </div>
+
+    <div id="status-text" style="display: none;"></div>
+    <div id="progress-text"></div>
+
+    <!-- Copy/Paste Fallback -->
+    <div class="fallback-section" id="fallback-section" style="display: none;">
+      <h3>No camera? Use copy/paste:</h3>
+
+      <div id="offer-code-section" style="display: none;">
+        <p><span class="step-indicator">1</span> Copy this code and send it to the other device:</p>
+        <textarea id="offer-code" class="code-area" readonly></textarea>
+        <button id="copy-offer-btn" class="copy-btn">Copy Code</button>
+      </div>
+
+      <div id="paste-answer-section" style="display: none;">
+        <p><span class="step-indicator">2</span> Paste their response code here:</p>
+        <textarea id="paste-answer" class="code-area" placeholder="Paste the response code here..."></textarea>
+        <button id="submit-answer-btn" class="paste-btn">Connect</button>
+      </div>
+
+      <div id="paste-offer-section" style="display: none;">
+        <p><span class="step-indicator">1</span> Paste the code from the other device:</p>
+        <textarea id="paste-offer" class="code-area" placeholder="Paste the QR code data here..."></textarea>
+        <button id="submit-offer-btn" class="paste-btn">Generate Response</button>
+      </div>
+
+      <div id="answer-code-section" style="display: none;">
+        <p><span class="step-indicator">2</span> Copy this response and send it back:</p>
+        <textarea id="answer-code" class="code-area" readonly></textarea>
+        <button id="copy-answer-btn" class="copy-btn">Copy Response</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="db.js?v=74"></script>
+  <script src="sync/webrtc.js?v=74"></script>
+  <script src="sync/signaling.js?v=74"></script>
+  <script src="sync/sync.js?v=74"></script>
+  <script>
+    // Sync page logic
+    (function() {
+      let peer = null;
+      let syncManager = null;
+      let isInitiator = false;
+      let cleanupScanner = null;
+
+      const showQRBtn = document.getElementById('show-qr-btn');
+      const scanQRBtn = document.getElementById('scan-qr-btn');
+      const qrContainer = document.getElementById('qr-container');
+      const qrCanvas = document.getElementById('qr-canvas');
+      const qrInstruction = document.getElementById('qr-instruction');
+      const scanAnswerBtn = document.getElementById('scan-answer-btn');
+      const scanContainer = document.getElementById('scan-container');
+      const scanVideo = document.getElementById('scan-video');
+      const statusText = document.getElementById('status-text');
+      const progressText = document.getElementById('progress-text');
+      const startView = document.getElementById('start-view');
+      const fallbackSection = document.getElementById('fallback-section');
+
+      // Fallback elements
+      const offerCodeSection = document.getElementById('offer-code-section');
+      const offerCode = document.getElementById('offer-code');
+      const copyOfferBtn = document.getElementById('copy-offer-btn');
+      const pasteAnswerSection = document.getElementById('paste-answer-section');
+      const pasteAnswer = document.getElementById('paste-answer');
+      const submitAnswerBtn = document.getElementById('submit-answer-btn');
+      const pasteOfferSection = document.getElementById('paste-offer-section');
+      const pasteOffer = document.getElementById('paste-offer');
+      const submitOfferBtn = document.getElementById('submit-offer-btn');
+      const answerCodeSection = document.getElementById('answer-code-section');
+      const answerCode = document.getElementById('answer-code');
+      const copyAnswerBtn = document.getElementById('copy-answer-btn');
+
+      // Initialize
+      BirdDB.init().then(() => {
+        console.log('Database initialized');
+      });
+
+      // Check if QR scanning is supported
+      if (!SyncSignaling.isQRScannerSupported()) {
+        scanQRBtn.textContent = 'Scan (not supported)';
+        scanQRBtn.disabled = true;
+      }
+
+      // Show QR Code (initiator)
+      showQRBtn.addEventListener('click', async () => {
+        isInitiator = true;
+        startView.style.display = 'none';
+        updateStatus('Creating connection...');
+
+        try {
+          peer = new PeerConnection();
+          await peer.createConnection(true);
+
+          peer.onDataChannelOpen = () => {
+            startSyncProcess();
+          };
+
+          const offer = await peer.createOffer();
+          const qrData = SyncSignaling.encodeForQR(offer);
+
+          // Generate QR code
+          await SyncSignaling.generateQRCode(qrData, qrCanvas);
+
+          qrContainer.style.display = 'block';
+          qrInstruction.textContent = 'Have the other device scan this QR code';
+          scanAnswerBtn.style.display = 'block';
+
+          // Show fallback
+          fallbackSection.style.display = 'block';
+          offerCodeSection.style.display = 'block';
+          offerCode.value = qrData;
+
+        } catch (e) {
+          console.error('Failed to create offer:', e);
+          updateStatus('Error: ' + e.message);
+        }
+      });
+
+      // Scan their answer
+      scanAnswerBtn.addEventListener('click', async () => {
+        qrContainer.style.display = 'none';
+        scanContainer.style.display = 'block';
+        pasteAnswerSection.style.display = 'block';
+        updateStatus('Scanning for response...');
+
+        try {
+          cleanupScanner = await SyncSignaling.startQRScanner(scanVideo, async (qrData) => {
+            await handleScannedAnswer(qrData);
+          });
+        } catch (e) {
+          console.error('Failed to start scanner:', e);
+          updateStatus('Camera not available. Use copy/paste instead.');
+        }
+      });
+
+      // Scan QR Code (receiver)
+      scanQRBtn.addEventListener('click', async () => {
+        isInitiator = false;
+        startView.style.display = 'none';
+        scanContainer.style.display = 'block';
+        fallbackSection.style.display = 'block';
+        pasteOfferSection.style.display = 'block';
+        updateStatus('Scanning for QR code...');
+
+        try {
+          cleanupScanner = await SyncSignaling.startQRScanner(scanVideo, async (qrData) => {
+            await handleScannedOffer(qrData);
+          });
+        } catch (e) {
+          console.error('Failed to start scanner:', e);
+          updateStatus('Camera not available. Use copy/paste instead.');
+        }
+      });
+
+      async function handleScannedOffer(qrData) {
+        if (cleanupScanner) {
+          cleanupScanner();
+          cleanupScanner = null;
+        }
+        scanContainer.style.display = 'none';
+
+        updateStatus('Processing...');
+
+        try {
+          const offer = SyncSignaling.decodeFromQR(qrData);
+
+          if (offer.type !== 'offer') {
+            throw new Error('Invalid QR code - expected offer');
+          }
+
+          peer = new PeerConnection();
+          await peer.createConnection(false);
+
+          peer.onDataChannelOpen = () => {
+            startSyncProcess();
+          };
+
+          const answer = await peer.acceptOffer(offer);
+          const answerQR = SyncSignaling.encodeForQR(answer);
+
+          // Show answer QR
+          await SyncSignaling.generateQRCode(answerQR, qrCanvas);
+
+          qrContainer.style.display = 'block';
+          qrInstruction.textContent = 'Have the other device scan this response';
+          scanAnswerBtn.style.display = 'none';
+
+          // Show fallback
+          pasteOfferSection.style.display = 'none';
+          answerCodeSection.style.display = 'block';
+          answerCode.value = answerQR;
+
+        } catch (e) {
+          console.error('Failed to process offer:', e);
+          updateStatus('Error: Invalid QR code');
+        }
+      }
+
+      async function handleScannedAnswer(qrData) {
+        if (cleanupScanner) {
+          cleanupScanner();
+          cleanupScanner = null;
+        }
+        scanContainer.style.display = 'none';
+
+        updateStatus('Connecting...');
+
+        try {
+          const answer = SyncSignaling.decodeFromQR(qrData);
+
+          if (answer.type !== 'answer') {
+            throw new Error('Invalid QR code - expected answer');
+          }
+
+          await peer.acceptAnswer(answer);
+          // DataChannel open will trigger startSyncProcess
+
+        } catch (e) {
+          console.error('Failed to process answer:', e);
+          updateStatus('Error: Invalid response code');
+        }
+      }
+
+      function startSyncProcess() {
+        qrContainer.style.display = 'none';
+        scanContainer.style.display = 'none';
+        fallbackSection.style.display = 'none';
+
+        syncManager = new BirdleSync();
+
+        syncManager.onStatusChange = (status) => {
+          updateStatus(status);
+        };
+
+        syncManager.onProgress = (msg) => {
+          progressText.textContent = msg;
+        };
+
+        syncManager.onComplete = () => {
+          progressText.textContent = 'Sync complete! Returning home...';
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 2000);
+        };
+
+        syncManager.onError = (error) => {
+          updateStatus('Error: ' + error.message);
+        };
+
+        syncManager.startSync(peer);
+      }
+
+      function updateStatus(message) {
+        statusText.style.display = 'block';
+        statusText.textContent = message;
+      }
+
+      // Copy/Paste fallback handlers
+      copyOfferBtn.addEventListener('click', () => {
+        offerCode.select();
+        document.execCommand('copy');
+        copyOfferBtn.textContent = 'Copied!';
+        setTimeout(() => {
+          copyOfferBtn.textContent = 'Copy Code';
+        }, 2000);
+      });
+
+      copyAnswerBtn.addEventListener('click', () => {
+        answerCode.select();
+        document.execCommand('copy');
+        copyAnswerBtn.textContent = 'Copied!';
+        setTimeout(() => {
+          copyAnswerBtn.textContent = 'Copy Response';
+        }, 2000);
+      });
+
+      submitOfferBtn.addEventListener('click', async () => {
+        const qrData = pasteOffer.value.trim();
+        if (qrData) {
+          await handleScannedOffer(qrData);
+        }
+      });
+
+      submitAnswerBtn.addEventListener('click', async () => {
+        const qrData = pasteAnswer.value.trim();
+        if (qrData) {
+          await handleScannedAnswer(qrData);
+        }
+      });
+
+      // Cleanup on page unload
+      window.addEventListener('beforeunload', () => {
+        if (cleanupScanner) cleanupScanner();
+        if (syncManager) syncManager.abort();
+        if (peer) peer.close();
+      });
+    })();
+  </script>
+</body>
+</html>

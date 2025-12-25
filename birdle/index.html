@@ -11,8 +11,17 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Birdle</h1>
-  <p>Bird Bingo Adventure</p>
+  <!-- Navbar with menu -->
+  <nav class="game-navbar">
+    <span style="font-weight: bold; font-size: 18px;">Birdle</span>
+    <button id="menu-btn" class="menu-btn">&#8942;</button>
+    <div id="menu-dropdown" class="menu-dropdown" style="display:none;">
+      <a href="sync.html" style="display: block; padding: 12px 16px; text-decoration: none; color: #333;">Sync Devices</a>
+      <a href="#" id="menu-about" style="display: block; padding: 12px 16px; text-decoration: none; color: #666; font-size: 13px;">About</a>
+    </div>
+  </nav>
+
+  <p style="margin-top: 20px;">Bird Bingo Adventure</p>
 
   <div id="location-status">
     <a href="#" id="grant-location" style="color: #c00;">Grant location access</a>
@@ -76,9 +85,9 @@
     </a>
   </div>
 
-  <script src="location.js?v=73"></script>
-  <script src="ebird.js?v=73"></script>
-  <script src="app.js?v=73"></script>
+  <script src="location.js?v=74"></script>
+  <script src="ebird.js?v=74"></script>
+  <script src="app.js?v=74"></script>
   <script>
     // Location status handling
     (function() {
@@ -232,6 +241,28 @@
       });
 
       showLocationStatus();
+    })();
+
+    // Menu toggle
+    (function() {
+      const menuBtn = document.getElementById('menu-btn');
+      const menuDropdown = document.getElementById('menu-dropdown');
+      const menuAbout = document.getElementById('menu-about');
+
+      menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuDropdown.style.display = menuDropdown.style.display === 'none' ? 'block' : 'none';
+      });
+
+      document.addEventListener('click', () => {
+        menuDropdown.style.display = 'none';
+      });
+
+      menuAbout.addEventListener('click', (e) => {
+        e.preventDefault();
+        alert('Birdle v73\n\nA bird spotting game.\nTrack your sightings and play region games!');
+        menuDropdown.style.display = 'none';
+      });
     })();
 
     // Force service worker update
