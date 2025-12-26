@@ -81,10 +81,10 @@
     </a>
   </div>
 
-  <script src="db.js?v=81"></script>
-  <script src="location.js?v=81"></script>
-  <script src="ebird.js?v=81"></script>
-  <script src="app.js?v=81"></script>
+  <script src="db.js?v=82"></script>
+  <script src="location.js?v=82"></script>
+  <script src="ebird.js?v=82"></script>
+  <script src="app.js?v=82"></script>
   <script>
     // Location status handling
     (function() {
@@ -105,24 +105,24 @@
       async function cacheCountryBirds(countryCode) {
         if (!countryCode) return;
 
-        await BirdDB.init();
-
-        // Check if already cached
-        const hasCache = await BirdDB.hasCountryCache(countryCode);
-        if (hasCache) {
-          const meta = await BirdDB.getCountryCacheMeta(countryCode);
-          cacheStatus.textContent = `${meta.speciesCodes.length} birds cached`;
-          cacheStatus.style.display = 'block';
-          cacheStatus.style.color = '#4caf50';
-          return;
-        }
-
-        // Show caching status
-        cacheStatus.style.display = 'block';
-        cacheStatus.style.color = '#666';
-        cacheStatus.textContent = 'Caching birds...';
-
         try {
+          await BirdDB.init();
+
+          // Check if already cached
+          const hasCache = await BirdDB.hasCountryCache(countryCode);
+          if (hasCache) {
+            const meta = await BirdDB.getCountryCacheMeta(countryCode);
+            cacheStatus.textContent = `${meta.speciesCodes.length} birds cached`;
+            cacheStatus.style.display = 'block';
+            cacheStatus.style.color = '#4caf50';
+            return;
+          }
+
+          // Show caching status
+          cacheStatus.style.display = 'block';
+          cacheStatus.style.color = '#666';
+          cacheStatus.textContent = 'Caching birds...';
+
           const result = await BirdDB.cacheCountryBirds(countryCode, (progress) => {
             if (progress.phase === 'fetching') {
               cacheStatus.textContent = `Fetching ${progress.total} species...`;
@@ -135,9 +135,7 @@
           });
           console.log('Country birds cached:', result);
         } catch (error) {
-          console.error('Error caching country birds:', error);
-          cacheStatus.textContent = 'Cache failed';
-          cacheStatus.style.color = '#c00';
+          console.error('Error with country cache:', error);
         }
       }
 
@@ -302,7 +300,7 @@
 
       menuAbout.addEventListener('click', (e) => {
         e.preventDefault();
-        alert('Birdle v81\n\nA bird spotting game.\nTrack your sightings and play region games!');
+        alert('Birdle v82\n\nA bird spotting game.\nTrack your sightings and play region games!');
         menuDropdown.style.display = 'none';
       });
     })();

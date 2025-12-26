@@ -1,4 +1,4 @@
-const CACHE_NAME = 'birdle-v81';
+const CACHE_NAME = 'birdle-v82';
 const ASSETS = [
   '/birdle/index.html',
   '/birdle/search.html',
@@ -117,9 +117,10 @@ self.addEventListener('fetch', (event) => {
         // Always strip redirect metadata before caching AND returning
         const cleanResponse = await stripRedirectMetadata(response);
 
-        // Cache the clean response
+        // Clone BEFORE returning (avoids race condition with body consumption)
+        const responseToCache = cleanResponse.clone();
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, cleanResponse.clone());
+          cache.put(event.request, responseToCache);
         });
 
         // Return clean response to client (Safari requires this)
