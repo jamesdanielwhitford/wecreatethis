@@ -16,6 +16,7 @@
     <span style="font-weight: bold; font-size: 18px;">Birdle</span>
     <button id="menu-btn" class="menu-btn">&#8942;</button>
     <div id="menu-dropdown" class="menu-dropdown" style="display:none;">
+      <a href="cache.html" style="display: block; padding: 12px 16px; text-decoration: none; color: #333;">Manage Cache</a>
       <a href="sync.html" style="display: block; padding: 12px 16px; text-decoration: none; color: #333;">Sync Devices</a>
       <a href="#" id="menu-about" style="display: block; padding: 12px 16px; text-decoration: none; color: #666; font-size: 13px;">About</a>
     </div>
@@ -71,7 +72,7 @@
     </a>
 
     <a href="games" class="btn">
-      <span class="btn-icon">🎮</span>
+      <span class="btn-icon">🌍</span>
       <span class="btn-text">Region Games</span>
     </a>
 
@@ -81,10 +82,10 @@
     </a>
   </div>
 
-  <script src="db.js?v=82"></script>
-  <script src="location.js?v=82"></script>
-  <script src="ebird.js?v=82"></script>
-  <script src="app.js?v=82"></script>
+  <script src="db.js?v=83"></script>
+  <script src="location.js?v=83"></script>
+  <script src="ebird.js?v=83"></script>
+  <script src="app.js?v=83"></script>
   <script>
     // Location status handling
     (function() {
@@ -300,7 +301,7 @@
 
       menuAbout.addEventListener('click', (e) => {
         e.preventDefault();
-        alert('Birdle v82\n\nA bird spotting game.\nTrack your sightings and play region games!');
+        alert('Birdle v83\n\nA bird spotting game.\nTrack your sightings and play region games!');
         menuDropdown.style.display = 'none';
       });
     })();

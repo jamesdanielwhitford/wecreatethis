@@ -627,6 +627,116 @@ const BirdDB = {
     return meta && meta.speciesCodes && meta.speciesCodes.length > 0;
   },
 
+  // ===== CACHE MANAGEMENT =====
+
+  // Get list of all cached countries with metadata
+  async getCachedCountries() {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('cache_meta', 'readonly');
+      const request = tx.objectStore('cache_meta').getAll();
+      request.onsuccess = () => {
+        const countries = [];
+        for (const meta of request.result) {
+          if (meta.key.startsWith('country_') && meta.key.endsWith('_birds')) {
+            const countryCode = meta.key.replace('country_', '').replace('_birds', '');
+            countries.push({
+              countryCode,
+              birdCount: meta.speciesCodes?.length || 0,
+              cachedAt: meta.updatedAt
+            });
+          }
+        }
+        resolve(countries);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  // Remove a country from cache (preserves birds with sightings or in games)
+  async removeCountryFromCache(countryCode) {
+    await this.ready();
+
+    const meta = await this.getCacheMeta(`country_${countryCode}_birds`);
+    if (!meta || !meta.speciesCodes) {
+      return { removed: 0, preserved: 0 };
+    }
+
+    let removed = 0;
+    let preserved = 0;
+
+    // Get birds protected by games
+    const gameProtectedCodes = await this.getActiveGameBirdCodes();
+
+    // Get birds protected by other country caches
+    const otherCountries = await this.getCachedCountries();
+    const otherCacheProtectedCodes = new Set();
+
+    for (const country of otherCountries) {
+      if (country.countryCode !== countryCode) {
+        const otherMeta = await this.getCacheMeta(`country_${country.countryCode}_birds`);
+        if (otherMeta?.speciesCodes) {
+          otherMeta.speciesCodes.forEach(sc => otherCacheProtectedCodes.add(sc));
+        }
+      }
+    }
+
+    // Process each bird
+    for (const speciesCode of meta.speciesCodes) {
+      const bird = await this.getBird(speciesCode);
+      if (!bird) continue;
+
+      const isProtected =
+        bird.hasSightings ||
+        gameProtectedCodes.includes(speciesCode) ||
+        otherCacheProtectedCodes.has(speciesCode);
+
+      if (isProtected) {
+        preserved++;
+        continue;
+      }
+
+      await this.deleteBird(speciesCode);
+      removed++;
+    }
+
+    // Remove cache metadata
+    await new Promise((resolve, reject) => {
+      const tx = this.db.transaction('cache_meta', 'readwrite');
+      const request = tx.objectStore('cache_meta').delete(`country_${countryCode}_birds`);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+
+    console.log(`Removed cache ${countryCode}: ${removed} deleted, ${preserved} preserved`);
+    return { removed, preserved };
+  },
+
+  // Get all cached birds for a country
+  async getCachedBirdsForCountry(countryCode) {
+    const meta = await this.getCacheMeta(`country_${countryCode}_birds`);
+    if (!meta || !meta.speciesCodes) return [];
+    return this.getBirds(meta.speciesCodes);
+  },
+
+  // Get cached birds for a region (state filters from parent country cache)
+  async getCachedBirdsForRegion(regionCode) {
+    const countryCode = regionCode.split('-')[0];
+    const allBirds = await this.getCachedBirdsForCountry(countryCode);
+
+    // If searching a state, filter to birds that include that region
+    if (regionCode !== countryCode) {
+      return allBirds.filter(bird =>
+        bird.regions && (
+          bird.regions.includes(regionCode) ||
+          bird.regions.includes(countryCode)
+        )
+      );
+    }
+
+    return allBirds;
+  },
+
   async migrateSightingsForSync() {
     // Add syncId to any existing sightings that don't have one
     await this.ready();

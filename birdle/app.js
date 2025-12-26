@@ -81,11 +81,84 @@ const App = {
   },
 
   async restoreLastSearch() {
-    // First check if we have a cached location from LocationService
+    const countryFilter = document.getElementById('country-filter');
+    const stateFilter = document.getElementById('state-filter');
+    const birdSearch = document.getElementById('bird-search');
+    const locationInfo = document.getElementById('location-info');
+
+    // Priority 1: Check for lastSearch (user's previous search session)
+    const lastSearch = JSON.parse(localStorage.getItem('lastSearch') || 'null');
+    if (lastSearch) {
+      // Restore search query if saved
+      if (lastSearch.query && birdSearch) {
+        birdSearch.value = lastSearch.query;
+        this.searchQuery = lastSearch.query.toLowerCase();
+      }
+
+      if (lastSearch.type === 'region') {
+        // Restore country selection
+        if (lastSearch.countryCode && countryFilter) {
+          countryFilter.value = lastSearch.countryCode;
+
+          // Load and restore state selection if applicable
+          if (stateFilter) {
+            const states = await EBird.getStates(lastSearch.countryCode);
+            if (states.length > 0) {
+              stateFilter.innerHTML = '<option value="">State/Province...</option>';
+              states.forEach(s => {
+                stateFilter.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+              });
+              stateFilter.disabled = false;
+              if (lastSearch.stateCode) {
+                stateFilter.value = lastSearch.stateCode;
+              }
+            }
+          }
+        } else if (countryFilter && lastSearch.code) {
+          // Legacy format - just set country from code
+          const countryCode = lastSearch.code.split('-')[0];
+          countryFilter.value = countryCode;
+        }
+
+        this.showLoading(true);
+        const regionCode = lastSearch.code || lastSearch.stateCode || lastSearch.countryCode;
+        const countryCode = (lastSearch.code || lastSearch.countryCode || '').split('-')[0];
+
+        // Check if country is cached - use cache if available
+        const isCached = await BirdDB.hasCountryCache(countryCode);
+        if (isCached) {
+          const birds = await BirdDB.getCachedBirdsForRegion(regionCode);
+          this.birds = birds;
+        } else {
+          const birds = await EBird.getRecentObservations(regionCode);
+          this.birds = this.deduplicateBirds(birds);
+        }
+
+        this.showLoading(false);
+        this.renderBirdList();
+        this.updateCachePrompt(countryCode);
+        return;
+      } else if (lastSearch.type === 'location') {
+        this.userLocation = { lat: lastSearch.lat, lng: lastSearch.lng };
+
+        if (locationInfo) {
+          locationInfo.textContent = `📍 ${lastSearch.lat.toFixed(4)}, ${lastSearch.lng.toFixed(4)} (50km radius)`;
+          locationInfo.style.display = 'block';
+        }
+
+        this.showLoading(true);
+        const birds = await EBird.getNearbyObservations(lastSearch.lat, lastSearch.lng);
+        this.birds = this.deduplicateBirds(birds);
+        this.showLoading(false);
+        this.renderBirdList();
+        return;
+      }
+    }
+
+    // Priority 2: Fall back to cached location (first time on search page)
     if (typeof LocationService !== 'undefined') {
       const cached = LocationService.getCached();
       if (cached) {
-        const locationInfo = document.getElementById('location-info');
         const displayName = LocationService.getRegionDisplayName(cached);
 
         if (locationInfo) {
@@ -94,9 +167,6 @@ const App = {
         }
 
         // Populate country/state dropdowns to match cached location
-        const countryFilter = document.getElementById('country-filter');
-        const stateFilter = document.getElementById('state-filter');
-
         if (countryFilter && cached.countryCode) {
           countryFilter.value = cached.countryCode;
 
@@ -131,38 +201,25 @@ const App = {
         } else {
           // Use region-based search for manual locations
           const regionCode = LocationService.getRegionCode(cached);
-          EBird.getRecentObservations(regionCode).then(birds => {
-            this.birds = this.deduplicateBirds(birds);
+
+          // Check if country is cached
+          const isCached = await BirdDB.hasCountryCache(cached.countryCode);
+          if (isCached) {
+            const birds = await BirdDB.getCachedBirdsForRegion(regionCode);
+            this.birds = birds;
             this.showLoading(false);
             this.renderBirdList();
-          });
+            this.updateCachePrompt(cached.countryCode);
+          } else {
+            EBird.getRecentObservations(regionCode).then(birds => {
+              this.birds = this.deduplicateBirds(birds);
+              this.showLoading(false);
+              this.renderBirdList();
+              this.updateCachePrompt(cached.countryCode);
+            });
+          }
         }
-        return;
       }
-    }
-
-    // Fallback to lastSearch localStorage
-    const lastSearch = JSON.parse(localStorage.getItem('lastSearch') || 'null');
-    if (!lastSearch) return;
-
-    if (lastSearch.type === 'region') {
-      document.getElementById('country-filter').value = lastSearch.code;
-      this.searchByRegion(lastSearch.code);
-    } else if (lastSearch.type === 'location') {
-      this.userLocation = { lat: lastSearch.lat, lng: lastSearch.lng };
-
-      const locationInfo = document.getElementById('location-info');
-      if (locationInfo) {
-        locationInfo.textContent = `📍 ${lastSearch.lat.toFixed(4)}, ${lastSearch.lng.toFixed(4)} (50km radius)`;
-        locationInfo.style.display = 'block';
-      }
-
-      this.showLoading(true);
-      EBird.getNearbyObservations(lastSearch.lat, lastSearch.lng).then(birds => {
-        this.birds = this.deduplicateBirds(birds);
-        this.showLoading(false);
-        this.renderBirdList();
-      });
     }
   },
 
@@ -222,9 +279,10 @@ const App = {
       this.renderBirdList();
     });
 
-    // Bird search filter
+    // Bird search filter - also save to lastSearch
     birdSearch?.addEventListener('input', (e) => {
       this.searchQuery = e.target.value.toLowerCase();
+      this.saveSearchQuery(e.target.value);
       this.renderBirdList();
     });
 
@@ -239,6 +297,79 @@ const App = {
     mapConfirmBtn?.addEventListener('click', () => {
       this.confirmMapLocation();
     });
+
+    // Cache country button
+    const cacheBtn = document.getElementById('cache-country-btn');
+    cacheBtn?.addEventListener('click', () => {
+      this.cacheCurrentCountry();
+    });
+  },
+
+  // Show/hide cache prompt based on whether country is cached
+  async updateCachePrompt(countryCode) {
+    const cachePrompt = document.getElementById('cache-prompt');
+    const cachePromptText = document.getElementById('cache-prompt-text');
+    const cacheBtn = document.getElementById('cache-country-btn');
+
+    if (!cachePrompt || !countryCode) {
+      if (cachePrompt) cachePrompt.style.display = 'none';
+      return;
+    }
+
+    const isCached = await BirdDB.hasCountryCache(countryCode);
+    if (isCached) {
+      cachePrompt.style.display = 'none';
+    } else {
+      cachePrompt.style.display = 'block';
+      cachePromptText.textContent = 'Save for offline?';
+      cacheBtn.textContent = 'Cache Country';
+      cacheBtn.disabled = false;
+      cachePrompt.dataset.country = countryCode;
+    }
+  },
+
+  // Cache the current country
+  async cacheCurrentCountry() {
+    const cachePrompt = document.getElementById('cache-prompt');
+    const cachePromptText = document.getElementById('cache-prompt-text');
+    const cacheBtn = document.getElementById('cache-country-btn');
+    const countryCode = cachePrompt?.dataset.country;
+
+    if (!countryCode) return;
+
+    cacheBtn.disabled = true;
+    cacheBtn.textContent = 'Caching...';
+
+    try {
+      await BirdDB.cacheCountryBirds(countryCode, (progress) => {
+        if (progress.phase === 'fetching') {
+          cachePromptText.textContent = `Fetching ${progress.total} species...`;
+        } else if (progress.phase === 'caching') {
+          cachePromptText.textContent = `Caching ${progress.cached}/${progress.total}...`;
+        } else if (progress.phase === 'done') {
+          cachePromptText.textContent = `${progress.cached} birds cached!`;
+        }
+      });
+
+      // Hide prompt after success
+      setTimeout(() => {
+        cachePrompt.style.display = 'none';
+      }, 2000);
+    } catch (error) {
+      console.error('Cache error:', error);
+      cachePromptText.textContent = 'Error caching. Try again.';
+      cacheBtn.textContent = 'Cache Country';
+      cacheBtn.disabled = false;
+    }
+  },
+
+  // Save search query to lastSearch without triggering a new search
+  saveSearchQuery(query) {
+    const lastSearch = JSON.parse(localStorage.getItem('lastSearch') || 'null');
+    if (lastSearch) {
+      lastSearch.query = query;
+      localStorage.setItem('lastSearch', JSON.stringify(lastSearch));
+    }
   },
 
   async useMyLocation() {
@@ -280,6 +411,9 @@ const App = {
       this.birds = this.deduplicateBirds(birds);
       this.showLoading(false);
       this.renderBirdList();
+
+      // Hide cache prompt for GPS-based search
+      this.updateCachePrompt(null);
 
       btn.textContent = LocationService.getButtonText();
       btn.disabled = false;
@@ -362,6 +496,9 @@ const App = {
       this.birds = this.deduplicateBirds(birds);
       this.showLoading(false);
       this.renderBirdList();
+
+      // Hide cache prompt for GPS-based search
+      this.updateCachePrompt(null);
     });
   },
 
@@ -373,11 +510,36 @@ const App = {
     }
 
     this.showLoading(true);
-    localStorage.setItem('lastSearch', JSON.stringify({ type: 'region', code: regionCode }));
+
+    // Save enhanced search settings for persistence
+    const countryCode = regionCode.split('-')[0];
+    const stateCode = regionCode.includes('-') ? regionCode : null;
+    localStorage.setItem('lastSearch', JSON.stringify({
+      type: 'region',
+      code: regionCode,
+      countryCode,
+      stateCode
+    }));
+
+    // Check if country is cached - use cache if available
+    const isCached = await BirdDB.hasCountryCache(countryCode);
+    if (isCached) {
+      const birds = await BirdDB.getCachedBirdsForRegion(regionCode);
+      this.birds = birds;
+      this.showLoading(false);
+      this.renderBirdList();
+      this.updateCachePrompt(countryCode);
+      return;
+    }
+
+    // Not cached - fetch from network
     const birds = await EBird.getRecentObservations(regionCode);
     this.birds = this.deduplicateBirds(birds);
     this.showLoading(false);
     this.renderBirdList();
+
+    // Show cache prompt for the country
+    this.updateCachePrompt(countryCode);
   },
 
 
