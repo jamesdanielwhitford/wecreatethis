@@ -51,10 +51,25 @@ const App = {
   },
 
   // ===== SEARCH PAGE =====
-  initSearch() {
+  async initSearch() {
     this.bindSearchEvents();
     this.updateSearchLocationButton();
+    await this.loadSearchCountries();
     this.restoreLastSearch();
+  },
+
+  async loadSearchCountries() {
+    const countryFilter = document.getElementById('country-filter');
+    if (!countryFilter) return;
+
+    try {
+      const countries = await EBird.getCountries();
+      countries.forEach(c => {
+        countryFilter.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+      });
+    } catch (error) {
+      console.error('Failed to load countries:', error);
+    }
   },
 
   // Update location button text based on cache state
