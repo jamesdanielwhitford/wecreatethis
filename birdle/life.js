@@ -41,6 +41,9 @@ const LifeList = {
     // Group birds by continent, country, and region
     const structure = {};
 
+    // Fetch countries list once (not inside the loop)
+    const countries = await EBird.getCountries();
+
     for (const [code, data] of speciesMap) {
       const bird = await BirdDB.getBird(code);
       const continent = bird?.continent || BirdDB.getContinent([...data.regions][0]) || 'Other';
@@ -63,8 +66,7 @@ const LifeList = {
       if (sighting.countryName) {
         countryName = sighting.countryName;
       } else {
-        // Try to get from cached countries or use code
-        const countries = await EBird.getCountries();
+        // Use pre-fetched countries list
         const country = countries.find(c => c.code === countryCode);
         if (country) countryName = country.name;
       }
