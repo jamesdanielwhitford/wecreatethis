@@ -1,4 +1,4 @@
-const CACHE_NAME = 'birdle-v78';
+const CACHE_NAME = 'birdle-v79';
 const ASSETS = [
   '/birdle/',
   '/birdle/index.html',
@@ -77,12 +77,22 @@ async function matchWithHtmlFallback(request) {
 // Fetch - network first, fallback to cache (ensures updates when online)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    fetch(event.request).then((response) => {
+    fetch(event.request).then(async (response) => {
       // Cache successful GET requests
       if (response.ok && event.request.method === 'GET') {
-        const clone = response.clone();
+        // Safari doesn't allow serving redirected responses from SW
+        // Create a clean Response without redirect metadata
+        let responseToCache = response.clone();
+        if (response.redirected) {
+          const body = await response.clone().blob();
+          responseToCache = new Response(body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers
+          });
+        }
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, clone);
+          cache.put(event.request, responseToCache);
         });
       }
       return response;
