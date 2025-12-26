@@ -1,4 +1,4 @@
-const CACHE_NAME = 'birdle-v80';
+const CACHE_NAME = 'birdle-v81';
 const ASSETS = [
   '/birdle/index.html',
   '/birdle/search.html',
@@ -78,23 +78,27 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Helper to try matching URL with .html suffix for extensionless navigation
-async function matchWithHtmlFallback(request) {
+// Helper to match cache, ignoring query params (e.g., ?v=80)
+async function matchCache(request) {
   const url = new URL(request.url);
 
-  // Try exact match first
+  // Try exact match first (with query params, in case it was cached that way)
   let cached = await caches.match(request);
   if (cached) return cached;
 
-  // For navigation requests, try adding .html suffix
+  // Try matching without query params
+  cached = await caches.match(request, { ignoreSearch: true });
+  if (cached) return cached;
+
+  // For navigation requests, try additional fallbacks
   if (request.mode === 'navigate') {
-    // If URL has no extension and doesn't end with /, try .html version
+    // Try adding .html suffix for extensionless URLs
     if (!url.pathname.includes('.') && !url.pathname.endsWith('/')) {
       const htmlUrl = new URL(url.pathname + '.html', url.origin);
       cached = await caches.match(htmlUrl.href);
       if (cached) return cached;
     }
-    // Also handle /birdle/ -> /birdle/index.html
+    // Handle /birdle/ -> /birdle/index.html
     if (url.pathname === '/birdle/' || url.pathname === '/birdle') {
       cached = await caches.match('/birdle/index.html');
       if (cached) return cached;
@@ -123,8 +127,8 @@ self.addEventListener('fetch', (event) => {
       }
       return response;
     }).catch(async () => {
-      // Network failed, try cache with HTML fallback for extensionless URLs
-      const cached = await matchWithHtmlFallback(event.request);
+      // Network failed, try cache (ignores query params, handles extensionless URLs)
+      const cached = await matchCache(event.request);
       if (cached) {
         return cached;
       }
