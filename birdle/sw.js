@@ -1,4 +1,4 @@
-const CACHE_NAME = 'birdle-v74';
+const CACHE_NAME = 'birdle-v75';
 const ASSETS = [
   '/birdle/',
   '/birdle/index.html',
@@ -53,6 +53,30 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Helper to try matching URL with .html suffix for extensionless navigation
+async function matchWithHtmlFallback(request) {
+  const url = new URL(request.url);
+
+  // Try exact match first
+  let cached = await caches.match(request);
+  if (cached) return cached;
+
+  // For navigation requests, try adding .html suffix
+  if (request.mode === 'navigate') {
+    // If URL has no extension and doesn't end with /, try .html version
+    if (!url.pathname.includes('.') && !url.pathname.endsWith('/')) {
+      const htmlUrl = url.pathname + '.html';
+      cached = await caches.match(htmlUrl);
+      if (cached) return cached;
+    }
+    // Also try the full path with .html
+    cached = await caches.match(url.pathname + '.html');
+    if (cached) return cached;
+  }
+
+  return null;
+}
+
 // Fetch - network first, fallback to cache (ensures updates when online)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
@@ -65,18 +89,17 @@ self.addEventListener('fetch', (event) => {
         });
       }
       return response;
-    }).catch(() => {
-      // Network failed, try cache
-      return caches.match(event.request).then((cached) => {
-        if (cached) {
-          return cached;
-        }
-        // No cache, return offline page for navigation
-        if (event.request.mode === 'navigate') {
-          return caches.match('/birdle/index.html');
-        }
-        throw new Error('No network and no cache available');
-      });
+    }).catch(async () => {
+      // Network failed, try cache with HTML fallback for extensionless URLs
+      const cached = await matchWithHtmlFallback(event.request);
+      if (cached) {
+        return cached;
+      }
+      // No cache, return offline page for navigation
+      if (event.request.mode === 'navigate') {
+        return caches.match('/birdle/index.html');
+      }
+      throw new Error('No network and no cache available');
     })
   );
 });
