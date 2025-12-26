@@ -14,6 +14,7 @@ body {
   padding: 20px;
   max-width: 400px;
   margin: 0 auto;
+  color: #333;
 }
 
 h1 {
@@ -32,7 +33,8 @@ h1 {
 }
 
 #location-status #update-location {
-  margin-left: 8px;
+  display: inline-block;
+  margin-top: 8px;
 }
 
 .button-container {
@@ -43,29 +45,30 @@ h1 {
 }
 
 .btn {
-  display: block;
-  padding: 16px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 16px;
   text-decoration: none;
-  background: #333;
-  color: #fff;
+  background: transparent;
+  color: #333;
+  border: 2px solid #38592D;
   border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn:active {
+  background: #38592D;
+  color: #fff;
 }
 
 .btn-icon {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
 }
 
 .btn-text {
-  display: block;
-  font-size: 1.2rem;
-  margin-top: 4px;
-}
-
-.btn-desc {
-  display: block;
-  font-size: 0.85rem;
-  opacity: 0.8;
+  font-size: 1.1rem;
 }
 
 .back-btn {
@@ -1130,8 +1133,10 @@ input[type="date"].form-input {
 }
 
 /* Google Search Button */
-.google-btn {
+.btn.google-btn {
   background: #4285f4;
+  color: #fff;
+  border-color: #4285f4;
   margin-top: 12px;
 }
 
