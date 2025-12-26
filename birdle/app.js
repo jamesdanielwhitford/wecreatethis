@@ -65,7 +65,7 @@ const App = {
     }
   },
 
-  restoreLastSearch() {
+  async restoreLastSearch() {
     // First check if we have a cached location from LocationService
     if (typeof LocationService !== 'undefined') {
       const cached = LocationService.getCached();
@@ -76,6 +76,31 @@ const App = {
         if (locationInfo) {
           locationInfo.textContent = `📍 ${displayName}`;
           locationInfo.style.display = 'block';
+        }
+
+        // Populate country/state dropdowns to match cached location
+        const countryFilter = document.getElementById('country-filter');
+        const stateFilter = document.getElementById('state-filter');
+
+        if (countryFilter && cached.countryCode) {
+          countryFilter.value = cached.countryCode;
+
+          // Load states for this country
+          if (stateFilter) {
+            const states = await EBird.getStates(cached.countryCode);
+            if (states.length > 0) {
+              stateFilter.innerHTML = '<option value="">State/Province...</option>';
+              states.forEach(s => {
+                stateFilter.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+              });
+              stateFilter.disabled = false;
+
+              // Set state if available
+              if (cached.stateCode) {
+                stateFilter.value = cached.stateCode;
+              }
+            }
+          }
         }
 
         this.showLoading(true);
