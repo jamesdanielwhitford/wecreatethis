@@ -120,18 +120,39 @@ const App = {
           countryFilter.value = countryCode;
         }
 
+        // Set userLocation from cached location for "Nearest" sorting
+        if (typeof LocationService !== 'undefined') {
+          const cached = LocationService.getCached();
+          if (cached && cached.lat && cached.lng) {
+            this.userLocation = { lat: cached.lat, lng: cached.lng };
+          }
+        }
+
         this.showLoading(true);
         const regionCode = lastSearch.code || lastSearch.stateCode || lastSearch.countryCode;
         const countryCode = (lastSearch.code || lastSearch.countryCode || '').split('-')[0];
-
-        // Check if country is cached - use cache if available
         const isCached = await BirdDB.hasCountryCache(countryCode);
+
+        // Try to fetch recent observations first (has location data)
+        try {
+          const birds = await EBird.getRecentObservations(regionCode, true);
+          if (birds && birds.length > 0) {
+            this.birds = this.deduplicateBirds(birds);
+            this.showLoading(false);
+            this.renderBirdList();
+            this.updateCachePrompt(countryCode);
+            return;
+          }
+        } catch (e) {
+          console.log('Network fetch failed, trying cache...');
+        }
+
+        // Fallback to cache if available
         if (isCached) {
           const birds = await BirdDB.getCachedBirdsForRegion(regionCode);
           this.birds = birds;
         } else {
-          const birds = await EBird.getRecentObservations(regionCode);
-          this.birds = this.deduplicateBirds(birds);
+          this.birds = [];
         }
 
         this.showLoading(false);
@@ -201,23 +222,32 @@ const App = {
         } else {
           // Use region-based search for manual locations
           const regionCode = LocationService.getRegionCode(cached);
+          const countryIsCached = await BirdDB.hasCountryCache(cached.countryCode);
 
-          // Check if country is cached
-          const isCached = await BirdDB.hasCountryCache(cached.countryCode);
-          if (isCached) {
-            const birds = await BirdDB.getCachedBirdsForRegion(regionCode);
-            this.birds = birds;
-            this.showLoading(false);
-            this.renderBirdList();
-            this.updateCachePrompt(cached.countryCode);
-          } else {
-            EBird.getRecentObservations(regionCode).then(birds => {
+          // Try to fetch recent observations first (has location data)
+          try {
+            const birds = await EBird.getRecentObservations(regionCode, true);
+            if (birds && birds.length > 0) {
               this.birds = this.deduplicateBirds(birds);
               this.showLoading(false);
               this.renderBirdList();
               this.updateCachePrompt(cached.countryCode);
-            });
+              return;
+            }
+          } catch (e) {
+            console.log('Network fetch failed, trying cache...');
           }
+
+          // Fallback to cache if available
+          if (countryIsCached) {
+            const birds = await BirdDB.getCachedBirdsForRegion(regionCode);
+            this.birds = birds;
+          } else {
+            this.birds = [];
+          }
+          this.showLoading(false);
+          this.renderBirdList();
+          this.updateCachePrompt(cached.countryCode);
         }
       }
     }
@@ -521,8 +551,32 @@ const App = {
       stateCode
     }));
 
-    // Check if country is cached - use cache if available
+    // Set userLocation from cached location for "Nearest" sorting
+    if (!this.userLocation && typeof LocationService !== 'undefined') {
+      const cached = LocationService.getCached();
+      if (cached && cached.lat && cached.lng) {
+        this.userLocation = { lat: cached.lat, lng: cached.lng };
+      }
+    }
+
     const isCached = await BirdDB.hasCountryCache(countryCode);
+
+    // Always try to fetch recent observations first (has location data)
+    // Fall back to cache only if offline
+    try {
+      const birds = await EBird.getRecentObservations(regionCode, true);
+      if (birds && birds.length > 0) {
+        this.birds = this.deduplicateBirds(birds);
+        this.showLoading(false);
+        this.renderBirdList();
+        this.updateCachePrompt(countryCode);
+        return;
+      }
+    } catch (e) {
+      console.log('Network fetch failed, trying cache...', e.message);
+    }
+
+    // Fallback to cache if available (offline mode)
     if (isCached) {
       const birds = await BirdDB.getCachedBirdsForRegion(regionCode);
       this.birds = birds;
@@ -532,13 +586,10 @@ const App = {
       return;
     }
 
-    // Not cached - fetch from network
-    const birds = await EBird.getRecentObservations(regionCode);
-    this.birds = this.deduplicateBirds(birds);
+    // No data available
+    this.birds = [];
     this.showLoading(false);
     this.renderBirdList();
-
-    // Show cache prompt for the country
     this.updateCachePrompt(countryCode);
   },
 
@@ -558,12 +609,30 @@ const App = {
 
     if (this.currentSort === 'alphabetical') {
       sorted.sort((a, b) => a.comName.localeCompare(b.comName));
-    } else if (this.currentSort === 'nearest' && this.userLocation) {
-      sorted.sort((a, b) => {
-        const distA = this.distance(this.userLocation.lat, this.userLocation.lng, a.lat, a.lng);
-        const distB = this.distance(this.userLocation.lat, this.userLocation.lng, b.lat, b.lng);
-        return distA - distB;
-      });
+    } else if (this.currentSort === 'nearest') {
+      // Use userLocation, or fall back to cached location
+      let refLocation = this.userLocation;
+      if (!refLocation && typeof LocationService !== 'undefined') {
+        const cached = LocationService.getCached();
+        if (cached && cached.lat && cached.lng) {
+          refLocation = { lat: cached.lat, lng: cached.lng };
+        }
+      }
+
+      if (refLocation) {
+        sorted.sort((a, b) => {
+          // Birds without coordinates go to the end
+          const hasA = a.lat != null && a.lng != null;
+          const hasB = b.lat != null && b.lng != null;
+          if (!hasA && !hasB) return a.comName.localeCompare(b.comName);
+          if (!hasA) return 1;
+          if (!hasB) return -1;
+
+          const distA = this.distance(refLocation.lat, refLocation.lng, a.lat, a.lng);
+          const distB = this.distance(refLocation.lat, refLocation.lng, b.lat, b.lng);
+          return distA - distB;
+        });
+      }
     }
 
     return sorted;

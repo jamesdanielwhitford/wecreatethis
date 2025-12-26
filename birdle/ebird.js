@@ -6,9 +6,9 @@ const EBird = {
   BASE_URL: 'https://api.ebird.org/v2',
 
   // Fetch recent observations for a region
-  async getRecentObservations(regionCode) {
+  async getRecentObservations(regionCode, throwOnNetworkError = false) {
     const url = `${this.BASE_URL}/data/obs/${regionCode}/recent`;
-    return this.fetch(url);
+    return this.fetch(url, throwOnNetworkError);
   },
 
   // Fetch recent observations near coordinates (max 50km radius, last 30 days)
@@ -65,7 +65,8 @@ const EBird = {
   },
 
   // Internal fetch with auth header
-  async fetch(url) {
+  // throwOnNetworkError: if true, rethrows network errors (for offline detection)
+  async fetch(url, throwOnNetworkError = false) {
     if (!this.API_KEY) {
       console.error('eBird API key not set. Get one at https://ebird.org/api/keygen');
       return [];
@@ -85,7 +86,16 @@ const EBird = {
       return await response.json();
     } catch (error) {
       console.error('eBird fetch error:', error);
+      // Rethrow network errors if requested (TypeError indicates network failure)
+      if (throwOnNetworkError && (error instanceof TypeError || error.name === 'TypeError')) {
+        throw error;
+      }
       return [];
     }
+  },
+
+  // Fetch with network error propagation (for offline fallback logic)
+  async fetchWithOfflineDetection(url) {
+    return this.fetch(url, true);
   }
 };
