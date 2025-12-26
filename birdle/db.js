@@ -570,6 +570,63 @@ const BirdDB = {
     }));
   },
 
+  // ===== COUNTRY CACHING =====
+
+  async cacheCountryBirds(countryCode, onProgress = null) {
+    await this.ready();
+
+    // Get all species codes for the country
+    const speciesCodes = await EBird.getSpeciesList(countryCode);
+    if (!speciesCodes || speciesCodes.length === 0) {
+      console.warn('No species found for country:', countryCode);
+      return { cached: 0, total: 0 };
+    }
+
+    if (onProgress) onProgress({ phase: 'fetching', total: speciesCodes.length });
+
+    // Fetch taxonomy data for all species
+    const taxonomy = await EBird.getTaxonomy(speciesCodes);
+    if (!taxonomy || taxonomy.length === 0) {
+      console.warn('No taxonomy data returned for country:', countryCode);
+      return { cached: 0, total: speciesCodes.length };
+    }
+
+    if (onProgress) onProgress({ phase: 'caching', total: taxonomy.length, cached: 0 });
+
+    // Cache each bird
+    let cached = 0;
+    for (const bird of taxonomy) {
+      await this.cacheBird({
+        speciesCode: bird.speciesCode,
+        comName: bird.comName,
+        sciName: bird.sciName,
+        familyName: bird.familyComName || null,
+        regions: [countryCode]
+      }, 'country');
+
+      cached++;
+      if (onProgress && cached % 50 === 0) {
+        onProgress({ phase: 'caching', total: taxonomy.length, cached });
+      }
+    }
+
+    // Store cache metadata
+    await this.setCacheMeta(`country_${countryCode}_birds`, speciesCodes);
+
+    if (onProgress) onProgress({ phase: 'done', total: taxonomy.length, cached });
+
+    return { cached, total: speciesCodes.length };
+  },
+
+  async getCountryCacheMeta(countryCode) {
+    return this.getCacheMeta(`country_${countryCode}_birds`);
+  },
+
+  async hasCountryCache(countryCode) {
+    const meta = await this.getCountryCacheMeta(countryCode);
+    return meta && meta.speciesCodes && meta.speciesCodes.length > 0;
+  },
+
   async migrateSightingsForSync() {
     // Add syncId to any existing sightings that don't have one
     await this.ready();

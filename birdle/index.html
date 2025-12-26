@@ -28,6 +28,7 @@
     <a href="#" id="current-location" style="color: #4caf50; display: none;"></a>
     <br>
     <a href="#" id="update-location" style="color: #2196f3; display: none;"></a>
+    <div id="cache-status" style="display: none; font-size: 12px; color: #666; margin-top: 4px;"></div>
   </div>
 
   <!-- Location Modal -->
@@ -80,6 +81,7 @@
     </a>
   </div>
 
+  <script src="db.js?v=81"></script>
   <script src="location.js?v=81"></script>
   <script src="ebird.js?v=81"></script>
   <script src="app.js?v=81"></script>
@@ -89,6 +91,7 @@
       const grantLink = document.getElementById('grant-location');
       const currentLocation = document.getElementById('current-location');
       const updateLink = document.getElementById('update-location');
+      const cacheStatus = document.getElementById('cache-status');
       const modal = document.getElementById('location-modal');
       const countrySelect = document.getElementById('modal-country');
       const stateSelect = document.getElementById('modal-state');
@@ -97,6 +100,46 @@
 
       let selectedCountry = null;
       let selectedState = null;
+
+      // Cache country birds when location is set
+      async function cacheCountryBirds(countryCode) {
+        if (!countryCode) return;
+
+        await BirdDB.init();
+
+        // Check if already cached
+        const hasCache = await BirdDB.hasCountryCache(countryCode);
+        if (hasCache) {
+          const meta = await BirdDB.getCountryCacheMeta(countryCode);
+          cacheStatus.textContent = `${meta.speciesCodes.length} birds cached`;
+          cacheStatus.style.display = 'block';
+          cacheStatus.style.color = '#4caf50';
+          return;
+        }
+
+        // Show caching status
+        cacheStatus.style.display = 'block';
+        cacheStatus.style.color = '#666';
+        cacheStatus.textContent = 'Caching birds...';
+
+        try {
+          const result = await BirdDB.cacheCountryBirds(countryCode, (progress) => {
+            if (progress.phase === 'fetching') {
+              cacheStatus.textContent = `Fetching ${progress.total} species...`;
+            } else if (progress.phase === 'caching') {
+              cacheStatus.textContent = `Caching ${progress.cached}/${progress.total}...`;
+            } else if (progress.phase === 'done') {
+              cacheStatus.textContent = `${progress.cached} birds cached`;
+              cacheStatus.style.color = '#4caf50';
+            }
+          });
+          console.log('Country birds cached:', result);
+        } catch (error) {
+          console.error('Error caching country birds:', error);
+          cacheStatus.textContent = 'Cache failed';
+          cacheStatus.style.color = '#c00';
+        }
+      }
 
       function showLocationStatus() {
         const cached = LocationService.getCached();
@@ -107,10 +150,14 @@
           currentLocation.style.display = 'inline';
           updateLink.textContent = 'Update with current location';
           updateLink.style.display = 'inline-block';
+
+          // Check/trigger country cache
+          cacheCountryBirds(cached.countryCode);
         } else {
           grantLink.style.display = 'inline';
           currentLocation.style.display = 'none';
           updateLink.style.display = 'none';
+          cacheStatus.style.display = 'none';
         }
       }
 

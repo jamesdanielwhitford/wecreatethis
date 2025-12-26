@@ -41,6 +41,29 @@ const EBird = {
     return this.fetch(url);
   },
 
+  // Fetch taxonomy data for species codes (batch)
+  // Returns array of { speciesCode, comName, sciName, familyComName, order }
+  async getTaxonomy(speciesCodes) {
+    if (!speciesCodes || speciesCodes.length === 0) return [];
+
+    // eBird API accepts comma-separated species codes
+    // Batch in chunks of 200 to avoid URL length limits
+    const BATCH_SIZE = 200;
+    const results = [];
+
+    for (let i = 0; i < speciesCodes.length; i += BATCH_SIZE) {
+      const batch = speciesCodes.slice(i, i + BATCH_SIZE);
+      // Must include fmt=json, otherwise returns CSV
+      const url = `${this.BASE_URL}/ref/taxonomy/ebird?fmt=json&species=${batch.join(',')}`;
+      const data = await this.fetch(url);
+      if (Array.isArray(data)) {
+        results.push(...data);
+      }
+    }
+
+    return results;
+  },
+
   // Internal fetch with auth header
   async fetch(url) {
     if (!this.API_KEY) {
