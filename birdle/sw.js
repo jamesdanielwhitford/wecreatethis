@@ -1,6 +1,5 @@
-const CACHE_NAME = 'birdle-v79';
+const CACHE_NAME = 'birdle-v80';
 const ASSETS = [
-  '/birdle/',
   '/birdle/index.html',
   '/birdle/search.html',
   '/birdle/games.html',
@@ -22,16 +21,42 @@ const ASSETS = [
   '/birdle/sync/sync.js',
   '/birdle/manifest.json',
   '/birdle/icon-192.png',
-  '/birdle/icon-512.png',
-  '/birdle/_headers'
+  '/birdle/icon-512.png'
 ];
 
-// Install - cache all assets
+// Helper: Create a clean response without redirect metadata (for Safari)
+function stripRedirectMetadata(response) {
+  if (!response.redirected) {
+    return response.clone();
+  }
+  // Create new Response without redirect flag
+  return response.blob().then(body => {
+    return new Response(body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    });
+  });
+}
+
+// Install - cache all assets with redirect stripping
 self.addEventListener('install', (event) => {
   console.log('Service worker installing:', CACHE_NAME);
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // Fetch each asset individually and strip redirect metadata
+      const fetchPromises = ASSETS.map(async (url) => {
+        try {
+          const response = await fetch(url);
+          if (response.ok) {
+            const cleanResponse = await stripRedirectMetadata(response);
+            await cache.put(url, cleanResponse);
+          }
+        } catch (err) {
+          console.warn('Failed to cache:', url, err);
+        }
+      });
+      await Promise.all(fetchPromises);
     })
   );
   // Force immediate activation
@@ -69,6 +94,11 @@ async function matchWithHtmlFallback(request) {
       cached = await caches.match(htmlUrl.href);
       if (cached) return cached;
     }
+    // Also handle /birdle/ -> /birdle/index.html
+    if (url.pathname === '/birdle/' || url.pathname === '/birdle') {
+      cached = await caches.match('/birdle/index.html');
+      if (cached) return cached;
+    }
   }
 
   return null;
@@ -80,20 +110,16 @@ self.addEventListener('fetch', (event) => {
     fetch(event.request).then(async (response) => {
       // Cache successful GET requests
       if (response.ok && event.request.method === 'GET') {
-        // Safari doesn't allow serving redirected responses from SW
-        // Create a clean Response without redirect metadata
-        let responseToCache = response.clone();
-        if (response.redirected) {
-          const body = await response.clone().blob();
-          responseToCache = new Response(body, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: response.headers
-          });
-        }
+        // Always strip redirect metadata before caching AND returning
+        const cleanResponse = await stripRedirectMetadata(response);
+
+        // Cache the clean response
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
+          cache.put(event.request, cleanResponse.clone());
         });
+
+        // Return clean response to client (Safari requires this)
+        return cleanResponse;
       }
       return response;
     }).catch(async () => {
