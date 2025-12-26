@@ -1,4 +1,4 @@
-const CACHE_NAME = 'birdle-v75';
+const CACHE_NAME = 'birdle-v76';
 const ASSETS = [
   '/birdle/',
   '/birdle/index.html',
@@ -65,13 +65,11 @@ async function matchWithHtmlFallback(request) {
   if (request.mode === 'navigate') {
     // If URL has no extension and doesn't end with /, try .html version
     if (!url.pathname.includes('.') && !url.pathname.endsWith('/')) {
-      const htmlUrl = url.pathname + '.html';
-      cached = await caches.match(htmlUrl);
+      // Build full URL with .html suffix
+      const htmlUrl = new URL(url.pathname + '.html', url.origin);
+      cached = await caches.match(htmlUrl.href);
       if (cached) return cached;
     }
-    // Also try the full path with .html
-    cached = await caches.match(url.pathname + '.html');
-    if (cached) return cached;
   }
 
   return null;
