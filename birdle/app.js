@@ -2777,14 +2777,13 @@ const App = {
     const card = this.bingoCard;
     if (!card) return;
 
-    // Get sightings created after the bingo card was created
+    // Get sightings with observation date after the bingo card was created
     let sightings = [];
     if (typeof BirdDB !== 'undefined') {
       const allSightings = await BirdDB.getAllSightings();
-      const cardCreatedAt = new Date(card.createdAt);
+      const cardCreatedDate = card.createdAt.split('T')[0]; // Get YYYY-MM-DD
       sightings = allSightings.filter(s => {
-        const sightingCreatedAt = new Date(s.createdAt);
-        return sightingCreatedAt >= cardCreatedAt;
+        return s.date >= cardCreatedDate;
       });
     }
     const seenCodes = new Set(sightings.map(s => s.speciesCode));
@@ -2920,10 +2919,9 @@ const App = {
     let sightings = [];
     if (typeof BirdDB !== 'undefined') {
       const allSightings = await BirdDB.getAllSightings();
-      const cardCreatedAt = new Date(card.createdAt);
+      const cardCreatedDate = card.createdAt.split('T')[0]; // Get YYYY-MM-DD
       sightings = allSightings.filter(s => {
-        const sightingCreatedAt = new Date(s.createdAt);
-        return sightingCreatedAt >= cardCreatedAt;
+        return s.date >= cardCreatedDate;
       });
     }
     const seenCodes = new Set(sightings.map(s => s.speciesCode));
@@ -2966,10 +2964,9 @@ const App = {
     let sightings = [];
     if (typeof BirdDB !== 'undefined') {
       const allSightings = await BirdDB.getAllSightings();
-      const cardCreatedAt = new Date(card.createdAt);
+      const cardCreatedDate = card.createdAt.split('T')[0]; // Get YYYY-MM-DD
       sightings = allSightings.filter(s => {
-        const sightingCreatedAt = new Date(s.createdAt);
-        return sightingCreatedAt >= cardCreatedAt;
+        return s.date >= cardCreatedDate;
       });
     }
     const seenCodes = new Set(sightings.map(s => s.speciesCode));
