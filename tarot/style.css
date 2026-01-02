@@ -1,14 +1,29 @@
 /* Tarot Reader Styles */
 
 :root {
-    --primary-bg: #1a0033;
-    --secondary-bg: #2d1b4e;
-    --accent: #8b5cf6;
-    --accent-light: #a78bfa;
-    --text: #f3e8ff;
-    --text-muted: #c4b5fd;
-    --border: #4c1d95;
-    --card-bg: #2d1b4e;
+    /* Light mode (default) */
+    --primary-bg: #f5f0ff;
+    --secondary-bg: #e9d5ff;
+    --accent: #7c3aed;
+    --accent-hover: #6d28d9;
+    --text: #1a0033;
+    --text-muted: #4c1d95;
+    --border: #c4b5fd;
+    --card-bg: #e9d5ff;
+}
+
+/* Dark mode (when system prefers dark) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary-bg: #1a0033;
+        --secondary-bg: #2d1b4e;
+        --accent: #8b5cf6;
+        --accent-hover: #7c3aed;
+        --text: #ffffff;
+        --text-muted: #e0d4f7;
+        --border: #4c1d95;
+        --card-bg: #2d1b4e;
+    }
 }
 
 * {
@@ -18,20 +33,17 @@
 }
 
 body {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: "Quintessential", serif;
     background: var(--primary-bg);
     color: var(--text);
     line-height: 1.6;
     min-height: 100vh;
-}
-
-.container {
-    max-width: 800px;
-    margin: 0 auto;
     padding: 20px;
-    min-height: 100vh;
+    max-width: 400px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 header {
@@ -42,7 +54,7 @@ header {
 
 h1 {
     font-size: 2.5rem;
-    color: var(--accent-light);
+    color: var(--text);
     margin-bottom: 10px;
 }
 
@@ -53,7 +65,7 @@ h1 {
 
 main {
     flex: 1;
-    padding: 40px 0;
+    padding: 20px 0;
 }
 
 .reading-select {
@@ -62,15 +74,13 @@ main {
 
 .reading-select h2 {
     margin-bottom: 30px;
-    color: var(--accent-light);
+    color: var(--text);
 }
 
 .reading-types {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    max-width: 400px;
-    margin: 0 auto;
 }
 
 .reading-btn {
@@ -82,13 +92,17 @@ main {
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-family: Georgia, serif;
+    font-family: "Quintessential", serif;
 }
 
 .reading-btn:hover {
-    background: var(--accent);
+    background: var(--accent-hover);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.reading-btn:active {
+    transform: translateY(0);
 }
 
 .secondary-btn {
@@ -104,8 +118,8 @@ main {
 }
 
 .secondary-btn:hover {
-    background: var(--accent);
-    color: var(--text);
+    background: var(--accent-hover);
+    color: var(--primary-bg);
 }
 
 .card-display {
@@ -143,7 +157,7 @@ main {
     font-size: 1.2rem;
     font-weight: bold;
     margin-bottom: 10px;
-    color: var(--accent-light);
+    color: var(--text);
 }
 
 .card-meaning {
@@ -169,21 +183,22 @@ footer {
 }
 
 #online-status {
-    color: var(--accent-light);
+    color: var(--accent);
 }
 
-@media (max-width: 600px) {
+/* Mobile optimizations for very small screens */
+@media (max-width: 360px) {
+    body {
+        padding: 16px;
+    }
+
     h1 {
         font-size: 2rem;
     }
 
     .tarot-card {
-        width: 150px;
-        height: 250px;
-        padding: 15px;
-    }
-
-    .reading-types {
-        max-width: 100%;
+        width: 130px;
+        height: 220px;
+        padding: 12px;
     }
 }
