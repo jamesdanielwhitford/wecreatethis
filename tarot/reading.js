@@ -1,10 +1,12 @@
 // Reading detail page logic
 
 let currentReading = null;
+let showingInfo = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await initDB();
     loadReading();
+    setupToggleButton();
 });
 
 async function loadReading() {
@@ -42,7 +44,7 @@ function displayReading(reading) {
     document.getElementById('reading-info').textContent = `${reading.spreadName} • ${dateStr}`;
 
     // Display cards
-    const container = document.getElementById('cards-container');
+    const container = document.getElementById('cards-view');
     container.innerHTML = '';
 
     reading.cards.forEach(card => {
@@ -61,5 +63,83 @@ function displayReading(reading) {
         `;
 
         container.appendChild(cardEl);
+    });
+
+    // Display spread info
+    displaySpreadInfo(reading);
+}
+
+function displaySpreadInfo(reading) {
+    const spread = SPREADS[reading.spreadType];
+    if (!spread) return;
+
+    const infoContainer = document.getElementById('spread-description');
+    document.getElementById('spread-name').textContent = spread.name;
+
+    let html = `<p>${spread.description || 'A powerful spread for divination and self-reflection.'}</p>`;
+
+    // Add positions explanation
+    html += `<h3>Card Positions</h3><ul>`;
+    spread.positions.forEach(pos => {
+        html += `<li><strong>${pos.name}</strong>${pos.description}</li>`;
+    });
+    html += `</ul>`;
+
+    // Add how to read section
+    html += `<h3>How to Read This Spread</h3>`;
+    html += getSpreadGuidance(reading.spreadType);
+
+    infoContainer.innerHTML = html;
+}
+
+function getSpreadGuidance(spreadType) {
+    const guidance = {
+        single: `
+            <p>The single card reading offers direct, focused insight into your question or situation.</p>
+            <div class="tip">
+                <p><strong>How to interpret:</strong> Consider the card's traditional meaning in relation to your question. Pay attention to whether it's upright or reversed, as this affects the energy of the message.</p>
+            </div>
+        `,
+        three: `
+            <p>The three card spread provides a narrative journey through time, offering context and direction.</p>
+            <div class="tip">
+                <p><strong>How to interpret:</strong> Read the cards as a story flowing from Past to Present to Future. Look for connections between the cards - do they reinforce each other or present contrasts? The Past shows influences, the Present reveals your current state, and the Future suggests where you're heading if you continue on this path.</p>
+            </div>
+        `,
+        celtic: `
+            <p>The Celtic Cross is one of the most comprehensive spreads, offering deep insight into complex situations.</p>
+            <div class="tip">
+                <p><strong>How to interpret:</strong> Start with cards 1 and 2 (Present and Challenge) to understand the core situation. Then read cards 3-4 (Foundation and Past) for context. Cards 5-6 (Crown and Future) show potential outcomes. Finally, cards 7-10 reveal internal factors (Self), external influences (Environment), your emotional state (Hopes/Fears), and the likely outcome.</p>
+            </div>
+            <p>Take your time with this spread - each card adds layers of meaning to the overall picture.</p>
+        `
+    };
+
+    return guidance[spreadType] || '';
+}
+
+function setupToggleButton() {
+    const toggleBtn = document.getElementById('toggle-view-btn');
+    const cardsView = document.getElementById('cards-view');
+    const infoView = document.getElementById('info-view');
+
+    toggleBtn.addEventListener('click', () => {
+        showingInfo = !showingInfo;
+
+        if (showingInfo) {
+            // Show info, hide cards
+            cardsView.style.display = 'none';
+            infoView.style.display = 'block';
+            toggleBtn.classList.remove('info-btn');
+            toggleBtn.classList.add('cards-btn');
+            toggleBtn.querySelector('.btn-icon').textContent = '';
+        } else {
+            // Show cards, hide info
+            cardsView.style.display = 'flex';
+            infoView.style.display = 'none';
+            toggleBtn.classList.remove('cards-btn');
+            toggleBtn.classList.add('info-btn');
+            toggleBtn.querySelector('.btn-icon').textContent = 'i';
+        }
     });
 }

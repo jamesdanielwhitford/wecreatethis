@@ -15,14 +15,28 @@
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 </head>
 <body>
-    <a href="index.html" class="back-btn">&larr; Back</a>
+    <div class="reading-nav">
+        <a href="index.html" class="back-btn">&larr; Back</a>
+        <button id="toggle-view-btn" class="toggle-view-btn info-btn">
+            <span class="btn-icon">i</span>
+        </button>
+    </div>
 
     <div id="reading-header">
         <h1 id="reading-title">Loading...</h1>
         <p id="reading-info" class="reading-meta"></p>
     </div>
 
-    <div id="cards-container" class="cards-display"></div>
+    <!-- Cards View -->
+    <div id="cards-view" class="cards-display"></div>
+
+    <!-- Info View -->
+    <div id="info-view" class="info-display" style="display: none;">
+        <div class="info-content">
+            <h2 id="spread-name">Spread Information</h2>
+            <div id="spread-description"></div>
+        </div>
+    </div>
 
     <script src="db.js"></script>
     <script src="tarot-data.js"></script>
