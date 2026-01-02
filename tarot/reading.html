@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Offline-first tarot card reading app">
+    <meta name="theme-color" content="#1a0033">
+    <title>Reading - Tarot Reader</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quintessential&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+</head>
+<body>
+    <a href="index.html" class="back-btn">&larr; Back</a>
+
+    <div id="reading-header">
+        <h1 id="reading-title">Loading...</h1>
+        <p id="reading-info" class="reading-meta"></p>
+    </div>
+
+    <div id="cards-container" class="cards-display"></div>
+
+    <script src="db.js"></script>
+    <script src="tarot-data.js"></script>
+    <script src="reading.js"></script>
+</body>
+</html>

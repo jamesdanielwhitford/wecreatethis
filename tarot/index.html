@@ -15,33 +15,59 @@
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 </head>
 <body>
-    <header>
-        <h1>Tarot Reader</h1>
-        <p class="subtitle">Discover your path</p>
-    </header>
+    <h1>Tarot Reader</h1>
 
-    <main>
-        <section class="reading-select">
-            <h2>Choose Your Reading</h2>
-            <div class="reading-types">
-                <button class="reading-btn" data-spread="single">Single Card</button>
-                <button class="reading-btn" data-spread="three">Three Card Spread</button>
-                <button class="reading-btn" data-spread="celtic">Celtic Cross</button>
+    <ul id="readings-list" class="readings-list"></ul>
+
+    <!-- Floating Action Button -->
+    <div class="fab-container">
+        <button id="new-reading-fab" class="fab"></button>
+    </div>
+
+    <!-- New Reading Modal -->
+    <div id="new-reading-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>New Reading</h3>
+
+            <div class="form-group">
+                <label for="reading-title">Reading Title</label>
+                <input type="text" id="reading-title" class="form-input" placeholder="e.g., Morning Guidance">
+                <p class="hint">Leave blank for auto-generated title</p>
             </div>
-        </section>
 
-        <section class="card-display hidden">
-            <div id="cards-container"></div>
-            <button id="new-reading" class="secondary-btn">New Reading</button>
-        </section>
-    </main>
+            <div class="form-group">
+                <label for="spread-select">Spread Type</label>
+                <select id="spread-select" class="form-select">
+                    <option value="">Choose a spread...</option>
+                    <option value="single">Single Card</option>
+                    <option value="three">Three Card Spread</option>
+                    <option value="celtic">Celtic Cross</option>
+                </select>
+            </div>
 
-    <footer>
-        <p class="version">v1.0.0</p>
-        <p class="status">
-            <span id="online-status">Online</span>
-        </p>
-    </footer>
+            <div class="modal-actions">
+                <button id="create-reading-btn" class="modal-btn seen" disabled>Create Reading</button>
+                <button id="cancel-reading-btn" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Reading Modal -->
+    <div id="rename-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Rename Reading</h3>
+
+            <div class="form-group">
+                <label for="rename-input">New Title</label>
+                <input type="text" id="rename-input" class="form-input" placeholder="Enter new title">
+            </div>
+
+            <div class="modal-actions">
+                <button id="save-rename-btn" class="modal-btn seen">Save</button>
+                <button id="cancel-rename-btn" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
 
     <script src="db.js"></script>
     <script src="tarot-data.js"></script>

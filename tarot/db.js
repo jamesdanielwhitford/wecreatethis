@@ -38,12 +38,7 @@ async function saveReading(reading) {
         const transaction = db.transaction([STORE_NAME], 'readwrite');
         const objectStore = transaction.objectStore(STORE_NAME);
 
-        const readingData = {
-            ...reading,
-            date: new Date().toISOString()
-        };
-
-        const request = objectStore.add(readingData);
+        const request = objectStore.add(reading);
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
     });
@@ -55,6 +50,36 @@ async function getAllReadings() {
         const transaction = db.transaction([STORE_NAME], 'readonly');
         const objectStore = transaction.objectStore(STORE_NAME);
         const request = objectStore.getAll();
+
+        request.onsuccess = () => {
+            // Sort by date descending (newest first)
+            const readings = request.result.sort((a, b) =>
+                new Date(b.date) - new Date(a.date)
+            );
+            resolve(readings);
+        };
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// Get a single reading by ID
+async function getReading(id) {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        const request = objectStore.get(id);
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// Update an existing reading
+async function updateReading(reading) {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        const request = objectStore.put(reading);
 
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
