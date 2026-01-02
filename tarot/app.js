@@ -61,12 +61,14 @@ function setupEventListeners() {
         if (!spreadType) return;
 
         // Create and save the reading
-        await createReading(title, spreadType);
+        const reading = await createReading(title, spreadType);
 
-        // Close modal and refresh list
+        // Close modal
         modal.style.display = 'none';
         resetModal();
-        loadReadingsList();
+
+        // Navigate to the reading detail page
+        window.location.href = `reading.html?id=${reading.id}`;
     });
 }
 
@@ -80,7 +82,7 @@ function resetModal() {
 // Create a new reading
 async function createReading(title, spreadType) {
     const spread = SPREADS[spreadType];
-    if (!spread) return;
+    if (!spread) return null;
 
     const cards = drawCards(spread.positions.length);
 
