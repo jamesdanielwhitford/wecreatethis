@@ -5,4 +5,8 @@
 .env
 
 CLAUDE.md
+**/CLAUDE.md
 dev
+
+# Tarot scraper tools and content
+tarot/scraper/
