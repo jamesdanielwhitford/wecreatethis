@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Offline-first tarot card reading app">
+    <meta name="theme-color" content="#1a0033">
+    <title>Tarot Reader</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Tarot Reader</h1>
+            <p class="subtitle">Discover your path</p>
+        </header>
+
+        <main>
+            <section class="reading-select">
+                <h2>Choose Your Reading</h2>
+                <div class="reading-types">
+                    <button class="reading-btn" data-spread="single">Single Card</button>
+                    <button class="reading-btn" data-spread="three">Three Card Spread</button>
+                    <button class="reading-btn" data-spread="celtic">Celtic Cross</button>
+                </div>
+            </section>
+
+            <section class="card-display hidden">
+                <div id="cards-container"></div>
+                <button id="new-reading" class="secondary-btn">New Reading</button>
+            </section>
+        </main>
+
+        <footer>
+            <p class="version">v1.0.0</p>
+            <p class="status">
+                <span id="online-status">Online</span>
+            </p>
+        </footer>
+    </div>
+
+    <script src="db.js"></script>
+    <script src="tarot-data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

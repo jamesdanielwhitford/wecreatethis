@@ -1,0 +1,189 @@
+/* Tarot Reader Styles */
+
+:root {
+    --primary-bg: #1a0033;
+    --secondary-bg: #2d1b4e;
+    --accent: #8b5cf6;
+    --accent-light: #a78bfa;
+    --text: #f3e8ff;
+    --text-muted: #c4b5fd;
+    --border: #4c1d95;
+    --card-bg: #2d1b4e;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Georgia, 'Times New Roman', serif;
+    background: var(--primary-bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    text-align: center;
+    padding: 40px 0;
+    border-bottom: 2px solid var(--border);
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: var(--accent-light);
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+main {
+    flex: 1;
+    padding: 40px 0;
+}
+
+.reading-select {
+    text-align: center;
+}
+
+.reading-select h2 {
+    margin-bottom: 30px;
+    color: var(--accent-light);
+}
+
+.reading-types {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.reading-btn {
+    padding: 20px;
+    font-size: 1.1rem;
+    background: var(--secondary-bg);
+    color: var(--text);
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: Georgia, serif;
+}
+
+.reading-btn:hover {
+    background: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.secondary-btn {
+    padding: 12px 24px;
+    font-size: 1rem;
+    background: transparent;
+    color: var(--accent-light);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 30px;
+}
+
+.secondary-btn:hover {
+    background: var(--accent);
+    color: var(--text);
+}
+
+.card-display {
+    text-align: center;
+}
+
+#cards-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 40px 0;
+}
+
+.tarot-card {
+    width: 200px;
+    height: 350px;
+    background: var(--card-bg);
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.tarot-card:hover {
+    transform: scale(1.05);
+}
+
+.card-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: var(--accent-light);
+}
+
+.card-meaning {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.hidden {
+    display: none;
+}
+
+footer {
+    text-align: center;
+    padding: 20px 0;
+    border-top: 2px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.version {
+    margin-bottom: 5px;
+}
+
+#online-status {
+    color: var(--accent-light);
+}
+
+@media (max-width: 600px) {
+    h1 {
+        font-size: 2rem;
+    }
+
+    .tarot-card {
+        width: 150px;
+        height: 250px;
+        padding: 15px;
+    }
+
+    .reading-types {
+        max-width: 100%;
+    }
+}
