@@ -512,6 +512,27 @@ footer {
     background: var(--card-bg);
 }
 
+.modal-btn.danger {
+    background: #dc2626;
+    color: #fff;
+}
+
+.modal-btn.danger:hover {
+    background: #b91c1c;
+}
+
+.delete-message {
+    color: var(--text);
+    font-size: 1rem;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.delete-message span {
+    font-weight: 600;
+    color: var(--accent);
+}
+
 /* Mobile optimizations for very small screens */
 @media (max-width: 360px) {
     body {

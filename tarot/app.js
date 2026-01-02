@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadReadingsList();
     setupEventListeners();
     setupRenameModal();
+    setupDeleteModal();
 });
 
 // Register service worker
@@ -263,15 +264,51 @@ function setupRenameModal() {
 }
 
 // Delete reading from list
+let currentDeleteId = null;
+
 async function deleteReadingFromList(readingId) {
     const reading = await getReading(readingId);
     if (!reading) return;
 
-    const confirmed = confirm(`Delete "${reading.title}"?`);
-    if (confirmed) {
-        await deleteReading(readingId);
+    currentDeleteId = readingId;
+
+    // Show delete modal with reading title
+    const deleteModal = document.getElementById('delete-modal');
+    const titleSpan = document.getElementById('delete-reading-title');
+    titleSpan.textContent = reading.title;
+    deleteModal.style.display = 'flex';
+}
+
+// Setup delete modal handlers
+function setupDeleteModal() {
+    const deleteModal = document.getElementById('delete-modal');
+    const confirmBtn = document.getElementById('confirm-delete-btn');
+    const cancelBtn = document.getElementById('cancel-delete-btn');
+
+    // Confirm delete
+    confirmBtn.addEventListener('click', async () => {
+        if (!currentDeleteId) return;
+
+        await deleteReading(currentDeleteId);
         loadReadingsList();
-    }
+
+        deleteModal.style.display = 'none';
+        currentDeleteId = null;
+    });
+
+    // Cancel delete
+    cancelBtn.addEventListener('click', () => {
+        deleteModal.style.display = 'none';
+        currentDeleteId = null;
+    });
+
+    // Click outside to close
+    deleteModal.addEventListener('click', (e) => {
+        if (e.target === deleteModal) {
+            deleteModal.style.display = 'none';
+            currentDeleteId = null;
+        }
+    });
 }
 
 // Draw random cards

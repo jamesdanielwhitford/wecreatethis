@@ -69,6 +69,21 @@
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Delete Reading</h3>
+
+            <p class="delete-message">Are you sure you want to delete "<span id="delete-reading-title"></span>"?</p>
+            <p class="hint">This action cannot be undone.</p>
+
+            <div class="modal-actions">
+                <button id="confirm-delete-btn" class="modal-btn danger">Delete</button>
+                <button id="cancel-delete-btn" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script src="db.js"></script>
     <script src="tarot-data.js"></script>
     <script src="app.js"></script>
