@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Tarot card detail">
+    <meta name="theme-color" content="#1a0033">
+    <title>Card Detail - Tarot Reader</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quintessential&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="reading-nav">
+        <a href="#" id="back-btn" class="back-btn">&larr; Back</a>
+    </div>
+
+    <div id="card-detail-container">
+        <div id="card-position-label" class="card-position"></div>
+        <img id="card-image" class="card-image-large" alt="Tarot card">
+        <h2 id="card-name-display"></h2>
+
+        <div class="card-meanings">
+            <div class="meaning-section">
+                <h3 id="meaning-heading">Upright</h3>
+                <ul id="meaning-list"></ul>
+            </div>
+
+            <div class="position-description">
+                <h3>Position Meaning</h3>
+                <p id="position-description-text"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="db.js"></script>
+    <script src="tarot-data.js"></script>
+    <script src="card-detail.js"></script>
+</body>
+</html>

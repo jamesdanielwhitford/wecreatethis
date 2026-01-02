@@ -28,6 +28,7 @@ function setupEventListeners() {
     const cancelBtn = document.getElementById('cancel-reading-btn');
     const createBtn = document.getElementById('create-reading-btn');
     const spreadSelect = document.getElementById('spread-select');
+    const deckBtn = document.getElementById('deck-btn');
 
     // Open modal
     fabBtn.addEventListener('click', () => {
@@ -46,6 +47,11 @@ function setupEventListeners() {
             modal.style.display = 'none';
             resetModal();
         }
+    });
+
+    // Navigate to deck browser
+    deckBtn.addEventListener('click', () => {
+        window.location.href = 'deck.html';
     });
 
     // Enable create button when spread is selected

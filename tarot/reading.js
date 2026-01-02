@@ -47,20 +47,24 @@ function displayReading(reading) {
     const container = document.getElementById('cards-view');
     container.innerHTML = '';
 
-    reading.cards.forEach(card => {
+    reading.cards.forEach((card, index) => {
         const cardEl = document.createElement('div');
         cardEl.className = 'tarot-card';
+        cardEl.style.cursor = 'pointer';
 
-        const meanings = card.isReversed ? card.reversed : card.upright;
-        const orientation = card.isReversed ? ' (Reversed)' : '';
+        const imagePath = getCardImagePath(card);
+        const reversedClass = card.isReversed ? ' reversed' : '';
 
         cardEl.innerHTML = `
             <div class="card-position">${card.position.name}</div>
-            <div class="card-name">${card.name}${orientation}</div>
-            <div class="card-meaning">
-                ${meanings.join(' • ')}
-            </div>
+            ${imagePath ? `<img src="${imagePath}" alt="${card.name}" class="card-image${reversedClass}">` : ''}
+            <div class="card-name">${card.name}</div>
         `;
+
+        // Navigate to card detail when clicked
+        cardEl.addEventListener('click', () => {
+            window.location.href = `card-detail.html?readingId=${currentReading.id}&cardIndex=${index}`;
+        });
 
         container.appendChild(cardEl);
     });

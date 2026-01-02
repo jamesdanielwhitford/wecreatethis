@@ -47,6 +47,39 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Page Header with Deck Button */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.deck-btn {
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.deck-btn:hover {
+    background: var(--accent);
+    color: #fff;
+    transform: scale(1.05);
+}
+
+.deck-btn:active {
+    transform: scale(0.95);
+}
+
 header {
     text-align: center;
     padding: 40px 0;
@@ -195,14 +228,280 @@ main {
 .cards-display .tarot-card {
     width: 100%;
     height: auto;
-    padding: 20px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    text-align: center;
+    transition: opacity 0.2s;
+}
+
+.cards-display .tarot-card:hover {
+    opacity: 0.8;
 }
 
 .card-position {
     font-size: 0.85rem;
     color: var(--accent);
     text-transform: uppercase;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.card-name {
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-top: 8px;
+    font-weight: 400;
+}
+
+/* Card Image */
+.card-image {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    border-radius: 8px;
+    margin: 12px auto;
+    display: block;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+}
+
+/* Reversed card - flip upside down */
+.card-image.reversed {
+    transform: rotate(180deg);
+}
+
+.card-name {
+    margin-top: 8px;
+}
+
+/* Card Detail Page */
+#card-detail-container {
+    text-align: center;
+    padding-bottom: 40px;
+}
+
+.card-image-large {
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    border-radius: 12px;
+    margin: 20px auto;
+    display: block;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.card-image-large.reversed {
+    transform: rotate(180deg);
+}
+
+#card-name-display {
+    font-size: 1.8rem;
+    margin: 20px 0;
+    color: var(--text);
+}
+
+.card-meanings {
+    margin-top: 30px;
+    text-align: left;
+}
+
+.meaning-section,
+.position-description {
+    margin-bottom: 30px;
+}
+
+.meaning-section h3,
+.position-description h3 {
+    font-size: 1.2rem;
+    color: var(--accent);
+    margin-bottom: 12px;
+}
+
+.meaning-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.meaning-section li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--secondary-bg);
+    font-size: 1rem;
+}
+
+.meaning-section li:last-child {
+    border-bottom: none;
+}
+
+.position-description p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text);
+    opacity: 0.9;
+}
+
+/* Deck Browser */
+#deck-container {
+    padding-bottom: 40px;
+}
+
+.deck-section {
+    margin-bottom: 40px;
+}
+
+.deck-section-title {
+    font-size: 1.3rem;
+    color: var(--accent);
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.deck-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.deck-card {
+    text-align: center;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.deck-card:hover {
+    opacity: 0.8;
+}
+
+.deck-card-image {
+    width: 100%;
+    max-width: 160px;
+    height: auto;
+    border-radius: 8px;
+    margin: 0 auto 8px;
+    display: block;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.deck-card-name {
+    font-size: 0.85rem;
+    color: var(--text);
+}
+
+.current-deck-name {
+    text-align: center;
+    color: var(--accent);
+    font-size: 0.9rem;
+    margin-top: -10px;
+    margin-bottom: 20px;
+}
+
+/* Choose Deck Button */
+.choose-deck-btn {
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.choose-deck-btn:hover {
+    background: var(--accent);
+    color: #fff;
+    transform: scale(1.05);
+}
+
+.choose-deck-btn:active {
+    transform: scale(0.95);
+}
+
+/* Deck Selection Modal */
+.deck-options {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.deck-option {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.deck-option:hover:not(.disabled) {
+    border-color: var(--accent);
+    background: var(--secondary-bg);
+}
+
+.deck-option.selected {
+    border-color: var(--accent);
+    background: var(--secondary-bg);
+}
+
+.deck-option.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.deck-option.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.deck-option-preview {
+    flex-shrink: 0;
+    width: 80px;
+    height: 120px;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.deck-preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.deck-preview-placeholder {
+    font-size: 3rem;
+    color: var(--border);
+}
+
+.deck-option-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.deck-option-info h4 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+    color: var(--text);
+}
+
+.deck-option-info p {
+    margin: 0 0 12px 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.deck-status {
+    font-size: 0.8rem;
+    color: var(--accent);
     font-weight: 500;
 }
 

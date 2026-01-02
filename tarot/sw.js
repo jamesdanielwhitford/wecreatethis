@@ -1,17 +1,103 @@
 // Service Worker for Tarot Reader
 
-const CACHE_NAME = 'tarot-v2';
+const CACHE_NAME = 'tarot-v6';
 const ASSETS = [
   '/tarot/index.html',
   '/tarot/reading.html',
+  '/tarot/card-detail.html',
+  '/tarot/deck.html',
+  '/tarot/deck-card-detail.html',
   '/tarot/style.css',
   '/tarot/app.js',
   '/tarot/reading.js',
+  '/tarot/card-detail.js',
+  '/tarot/deck.js',
+  '/tarot/deck-card-detail.js',
+  '/tarot/deck-manager.js',
   '/tarot/db.js',
   '/tarot/tarot-data.js',
   '/tarot/manifest.json',
   '/tarot/icon-192.png',
-  '/tarot/icon-512.png'
+  '/tarot/icon-512.png',
+  // Card images
+  '/tarot/images/01 of Cups.webp',
+  '/tarot/images/01 of Pentacles.webp',
+  '/tarot/images/01 of Swords.webp',
+  '/tarot/images/01 of Wands.webp',
+  '/tarot/images/02 of Cups.webp',
+  '/tarot/images/02 of Pentacles.webp',
+  '/tarot/images/02 of Swords.webp',
+  '/tarot/images/02 of Wands.webp',
+  '/tarot/images/03 of Cups.webp',
+  '/tarot/images/03 of Pentacles.webp',
+  '/tarot/images/03 of Swords.webp',
+  '/tarot/images/03 of Wands.webp',
+  '/tarot/images/04 of Cups.webp',
+  '/tarot/images/04 of Pentacles.webp',
+  '/tarot/images/04 of Swords.webp',
+  '/tarot/images/04 of Wands.webp',
+  '/tarot/images/05 of Cups.webp',
+  '/tarot/images/05 of Pentacles.webp',
+  '/tarot/images/05 of Swords.webp',
+  '/tarot/images/05 of Wands.webp',
+  '/tarot/images/06 of Cups.webp',
+  '/tarot/images/06 of Pentacles.webp',
+  '/tarot/images/06 of Swords.webp',
+  '/tarot/images/06 of Wands.webp',
+  '/tarot/images/07 of Cups.webp',
+  '/tarot/images/07 of Pentacles.webp',
+  '/tarot/images/07 of Swords.webp',
+  '/tarot/images/07 of Wands.webp',
+  '/tarot/images/08 of Cups.webp',
+  '/tarot/images/08 of Pentacles.webp',
+  '/tarot/images/08 of Swords.webp',
+  '/tarot/images/08 of Wands.webp',
+  '/tarot/images/09 of Cups.webp',
+  '/tarot/images/09 of Pentacles.webp',
+  '/tarot/images/09 of Swords.webp',
+  '/tarot/images/09 of Wands.webp',
+  '/tarot/images/10 of Cups.webp',
+  '/tarot/images/10 of Pentacles.webp',
+  '/tarot/images/10 of Swords.webp',
+  '/tarot/images/10 of Wands.webp',
+  '/tarot/images/Chariot.webp',
+  '/tarot/images/Death.webp',
+  '/tarot/images/Devil.webp',
+  '/tarot/images/Emperor.webp',
+  '/tarot/images/Empress.webp',
+  '/tarot/images/Fool.webp',
+  '/tarot/images/Hanged Man.webp',
+  '/tarot/images/Hermit.webp',
+  '/tarot/images/Hierophant.webp',
+  '/tarot/images/High Priestess.webp',
+  '/tarot/images/Judgement.webp',
+  '/tarot/images/Justice.webp',
+  '/tarot/images/King of Cups.webp',
+  '/tarot/images/King of Pentacles.webp',
+  '/tarot/images/King of Swords.webp',
+  '/tarot/images/King of Wands.webp',
+  '/tarot/images/Knight of Cups.webp',
+  '/tarot/images/Knight of Pentacles.webp',
+  '/tarot/images/Knight of Swords.webp',
+  '/tarot/images/Knight of Wands.webp',
+  '/tarot/images/Lovers.webp',
+  '/tarot/images/Magician.webp',
+  '/tarot/images/Moon.webp',
+  '/tarot/images/Page of Cups.webp',
+  '/tarot/images/Page of Pentacles.webp',
+  '/tarot/images/Page of Swords.webp',
+  '/tarot/images/Page of Wands.webp',
+  '/tarot/images/Queen of Cups.webp',
+  '/tarot/images/Queen of Pentacles.webp',
+  '/tarot/images/Queen of Swords.webp',
+  '/tarot/images/Queen of Wands.webp',
+  '/tarot/images/Star.webp',
+  '/tarot/images/Strength.webp',
+  '/tarot/images/Sun.webp',
+  '/tarot/images/Temperance.webp',
+  '/tarot/images/Tower.webp',
+  '/tarot/images/Wheel of Fortune.webp',
+  '/tarot/images/World.webp'
 ];
 
 // Helper: Create a clean response without redirect metadata (for Safari)
@@ -130,4 +216,42 @@ self.addEventListener('fetch', (event) => {
       throw new Error('No network and no cache available');
     })
   );
+});
+
+// Message handler for deck caching
+self.addEventListener('message', async (event) => {
+  const { type, deckId, imageUrls } = event.data;
+
+  if (type === 'CACHE_DECK') {
+    // Cache new deck images
+    const cache = await caches.open(CACHE_NAME);
+    const headers = { 'User-Agent': 'Mozilla/5.0' };
+
+    for (const url of imageUrls) {
+      try {
+        const response = await fetch(url, { headers });
+        if (response.ok) {
+          const cleanResponse = await stripRedirectMetadata(response);
+          await cache.put(url, cleanResponse);
+        }
+      } catch (err) {
+        console.warn('Failed to cache deck image:', url, err);
+      }
+    }
+
+    console.log(`Cached deck: ${deckId}`);
+  } else if (type === 'REMOVE_DECK') {
+    // Remove old deck images from cache
+    const cache = await caches.open(CACHE_NAME);
+
+    for (const url of imageUrls) {
+      try {
+        await cache.delete(url);
+      } catch (err) {
+        console.warn('Failed to remove deck image:', url, err);
+      }
+    }
+
+    console.log(`Removed deck from cache: ${deckId}`);
+  }
 });

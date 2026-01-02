@@ -510,3 +510,54 @@ const SPREADS = {
         ]
     }
 };
+
+// Helper function to get image path for a card
+function getCardImagePath(card, deckId = null) {
+    // Get deck config (uses current deck if not specified)
+    let config;
+    if (deckId && typeof DECK_CONFIG !== 'undefined') {
+        config = DECK_CONFIG[deckId];
+    } else if (typeof getDeckConfig !== 'undefined' && typeof getCurrentDeck !== 'undefined') {
+        config = getDeckConfig(getCurrentDeck());
+    } else {
+        // Fallback if deck-manager.js not loaded yet
+        config = { imagePrefix: 'images/', imageExtension: '.webp' };
+    }
+
+    // Major Arcana: just the name without "The"
+    if (card.number !== undefined) {
+        const cardName = card.name.replace('The ', '');
+        return `${config.imagePrefix}${cardName}${config.imageExtension}`;
+    }
+
+    // Minor Arcana
+    const suit = card.suit.charAt(0).toUpperCase() + card.suit.slice(1);
+
+    // Map card names to image filenames
+    const cardMap = {
+        'Ace': '01',
+        'Two': '02',
+        'Three': '03',
+        'Four': '04',
+        'Five': '05',
+        'Six': '06',
+        'Seven': '07',
+        'Eight': '08',
+        'Nine': '09',
+        'Ten': '10',
+        'Page': 'Page',
+        'Knight': 'Knight',
+        'Queen': 'Queen',
+        'King': 'King'
+    };
+
+    // Extract the rank from the card name (e.g., "Ace of Wands" -> "Ace")
+    const rankMatch = card.name.match(/^(Ace|Two|Three|Four|Five|Six|Seven|Eight|Nine|Ten|Page|Knight|Queen|King)/);
+    if (rankMatch) {
+        const rank = rankMatch[1];
+        const rankFile = cardMap[rank];
+        return `${config.imagePrefix}${rankFile} of ${suit}${config.imageExtension}`;
+    }
+
+    return null;
+}

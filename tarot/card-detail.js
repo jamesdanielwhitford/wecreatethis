@@ -1,0 +1,73 @@
+// Card detail page logic
+
+let currentReading = null;
+let currentCard = null;
+let cardIndex = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await initDB();
+    loadCardDetail();
+});
+
+async function loadCardDetail() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const readingId = parseInt(urlParams.get('readingId'));
+    cardIndex = parseInt(urlParams.get('cardIndex'));
+
+    if (!readingId || cardIndex === null) {
+        window.location.href = 'index.html';
+        return;
+    }
+
+    currentReading = await getReading(readingId);
+
+    if (!currentReading || !currentReading.cards[cardIndex]) {
+        alert('Card not found');
+        window.location.href = 'index.html';
+        return;
+    }
+
+    currentCard = currentReading.cards[cardIndex];
+    displayCardDetail(currentCard);
+
+    // Setup back button
+    document.getElementById('back-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.href = `reading.html?id=${readingId}`;
+    });
+}
+
+function displayCardDetail(card) {
+    const imagePath = getCardImagePath(card);
+    const reversedClass = card.isReversed ? ' reversed' : '';
+    const orientation = card.isReversed ? ' (Reversed)' : '';
+
+    // Set card image
+    const cardImage = document.getElementById('card-image');
+    if (imagePath) {
+        cardImage.src = imagePath;
+        cardImage.className = 'card-image-large' + reversedClass;
+    }
+
+    // Set position label
+    document.getElementById('card-position-label').textContent = card.position.name;
+
+    // Set card name
+    document.getElementById('card-name-display').textContent = card.name + orientation;
+
+    // Set meanings
+    const meanings = card.isReversed ? card.reversed : card.upright;
+    const meaningHeading = card.isReversed ? 'Reversed' : 'Upright';
+    document.getElementById('meaning-heading').textContent = meaningHeading;
+
+    const meaningList = document.getElementById('meaning-list');
+    meaningList.innerHTML = '';
+    meanings.forEach(meaning => {
+        const li = document.createElement('li');
+        li.textContent = meaning;
+        meaningList.appendChild(li);
+    });
+
+    // Set position description
+    document.getElementById('position-description-text').textContent = card.position.description;
+}

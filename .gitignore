@@ -16,3 +16,5 @@ convert-tarot-images.py
 download-tarot-images.py
 images-for-tarot.md
 tarot-images/
+test-tinypng.py
+Cards-jpg
