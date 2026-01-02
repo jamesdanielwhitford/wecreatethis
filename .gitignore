@@ -11,3 +11,8 @@ dev
 
 # Tarot scraper tools and content
 tarot/scraper/
+
+convert-tarot-images.py
+download-tarot-images.py
+images-for-tarot.md
+tarot-images/
