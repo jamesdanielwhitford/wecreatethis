@@ -2,8 +2,6 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     displayDeck();
-    setupDeckSelector();
-    updateCurrentDeckDisplay();
 });
 
 function displayDeck() {
@@ -47,93 +45,3 @@ function renderCardGrid(containerId, cards) {
     });
 }
 
-function setupDeckSelector() {
-    const modal = document.getElementById('choose-deck-modal');
-    const chooseDeckBtn = document.getElementById('choose-deck-btn');
-    const cancelBtn = document.getElementById('cancel-deck-btn');
-    const deckOptions = document.querySelectorAll('.deck-option:not(.disabled)');
-
-    // Open modal
-    chooseDeckBtn.addEventListener('click', () => {
-        modal.style.display = 'flex';
-        updateDeckStatuses();
-    });
-
-    // Close modal
-    cancelBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-    });
-
-    // Click outside to close
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
-
-    // Handle deck selection
-    deckOptions.forEach(option => {
-        option.addEventListener('click', async () => {
-            const deckId = option.dataset.deck;
-            const currentDeck = getCurrentDeck();
-
-            if (deckId === currentDeck) {
-                return; // Already using this deck
-            }
-
-            // Show loading state
-            option.classList.add('loading');
-            const statusEl = option.querySelector('.deck-status');
-            const originalStatus = statusEl.textContent;
-            statusEl.textContent = 'Downloading...';
-
-            // Switch deck
-            const success = await switchDeck(deckId);
-
-            if (success) {
-                statusEl.textContent = '✓ Downloaded';
-                updateCurrentDeckDisplay();
-
-                // Reload page to show new deck images
-                setTimeout(() => {
-                    window.location.reload();
-                }, 500);
-            } else {
-                statusEl.textContent = '✗ Failed';
-                setTimeout(() => {
-                    statusEl.textContent = originalStatus;
-                }, 2000);
-            }
-
-            option.classList.remove('loading');
-        });
-    });
-}
-
-function updateDeckStatuses() {
-    const currentDeck = getCurrentDeck();
-    const deckOptions = document.querySelectorAll('.deck-option:not(.disabled)');
-
-    deckOptions.forEach(option => {
-        const deckId = option.dataset.deck;
-        const statusEl = option.querySelector('.deck-status');
-
-        if (deckId === currentDeck) {
-            option.classList.add('selected');
-            statusEl.textContent = '✓ Active';
-        } else {
-            option.classList.remove('selected');
-            statusEl.textContent = 'Download';
-        }
-    });
-}
-
-function updateCurrentDeckDisplay() {
-    const currentDeckId = getCurrentDeck();
-    const config = getDeckConfig(currentDeckId);
-    const nameEl = document.getElementById('current-deck-name');
-
-    if (nameEl) {
-        nameEl.textContent = config.name;
-    }
-}

@@ -4,13 +4,13 @@ const DECK_CONFIG = {
     'rider-waite': {
         name: 'Rider-Waite-Smith',
         description: 'The classic tarot deck',
-        imagePrefix: 'images/',
+        imagePrefix: 'images/rider-waite/',
         imageExtension: '.webp'
     },
     'golden-thread': {
         name: 'Golden Thread',
         description: 'Modern minimalist design',
-        imagePrefix: 'images/golden-thread/',
+        imagePrefix: 'images/',
         imageExtension: '.webp'
     }
 };
@@ -19,7 +19,7 @@ const CURRENT_DECK_KEY = 'tarot-current-deck';
 
 // Get current deck from localStorage
 function getCurrentDeck() {
-    return localStorage.getItem(CURRENT_DECK_KEY) || 'rider-waite';
+    return localStorage.getItem(CURRENT_DECK_KEY) || 'golden-thread';
 }
 
 // Set current deck in localStorage
@@ -29,7 +29,7 @@ function setCurrentDeck(deckId) {
 
 // Get deck configuration
 function getDeckConfig(deckId) {
-    return DECK_CONFIG[deckId] || DECK_CONFIG['rider-waite'];
+    return DECK_CONFIG[deckId] || DECK_CONFIG['golden-thread'];
 }
 
 // Generate list of all image URLs for a deck

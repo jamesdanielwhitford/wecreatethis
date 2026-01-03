@@ -275,7 +275,7 @@ main {
     width: 100%;
     max-width: 200px;
     height: auto;
-    border-radius: 8px;
+    border-radius: 4px;
     margin: 12px auto;
     display: block;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -301,7 +301,7 @@ main {
     width: 100%;
     max-width: 280px;
     height: auto;
-    border-radius: 12px;
+    border-radius: 4px;
     margin: 20px auto;
     display: block;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
@@ -396,7 +396,7 @@ main {
     width: 100%;
     max-width: 160px;
     height: auto;
-    border-radius: 8px;
+    border-radius: 4px;
     margin: 0 auto 8px;
     display: block;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);

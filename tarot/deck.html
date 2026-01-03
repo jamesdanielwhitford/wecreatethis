@@ -15,11 +15,10 @@
 <body>
     <div class="reading-nav">
         <a href="index.html" class="back-btn">&larr; Back</a>
-        <button id="choose-deck-btn" class="choose-deck-btn" title="Choose Deck">⚙️</button>
     </div>
 
     <h1>Full Tarot Deck</h1>
-    <p id="current-deck-name" class="current-deck-name"></p>
+    <p class="current-deck-name">Golden Thread</p>
 
     <div id="deck-container">
         <!-- Major Arcana Section -->
@@ -50,41 +49,6 @@
         <div class="deck-section">
             <h2 class="deck-section-title">Suit of Pentacles</h2>
             <div id="pentacles-grid" class="deck-grid"></div>
-        </div>
-    </div>
-
-    <!-- Choose Deck Modal -->
-    <div id="choose-deck-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <h3>Choose Tarot Deck</h3>
-
-            <div class="deck-options">
-                <div class="deck-option" data-deck="rider-waite">
-                    <div class="deck-option-preview">
-                        <img src="images/Fool.webp" alt="Rider-Waite-Smith Deck" class="deck-preview-image">
-                    </div>
-                    <div class="deck-option-info">
-                        <h4>Rider-Waite-Smith</h4>
-                        <p>The classic tarot deck (default)</p>
-                        <span class="deck-status" id="rider-waite-status">✓ Downloaded</span>
-                    </div>
-                </div>
-
-                <div class="deck-option" data-deck="golden-thread">
-                    <div class="deck-option-preview">
-                        <img src="images/golden-thread/Fool.webp" alt="Golden Thread Deck" class="deck-preview-image">
-                    </div>
-                    <div class="deck-option-info">
-                        <h4>Golden Thread</h4>
-                        <p>Modern minimalist design</p>
-                        <span class="deck-status" id="golden-thread-status">Download</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-actions">
-                <button id="cancel-deck-btn" class="modal-btn cancel">Close</button>
-            </div>
         </div>
     </div>
 
