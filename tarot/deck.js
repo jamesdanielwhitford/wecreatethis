@@ -22,6 +22,10 @@ function displayDeck() {
 
 function renderCardGrid(containerId, cards) {
     const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`Container ${containerId} not found`);
+        return;
+    }
     container.innerHTML = '';
 
     cards.forEach(card => {
@@ -29,10 +33,16 @@ function renderCardGrid(containerId, cards) {
         cardEl.className = 'deck-card';
         cardEl.style.cursor = 'pointer';
 
-        const imagePath = getCardImagePath(card);
+        let imagePath = getCardImagePath(card);
+
+        // Ensure path doesn't have double slashes or old golden-thread path
+        if (imagePath) {
+            imagePath = imagePath.replace(/images\/golden-thread\//g, 'images/');
+            imagePath = imagePath.replace(/\/\//g, '/');
+        }
 
         cardEl.innerHTML = `
-            ${imagePath ? `<img src="${imagePath}" alt="${card.name}" class="deck-card-image">` : ''}
+            ${imagePath ? `<img src="${imagePath}" alt="${card.name}" class="deck-card-image" onerror="console.error('Failed to load: ${imagePath}')">` : ''}
             <div class="deck-card-name">${card.name}</div>
         `;
 
