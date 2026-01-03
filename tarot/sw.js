@@ -1,6 +1,6 @@
 // Service Worker for Tarot Reader
 
-const CACHE_NAME = 'tarot-v12';
+const CACHE_NAME = 'tarot-v13';
 const ASSETS = [
   '/tarot/index.html',
   '/tarot/reading.html',
@@ -183,32 +183,37 @@ async function matchCache(request) {
   return null;
 }
 
-// Fetch - network first, fallback to cache (ensures updates when online)
+// Fetch - cache first with background update (instant load, updates silently)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    fetch(event.request).then(async (response) => {
-      // Cache successful GET requests
-      if (response.ok && event.request.method === 'GET') {
-        // Always strip redirect metadata before caching AND returning
-        const cleanResponse = await stripRedirectMetadata(response);
+    matchCache(event.request).then(async (cached) => {
+      // Start background network request for updates
+      const networkPromise = fetch(event.request).then(async (response) => {
+        // Cache successful GET requests in background
+        if (response.ok && event.request.method === 'GET') {
+          const cleanResponse = await stripRedirectMetadata(response);
+          const responseToCache = cleanResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return response;
+      }).catch(() => null); // Ignore network errors silently
 
-        // Clone BEFORE returning (avoids race condition with body consumption)
-        const responseToCache = cleanResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-
-        // Return clean response to client (Safari requires this)
-        return cleanResponse;
-      }
-      return response;
-    }).catch(async () => {
-      // Network failed, try cache (ignores query params, handles extensionless URLs)
-      const cached = await matchCache(event.request);
+      // Return cached response immediately if available
       if (cached) {
+        // Update cache in background (user doesn't wait)
+        networkPromise;
         return cached;
       }
-      // No cache, return offline page for navigation
+
+      // No cache, wait for network (first visit only)
+      const networkResponse = await networkPromise;
+      if (networkResponse) {
+        return networkResponse;
+      }
+
+      // Network failed and no cache, return offline page
       if (event.request.mode === 'navigate') {
         return caches.match('/tarot/index.html');
       }
