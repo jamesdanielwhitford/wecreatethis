@@ -142,7 +142,7 @@ function setupToggleButton() {
             toggleBtn.querySelector('.btn-icon').textContent = '';
         } else {
             // Show cards, hide info
-            cardsView.style.display = 'flex';
+            cardsView.style.display = '';  // Remove inline style to let CSS take over
             infoView.style.display = 'none';
             toggleBtn.classList.remove('cards-btn');
             toggleBtn.classList.add('info-btn');
