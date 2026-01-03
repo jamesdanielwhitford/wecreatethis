@@ -1,6 +1,6 @@
 // Service Worker for Tarot Reader
 
-const CACHE_NAME = 'tarot-v9';
+const CACHE_NAME = 'tarot-v10';
 const ASSETS = [
   '/tarot/index.html',
   '/tarot/reading.html',
@@ -18,8 +18,6 @@ const ASSETS = [
   '/tarot/tarot-data.js',
   '/tarot/card-descriptions.js',
   '/tarot/manifest.json',
-  '/tarot/icon-192.png',
-  '/tarot/icon-512.png',
   // Card images
   '/tarot/images/01 of Cups.webp',
   '/tarot/images/01 of Pentacles.webp',
