@@ -145,11 +145,21 @@ document.addEventListener('DOMContentLoaded', () => {
 async function handleIncomingMessage(messageData, userId) {
     const { senderId, receiverId, cipherId, cipherText } = messageData;
 
-    // Check if this message is for us
-    if (receiverId !== userId) {
+    // Handle "ANYONE" receiver - message can be opened by anyone
+    if (receiverId === 'ANYONE') {
+        // If user has no ID yet (first visit), assign them one
+        if (!localStorage.getItem('invisibleink_userId')) {
+            const newUserId = generateUserId();
+            localStorage.setItem('invisibleink_userId', newUserId);
+            userId = newUserId;
+        }
+        // Continue to show message - anyone can view
+    } else if (receiverId !== userId) {
+        // Specific receiver - check if this message is for us
         // If user has no ID yet (first visit), set them as the receiver
         if (!localStorage.getItem('invisibleink_userId')) {
             localStorage.setItem('invisibleink_userId', receiverId);
+            userId = receiverId;
             // Continue to show message
         } else {
             // Message not for this user
@@ -227,7 +237,7 @@ function showContactList(userId) {
         <main>
             <h2>Contacts</h2>
             ${contactEntries.length === 0 ?
-                '<p>No contacts yet. Share your ID with someone to get started!</p>' :
+                '<p>No contacts yet. Send a message to anyone to get started!</p>' :
                 '<ul class="contact-list">' +
                 contactEntries.map(([id, name]) => `
                     <li>
@@ -239,6 +249,12 @@ function showContactList(userId) {
                 `).join('') +
                 '</ul>'
             }
+            <div class="compose">
+                <h3>Send to Anyone</h3>
+                <textarea id="anyoneMessageText" placeholder="Type your message..."></textarea>
+                <button onclick="composeAnonymousMessage('${userId}')">Create Message Link</button>
+                <div id="anyoneMessageLink"></div>
+            </div>
             <div class="add-contact">
                 <h3>Add Contact</h3>
                 <input type="text" id="contactId" placeholder="Contact ID">
@@ -339,6 +355,39 @@ async function composeMessage(receiverId, senderId) {
     }
 }
 
+// Compose anonymous message (send to anyone)
+async function composeAnonymousMessage(senderId) {
+    const messageText = document.getElementById('anyoneMessageText').value.trim();
+
+    if (!messageText) {
+        alert('Please enter a message');
+        return;
+    }
+
+    const linkDiv = document.getElementById('anyoneMessageLink');
+    linkDiv.innerHTML = '<p>Generating secure link...</p>';
+
+    try {
+        const messageUrl = await createMessageUrl(senderId, 'ANYONE', messageText);
+
+        linkDiv.innerHTML = `
+            <div class="message-url">
+                <p><strong>Share this link with anyone:</strong></p>
+                <input type="text" value="${messageUrl}" readonly onclick="this.select()">
+                <button onclick="copyToClipboard('${messageUrl}')">Copy Link</button>
+                <p><small>Note: This link can only be viewed once and expires in 30 days.</small></p>
+            </div>
+        `;
+    } catch (error) {
+        linkDiv.innerHTML = `
+            <div class="error">
+                <p>Error creating message link. Please check your Supabase configuration.</p>
+            </div>
+        `;
+        console.error('Error creating message:', error);
+    }
+}
+
 // Copy to clipboard
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
@@ -372,4 +421,5 @@ function displayReceivedMessage(senderId, message, userId) {
 // Make functions globally available
 window.addContact = addContact;
 window.composeMessage = composeMessage;
+window.composeAnonymousMessage = composeAnonymousMessage;
 window.copyToClipboard = copyToClipboard;
