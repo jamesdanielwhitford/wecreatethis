@@ -1,5 +1,12 @@
 // Deck browser page logic
 
+// Force clear old cached deck preferences
+if (localStorage.getItem('tarot-deck-version') !== '2') {
+    localStorage.setItem('tarot-deck-version', '2');
+    localStorage.removeItem('tarot-current-deck');
+    console.log('Cleared old deck cache - will use default golden-thread with correct paths');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     displayDeck();
 });
