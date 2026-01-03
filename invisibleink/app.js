@@ -97,13 +97,26 @@ async function createMessageUrl(senderId, receiverId, message) {
     return `${window.location.origin}/invisibleink/${senderId}/${receiverId}/${cipherId}/${encoded}`;
 }
 
+// Debug helper
+function debugLog(msg) {
+    console.log(msg);
+    const debugDiv = document.getElementById('debug') || (() => {
+        const d = document.createElement('div');
+        d.id = 'debug';
+        d.style.cssText = 'position:fixed;top:0;left:0;background:black;color:lime;padding:10px;z-index:9999;font-family:monospace;font-size:12px;max-width:100%;overflow:auto;';
+        document.body.appendChild(d);
+        return d;
+    })();
+    debugDiv.innerHTML += msg + '<br>';
+}
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🔵 Invisible Ink v2 loaded');
+    debugLog('🔵 Invisible Ink v3 loaded');
     const userId = getUserId();
-    console.log('🔵 User ID:', userId);
+    debugLog('🔵 User ID: ' + userId);
     const path = window.location.pathname;
-    console.log('🔵 Current path:', path);
+    debugLog('🔵 Current path: ' + path);
 
     // Check if we're receiving a message
     const messageData = parseMessageUrl();
@@ -114,24 +127,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Redirect to user's homepage if at root
     if (path === '/invisibleink' || path === '/invisibleink/' || path === '/invisibleink/index.html') {
-        console.log('🔵 Redirecting to user homepage:', userId);
-        window.location.href = userId; // Relative to <base href="/invisibleink/">
+        debugLog('🔵 Redirecting to: ' + userId);
+        setTimeout(() => {
+            window.location.href = userId; // Relative to <base href="/invisibleink/">
+        }, 2000); // 2 second delay to see debug
         return;
     }
 
     // Check if viewing a specific user page
     const pathParts = path.split('/').filter(p => p);
-    console.log('🔵 Path parts:', pathParts);
+    debugLog('🔵 Path parts: ' + JSON.stringify(pathParts));
     if (pathParts.length >= 2 && pathParts[0] === 'invisibleink') {
         const viewingUserId = pathParts[1];
-        console.log('🔵 Viewing user ID:', viewingUserId);
+        debugLog('🔵 Viewing user: ' + viewingUserId);
 
         // If viewing own page, show contact list
         if (viewingUserId === userId) {
-            console.log('🔵 Showing contact list for own page');
+            debugLog('🔵 Showing YOUR contact list');
             showContactList(userId);
         } else {
-            console.log('🔵 Showing contact page for:', viewingUserId);
+            debugLog('🔵 Showing contact page');
             // Viewing someone else's page - treat as contact page
             showContactPage(viewingUserId, userId);
         }
@@ -139,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Default: show contact list
-    console.log('🔵 Default: showing contact list');
+    debugLog('🔵 Default: showing contact list');
     showContactList(userId);
 });
 
