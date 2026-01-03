@@ -99,8 +99,11 @@ async function createMessageUrl(senderId, receiverId, message) {
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🔵 Invisible Ink v2 loaded');
     const userId = getUserId();
+    console.log('🔵 User ID:', userId);
     const path = window.location.pathname;
+    console.log('🔵 Current path:', path);
 
     // Check if we're receiving a message
     const messageData = parseMessageUrl();
@@ -111,19 +114,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Redirect to user's homepage if at root
     if (path === '/invisibleink' || path === '/invisibleink/' || path === '/invisibleink/index.html') {
+        console.log('🔵 Redirecting to user homepage:', userId);
         window.location.href = userId; // Relative to <base href="/invisibleink/">
         return;
     }
 
     // Check if viewing a specific user page
     const pathParts = path.split('/').filter(p => p);
+    console.log('🔵 Path parts:', pathParts);
     if (pathParts.length >= 2 && pathParts[0] === 'invisibleink') {
         const viewingUserId = pathParts[1];
+        console.log('🔵 Viewing user ID:', viewingUserId);
 
         // If viewing own page, show contact list
         if (viewingUserId === userId) {
+            console.log('🔵 Showing contact list for own page');
             showContactList(userId);
         } else {
+            console.log('🔵 Showing contact page for:', viewingUserId);
             // Viewing someone else's page - treat as contact page
             showContactPage(viewingUserId, userId);
         }
@@ -131,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Default: show contact list
+    console.log('🔵 Default: showing contact list');
     showContactList(userId);
 });
 
