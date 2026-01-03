@@ -15,6 +15,16 @@ function getUserId() {
         userId = generateUserId();
         localStorage.setItem('invisibleink_userId', userId);
     }
+
+    // Cleanup: Remove old "Pending Messages" contact if it exists
+    const contacts = getContacts();
+    if (contacts['ANYONE']) {
+        delete contacts['ANYONE'];
+        saveContacts(contacts);
+        // Also delete the messages
+        localStorage.removeItem('invisibleink_messages_ANYONE');
+    }
+
     return userId;
 }
 
@@ -389,24 +399,16 @@ async function composeAnonymousMessage(senderId) {
     try {
         const messageUrl = await createMessageUrl(senderId, 'ANYONE', messageText);
 
-        // Save to a special "pending" contact for anonymous messages
-        const messages = getMessages('ANYONE');
-        messages.push({
+        // Save sent anonymous message to localStorage (not tied to a contact yet)
+        const sentMessages = JSON.parse(localStorage.getItem('invisibleink_sent_anonymous') || '[]');
+        sentMessages.push({
             from: senderId,
             to: 'ANYONE',
             message: messageText,
             timestamp: Date.now(),
-            sent: true,
             messageUrl: messageUrl
         });
-        saveMessages('ANYONE', messages);
-
-        // Add ANYONE to contacts if not already there
-        const contacts = getContacts();
-        if (!contacts['ANYONE']) {
-            contacts['ANYONE'] = 'Pending Messages';
-            saveContacts(contacts);
-        }
+        localStorage.setItem('invisibleink_sent_anonymous', JSON.stringify(sentMessages));
 
         linkDiv.innerHTML = `
             <div class="message-url">
@@ -419,11 +421,6 @@ async function composeAnonymousMessage(senderId) {
 
         // Clear the textarea
         document.getElementById('anyoneMessageText').value = '';
-
-        // Refresh to show the new contact
-        setTimeout(() => {
-            showContactList(senderId);
-        }, 2000);
     } catch (error) {
         linkDiv.innerHTML = `
             <div class="error">
