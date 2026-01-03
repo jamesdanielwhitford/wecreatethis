@@ -97,26 +97,38 @@ async function createMessageUrl(senderId, receiverId, message) {
     return `${window.location.origin}/invisibleink/${senderId}/${receiverId}/${cipherId}/${encoded}`;
 }
 
-// Debug helper
+// Debug helper - persists across redirects
 function debugLog(msg) {
-    console.log(msg);
+    const timestamp = new Date().toLocaleTimeString();
+    const logMsg = `[${timestamp}] ${msg}`;
+    console.log(logMsg);
+
+    // Store in localStorage
+    const logs = JSON.parse(localStorage.getItem('debug_logs') || '[]');
+    logs.push(logMsg);
+    localStorage.setItem('debug_logs', JSON.stringify(logs.slice(-20))); // Keep last 20
+
+    // Display on page
     const debugDiv = document.getElementById('debug') || (() => {
         const d = document.createElement('div');
         d.id = 'debug';
-        d.style.cssText = 'position:fixed;top:0;left:0;background:black;color:lime;padding:10px;z-index:9999;font-family:monospace;font-size:12px;max-width:100%;overflow:auto;';
+        d.style.cssText = 'position:fixed;top:0;left:0;background:black;color:lime;padding:10px;z-index:9999;font-family:monospace;font-size:10px;max-width:100%;max-height:200px;overflow:auto;';
         document.body.appendChild(d);
         return d;
     })();
-    debugDiv.innerHTML += msg + '<br>';
+
+    // Show last 10 logs
+    const allLogs = JSON.parse(localStorage.getItem('debug_logs') || '[]');
+    debugDiv.innerHTML = allLogs.slice(-10).join('<br>');
 }
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
-    debugLog('🔵 Invisible Ink v3 loaded');
+    debugLog('🔵 V3 LOADED');
     const userId = getUserId();
-    debugLog('🔵 User ID: ' + userId);
+    debugLog('🔵 UserID: ' + userId);
     const path = window.location.pathname;
-    debugLog('🔵 Current path: ' + path);
+    debugLog('🔵 Path: ' + path);
 
     // Check if we're receiving a message
     const messageData = parseMessageUrl();
