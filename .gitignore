@@ -8,6 +8,7 @@ CLAUDE.md
 .claude
 **/CLAUDE.md
 dev
+dev-server.py
 
 # Tarot scraper tools and content
 tarot/scraper/
