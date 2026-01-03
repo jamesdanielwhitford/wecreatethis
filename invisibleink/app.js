@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Redirect to user's homepage if at root
     if (path === '/invisibleink' || path === '/invisibleink/' || path === '/invisibleink/index.html') {
-        window.location.href = `/invisibleink/${userId}`;
+        window.location.href = userId; // Relative to <base href="/invisibleink/">
         return;
     }
 
