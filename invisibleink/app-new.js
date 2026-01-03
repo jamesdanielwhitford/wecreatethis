@@ -64,21 +64,37 @@ function parseMessageUrl() {
 
 // Create encrypted message URL
 function createMessageUrl(senderId, recipientId, message, senderKeys, replyToken = null) {
-    // Extract recipient's public keys from their ID
-    const { publicKey: recipientPublicKey } = window.InvisibleInkCrypto.parseUserId(recipientId);
+    let encryptedMessage, nonce, signature;
 
-    // Encrypt the message with recipient's public key
-    const { encryptedMessage, nonce } = window.InvisibleInkCrypto.encryptMessage(
-        message,
-        recipientPublicKey,
-        senderKeys.privateKey
-    );
+    if (recipientId === 'ANYONE') {
+        // For public messages, just base64 encode (not encrypted, anyone can read)
+        // We'll still sign it to prove who sent it
+        const messageBytes = new TextEncoder().encode(message);
+        encryptedMessage = window.InvisibleInkCrypto.base64UrlEncode(messageBytes);
+        nonce = 'public'; // Placeholder since no encryption
 
-    // Sign the encrypted message to prove sender identity
-    const signature = window.InvisibleInkCrypto.signMessage(
-        encryptedMessage,
-        senderKeys.signingPrivateKey
-    );
+        // Sign the original message
+        signature = window.InvisibleInkCrypto.signMessage(
+            message,
+            senderKeys.signingPrivateKey
+        );
+    } else {
+        // Extract recipient's public keys from their ID
+        const { publicKey: recipientPublicKey } = window.InvisibleInkCrypto.parseUserId(recipientId);
+
+        // Encrypt the message with recipient's public key
+        ({ encryptedMessage, nonce } = window.InvisibleInkCrypto.encryptMessage(
+            message,
+            recipientPublicKey,
+            senderKeys.privateKey
+        ));
+
+        // Sign the encrypted message to prove sender identity
+        signature = window.InvisibleInkCrypto.signMessage(
+            encryptedMessage,
+            senderKeys.signingPrivateKey
+        );
+    }
 
     // Build URL
     let url = `${window.location.origin}/invisibleink/${senderId}/${encryptedMessage}/${nonce}/${signature}`;
@@ -117,49 +133,76 @@ function handleIncomingMessage(messageData, userKeys, userId) {
         return;
     }
 
-    // Verify signature
-    const { signingPublicKey: senderSigningKey } = window.InvisibleInkCrypto.parseUserId(senderId);
-    const verifiedMessage = window.InvisibleInkCrypto.verifySignature(signature, senderSigningKey);
+    let decryptedMessage;
 
-    if (!verifiedMessage) {
-        document.body.innerHTML = `
-            <div id="app">
-                <header><h1>Invisible Ink</h1></header>
-                <main>
-                    <div class="error">
-                        <h2>Invalid Signature</h2>
-                        <p>This message could not be verified. It may have been tampered with.</p>
-                        <a href="/invisibleink/${encodeURIComponent(userId)}">Go to your messages</a>
-                    </div>
-                </main>
-            </div>
-        `;
-        return;
-    }
+    if (nonce === 'public') {
+        // Public message - just decode and verify signature
+        const { signingPublicKey: senderSigningKey } = window.InvisibleInkCrypto.parseUserId(senderId);
+        const verifiedMessage = window.InvisibleInkCrypto.verifySignature(signature, senderSigningKey);
 
-    // Decrypt the message
-    const { publicKey: senderPublicKey } = window.InvisibleInkCrypto.parseUserId(senderId);
-    const decryptedMessage = window.InvisibleInkCrypto.decryptMessage(
-        encryptedMessage,
-        nonce,
-        senderPublicKey,
-        userKeys.privateKey
-    );
+        if (!verifiedMessage) {
+            document.body.innerHTML = `
+                <div id="app">
+                    <header><h1>Invisible Ink</h1></header>
+                    <main>
+                        <div class="error">
+                            <h2>Invalid Signature</h2>
+                            <p>This message could not be verified. It may have been tampered with.</p>
+                            <a href="/invisibleink/${encodeURIComponent(userId)}">Go to your messages</a>
+                        </div>
+                    </main>
+                </div>
+            `;
+            return;
+        }
 
-    if (!decryptedMessage) {
-        document.body.innerHTML = `
-            <div id="app">
-                <header><h1>Invisible Ink</h1></header>
-                <main>
-                    <div class="error">
-                        <h2>Decryption Failed</h2>
-                        <p>Could not decrypt this message. It may not be intended for you.</p>
-                        <a href="/invisibleink/${encodeURIComponent(userId)}">Go to your messages</a>
-                    </div>
-                </main>
-            </div>
-        `;
-        return;
+        // The verified message IS the decrypted message (it was signed, not encrypted)
+        decryptedMessage = verifiedMessage;
+    } else {
+        // Private message - verify signature on encrypted message, then decrypt
+        const { signingPublicKey: senderSigningKey } = window.InvisibleInkCrypto.parseUserId(senderId);
+        const verifiedEncrypted = window.InvisibleInkCrypto.verifySignature(signature, senderSigningKey);
+
+        if (!verifiedEncrypted) {
+            document.body.innerHTML = `
+                <div id="app">
+                    <header><h1>Invisible Ink</h1></header>
+                    <main>
+                        <div class="error">
+                            <h2>Invalid Signature</h2>
+                            <p>This message could not be verified. It may have been tampered with.</p>
+                            <a href="/invisibleink/${encodeURIComponent(userId)}">Go to your messages</a>
+                        </div>
+                    </main>
+                </div>
+            `;
+            return;
+        }
+
+        // Decrypt the message
+        const { publicKey: senderPublicKey } = window.InvisibleInkCrypto.parseUserId(senderId);
+        decryptedMessage = window.InvisibleInkCrypto.decryptMessage(
+            encryptedMessage,
+            nonce,
+            senderPublicKey,
+            userKeys.privateKey
+        );
+
+        if (!decryptedMessage) {
+            document.body.innerHTML = `
+                <div id="app">
+                    <header><h1>Invisible Ink</h1></header>
+                    <main>
+                        <div class="error">
+                            <h2>Decryption Failed</h2>
+                            <p>Could not decrypt this message. It may not be intended for you.</p>
+                            <a href="/invisibleink/${encodeURIComponent(userId)}">Go to your messages</a>
+                        </div>
+                    </main>
+                </div>
+            `;
+            return;
+        }
     }
 
     // Save the message
