@@ -1,10 +1,10 @@
-const CACHE_NAME = 'invisibleink-v2';
+const CACHE_NAME = 'invisibleink-v3-crypto';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './styles.css',
-    './api.js',
-    './app.js',
+    './crypto.js',
+    './app-new.js',
     './icon-192.png',
     './icon-512.png'
 ];
