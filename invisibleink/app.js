@@ -337,6 +337,17 @@ async function composeMessage(receiverId, senderId) {
     try {
         const messageUrl = await createMessageUrl(senderId, receiverId, messageText);
 
+        // Save the sent message to local history
+        const messages = getMessages(receiverId);
+        messages.push({
+            from: senderId,
+            to: receiverId,
+            message: messageText,
+            timestamp: Date.now(),
+            sent: true
+        });
+        saveMessages(receiverId, messages);
+
         linkDiv.innerHTML = `
             <div class="message-url">
                 <p><strong>Share this link:</strong></p>
@@ -345,6 +356,14 @@ async function composeMessage(receiverId, senderId) {
                 <p><small>Note: This link can only be viewed once and expires in 30 days.</small></p>
             </div>
         `;
+
+        // Clear the textarea
+        document.getElementById('messageText').value = '';
+
+        // Refresh the contact page to show the new message
+        setTimeout(() => {
+            showContactPage(receiverId, senderId);
+        }, 2000);
     } catch (error) {
         linkDiv.innerHTML = `
             <div class="error">
@@ -370,6 +389,25 @@ async function composeAnonymousMessage(senderId) {
     try {
         const messageUrl = await createMessageUrl(senderId, 'ANYONE', messageText);
 
+        // Save to a special "pending" contact for anonymous messages
+        const messages = getMessages('ANYONE');
+        messages.push({
+            from: senderId,
+            to: 'ANYONE',
+            message: messageText,
+            timestamp: Date.now(),
+            sent: true,
+            messageUrl: messageUrl
+        });
+        saveMessages('ANYONE', messages);
+
+        // Add ANYONE to contacts if not already there
+        const contacts = getContacts();
+        if (!contacts['ANYONE']) {
+            contacts['ANYONE'] = 'Pending Messages';
+            saveContacts(contacts);
+        }
+
         linkDiv.innerHTML = `
             <div class="message-url">
                 <p><strong>Share this link with anyone:</strong></p>
@@ -378,6 +416,14 @@ async function composeAnonymousMessage(senderId) {
                 <p><small>Note: This link can only be viewed once and expires in 30 days.</small></p>
             </div>
         `;
+
+        // Clear the textarea
+        document.getElementById('anyoneMessageText').value = '';
+
+        // Refresh to show the new contact
+        setTimeout(() => {
+            showContactList(senderId);
+        }, 2000);
     } catch (error) {
         linkDiv.innerHTML = `
             <div class="error">
