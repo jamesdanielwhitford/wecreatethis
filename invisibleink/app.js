@@ -70,15 +70,18 @@ function urlSafeDecode(text) {
 // Parse URL path for message
 function parseMessageUrl() {
     const path = window.location.pathname;
+    const search = window.location.search;
     const parts = path.split('/').filter(p => p);
 
-    // Expected format: invisibleink/senderid/receiverid/cipherid/ciphertext
+    // Expected format: invisibleink/senderid/receiverid/cipherid/ciphertext?reply=TOKEN
     if (parts.length >= 5 && parts[0] === 'invisibleink') {
+        const urlParams = new URLSearchParams(search);
         return {
             senderId: parts[1],
             receiverId: parts[2],
             cipherId: parts[3],
-            cipherText: urlSafeDecode(parts.slice(4).join('/'))
+            cipherText: urlSafeDecode(parts.slice(4).join('/')),
+            replyToken: urlParams.get('reply') || null
         };
     }
     return null;
@@ -153,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Handle incoming message from URL with one-time cipher
 async function handleIncomingMessage(messageData, userId) {
-    const { senderId, receiverId, cipherId, cipherText } = messageData;
+    const { senderId, receiverId, cipherId, cipherText, replyToken } = messageData;
 
     // Handle "ANYONE" receiver - message can be opened by anyone
     if (receiverId === 'ANYONE') {
@@ -222,6 +225,27 @@ async function handleIncomingMessage(messageData, userId) {
     });
     saveMessages(senderId, messages);
 
+    // Handle reply token - link this message to original anonymous message
+    if (replyToken) {
+        // Check if this is a reply to one of our anonymous messages
+        const sentMessages = JSON.parse(localStorage.getItem('invisibleink_sent_anonymous') || '[]');
+        const originalMessage = sentMessages.find(msg => msg.replyToken === replyToken);
+
+        if (originalMessage) {
+            // This is a reply to our anonymous message!
+            // Add the sender as a contact (they replied to us)
+            const contacts = getContacts();
+            if (!contacts[senderId]) {
+                contacts[senderId] = `Reply from ${senderId.slice(0, 8)}...`;
+                saveContacts(contacts);
+            }
+
+            // Remove this message from anonymous list since we now know who they are
+            const updatedSentMessages = sentMessages.filter(msg => msg.replyToken !== replyToken);
+            localStorage.setItem('invisibleink_sent_anonymous', JSON.stringify(updatedSentMessages));
+        }
+    }
+
     // Add sender to contacts if not already there
     const contacts = getContacts();
     if (!contacts[senderId]) {
@@ -230,7 +254,7 @@ async function handleIncomingMessage(messageData, userId) {
     }
 
     // Display the message
-    displayReceivedMessage(senderId, message, userId);
+    displayReceivedMessage(senderId, message, userId, replyToken);
 }
 
 // Show contact list
@@ -397,24 +421,31 @@ async function composeAnonymousMessage(senderId) {
     linkDiv.innerHTML = '<p>Generating secure link...</p>';
 
     try {
+        // Generate a unique reply token for this anonymous message
+        const replyToken = generateCipherId();
+
         const messageUrl = await createMessageUrl(senderId, 'ANYONE', messageText);
 
-        // Save sent anonymous message to localStorage (not tied to a contact yet)
+        // Add reply token to URL
+        const messageUrlWithReply = `${messageUrl}?reply=${replyToken}`;
+
+        // Save sent anonymous message to localStorage with reply token
         const sentMessages = JSON.parse(localStorage.getItem('invisibleink_sent_anonymous') || '[]');
         sentMessages.push({
             from: senderId,
             to: 'ANYONE',
             message: messageText,
             timestamp: Date.now(),
-            messageUrl: messageUrl
+            messageUrl: messageUrlWithReply,
+            replyToken: replyToken
         });
         localStorage.setItem('invisibleink_sent_anonymous', JSON.stringify(sentMessages));
 
         linkDiv.innerHTML = `
             <div class="message-url">
                 <p><strong>Share this link with anyone:</strong></p>
-                <input type="text" value="${messageUrl}" readonly onclick="this.select()">
-                <button onclick="copyToClipboard('${messageUrl}')">Copy Link</button>
+                <input type="text" value="${messageUrlWithReply}" readonly onclick="this.select()">
+                <button onclick="copyToClipboard('${messageUrlWithReply}')">Copy Link</button>
                 <p><small>Note: This link can only be viewed once and expires in 30 days.</small></p>
             </div>
         `;
@@ -439,7 +470,7 @@ function copyToClipboard(text) {
 }
 
 // Display received message
-function displayReceivedMessage(senderId, message, userId) {
+function displayReceivedMessage(senderId, message, userId, replyToken = null) {
     const contacts = getContacts();
     const contactName = contacts[senderId] || 'Unknown Contact';
 
@@ -455,14 +486,74 @@ function displayReceivedMessage(senderId, message, userId) {
                 <div class="message-content">
                     <p>${message}</p>
                 </div>
+                ${replyToken ? `
+                    <div class="compose" style="margin-top: 20px;">
+                        <h3>Reply</h3>
+                        <textarea id="replyMessageText" placeholder="Type your reply..."></textarea>
+                        <button onclick="sendReply('${senderId}', '${userId}', '${replyToken}')">Send Reply</button>
+                        <div id="replyMessageLink"></div>
+                    </div>
+                ` : ''}
                 <a href="/invisibleink/${userId}">View all messages</a>
             </div>
         </main>
     `;
 }
 
+// Send reply to anonymous message
+async function sendReply(originalSenderId, myUserId, replyToken) {
+    const messageText = document.getElementById('replyMessageText').value.trim();
+
+    if (!messageText) {
+        alert('Please enter a message');
+        return;
+    }
+
+    const linkDiv = document.getElementById('replyMessageLink');
+    linkDiv.innerHTML = '<p>Generating secure link...</p>';
+
+    try {
+        const messageUrl = await createMessageUrl(myUserId, originalSenderId, messageText);
+
+        // Add reply token to URL so sender knows this is a reply to their anonymous message
+        const messageUrlWithReply = `${messageUrl}?reply=${replyToken}`;
+
+        // Save the sent message to local history
+        const messages = getMessages(originalSenderId);
+        messages.push({
+            from: myUserId,
+            to: originalSenderId,
+            message: messageText,
+            timestamp: Date.now(),
+            sent: true,
+            replyTo: replyToken
+        });
+        saveMessages(originalSenderId, messages);
+
+        linkDiv.innerHTML = `
+            <div class="message-url">
+                <p><strong>Share this link:</strong></p>
+                <input type="text" value="${messageUrlWithReply}" readonly onclick="this.select()">
+                <button onclick="copyToClipboard('${messageUrlWithReply}')">Copy Link</button>
+                <p><small>Note: This link can only be viewed once and expires in 30 days.</small></p>
+            </div>
+        `;
+
+        // Clear textarea
+        document.getElementById('replyMessageText').value = '';
+    } catch (error) {
+        linkDiv.innerHTML = `
+            <div class="error">
+                <p>Error creating reply link. Please check your Supabase configuration.</p>
+            </div>
+        `;
+        console.error('Error creating reply:', error);
+    }
+}
+
 // Make functions globally available
 window.addContact = addContact;
 window.composeMessage = composeMessage;
 window.composeAnonymousMessage = composeAnonymousMessage;
+window.sendReply = sendReply;
 window.copyToClipboard = copyToClipboard;
