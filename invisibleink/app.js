@@ -323,6 +323,13 @@ function showContactPage(contactId, userId) {
     const contactName = contacts[contactId] || 'Unknown Contact';
     const messages = getMessages(contactId);
 
+    console.log('showContactPage DEBUG:', {
+        contactId,
+        userId,
+        messageCount: messages.length,
+        messages: messages.map(m => ({ from: m.from, to: m.to, msg: m.message, sent: m.sent }))
+    });
+
     const app = document.getElementById('app');
     app.innerHTML = `
         <header>
@@ -338,7 +345,7 @@ function showContactPage(contactId, userId) {
                 ${messages.length === 0 ?
                     '<p>No messages yet</p>' :
                     messages.map(msg => `
-                        <div class="message ${msg.from === userId ? 'sent' : 'received'}">
+                        <div class="message ${msg.from === userId || msg.sent ? 'sent' : 'received'}">
                             <p>${msg.message}</p>
                             <small>${new Date(msg.timestamp).toLocaleString()}</small>
                         </div>
