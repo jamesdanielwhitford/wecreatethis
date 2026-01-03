@@ -312,11 +312,15 @@ Root directory (gitignored):
 
 ## Offline Strategy
 
-- **Network-first with cache fallback**: Ensures users get updates when online
+- **Cache-first with background update** (Stale-While-Revalidate): Instant page loads with silent updates
+  - Serves cached content immediately for instant loading (feels like native app)
+  - Updates cache in background when online (users never wait for network)
+  - Only uses network on first visit to initially populate cache
+  - Eliminates network delays while keeping content fresh
 - **Redirect metadata stripping**: Prevents ERR_FAILED errors on Cloudflare Pages and Safari
 - **Enhanced cache matching**: Handles extensionless URLs and query parameters
 - **IndexedDB for user data**: Reading history stored locally
-- **Service worker versioning**: Uses `tarot-v8` cache name (increment when updating)
+- **Service worker versioning**: Uses `tarot-v13` cache name (increment when updating)
 - **Immediate activation**: Uses `skipWaiting()` and `clients.claim()` for instant updates
 - **Image caching**: All 78 Golden Thread card images (3.9MB total) cached on first visit for offline use
 - **Deck management caching**: Service worker message handlers for CACHE_DECK and REMOVE_DECK
@@ -506,8 +510,9 @@ The project includes Python scripts for downloading and optimizing tarot card im
 
 ### Known Issues & TODOs
 - **Missing Icons**: Need to create icon-192.png and icon-512.png for PWA installation
-- **Service Worker Cache**: Remember to increment cache version when updating files (currently tarot-v12)
-  - Service worker now uses proper redirect handling for Cloudflare Pages compatibility
+- **Service Worker Cache**: Remember to increment cache version when updating files (currently tarot-v13)
+  - Service worker uses cache-first strategy for instant loading (stale-while-revalidate pattern)
+  - Proper redirect handling for Cloudflare Pages compatibility
   - All 78 Golden Thread card images cached for offline use
   - Deck browser cached (selection UI removed)
   - Deck management message handlers ready for future multi-deck support
@@ -516,7 +521,7 @@ The project includes Python scripts for downloading and optimizing tarot card im
   - `deck.js` lines 3-8: localStorage version check and clearing (added to fix iOS cache issue after deck path migration)
   - `deck.js` lines 39-42: Image path replacement for legacy `images/golden-thread/` paths
   - `deck.js` line 45: `onerror` console logging for failed image loads
-  - These can be removed once all production users have migrated past service worker v12
+  - These can be removed once all production users have migrated past service worker v13
 
 ## Reading Data Model
 
