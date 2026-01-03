@@ -97,38 +97,10 @@ async function createMessageUrl(senderId, receiverId, message) {
     return `${window.location.origin}/invisibleink/${senderId}/${receiverId}/${cipherId}/${encoded}`;
 }
 
-// Debug helper - persists across redirects
-function debugLog(msg) {
-    const timestamp = new Date().toLocaleTimeString();
-    const logMsg = `[${timestamp}] ${msg}`;
-    console.log(logMsg);
-
-    // Store in localStorage
-    const logs = JSON.parse(localStorage.getItem('debug_logs') || '[]');
-    logs.push(logMsg);
-    localStorage.setItem('debug_logs', JSON.stringify(logs.slice(-20))); // Keep last 20
-
-    // Display on page
-    const debugDiv = document.getElementById('debug') || (() => {
-        const d = document.createElement('div');
-        d.id = 'debug';
-        d.style.cssText = 'position:fixed;top:0;left:0;background:black;color:lime;padding:10px;z-index:9999;font-family:monospace;font-size:10px;max-width:100%;max-height:200px;overflow:auto;';
-        document.body.appendChild(d);
-        return d;
-    })();
-
-    // Show last 10 logs
-    const allLogs = JSON.parse(localStorage.getItem('debug_logs') || '[]');
-    debugDiv.innerHTML = allLogs.slice(-10).join('<br>');
-}
-
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
-    debugLog('🔵 V3 LOADED');
     const userId = getUserId();
-    debugLog('🔵 UserID: ' + userId);
     const path = window.location.pathname;
-    debugLog('🔵 Path: ' + path);
 
     // Check if we're receiving a message
     const messageData = parseMessageUrl();
@@ -139,26 +111,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Redirect to user's homepage if at root
     if (path === '/invisibleink' || path === '/invisibleink/' || path === '/invisibleink/index.html') {
-        debugLog('🔵 Redirecting to: ' + userId);
-        setTimeout(() => {
-            window.location.href = userId; // Relative to <base href="/invisibleink/">
-        }, 2000); // 2 second delay to see debug
+        window.location.href = userId; // Relative to <base href="/invisibleink/">
         return;
     }
 
     // Check if viewing a specific user page
     const pathParts = path.split('/').filter(p => p);
-    debugLog('🔵 Path parts: ' + JSON.stringify(pathParts));
     if (pathParts.length >= 2 && pathParts[0] === 'invisibleink') {
         const viewingUserId = pathParts[1];
-        debugLog('🔵 Viewing user: ' + viewingUserId);
 
         // If viewing own page, show contact list
         if (viewingUserId === userId) {
-            debugLog('🔵 Showing YOUR contact list');
             showContactList(userId);
         } else {
-            debugLog('🔵 Showing contact page');
             // Viewing someone else's page - treat as contact page
             showContactPage(viewingUserId, userId);
         }
@@ -166,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Default: show contact list
-    debugLog('🔵 Default: showing contact list');
     showContactList(userId);
 });
 
