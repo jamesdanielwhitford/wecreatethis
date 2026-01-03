@@ -273,6 +273,9 @@ function showContactList(userId) {
     const contacts = getContacts();
     const contactEntries = Object.entries(contacts);
 
+    // Get pending anonymous messages
+    const pendingMessages = JSON.parse(localStorage.getItem('invisibleink_sent_anonymous') || '[]');
+
     const app = document.getElementById('app');
     app.innerHTML = `
         <header>
@@ -294,6 +297,19 @@ function showContactList(userId) {
                 `).join('') +
                 '</ul>'
             }
+            ${pendingMessages.length > 0 ? `
+                <h2>Pending Replies</h2>
+                <ul class="contact-list">
+                    ${pendingMessages.map(msg => `
+                        <li>
+                            <a href="javascript:void(0)" onclick="showPendingMessage('${msg.replyToken}', '${userId}')">
+                                <strong>Awaiting reply...</strong>
+                                <small>${new Date(msg.timestamp).toLocaleString()}</small>
+                            </a>
+                        </li>
+                    `).join('')}
+                </ul>
+            ` : ''}
             <div class="compose">
                 <h3>Send to Anyone</h3>
                 <textarea id="anyoneMessageText" placeholder="Type your message..."></textarea>
@@ -572,9 +588,49 @@ async function sendReply(originalSenderId, myUserId, replyToken) {
     }
 }
 
+// Show pending anonymous message details
+function showPendingMessage(replyToken, userId) {
+    const pendingMessages = JSON.parse(localStorage.getItem('invisibleink_sent_anonymous') || '[]');
+    const msg = pendingMessages.find(m => m.replyToken === replyToken);
+
+    if (!msg) {
+        alert('Message not found');
+        return;
+    }
+
+    const app = document.getElementById('app');
+    app.innerHTML = `
+        <header>
+            <h1>Invisible Ink</h1>
+            <a href="/invisibleink/${userId}">← Back to contacts</a>
+        </header>
+        <main>
+            <h2>Pending Reply</h2>
+            <p><small>Sent: ${new Date(msg.timestamp).toLocaleString()}</small></p>
+
+            <div class="messages">
+                <h3>Messages</h3>
+                <div class="message sent">
+                    <p>${msg.message}</p>
+                    <small>${new Date(msg.timestamp).toLocaleString()}</small>
+                </div>
+                <p style="margin-top: 20px;"><em>Waiting for reply...</em></p>
+            </div>
+
+            <div class="message-url" style="margin-top: 20px;">
+                <p><strong>Message Link:</strong></p>
+                <input type="text" value="${msg.messageUrl}" readonly onclick="this.select()">
+                <button onclick="copyToClipboard('${msg.messageUrl}')">Copy Link</button>
+                <p><small>Share this link to receive a reply</small></p>
+            </div>
+        </main>
+    `;
+}
+
 // Make functions globally available
 window.addContact = addContact;
 window.composeMessage = composeMessage;
 window.composeAnonymousMessage = composeAnonymousMessage;
 window.sendReply = sendReply;
 window.copyToClipboard = copyToClipboard;
+window.showPendingMessage = showPendingMessage;
