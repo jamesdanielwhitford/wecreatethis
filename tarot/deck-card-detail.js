@@ -39,6 +39,16 @@ function displayCardDetail(card) {
     // Set card name
     document.getElementById('card-name-display').textContent = card.name;
 
+    // Set card description
+    const description = getCardDescription(card.name);
+    const descriptionSection = document.getElementById('card-description-section');
+    if (description) {
+        document.getElementById('card-description-text').textContent = description;
+        descriptionSection.style.display = 'block';
+    } else {
+        descriptionSection.style.display = 'none';
+    }
+
     // Set upright meanings
     const uprightList = document.getElementById('upright-list');
     uprightList.innerHTML = '';

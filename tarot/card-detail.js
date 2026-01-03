@@ -70,4 +70,14 @@ function displayCardDetail(card) {
 
     // Set position description
     document.getElementById('position-description-text').textContent = card.position.description;
+
+    // Set card description
+    const description = getCardDescription(card.name);
+    const descriptionSection = document.getElementById('card-description-section');
+    if (description) {
+        document.getElementById('card-description-text').textContent = description;
+        descriptionSection.style.display = 'block';
+    } else {
+        descriptionSection.style.display = 'none';
+    }
 }

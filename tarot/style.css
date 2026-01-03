@@ -323,12 +323,14 @@ main {
 }
 
 .meaning-section,
-.position-description {
+.position-description,
+.card-description {
     margin-bottom: 30px;
 }
 
 .meaning-section h3,
-.position-description h3 {
+.position-description h3,
+.card-description h3 {
     font-size: 1.2rem;
     color: var(--text);
     margin-bottom: 12px;
@@ -349,11 +351,13 @@ main {
     border-bottom: none;
 }
 
-.position-description p {
+.position-description p,
+.card-description p {
     font-size: 1rem;
     line-height: 1.6;
     color: var(--text);
     opacity: 0.9;
+    white-space: pre-line;
 }
 
 /* Deck Browser */
