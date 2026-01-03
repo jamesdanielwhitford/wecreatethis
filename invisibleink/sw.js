@@ -1,4 +1,4 @@
-const CACHE_NAME = 'invisibleink-v4-crypto';
+const CACHE_NAME = 'invisibleink-v5-crypto';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
