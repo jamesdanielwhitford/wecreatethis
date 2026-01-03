@@ -109,7 +109,7 @@ function handleIncomingMessage(messageData, userKeys, userId) {
                 <main>
                     <div class="error">
                         <p>This message is not for you.</p>
-                        <a href="/invisibleink/${userId}">Go to your messages</a>
+                        <a href="/invisibleink/${encodeURIComponent(userId)}">Go to your messages</a>
                     </div>
                 </main>
             </div>
@@ -129,7 +129,7 @@ function handleIncomingMessage(messageData, userKeys, userId) {
                     <div class="error">
                         <h2>Invalid Signature</h2>
                         <p>This message could not be verified. It may have been tampered with.</p>
-                        <a href="/invisibleink/${userId}">Go to your messages</a>
+                        <a href="/invisibleink/${encodeURIComponent(userId)}">Go to your messages</a>
                     </div>
                 </main>
             </div>
@@ -154,7 +154,7 @@ function handleIncomingMessage(messageData, userKeys, userId) {
                     <div class="error">
                         <h2>Decryption Failed</h2>
                         <p>Could not decrypt this message. It may not be intended for you.</p>
-                        <a href="/invisibleink/${userId}">Go to your messages</a>
+                        <a href="/invisibleink/${encodeURIComponent(userId)}">Go to your messages</a>
                     </div>
                 </main>
             </div>
@@ -287,7 +287,7 @@ function showContactPage(contactId, userId) {
     app.innerHTML = `
         <header>
             <h1>Invisible Ink</h1>
-            <a href="/invisibleink/${userId}">← Back to contacts</a>
+            <a href="/invisibleink/${encodeURIComponent(userId)}">← Back to contacts</a>
         </header>
         <main>
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
@@ -348,7 +348,7 @@ function displayReceivedMessage(senderId, message, userId, replyToken = null) {
                         <div id="replyMessageLink"></div>
                     </div>
                 ` : ''}
-                <a href="/invisibleink/${userId}">View all messages</a>
+                <a href="/invisibleink/${encodeURIComponent(userId)}">View all messages</a>
             </div>
         </main>
     `;
@@ -364,7 +364,7 @@ function showKeyManagement() {
     app.innerHTML = `
         <header>
             <h1>Invisible Ink</h1>
-            <a href="/invisibleink/${userId}">← Back to contacts</a>
+            <a href="/invisibleink/${encodeURIComponent(userId)}">← Back to contacts</a>
         </header>
         <main>
             <h2>Key Management</h2>
@@ -607,7 +607,7 @@ function showPendingMessage(replyToken, userId) {
     app.innerHTML = `
         <header>
             <h1>Invisible Ink</h1>
-            <a href="/invisibleink/${userId}">← Back to contacts</a>
+            <a href="/invisibleink/${encodeURIComponent(userId)}">← Back to contacts</a>
         </header>
         <main>
             <h2>Pending Reply</h2>
@@ -695,14 +695,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Root redirect
     if (path === '/invisibleink' || path === '/invisibleink/' || path === '/invisibleink/index.html') {
-        window.location.href = userId;
+        window.location.href = `/invisibleink/${encodeURIComponent(userId)}`;
         return;
     }
 
-    // Check if viewing contact
-    if (pathParts.length >= 4 && pathParts[0] === 'invisibleink' && pathParts[2] === 'contact') {
-        const contactId = decodeURIComponent(pathParts[3]);
-        showContactPage(contactId, userId);
+    // Check if viewing a user page
+    if (pathParts.length >= 2 && pathParts[0] === 'invisibleink') {
+        const viewingUserId = decodeURIComponent(pathParts[1]);
+
+        // Check if viewing contact: /invisibleink/userId/contact/contactId
+        if (pathParts.length >= 4 && pathParts[2] === 'contact') {
+            const contactId = decodeURIComponent(pathParts[3]);
+            showContactPage(contactId, userId);
+            return;
+        }
+
+        // If viewing own page or any user page, show contact list
+        showContactList(userId, keys);
         return;
     }
 
