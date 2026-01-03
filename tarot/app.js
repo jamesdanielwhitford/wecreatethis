@@ -1,6 +1,7 @@
 // Main application logic
 
 let currentReading = null;
+let selectedSpreadType = null;
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', async () => {
@@ -8,6 +9,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     registerServiceWorker();
     loadReadingsList();
     setupEventListeners();
+    setupSpreadSelectionModal();
+    setupTitleMessageModal();
     setupRenameModal();
     setupDeleteModal();
 });
@@ -23,70 +26,134 @@ function registerServiceWorker() {
 
 // Setup event listeners
 function setupEventListeners() {
-    const modal = document.getElementById('new-reading-modal');
     const fabBtn = document.getElementById('new-reading-fab');
-    const cancelBtn = document.getElementById('cancel-reading-btn');
-    const createBtn = document.getElementById('create-reading-btn');
-    const spreadSelect = document.getElementById('spread-select');
     const deckBtn = document.getElementById('deck-btn');
 
-    // Open modal
+    // Open spread selection modal
     fabBtn.addEventListener('click', () => {
-        modal.style.display = 'flex';
-    });
-
-    // Close modal
-    cancelBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-        resetModal();
-    });
-
-    // Click outside to close
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-            resetModal();
-        }
+        const spreadModal = document.getElementById('spread-select-modal');
+        spreadModal.style.display = 'flex';
     });
 
     // Navigate to deck browser
     deckBtn.addEventListener('click', () => {
         window.location.href = 'deck.html';
     });
+}
 
-    // Enable create button when spread is selected
-    spreadSelect.addEventListener('change', () => {
-        createBtn.disabled = !spreadSelect.value;
+// Setup spread selection modal
+function setupSpreadSelectionModal() {
+    const spreadModal = document.getElementById('spread-select-modal');
+    const cancelBtn = document.getElementById('cancel-spread-btn');
+    const spreadOptions = document.querySelectorAll('.spread-option');
+
+    // Handle spread selection
+    spreadOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            selectedSpreadType = option.dataset.spread;
+            spreadModal.style.display = 'none';
+            openTitleMessageModal();
+        });
     });
+
+    // Cancel button
+    cancelBtn.addEventListener('click', () => {
+        spreadModal.style.display = 'none';
+        selectedSpreadType = null;
+    });
+
+    // Click outside to close
+    spreadModal.addEventListener('click', (e) => {
+        if (e.target === spreadModal) {
+            spreadModal.style.display = 'none';
+            selectedSpreadType = null;
+        }
+    });
+}
+
+// Open title/message modal with appropriate settings
+function openTitleMessageModal() {
+    const titleModal = document.getElementById('title-message-modal');
+    const titleInput = document.getElementById('reading-title');
+    const messageGroup = document.getElementById('message-group');
+    const messageTextarea = document.getElementById('reading-message');
+
+    // Set placeholder to current date
+    const date = new Date();
+    const dateStr = date.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+    titleInput.placeholder = dateStr;
+
+    // Show/hide message field based on spread type
+    if (selectedSpreadType === 'single') {
+        messageGroup.style.display = 'block';
+    } else {
+        messageGroup.style.display = 'none';
+        messageTextarea.value = '';
+    }
+
+    // Clear previous values
+    titleInput.value = '';
+    messageTextarea.value = '';
+
+    // Show modal
+    titleModal.style.display = 'flex';
+
+    // Focus the title input
+    setTimeout(() => titleInput.focus(), 100);
+}
+
+// Setup title/message modal
+function setupTitleMessageModal() {
+    const titleModal = document.getElementById('title-message-modal');
+    const createBtn = document.getElementById('create-reading-btn');
+    const cancelBtn = document.getElementById('cancel-title-btn');
 
     // Create reading
     createBtn.addEventListener('click', async () => {
         const title = document.getElementById('reading-title').value.trim();
-        const spreadType = spreadSelect.value;
+        const message = document.getElementById('reading-message').value.trim();
 
-        if (!spreadType) return;
+        if (!selectedSpreadType) return;
 
         // Create and save the reading
-        const reading = await createReading(title, spreadType);
+        const reading = await createReading(title, selectedSpreadType, message);
 
-        // Close modal
-        modal.style.display = 'none';
-        resetModal();
+        // Close modal and reset
+        titleModal.style.display = 'none';
+        selectedSpreadType = null;
 
         // Navigate to the reading detail page
         window.location.href = `reading.html?id=${reading.id}`;
     });
-}
 
-// Reset modal form
-function resetModal() {
-    document.getElementById('reading-title').value = '';
-    document.getElementById('spread-select').value = '';
-    document.getElementById('create-reading-btn').disabled = true;
+    // Cancel button
+    cancelBtn.addEventListener('click', () => {
+        titleModal.style.display = 'none';
+        selectedSpreadType = null;
+    });
+
+    // Click outside to close
+    titleModal.addEventListener('click', (e) => {
+        if (e.target === titleModal) {
+            titleModal.style.display = 'none';
+            selectedSpreadType = null;
+        }
+    });
+
+    // Enter key in title to submit
+    document.getElementById('reading-title').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && selectedSpreadType !== 'single') {
+            createBtn.click();
+        }
+    });
 }
 
 // Create a new reading
-async function createReading(title, spreadType) {
+async function createReading(title, spreadType, message = '') {
     const spread = SPREADS[spreadType];
     if (!spread) return null;
 
@@ -101,6 +168,7 @@ async function createReading(title, spreadType) {
         spreadType: spreadType,
         spreadName: spread.name,
         date: new Date().toISOString(),
+        message: message || null,
         cards: cards.map((card, index) => ({
             ...card,
             position: spread.positions[index]

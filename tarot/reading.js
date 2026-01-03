@@ -55,8 +55,14 @@ function displayReading(reading) {
         const imagePath = getCardImagePath(card);
         const reversedClass = card.isReversed ? ' reversed' : '';
 
+        // For single card readings with a message, show the message instead of "Your Message"
+        let positionLabel = card.position.name;
+        if (reading.spreadType === 'single' && reading.message && reading.message.trim()) {
+            positionLabel = reading.message;
+        }
+
         cardEl.innerHTML = `
-            <div class="card-position">${card.position.name}</div>
+            <div class="card-position">${positionLabel}</div>
             ${imagePath ? `<img src="${imagePath}" alt="${card.name}" class="card-image${reversedClass}">` : ''}
             <div class="card-name">${card.name}</div>
         `;

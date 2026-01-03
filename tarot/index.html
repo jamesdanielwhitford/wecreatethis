@@ -27,30 +27,50 @@
         <button id="new-reading-fab" class="fab"></button>
     </div>
 
-    <!-- New Reading Modal -->
-    <div id="new-reading-modal" class="modal" style="display: none;">
+    <!-- Step 1: Spread Selection Modal -->
+    <div id="spread-select-modal" class="modal" style="display: none;">
         <div class="modal-content">
-            <h3>New Reading</h3>
+            <h3>Select Reading Type</h3>
 
-            <div class="form-group">
-                <label for="reading-title">Reading Title</label>
-                <input type="text" id="reading-title" class="form-input" placeholder="e.g., Morning Guidance">
-                <p class="hint">Leave blank for auto-generated title</p>
-            </div>
-
-            <div class="form-group">
-                <label for="spread-select">Spread Type</label>
-                <select id="spread-select" class="form-select">
-                    <option value="">Choose a spread...</option>
-                    <option value="single">Single Card</option>
-                    <option value="three">Three Card Spread</option>
-                    <option value="celtic">Celtic Cross</option>
-                </select>
+            <div class="spread-options">
+                <button class="spread-option" data-spread="single">
+                    <span class="spread-name">Single Card</span>
+                    <span class="spread-description">Quick daily card pull for guidance</span>
+                </button>
+                <button class="spread-option" data-spread="three">
+                    <span class="spread-name">Three Card Spread</span>
+                    <span class="spread-description">Past, Present, Future reading</span>
+                </button>
+                <button class="spread-option" data-spread="celtic">
+                    <span class="spread-name">Celtic Cross</span>
+                    <span class="spread-description">Comprehensive 10-card spread</span>
+                </button>
             </div>
 
             <div class="modal-actions">
-                <button id="create-reading-btn" class="modal-btn seen" disabled>Create Reading</button>
-                <button id="cancel-reading-btn" class="modal-btn cancel">Cancel</button>
+                <button id="cancel-spread-btn" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Title & Message Modal -->
+    <div id="title-message-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3 id="title-modal-heading">Reading Title</h3>
+
+            <div class="form-group">
+                <label for="reading-title">Title</label>
+                <input type="text" id="reading-title" class="form-input" placeholder="">
+            </div>
+
+            <div class="form-group" id="message-group" style="display: none;">
+                <label for="reading-message">Message</label>
+                <textarea id="reading-message" class="form-textarea" rows="3" placeholder="What guidance are you seeking?"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button id="create-reading-btn" class="modal-btn seen">Create Reading</button>
+                <button id="cancel-title-btn" class="modal-btn cancel">Cancel</button>
             </div>
         </div>
     </div>

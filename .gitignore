@@ -17,4 +17,7 @@ download-tarot-images.py
 images-for-tarot.md
 tarot-images/
 test-tinypng.py
-Cards-jpg
+Cards-jpg/
+convert-second-deck.py
+create-pixel-deck.py
+test-pixel-Fool.webp
