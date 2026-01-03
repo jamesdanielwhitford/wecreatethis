@@ -344,6 +344,20 @@ function addContact() {
     showContactList(userId);
 }
 
+// Edit contact name
+function editContactName(contactId, userId) {
+    const contacts = getContacts();
+    const currentName = contacts[contactId] || 'Unknown Contact';
+
+    const newName = prompt(`Enter new name for contact:`, currentName);
+
+    if (newName !== null && newName.trim() !== '') {
+        contacts[contactId] = newName.trim();
+        saveContacts(contacts);
+        showContactPage(contactId, userId);
+    }
+}
+
 // Show contact page with messages
 function showContactPage(contactId, userId) {
     const contacts = getContacts();
@@ -367,7 +381,10 @@ function showContactPage(contactId, userId) {
             <a href="/invisibleink/${userId}">← Back to contacts</a>
         </header>
         <main>
-            <h2>${contactName}</h2>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <h2 style="margin: 0;">${contactName}</h2>
+                <button onclick="editContactName('${contactId}', '${userId}')" style="font-size: 0.8em;">✏️ Edit</button>
+            </div>
             <p><small>ID: ${contactId}</small></p>
 
             <div class="messages">
@@ -629,6 +646,7 @@ function showPendingMessage(replyToken, userId) {
 
 // Make functions globally available
 window.addContact = addContact;
+window.editContactName = editContactName;
 window.composeMessage = composeMessage;
 window.composeAnonymousMessage = composeAnonymousMessage;
 window.sendReply = sendReply;
