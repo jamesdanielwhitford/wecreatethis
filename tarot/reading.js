@@ -109,21 +109,15 @@ function getSpreadGuidance(spreadType) {
     const guidance = {
         single: `
             <p>The single card reading offers direct, focused insight into your question or situation.</p>
-            <div class="tip">
-                <p><strong>How to interpret:</strong> Consider the card's traditional meaning in relation to your question. Pay attention to whether it's upright or reversed, as this affects the energy of the message.</p>
-            </div>
+            <p><strong>How to interpret:</strong> Consider the card's traditional meaning in relation to your question. Pay attention to whether it's upright or reversed, as this affects the energy of the message.</p>
         `,
         three: `
             <p>The three card spread provides a narrative journey through time, offering context and direction.</p>
-            <div class="tip">
-                <p><strong>How to interpret:</strong> Read the cards as a story flowing from Past to Present to Future. Look for connections between the cards - do they reinforce each other or present contrasts? The Past shows influences, the Present reveals your current state, and the Future suggests where you're heading if you continue on this path.</p>
-            </div>
+            <p><strong>How to interpret:</strong> Read the cards as a story flowing from Past to Present to Future. Look for connections between the cards - do they reinforce each other or present contrasts? The Past shows influences, the Present reveals your current state, and the Future suggests where you're heading if you continue on this path.</p>
         `,
         celtic: `
             <p>The Celtic Cross is one of the most comprehensive spreads, offering deep insight into complex situations.</p>
-            <div class="tip">
-                <p><strong>How to interpret:</strong> Start with cards 1 and 2 (Present and Challenge) to understand the core situation. Then read cards 3-4 (Foundation and Past) for context. Cards 5-6 (Crown and Future) show potential outcomes. Finally, cards 7-10 reveal internal factors (Self), external influences (Environment), your emotional state (Hopes/Fears), and the likely outcome.</p>
-            </div>
+            <p><strong>How to interpret:</strong> Start with cards 1 and 2 (Present and Challenge) to understand the core situation. Then read cards 3-4 (Foundation and Past) for context. Cards 5-6 (Crown and Future) show potential outcomes. Finally, cards 7-10 reveal internal factors (Self), external influences (Environment), your emotional state (Hopes/Fears), and the likely outcome.</p>
             <p>Take your time with this spread - each card adds layers of meaning to the overall picture.</p>
         `
     };

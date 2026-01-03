@@ -253,7 +253,7 @@ main {
 
 .card-position {
     font-size: 0.85rem;
-    color: var(--accent);
+    color: var(--text);
     text-transform: uppercase;
     margin-bottom: 12px;
     font-weight: 500;
@@ -326,7 +326,7 @@ main {
 .meaning-section h3,
 .position-description h3 {
     font-size: 1.2rem;
-    color: var(--accent);
+    color: var(--text);
     margin-bottom: 12px;
 }
 
@@ -363,7 +363,7 @@ main {
 
 .deck-section-title {
     font-size: 1.3rem;
-    color: var(--accent);
+    color: var(--text);
     margin-bottom: 16px;
     text-align: center;
 }
@@ -401,7 +401,7 @@ main {
 
 .current-deck-name {
     text-align: center;
-    color: var(--accent);
+    color: var(--text);
     font-size: 0.9rem;
     margin-top: -10px;
     margin-bottom: 20px;
@@ -513,7 +513,7 @@ main {
 
 .deck-status {
     font-size: 0.8rem;
-    color: var(--accent);
+    color: var(--text);
     font-weight: 500;
 }
 
@@ -615,7 +615,7 @@ main {
 }
 
 .info-content h3 {
-    color: var(--accent);
+    color: var(--text);
     font-size: 1.2rem;
     margin-top: 24px;
     margin-bottom: 12px;
@@ -641,21 +641,9 @@ main {
 }
 
 .info-content li strong {
-    color: var(--accent);
+    color: var(--text);
     display: block;
     margin-bottom: 4px;
-}
-
-.info-content .tip {
-    background: var(--secondary-bg);
-    padding: 16px;
-    border-radius: 8px;
-    border-left: 4px solid var(--accent);
-    margin: 20px 0;
-}
-
-.info-content .tip p {
-    margin: 0;
 }
 
 footer {
@@ -671,7 +659,7 @@ footer {
 }
 
 #online-status {
-    color: var(--accent);
+    color: var(--text);
 }
 
 /* Readings List */
@@ -974,7 +962,7 @@ footer {
 
 .delete-message span {
     font-weight: 600;
-    color: var(--accent);
+    color: var(--text);
 }
 
 /* Mobile optimizations for very small screens */
