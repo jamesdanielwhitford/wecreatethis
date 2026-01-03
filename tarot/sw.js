@@ -1,6 +1,6 @@
 // Service Worker for Tarot Reader
 
-const CACHE_NAME = 'tarot-v8';
+const CACHE_NAME = 'tarot-v9';
 const ASSETS = [
   '/tarot/index.html',
   '/tarot/reading.html',
@@ -71,7 +71,7 @@ const ASSETS = [
   '/tarot/images/Hermit.webp',
   '/tarot/images/Hierophant.webp',
   '/tarot/images/High Priestess.webp',
-  '/tarot/images/Judgement.webp',
+  '/tarot/images/Judgment.webp',
   '/tarot/images/Justice.webp',
   '/tarot/images/King of Cups.webp',
   '/tarot/images/King of Pentacles.webp',
