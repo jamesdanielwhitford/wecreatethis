@@ -1,0 +1,11 @@
+# Cloudflare Pages / Netlify redirects
+# Client-side routing support for sub-apps
+
+# Invisible Ink - serve index.html for all invisibleink routes
+/invisibleink/*  /invisibleink/index.html  200
+
+# Tarot app routing (if needed in future)
+/tarot/*  /tarot/index.html  200
+
+# Birdle app routing (if needed in future)
+/birdle/*  /birdle/index.html  200
