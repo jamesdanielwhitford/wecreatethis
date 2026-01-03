@@ -240,6 +240,17 @@ async function handleIncomingMessage(messageData, userId) {
                 saveContacts(contacts);
             }
 
+            // Move the original anonymous message into this contact's conversation thread
+            const contactMessages = getMessages(senderId);
+            contactMessages.push({
+                from: originalMessage.from,
+                to: senderId,
+                message: originalMessage.message,
+                timestamp: originalMessage.timestamp,
+                sent: true
+            });
+            saveMessages(senderId, contactMessages);
+
             // Remove this message from anonymous list since we now know who they are
             const updatedSentMessages = sentMessages.filter(msg => msg.replyToken !== replyToken);
             localStorage.setItem('invisibleink_sent_anonymous', JSON.stringify(updatedSentMessages));
