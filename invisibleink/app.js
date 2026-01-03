@@ -334,6 +334,9 @@ function showContactPage(contactId, userId) {
     const contactName = contacts[contactId] || 'Unknown Contact';
     const messages = getMessages(contactId);
 
+    // Sort messages by timestamp (oldest first)
+    messages.sort((a, b) => a.timestamp - b.timestamp);
+
     console.log('showContactPage DEBUG:', {
         contactId,
         userId,
