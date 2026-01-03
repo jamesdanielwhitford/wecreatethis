@@ -30,6 +30,9 @@ async function loadReading() {
 }
 
 function displayReading(reading) {
+    // Add spread-specific class to body for layout
+    document.body.className = `reading-page spread-${reading.spreadType}`;
+
     // Set title and meta info
     document.getElementById('reading-title').textContent = reading.title;
 
