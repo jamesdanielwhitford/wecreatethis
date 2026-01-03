@@ -169,6 +169,7 @@ async function createReading(title, spreadType, message = '') {
         spreadName: spread.name,
         date: new Date().toISOString(),
         message: message || null,
+        revealedCardIndex: 0,
         cards: cards.map((card, index) => ({
             ...card,
             position: spread.positions[index]

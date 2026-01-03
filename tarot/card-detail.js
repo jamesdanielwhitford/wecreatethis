@@ -31,8 +31,20 @@ async function loadCardDetail() {
     displayCardDetail(currentCard);
 
     // Setup back button
-    document.getElementById('back-btn').addEventListener('click', (e) => {
+    document.getElementById('back-btn').addEventListener('click', async (e) => {
         e.preventDefault();
+
+        // Initialize revealedCardIndex if not set (for older readings)
+        if (currentReading.revealedCardIndex === undefined) {
+            currentReading.revealedCardIndex = 0;
+        }
+
+        // Reveal next card if current card was just revealed (including the last card)
+        if (cardIndex === currentReading.revealedCardIndex) {
+            currentReading.revealedCardIndex++;
+            await updateReading(currentReading);
+        }
+
         window.location.href = `reading.html?id=${readingId}`;
     });
 }

@@ -270,6 +270,58 @@ main {
     font-weight: 400;
 }
 
+/* Next card to read - golden glow effect */
+.tarot-card.next-to-read .card-image {
+    animation: golden-glow 2s ease-in-out infinite;
+}
+
+@keyframes golden-glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6));
+    }
+    50% {
+        filter: drop-shadow(0 0 35px rgba(255, 215, 0, 0.9));
+    }
+}
+
+/* Face-down card styles */
+.tarot-card.face-down {
+    cursor: default;
+    opacity: 0.7;
+}
+
+.tarot-card.face-down:hover {
+    opacity: 0.7;
+}
+
+.card-back {
+    background: #000000;
+    width: 100%;
+    max-width: 200px;
+    aspect-ratio: 2/3;
+    border-radius: 4px;
+    border: 2px solid var(--accent);
+}
+
+/* Adjust card-back size for different spreads */
+.spread-three .card-back {
+    max-width: 100px;
+}
+
+.spread-celtic .card-back {
+    max-width: 80px;
+}
+
+@media (max-width: 360px) {
+    .spread-three .card-back {
+        max-width: 85px;
+    }
+
+    .spread-celtic .card-back {
+        max-width: 65px;
+    }
+}
+
 /* Card Image */
 .card-image {
     width: 100%;

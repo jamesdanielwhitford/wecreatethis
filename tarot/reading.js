@@ -46,6 +46,11 @@ function displayReading(reading) {
 
     document.getElementById('reading-info').textContent = `${reading.spreadName} • ${dateStr}`;
 
+    // Initialize revealedCardIndex if not set (for older readings)
+    if (reading.revealedCardIndex === undefined) {
+        reading.revealedCardIndex = 0;
+    }
+
     // Display cards
     const container = document.getElementById('cards-view');
     container.innerHTML = '';
@@ -53,8 +58,10 @@ function displayReading(reading) {
     reading.cards.forEach((card, index) => {
         const cardEl = document.createElement('div');
         cardEl.className = 'tarot-card';
-        cardEl.style.cursor = 'pointer';
 
+        const isRevealed = index <= reading.revealedCardIndex;
+        const isNextCard = index === reading.revealedCardIndex;
+        const isLastCard = index === reading.cards.length - 1;
         const imagePath = getCardImagePath(card);
         const reversedClass = card.isReversed ? ' reversed' : '';
 
@@ -64,16 +71,34 @@ function displayReading(reading) {
             positionLabel = reading.message;
         }
 
-        cardEl.innerHTML = `
-            <div class="card-position">${positionLabel}</div>
-            ${imagePath ? `<img src="${imagePath}" alt="${card.name}" class="card-image${reversedClass}">` : ''}
-            <div class="card-name">${card.name}</div>
-        `;
+        if (isRevealed) {
+            // Show revealed card with full details
+            cardEl.style.cursor = 'pointer';
 
-        // Navigate to card detail when clicked
-        cardEl.addEventListener('click', () => {
-            window.location.href = `card-detail.html?readingId=${currentReading.id}&cardIndex=${index}`;
-        });
+            // Add golden glow to the current card to read
+            if (isNextCard) {
+                cardEl.classList.add('next-to-read');
+            }
+
+            cardEl.innerHTML = `
+                <div class="card-position">${positionLabel}</div>
+                ${imagePath ? `<img src="${imagePath}" alt="${card.name}" class="card-image${reversedClass}">` : ''}
+                <div class="card-name">${card.name}</div>
+            `;
+
+            // Navigate to card detail when clicked
+            cardEl.addEventListener('click', () => {
+                window.location.href = `card-detail.html?readingId=${currentReading.id}&cardIndex=${index}`;
+            });
+        } else {
+            // Show face-down card (black)
+            cardEl.classList.add('face-down');
+            cardEl.innerHTML = `
+                <div class="card-position">${positionLabel}</div>
+                <div class="card-back"></div>
+                <div class="card-name">&nbsp;</div>
+            `;
+        }
 
         container.appendChild(cardEl);
     });
