@@ -1085,6 +1085,7 @@ footer {
     max-width: 400px;
     margin: 0 auto 40px;
     position: relative;
+    justify-items: center;
 }
 
 .spread-celtic .tarot-card {
