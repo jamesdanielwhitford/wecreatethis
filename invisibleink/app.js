@@ -120,6 +120,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pathParts.length >= 2 && pathParts[0] === 'invisibleink') {
         const viewingUserId = pathParts[1];
 
+        // Check if viewing a contact: /invisibleink/userId/contact/contactId
+        if (pathParts.length >= 4 && pathParts[2] === 'contact') {
+            const contactId = pathParts[3];
+            showContactPage(contactId, userId);
+            return;
+        }
+
         // If viewing own page, show contact list
         if (viewingUserId === userId) {
             showContactList(userId);
