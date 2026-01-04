@@ -41,8 +41,9 @@ function generateDiamondPattern(cardIndex) {
     ctx.lineWidth = lineWidth;
 
     // Draw diagonal lines going down-right (/)
+    // Need enough lines to cover corners - start well before 0 and go past width
     const numDiagonals1 = Math.ceil((300 + 450) / spacing) + 2;
-    for (let i = -10; i < numDiagonals1; i++) {
+    for (let i = -20; i < numDiagonals1; i++) {
         const startX = i * spacing;
         const startY = 0;
         const endX = startX + 450;
@@ -55,7 +56,8 @@ function generateDiamondPattern(cardIndex) {
     }
 
     // Draw diagonal lines going down-left (\)
-    for (let i = -10; i < numDiagonals1; i++) {
+    // Need to extend further in both directions to cover all corners
+    for (let i = -20; i < numDiagonals1 + 10; i++) {
         const startX = i * spacing;
         const startY = 0;
         const endX = startX - 450;
