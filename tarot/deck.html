@@ -15,6 +15,7 @@
 <body>
     <div class="reading-nav">
         <a href="index.html" class="back-btn">&larr; Back</a>
+        <button id="card-back-settings-btn" class="settings-btn" title="Card Back Settings">⚙️</button>
     </div>
 
     <h1>Full Tarot Deck</h1>
@@ -52,8 +53,21 @@
         </div>
     </div>
 
+    <!-- Card Back Settings Modal -->
+    <div id="card-back-modal" class="modal" style="display: none;">
+        <div class="modal-content card-back-modal">
+            <h2>Card Back Style</h2>
+            <p class="modal-subtitle">Choose the design for unrevealed cards in your readings</p>
+
+            <div id="card-back-options" class="card-back-options"></div>
+
+            <button id="close-card-back-modal" class="modal-btn">Done</button>
+        </div>
+    </div>
+
     <script src="tarot-data.js"></script>
     <script src="deck-manager.js"></script>
+    <script src="card-back-patterns.js"></script>
     <script src="deck.js"></script>
 </body>
 </html>

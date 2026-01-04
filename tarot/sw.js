@@ -1,6 +1,6 @@
 // Service Worker for Tarot Reader
 
-const CACHE_NAME = 'tarot-v14';
+const CACHE_NAME = 'tarot-v15';
 const ASSETS = [
   '/tarot/index.html',
   '/tarot/reading.html',
@@ -17,6 +17,7 @@ const ASSETS = [
   '/tarot/db.js',
   '/tarot/tarot-data.js',
   '/tarot/card-descriptions.js',
+  '/tarot/card-back-patterns.js',
   '/tarot/manifest.json',
   // Card images
   '/tarot/images/01 of Cups.webp',

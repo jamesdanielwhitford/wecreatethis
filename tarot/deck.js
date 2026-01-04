@@ -9,6 +9,7 @@ if (localStorage.getItem('tarot-deck-version') !== '2') {
 
 document.addEventListener('DOMContentLoaded', () => {
     displayDeck();
+    setupCardBackModal();
 });
 
 function displayDeck() {
@@ -59,6 +60,71 @@ function renderCardGrid(containerId, cards) {
         });
 
         container.appendChild(cardEl);
+    });
+}
+
+function setupCardBackModal() {
+    const modal = document.getElementById('card-back-modal');
+    const openBtn = document.getElementById('card-back-settings-btn');
+    const closeBtn = document.getElementById('close-card-back-modal');
+
+    // Open modal
+    openBtn.addEventListener('click', () => {
+        renderCardBackOptions();
+        modal.style.display = 'flex';
+    });
+
+    // Close modal
+    closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+
+function renderCardBackOptions() {
+    const container = document.getElementById('card-back-options');
+    const currentStyle = getCurrentCardBackStyle();
+    container.innerHTML = '';
+
+    Object.keys(CARD_BACK_STYLES).forEach(styleId => {
+        const style = CARD_BACK_STYLES[styleId];
+        const optionEl = document.createElement('div');
+        optionEl.className = 'card-back-option';
+        if (styleId === currentStyle) {
+            optionEl.classList.add('selected');
+        }
+
+        // Generate a preview card back (use card index 0 for preview)
+        const previewImage = generateCardBackPattern(styleId, 0);
+
+        optionEl.innerHTML = `
+            <div class="card-back-preview">
+                <img src="${previewImage}" alt="${style.name}">
+            </div>
+            <div class="card-back-info">
+                <h3>${style.name}</h3>
+                <p>${style.description}</p>
+            </div>
+        `;
+
+        optionEl.addEventListener('click', () => {
+            // Update selection
+            document.querySelectorAll('.card-back-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            optionEl.classList.add('selected');
+
+            // Save preference
+            setCardBackStyle(styleId);
+        });
+
+        container.appendChild(optionEl);
     });
 }
 

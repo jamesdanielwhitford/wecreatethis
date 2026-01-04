@@ -91,11 +91,16 @@ function displayReading(reading) {
                 window.location.href = `card-detail.html?readingId=${currentReading.id}&cardIndex=${index}`;
             });
         } else {
-            // Show face-down card (black)
+            // Show face-down card with procedural pattern overlay
             cardEl.classList.add('face-down');
+            const cardBackStyle = getCurrentCardBackStyle();
+            const cardBackImage = generateCardBackPattern(cardBackStyle, index);
             cardEl.innerHTML = `
                 <div class="card-position">${positionLabel}</div>
-                <div class="card-back"></div>
+                <div class="card-image-wrapper">
+                    ${imagePath ? `<img src="${imagePath}" alt="${card.name}" class="card-image">` : ''}
+                    <img src="${cardBackImage}" alt="Card back" class="card-back-overlay">
+                </div>
                 <div class="card-name">&nbsp;</div>
             `;
         }
