@@ -26,6 +26,16 @@ Tarot Reader is a simple, mystical web application that allows users to perform 
   - Consistent text color scheme: All headings and text use `var(--text)` for readability
   - Accent color (`var(--accent)`) used only for borders, buttons, and decorative elements, not text
 - **Quintessential Font** - Custom Google Font used throughout for mystical aesthetic
+- **Procedural Card Back Patterns** - Unique card back designs for unrevealed cards
+  - Settings button (⚙️) in deck browser to change card back style
+  - Three procedural pattern options:
+    - **Diamond** (default) - Classic playing card diamond pattern with deep red background and black intersecting diagonal lines
+    - **Water** - Realistic blue water ripple patterns using noise-based displacement with multiple interference points
+    - **Spiral** - White galactic spiral pattern on black background with particle-based rendering
+  - Each card in a spread gets a unique variation of the pattern (seeded by card index)
+  - Card backs overlay actual card images to maintain exact dimensions across spreads
+  - Patterns stored in localStorage for persistence
+  - All patterns generated procedurally using Canvas API (no image files)
 
 ### Completed Features (Recent)
 - **New Reading Creation Flow** ✓
@@ -192,7 +202,8 @@ tarot/
 ├── db.js               # IndexedDB wrapper with CRUD operations
 ├── tarot-data.js       # Card data (78 cards) and spread definitions
 ├── card-descriptions.js # Card descriptions (78 cards, ~90KB) with visual symbolism
-├── sw.js               # Service worker (v7)
+├── card-back-patterns.js # Procedural card back pattern generators
+├── sw.js               # Service worker (v15)
 ├── manifest.json       # PWA manifest
 ├── list-of-cards.md    # Reference list with URLs to card meanings
 ├── icon-192.png        # App icon (192x192) - TODO: needs creation
@@ -389,7 +400,7 @@ When a card is drawn:
 
 ### Version Management
 - Current version: 1.0.0
-- Service worker cache version: v7 (tarot-v7)
+- Service worker cache version: v15 (tarot-v15)
 - Update version in: `sw.js` (CACHE_NAME), `manifest.json`, `index.html`
 - Use `dev/bump-version.sh` for version increments
 
