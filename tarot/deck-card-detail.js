@@ -4,6 +4,7 @@ let currentCard = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadCardDetail();
+    setupBackButton();
 });
 
 function loadCardDetail() {
@@ -65,5 +66,15 @@ function displayCardDetail(card) {
         const li = document.createElement('li');
         li.textContent = meaning;
         reversedList.appendChild(li);
+    });
+}
+
+function setupBackButton() {
+    const backBtn = document.getElementById('back-btn');
+    backBtn.addEventListener('click', (e) => {
+        // Don't navigate using the default link behavior
+        // Instead use browser history which will restore scroll position
+        e.preventDefault();
+        window.history.back();
     });
 }
