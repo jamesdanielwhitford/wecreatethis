@@ -10,6 +10,7 @@ if (localStorage.getItem('tarot-deck-version') !== '2') {
 document.addEventListener('DOMContentLoaded', () => {
     displayDeck();
     setupCardBackModal();
+    restoreScrollPosition();
 });
 
 function displayDeck() {
@@ -56,6 +57,8 @@ function renderCardGrid(containerId, cards) {
 
         // Navigate to standalone card detail page
         cardEl.addEventListener('click', () => {
+            // Save scroll position before navigating
+            saveScrollPosition();
             window.location.href = `deck-card-detail.html?cardName=${encodeURIComponent(card.name)}`;
         });
 
@@ -126,5 +129,21 @@ function renderCardBackOptions() {
 
         container.appendChild(optionEl);
     });
+}
+
+function saveScrollPosition() {
+    sessionStorage.setItem('deckScrollPosition', window.scrollY.toString());
+}
+
+function restoreScrollPosition() {
+    const savedPosition = sessionStorage.getItem('deckScrollPosition');
+    if (savedPosition !== null) {
+        // Use requestAnimationFrame to ensure DOM is fully rendered
+        requestAnimationFrame(() => {
+            window.scrollTo(0, parseInt(savedPosition, 10));
+            // Clear the saved position after restoring
+            sessionStorage.removeItem('deckScrollPosition');
+        });
+    }
 }
 
