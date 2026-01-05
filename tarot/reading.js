@@ -159,6 +159,7 @@ function setupToggleButton() {
     const toggleBtn = document.getElementById('toggle-view-btn');
     const cardsView = document.getElementById('cards-view');
     const infoView = document.getElementById('info-view');
+    const backBtn = document.getElementById('back-btn');
 
     toggleBtn.addEventListener('click', () => {
         showingInfo = !showingInfo;
@@ -169,14 +170,29 @@ function setupToggleButton() {
             infoView.style.display = 'block';
             toggleBtn.classList.remove('info-btn');
             toggleBtn.classList.add('cards-btn');
-            toggleBtn.querySelector('.btn-icon').textContent = '';
+            toggleBtn.textContent = '';
         } else {
             // Show cards, hide info
             cardsView.style.display = '';  // Remove inline style to let CSS take over
             infoView.style.display = 'none';
             toggleBtn.classList.remove('cards-btn');
             toggleBtn.classList.add('info-btn');
-            toggleBtn.querySelector('.btn-icon').textContent = 'i';
+            toggleBtn.textContent = 'i';
         }
+    });
+
+    // Make back button return to cards view when on info view
+    backBtn.addEventListener('click', (e) => {
+        if (showingInfo) {
+            e.preventDefault();
+            // Switch back to cards view
+            showingInfo = false;
+            cardsView.style.display = '';
+            infoView.style.display = 'none';
+            toggleBtn.classList.remove('cards-btn');
+            toggleBtn.classList.add('info-btn');
+            toggleBtn.textContent = 'i';
+        }
+        // Otherwise let the default link behavior happen (go to index.html)
     });
 }

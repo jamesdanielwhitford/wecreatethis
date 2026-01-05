@@ -1,6 +1,6 @@
 // Service Worker for Tarot Reader
 
-const CACHE_NAME = 'tarot-v17';
+const CACHE_NAME = 'tarot-v19';
 const ASSETS = [
   '/tarot/index.html',
   '/tarot/reading.html',
