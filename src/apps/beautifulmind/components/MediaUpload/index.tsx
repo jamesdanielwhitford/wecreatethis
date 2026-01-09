@@ -555,8 +555,6 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
                   {existingMedia.length > 0 && (
                     <div className={styles.mediaGrid}>
                       {existingMedia.map((attachment) => {
-                        const isTemp = isPendingFile(attachment);
-                        
                         return (
                           <div key={attachment.id} className={styles.mediaItem}>
                             {/* All existing media display code remains the same */}

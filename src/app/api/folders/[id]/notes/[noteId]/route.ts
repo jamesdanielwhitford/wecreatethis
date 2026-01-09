@@ -49,7 +49,7 @@ export async function POST(
     console.log('Adding note to folder:', noteResult.data.title, '->', folderResult.data.title);
     
     // Add the note to the folder using the helper function
-    const { data, error } = await supabase.rpc('add_note_to_folder', {
+    const { error } = await supabase.rpc('add_note_to_folder', {
       p_folder_id: params.id,
       p_note_id: params.noteId,
       p_added_by: null // Could be set to user ID when auth is implemented

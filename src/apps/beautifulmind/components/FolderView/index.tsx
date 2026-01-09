@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Folder, Note, NoteSuggestion } from '../../types/notes.types';
-import { folderManagementService, foldersService } from '../../utils/api';
+import { folderManagementService } from '../../utils/api';
 import Breadcrumb from '../Breadcrumb';
 import { getFolderPath } from '../../utils/folder-hierarchy';
 import styles from './styles.module.css';
@@ -92,7 +92,7 @@ const FolderView: React.FC<FolderViewProps> = ({
       
       // Get ALL notes not in folder, ordered by relevance (no threshold filtering)
       const response = await folderManagementService.getSuggestedNotes(folder.id, 0, 50); // threshold=0, limit=50
-      setSuggestedNotes(response.suggested_notes || []);
+      setSuggestedNotes(response.suggested_notes as NoteSuggestion[] || []);
     } catch (err) {
       setSuggestionsError(err instanceof Error ? err.message : 'Failed to load suggestions');
     } finally {
@@ -247,7 +247,7 @@ const FolderView: React.FC<FolderViewProps> = ({
         <div className={styles.folderInfo}>
           <h2 className={styles.sectionTitle}>📂 Folder Contents</h2>
           <p className={styles.folderDescription}>
-            Notes you've manually added to this folder
+            Notes you&apos;ve manually added to this folder
           </p>
         </div>
         <button
@@ -290,7 +290,7 @@ const FolderView: React.FC<FolderViewProps> = ({
             <div className={styles.emptyNotes}>
               <div className={styles.emptyIcon}>📝</div>
               <h4>No notes in this folder yet</h4>
-              <p>Click "Add Notes" to manually add notes to "{folder.title}"</p>
+              <p>Click &quot;Add Notes&quot; to manually add notes to &quot;{folder.title}&quot;</p>
             </div>
           ) : (
             <div className={styles.notesList}>
@@ -360,7 +360,7 @@ const FolderView: React.FC<FolderViewProps> = ({
         <div className={styles.modal} onClick={() => setShowAddNotesModal(false)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle}>Add Notes to "{folder.title}"</h3>
+              <h3 className={styles.modalTitle}>Add Notes to &quot;{folder.title}&quot;</h3>
               <button 
                 className={styles.modalClose}
                 onClick={() => setShowAddNotesModal(false)}
@@ -396,7 +396,7 @@ const FolderView: React.FC<FolderViewProps> = ({
                     <div className={styles.noSuggestions}>
                       <div className={styles.noSuggestionsIcon}>📝</div>
                       <h4>No notes available to add</h4>
-                      <p>All existing notes are already in this folder, or you haven't created any notes yet.</p>
+                      <p>All existing notes are already in this folder, or you haven&apos;t created any notes yet.</p>
                     </div>
                   ) : (
                     <div className={styles.suggestionsList}>

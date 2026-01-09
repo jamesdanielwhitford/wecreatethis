@@ -26,63 +26,6 @@ async function downloadImageFile(storagePath: string): Promise<Blob> {
   return data;
 }
 
-// Helper function to resize image and convert to base64
-async function resizeImageToBase64(blob: Blob, maxSize: number = 512): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    if (!ctx) {
-      reject(new Error('Could not get canvas context'));
-      return;
-    }
-
-    img.onload = () => {
-      // Calculate new dimensions while maintaining aspect ratio
-      let { width, height } = img;
-      
-      if (width > height) {
-        if (width > maxSize) {
-          height = (height * maxSize) / width;
-          width = maxSize;
-        }
-      } else {
-        if (height > maxSize) {
-          width = (width * maxSize) / height;
-          height = maxSize;
-        }
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-
-      // Draw resized image
-      ctx.drawImage(img, 0, 0, width, height);
-
-      // Convert to base64
-      canvas.toBlob((resizedBlob) => {
-        if (!resizedBlob) {
-          reject(new Error('Failed to resize image'));
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = () => {
-          const base64 = reader.result as string;
-          // Remove data:image/jpeg;base64, prefix
-          const base64Data = base64.split(',')[1];
-          resolve(base64Data);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(resizedBlob);
-      }, 'image/jpeg', 0.8);
-    };
-
-    img.onerror = reject;
-    img.src = URL.createObjectURL(blob);
-  });
-}
 
 // Alternative server-side image processing (simpler approach)
 async function convertBlobToBase64(blob: Blob): Promise<string> {

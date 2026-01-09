@@ -95,7 +95,7 @@ export async function GET() {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Test basic connection by trying to query notes table
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('notes')
       .select('count')
       .limit(1);

@@ -1,7 +1,7 @@
 // src/apps/openmind/utils/folderStructure.ts
 
 import { createClient } from '@supabase/supabase-js';
-import { Folder, FolderFormData } from '@/apps/beautifulmind/types/notes.types';
+import { Folder, FolderFormData, Note } from '@/apps/beautifulmind/types/notes.types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -165,7 +165,7 @@ export class FolderStructureManager {
   /**
    * Gets all notes from OpenMind folders for a specific date range
    */
-  async getNotesForDateRange(startDate: Date, endDate: Date, userId: string): Promise<any[]> {
+  async getNotesForDateRange(startDate: Date, endDate: Date, userId: string): Promise<Note[]> {
     try {
       // Find the root OpenMind folder
       const { data: rootFolder } = await supabase

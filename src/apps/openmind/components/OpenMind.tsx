@@ -1,8 +1,8 @@
 // src/apps/openmind/components/OpenMind.tsx
 "use client"
 
-import React, { useState, useEffect } from 'react';
-import { ViewMode, DayEntries } from '../types/openmind.types';
+import React, { useState } from 'react';
+import { ViewMode, OpenMindEntry } from '../types/openmind.types';
 import { useOpenMindEntries } from '../hooks/useOpenMindEntries';
 import { useVoiceRecording } from '../hooks/useVoiceRecording';
 import VoiceRecorder from './VoiceRecorder';
@@ -15,7 +15,7 @@ import styles from './OpenMind.module.css';
 const OpenMind: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedNote, setSelectedNote] = useState<any>(null);
+  const [selectedNote, setSelectedNote] = useState<OpenMindEntry | null>(null);
   
   const { entries, loading, error, refreshEntries } = useOpenMindEntries(currentDate, viewMode);
   const { recording, startRecording, stopRecording, duration } = useVoiceRecording({

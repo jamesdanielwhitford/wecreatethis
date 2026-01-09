@@ -41,7 +41,7 @@ export async function GET(
     // Add URLs to media attachments
     const noteWithUrls = {
       ...data,
-      media_attachments: data.media_attachments?.map((attachment: any) => ({
+      media_attachments: data.media_attachments?.map((attachment: { storage_path: string; thumbnail_path?: string }) => ({
         ...attachment,
         url: getMediaUrl(attachment.storage_path),
         thumbnailUrl: attachment.thumbnail_path ? getMediaUrl(attachment.thumbnail_path) : undefined
@@ -86,7 +86,7 @@ export async function PUT(
     // Add URLs to media attachments
     const noteWithUrls = {
       ...data,
-      media_attachments: data.media_attachments?.map((attachment: any) => ({
+      media_attachments: data.media_attachments?.map((attachment: { storage_path: string; thumbnail_path?: string }) => ({
         ...attachment,
         url: getMediaUrl(attachment.storage_path),
         thumbnailUrl: attachment.thumbnail_path ? getMediaUrl(attachment.thumbnail_path) : undefined

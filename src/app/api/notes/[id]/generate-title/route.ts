@@ -170,7 +170,7 @@ export async function POST(
     // Add URLs to media attachments
     const noteWithUrls = {
       ...updatedNote,
-      media_attachments: updatedNote.media_attachments?.map((attachment: any) => ({
+      media_attachments: updatedNote.media_attachments?.map((attachment: { storage_path: string; thumbnail_path?: string }) => ({
         ...attachment,
         url: supabase.storage.from('note-media').getPublicUrl(attachment.storage_path).data.publicUrl,
         thumbnailUrl: attachment.thumbnail_path ? supabase.storage.from('note-media').getPublicUrl(attachment.thumbnail_path).data.publicUrl : undefined

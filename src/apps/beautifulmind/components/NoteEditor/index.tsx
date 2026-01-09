@@ -169,7 +169,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       if (!note?.media_attachments?.some(a => a.id === attachment.id)) {
         await mediaService.deleteAttachment(attachment.id);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to delete media');
     }
   };
@@ -201,7 +201,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       }, 1000);
       
       setError(null);
-    } catch (err) {
+    } catch {
       setError('Failed to retry transcription');
     }
   };
@@ -223,7 +223,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       }, 1000);
       
       setError(null);
-    } catch (err) {
+    } catch {
       setError('Failed to generate description');
     }
   };
@@ -243,7 +243,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       }, 1000);
       
       setError(null);
-    } catch (err) {
+    } catch {
       setError('Failed to update description');
     }
   };
@@ -257,7 +257,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     const descriptions = pendingFiles.map(pf => pf.description);
 
     try {
-      const attachments = await mediaService.uploadFiles(noteId, files, shouldTranscribe, shouldDescribe, descriptions);
+      const attachments = await mediaService.uploadFiles(noteId, files, shouldTranscribe, shouldDescribe, descriptions.filter(d => d !== undefined) as string[]);
       
       // Clean up preview URLs
       pendingFiles.forEach(pf => {

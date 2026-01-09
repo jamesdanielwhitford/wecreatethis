@@ -10,15 +10,10 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Helper function to get media URL
-const getMediaUrl = (path: string): string => {
-  const { data } = supabase.storage.from('note-media').getPublicUrl(path);
-  return data.publicUrl;
-};
 
 // GET /api/folders/[id] - Get a specific folder
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -96,7 +91,12 @@ export async function PUT(
       }
     }
     
-    const updateData: any = {
+    const updateData: {
+      title: string;
+      description: string | null;
+      updated_at: string;
+      parent_folder_id?: string | null;
+    } = {
       title: title.trim(),
       description: description?.trim() || null,
       updated_at: new Date().toISOString()
@@ -128,7 +128,7 @@ export async function PUT(
 
 // DELETE /api/folders/[id] - Delete a folder
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {

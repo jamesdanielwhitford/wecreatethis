@@ -4,7 +4,7 @@ import OpenAI from 'openai';
 import { TopicExtractionResult } from '../types/openmind.types';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY,
 });
 
 export class TopicExtractor {
@@ -84,7 +84,7 @@ Guidelines:
         }
 
         return parsedResult;
-      } catch (parseError) {
+      } catch {
         console.error('Failed to parse OpenAI response:', result);
         throw new Error('Failed to parse topic extraction response');
       }

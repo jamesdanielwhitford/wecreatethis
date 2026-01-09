@@ -200,14 +200,6 @@ const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
     }
   };
 
-  const getDescriptionStatusIcon = (status?: string) => {
-    switch (status) {
-      case 'pending': return '⏳';
-      case 'completed': return '✅';
-      case 'failed': return '❌';
-      default: return '📝';
-    }
-  };
 
   const truncateTranscription = (text: string, maxLength: number = 150) => {
     if (text.length <= maxLength) return text;
@@ -531,7 +523,7 @@ const NoteView: React.FC<NoteViewProps> = ({ note, onEdit, onDelete }) => {
         <div className={styles.folderModal} onClick={() => setShowFolderModal(false)}>
           <div className={styles.folderModalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.folderModalHeader}>
-              <h3 className={styles.folderModalTitle}>Manage Folders for "{note.title || 'Untitled'}"</h3>
+              <h3 className={styles.folderModalTitle}>Manage Folders for &quot;{note.title || 'Untitled'}&quot;</h3>
               <button 
                 className={styles.folderModalClose}
                 onClick={() => setShowFolderModal(false)}

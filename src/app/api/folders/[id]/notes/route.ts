@@ -3,6 +3,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+interface MediaAttachment {
+  id: string;
+  storage_path: string;
+  thumbnail_path?: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+}
+
+
+
 // Initialize Supabase client  
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -16,7 +27,7 @@ const getMediaUrl = (path: string): string => {
 
 // GET /api/folders/[id]/notes - Get notes that are manually added to this folder
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -69,12 +80,13 @@ export async function GET(
     console.log('Found manually added notes:', folderNotes?.length || 0);
     
     // Step 3: Process results and add media URLs
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const processedNotes = (folderNotes || []).map((folderNote: any) => {
       const note = folderNote.note;
       return {
         ...note,
         added_to_folder_at: folderNote.added_at,
-        media_attachments: note.media_attachments?.map((attachment: any) => ({
+        media_attachments: note.media_attachments?.map((attachment: MediaAttachment) => ({
           ...attachment,
           url: getMediaUrl(attachment.storage_path),
           thumbnailUrl: attachment.thumbnail_path ? getMediaUrl(attachment.thumbnail_path) : undefined
