@@ -125,7 +125,8 @@
     function shiftChar(char, shift) {
       if (/[a-zA-Z]/.test(char)) {
         const base = char === char.toUpperCase() ? 'A'.charCodeAt(0) : 'a'.charCodeAt(0);
-        return String.fromCharCode((char.charCodeAt(0) - base + shift) % 26 + base);
+        // Handle negative shifts properly with double modulo
+        return String.fromCharCode(((char.charCodeAt(0) - base + shift) % 26 + 26) % 26 + base);
       }
       return char;
     }
@@ -197,19 +198,17 @@
         iIdx++;
       }
 
-      // Loop C and D - each original char produces 2 output chars
+      // Loop C and D - each original char produced 2 encoded chars
       while (iIdx < inputString.length) {
         // Step C: m1 = m1 + m2, this char was shifted by m1
+        const oldM2 = m2;
         m1 = m1 + m2;
-        if (iIdx < inputString.length) {
-          output.push(shiftChar(inputString[iIdx], -m1));
-          iIdx++;
-        }
+        output.push(shiftChar(inputString[iIdx], -m1));
+        iIdx++;
 
-        // Step D: m2 = m1 + m2, this char was shifted by m2 (same original char)
-        m2 = m1 + m2;
+        // Step D: m2 = m1 + old_m2, skip this char (it's the duplicate)
+        m2 = m1 + oldM2;
         if (iIdx < inputString.length) {
-          // Skip this char - it's a duplicate of the previous original char
           iIdx++;
         }
       }
