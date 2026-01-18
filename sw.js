@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wecreatethis-v1';
+const CACHE_NAME = 'wecreatethis-v2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -29,7 +29,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch - serve from cache, fallback to network
+// Fetch - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
   // Only handle requests within root scope (not subapps)
   const url = new URL(event.request.url);
@@ -37,21 +37,36 @@ self.addEventListener('fetch', (event) => {
     return; // Let subapp service workers handle these
   }
 
+  // Only handle GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).then((response) => {
-        if (response.ok && event.request.method === 'GET') {
+    fetch(event.request)
+      .then((response) => {
+        // Cache successful responses
+        if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, clone);
           });
         }
         return response;
-      });
-    }).catch(() => {
-      if (event.request.mode === 'navigate') {
-        return caches.match('/index.html');
-      }
-    })
+      })
+      .catch(() => {
+        // Network failed, try cache
+        return caches.match(event.request).then((cached) => {
+          if (cached) {
+            return cached;
+          }
+          // For navigation requests, serve cached index as fallback
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html');
+          }
+          // Return a proper error response instead of undefined
+          return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+        });
+      })
   );
 });
