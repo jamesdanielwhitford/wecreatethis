@@ -99,14 +99,26 @@
   <h1>Puzzle Help</h1>
   <div class="container">
     <div>
-      <label for="input">Input Text</label>
-      <input type="text" id="input" placeholder="Enter text to transform..." autocomplete="off">
+      <label for="input">Encode</label>
+      <input type="text" id="input" placeholder="Enter text to encode..." autocomplete="off">
     </div>
     <div>
-      <label>Output</label>
+      <label>Encoded Output</label>
       <div class="output-box" id="output"></div>
     </div>
     <button class="copy-btn" id="copyBtn">Copy</button>
+  </div>
+
+  <div class="container" style="margin-top: 40px;">
+    <div>
+      <label for="decodeInput">Decode</label>
+      <input type="text" id="decodeInput" placeholder="Enter text to decode..." autocomplete="off">
+    </div>
+    <div>
+      <label>Decoded Output</label>
+      <div class="output-box" id="decodeOutput"></div>
+    </div>
+    <button class="copy-btn" id="copyBtnDecode">Copy</button>
   </div>
 
   <script>
@@ -160,11 +172,63 @@
       return output.join('');
     }
 
+    function reverseTransformString(inputString) {
+      if (!inputString) return '';
+
+      const output = [];
+      let iIdx = 0;
+      let m1 = 1;
+      let m2 = 1;
+
+      // Step S: shift by -1 (reverse of +1)
+      if (iIdx < inputString.length) {
+        output.push(shiftChar(inputString[iIdx], -1));
+        iIdx++;
+      }
+
+      // Step A: shift by -1 (reverse of +1)
+      if (iIdx < inputString.length) {
+        output.push(shiftChar(inputString[iIdx], -1));
+        iIdx++;
+      }
+
+      // Step B: skip the dash
+      if (iIdx < inputString.length && inputString[iIdx] === '-') {
+        iIdx++;
+      }
+
+      // Loop C and D - each original char produces 2 output chars
+      while (iIdx < inputString.length) {
+        // Step C: m1 = m1 + m2, this char was shifted by m1
+        m1 = m1 + m2;
+        if (iIdx < inputString.length) {
+          output.push(shiftChar(inputString[iIdx], -m1));
+          iIdx++;
+        }
+
+        // Step D: m2 = m1 + m2, this char was shifted by m2 (same original char)
+        m2 = m1 + m2;
+        if (iIdx < inputString.length) {
+          // Skip this char - it's a duplicate of the previous original char
+          iIdx++;
+        }
+      }
+
+      return output.join('');
+    }
+
     const inputEl = document.getElementById('input');
     const outputEl = document.getElementById('output');
 
     inputEl.addEventListener('input', () => {
       outputEl.textContent = transformString(inputEl.value);
+    });
+
+    const decodeInputEl = document.getElementById('decodeInput');
+    const decodeOutputEl = document.getElementById('decodeOutput');
+
+    decodeInputEl.addEventListener('input', () => {
+      decodeOutputEl.textContent = reverseTransformString(decodeInputEl.value);
     });
 
     const copyBtn = document.getElementById('copyBtn');
@@ -177,6 +241,20 @@
         setTimeout(() => {
           copyBtn.textContent = 'Copy';
           copyBtn.classList.remove('copied');
+        }, 1500);
+      });
+    });
+
+    const copyBtnDecode = document.getElementById('copyBtnDecode');
+    copyBtnDecode.addEventListener('click', () => {
+      const text = decodeOutputEl.textContent;
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtnDecode.textContent = 'Copied!';
+        copyBtnDecode.classList.add('copied');
+        setTimeout(() => {
+          copyBtnDecode.textContent = 'Copy';
+          copyBtnDecode.classList.remove('copied');
         }, 1500);
       });
     });
