@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wecreatethis-v2';
+const CACHE_NAME = 'wecreatethis-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -54,19 +54,21 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => {
+      .catch(async () => {
         // Network failed, try cache
-        return caches.match(event.request).then((cached) => {
-          if (cached) {
-            return cached;
+        const cached = await caches.match(event.request);
+        if (cached) {
+          return cached;
+        }
+        // For navigation requests, serve cached index as fallback
+        if (event.request.mode === 'navigate') {
+          const index = await caches.match('/index.html');
+          if (index) {
+            return index;
           }
-          // For navigation requests, serve cached index as fallback
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-          // Return a proper error response instead of undefined
-          return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
-        });
+        }
+        // Return a proper error response instead of undefined
+        return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
       })
   );
 });
