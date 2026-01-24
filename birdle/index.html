@@ -32,46 +32,40 @@
     <div class="modal-content">
       <h3 id="modal-title">Location Access</h3>
 
-      <!-- Main options view -->
-      <div id="modal-options" style="display: block;">
-        <div class="modal-actions">
-          <button id="modal-grant-btn" class="modal-btn seen">Grant Location Access</button>
-          <button id="modal-download-btn" class="modal-btn">Download Location for Offline</button>
-          <button id="modal-update-btn" class="modal-btn" style="display: none;">Update with Current Location</button>
-          <button id="modal-cancel-btn" class="modal-btn cancel">Cancel</button>
+      <!-- Country/Region dropdowns (always visible) -->
+      <div class="form-group">
+        <label>Country</label>
+        <select id="modal-country" class="form-select">
+          <option value="">Select Country...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>State/Province</label>
+        <select id="modal-state" class="form-select" disabled>
+          <option value="">Select State/Province...</option>
+        </select>
+      </div>
+
+      <!-- Download progress (hidden by default) -->
+      <div id="download-progress" style="display: none; margin-top: 16px;">
+        <div style="font-size: 14px; color: #333; margin-bottom: 12px; font-weight: 500;">
+          <span id="download-status">Downloading birds for offline access...</span>
+        </div>
+        <div class="progress-bar-container">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <div id="progress-text" style="font-size: 12px; color: #666; margin-top: 8px; text-align: center;"></div>
+        <div style="font-size: 12px; color: #999; margin-top: 8px; text-align: center;">
+          Please do not navigate away until complete
         </div>
       </div>
 
-      <!-- Download location view -->
-      <div id="modal-download-view" style="display: none;">
-        <div class="form-group">
-          <label>Country</label>
-          <select id="modal-country" class="form-select">
-            <option value="">Select Country...</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>State/Province</label>
-          <select id="modal-state" class="form-select" disabled>
-            <option value="">Select State/Province...</option>
-          </select>
-        </div>
-        <div id="download-progress" style="display: none; margin-top: 16px;">
-          <div style="font-size: 14px; color: #333; margin-bottom: 12px; font-weight: 500;">
-            <span id="download-status">Downloading birds for offline access...</span>
-          </div>
-          <div class="progress-bar-container">
-            <div id="progress-bar" class="progress-bar"></div>
-          </div>
-          <div id="progress-text" style="font-size: 12px; color: #666; margin-top: 8px; text-align: center;"></div>
-          <div style="font-size: 12px; color: #999; margin-top: 8px; text-align: center;">
-            Please do not navigate away until complete
-          </div>
-        </div>
-        <div class="modal-actions" style="margin-top: 20px;">
-          <button id="modal-download-save-btn" class="modal-btn seen" disabled>Download</button>
-          <button id="modal-download-cancel-btn" class="modal-btn cancel">Cancel</button>
-        </div>
+      <!-- Action buttons -->
+      <div class="modal-actions" style="margin-top: 20px;">
+        <button id="modal-use-location-btn" class="modal-btn seen">Use Current Location</button>
+        <button id="modal-update-location-btn" class="modal-btn seen" style="display: none;">Update Location</button>
+        <button id="modal-download-btn" class="modal-btn">Download Location</button>
+        <button id="modal-cancel-btn" class="modal-btn cancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -128,41 +122,54 @@
       const modal = document.getElementById('location-modal');
       const modalTitle = document.getElementById('modal-title');
 
-      // Modal views
-      const modalOptions = document.getElementById('modal-options');
-      const modalDownloadView = document.getElementById('modal-download-view');
-
-      // Main option buttons
-      const grantBtn = document.getElementById('modal-grant-btn');
+      // Buttons
+      const useLocationBtn = document.getElementById('modal-use-location-btn');
+      const updateLocationBtn = document.getElementById('modal-update-location-btn');
       const downloadBtn = document.getElementById('modal-download-btn');
-      const updateBtn = document.getElementById('modal-update-btn');
       const cancelBtn = document.getElementById('modal-cancel-btn');
 
-      // Download view elements
+      // Form elements
       const countrySelect = document.getElementById('modal-country');
       const stateSelect = document.getElementById('modal-state');
       const downloadProgress = document.getElementById('download-progress');
       const progressText = document.getElementById('progress-text');
-      const downloadSaveBtn = document.getElementById('modal-download-save-btn');
-      const downloadCancelBtn = document.getElementById('modal-download-cancel-btn');
+
+      // Get globe emoji based on continent
+      function getGlobeEmoji(countryCode) {
+        const continent = BirdDB.getContinent(countryCode);
+
+        // 🌍 Africa/Europe
+        if (continent === 'Africa' || continent === 'Europe') {
+          return '🌍';
+        }
+        // 🌏 Asia/Oceania (Australia)
+        else if (continent === 'Asia' || continent === 'Oceania') {
+          return '🌏';
+        }
+        // 🌎 Americas (North/South America)
+        else if (continent === 'North America' || continent === 'South America') {
+          return '🌎';
+        }
+        // Default to Africa globe
+        else {
+          return '🌍';
+        }
+      }
 
       // Update location button text and color
       function updateLocationButton() {
         const cached = LocationService.getCached();
         if (cached) {
           const displayName = LocationService.getRegionDisplayName(cached);
-          locationBtn.textContent = displayName;
+          const globe = getGlobeEmoji(cached.countryCode);
+          locationBtn.textContent = `${globe} ${displayName}`;
           locationBtn.style.color = '#4caf50';
-
-          // Show update button in modal
-          updateBtn.style.display = 'block';
 
           // Check/trigger country cache
           updateCacheStatus(cached.countryCode);
         } else {
           locationBtn.textContent = 'Grant location access';
           locationBtn.style.color = '#c00';
-          updateBtn.style.display = 'none';
           cacheStatus.style.display = 'none';
         }
       }
@@ -192,80 +199,19 @@
       async function openModal() {
         const cached = LocationService.getCached();
         const hasLocation = cached !== null;
-        const hasGPS = hasLocation && LocationService.hasValidCoordinates(cached);
-        const hasCachedBirds = hasLocation && await BirdDB.hasCountryCache(cached.countryCode);
 
-        // Show/hide buttons based on state
-        if (hasGPS) {
-          // Has GPS location - hide "Grant" button, show "Update"
-          grantBtn.style.display = 'none';
-          updateBtn.style.display = 'block';
+        // Show/hide buttons based on whether user has location set
+        if (hasLocation) {
+          // Has location - show "Update Location" button, hide "Use Current Location"
+          useLocationBtn.style.display = 'none';
+          updateLocationBtn.style.display = 'block';
+          modalTitle.textContent = 'Update Location';
         } else {
-          // No GPS location - show "Grant" button, hide "Update"
-          grantBtn.style.display = 'block';
-          updateBtn.style.display = 'none';
+          // No location - show "Use Current Location" button, hide "Update Location"
+          useLocationBtn.style.display = 'block';
+          updateLocationBtn.style.display = 'none';
+          modalTitle.textContent = 'Location Access';
         }
-
-        // Show/hide download button based on whether birds are cached
-        if (hasCachedBirds) {
-          // Already cached - change button text to indicate re-download
-          downloadBtn.textContent = 'Change or Re-download Location';
-        } else {
-          downloadBtn.textContent = 'Download Location for Offline';
-        }
-
-        modalOptions.style.display = 'block';
-        modalDownloadView.style.display = 'none';
-        modal.style.display = 'flex';
-        modalTitle.textContent = hasLocation ? 'Update Location' : 'Location Access';
-      }
-
-      // Close modal
-      function closeModal() {
-        modal.style.display = 'none';
-        modalOptions.style.display = 'block';
-        modalDownloadView.style.display = 'none';
-      }
-
-      // Grant location access (GPS)
-      async function grantLocationAccess() {
-        const originalText = grantBtn.textContent;
-        grantBtn.textContent = 'Getting location...';
-        grantBtn.disabled = true;
-
-        try {
-          await LocationService.getLocation(true);
-          updateLocationButton();
-          closeModal();
-        } catch (error) {
-          alert(error.message);
-          grantBtn.textContent = originalText;
-          grantBtn.disabled = false;
-        }
-      }
-
-      // Update with current location (GPS refresh)
-      async function updateCurrentLocation() {
-        const originalText = updateBtn.textContent;
-        updateBtn.textContent = 'Updating...';
-        updateBtn.disabled = true;
-
-        try {
-          await LocationService.getLocation(true);
-          updateLocationButton();
-          closeModal();
-        } catch (error) {
-          alert(error.message);
-          updateBtn.textContent = originalText;
-          updateBtn.disabled = false;
-        }
-      }
-
-      // Show download location view
-      async function showDownloadView() {
-        modalOptions.style.display = 'none';
-        modalDownloadView.style.display = 'block';
-        modalTitle.textContent = 'Download Location';
 
         // Load countries if not already loaded
         if (countrySelect.options.length <= 1) {
@@ -278,7 +224,6 @@
         }
 
         // Pre-select current location if cached
-        const cached = LocationService.getCached();
         if (cached && cached.countryCode) {
           countrySelect.value = cached.countryCode;
           await loadStates(cached.countryCode);
@@ -287,36 +232,103 @@
           }
         }
 
-        validateDownloadForm();
+        // Update download button text based on whether selected location is cached
+        await updateDownloadButtonText();
+
+        // Reset progress display
+        downloadProgress.style.display = 'none';
+
+        modal.style.display = 'flex';
       }
 
-      // Load states for selected country
-      async function loadStates(countryCode) {
-        stateSelect.innerHTML = '<option value="">Loading...</option>';
-        stateSelect.disabled = true;
+      // Update download button text based on whether location is cached
+      async function updateDownloadButtonText() {
+        const countryCode = countrySelect.value;
 
-        if (countryCode) {
-          const states = await EBird.getStates(countryCode);
-          stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
-          states.forEach(s => {
-            stateSelect.innerHTML += `<option value="${s.code}">${s.name}</option>`;
-          });
-          stateSelect.disabled = false;
-        } else {
-          stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
+        if (!countryCode) {
+          downloadBtn.textContent = 'Download Location';
+          return;
+        }
+
+        try {
+          await BirdDB.init();
+          const hasCache = await BirdDB.hasCountryCache(countryCode);
+
+          if (hasCache) {
+            downloadBtn.textContent = 'Re-download Location';
+          } else {
+            downloadBtn.textContent = 'Download Location';
+          }
+        } catch (error) {
+          console.error('Error checking cache:', error);
+          downloadBtn.textContent = 'Download Location';
         }
       }
 
-      // Validate download form
-      function validateDownloadForm() {
-        downloadSaveBtn.disabled = !countrySelect.value;
+      // Close modal
+      function closeModal() {
+        modal.style.display = 'none';
+        downloadProgress.style.display = 'none';
       }
 
-      // Download and save location with birds
-      async function downloadAndSaveLocation() {
+      // Use current location (GPS)
+      async function useCurrentLocation() {
+        const originalText = useLocationBtn.textContent;
+        useLocationBtn.textContent = 'Getting location...';
+        useLocationBtn.disabled = true;
+
+        try {
+          await LocationService.getLocation(true);
+          updateLocationButton();
+          closeModal();
+        } catch (error) {
+          alert(error.message);
+          useLocationBtn.textContent = originalText;
+          useLocationBtn.disabled = false;
+        }
+      }
+
+      // Update location (from dropdowns)
+      async function updateLocation() {
         const countryCode = countrySelect.value;
-        const countryName = countrySelect.options[countrySelect.selectedIndex].text;
         const stateCode = stateSelect.value || null;
+
+        if (!countryCode) {
+          alert('Please select a country');
+          return;
+        }
+
+        // Get country/state names
+        const countryName = countrySelect.options[countrySelect.selectedIndex].text;
+        const stateName = stateCode ? stateSelect.options[stateSelect.selectedIndex].text : null;
+
+        // Save location
+        const location = {
+          lat: 0,
+          lng: 0,
+          countryCode,
+          countryName,
+          stateCode,
+          stateName,
+          displayName: stateName ? `${stateName}, ${countryName}` : countryName
+        };
+        LocationService.saveToCache(location);
+        updateLocationButton();
+        closeModal();
+      }
+
+      // Download location and cache birds
+      async function downloadLocation() {
+        const countryCode = countrySelect.value;
+        const stateCode = stateSelect.value || null;
+
+        if (!countryCode) {
+          alert('Please select a country');
+          return;
+        }
+
+        // Get country/state names
+        const countryName = countrySelect.options[countrySelect.selectedIndex].text;
         const stateName = stateCode ? stateSelect.options[stateSelect.selectedIndex].text : null;
 
         // Save location first
@@ -335,10 +347,12 @@
         const progressBar = document.getElementById('progress-bar');
         const downloadStatus = document.getElementById('download-status');
 
-        // Show progress
+        // Show progress and disable buttons
         downloadProgress.style.display = 'block';
-        downloadSaveBtn.disabled = true;
-        downloadCancelBtn.disabled = true;
+        useLocationBtn.disabled = true;
+        updateLocationBtn.disabled = true;
+        downloadBtn.disabled = true;
+        cancelBtn.disabled = true;
         progressBar.style.width = '0%';
 
         try {
@@ -364,20 +378,41 @@
           updateLocationButton();
           setTimeout(() => {
             closeModal();
-            downloadProgress.style.display = 'none';
-            downloadSaveBtn.disabled = false;
-            downloadCancelBtn.disabled = false;
+            useLocationBtn.disabled = false;
+            updateLocationBtn.disabled = false;
+            downloadBtn.disabled = false;
+            cancelBtn.disabled = false;
             progressBar.style.width = '0%';
           }, 1500);
         } catch (error) {
           console.error('Error caching birds:', error);
           alert('Failed to download birds. Please try again.');
           downloadProgress.style.display = 'none';
-          downloadSaveBtn.disabled = false;
-          downloadCancelBtn.disabled = false;
+          useLocationBtn.disabled = false;
+          updateLocationBtn.disabled = false;
+          downloadBtn.disabled = false;
+          cancelBtn.disabled = false;
           progressBar.style.width = '0%';
         }
       }
+
+      // Load states for selected country
+      async function loadStates(countryCode) {
+        stateSelect.innerHTML = '<option value="">Loading...</option>';
+        stateSelect.disabled = true;
+
+        if (countryCode) {
+          const states = await EBird.getStates(countryCode);
+          stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
+          states.forEach(s => {
+            stateSelect.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+          });
+          stateSelect.disabled = false;
+        } else {
+          stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
+        }
+      }
+
 
       // Event listeners
       locationBtn.addEventListener('click', async (e) => {
@@ -386,24 +421,14 @@
         await openModal();
       });
 
-      grantBtn.addEventListener('click', grantLocationAccess);
-      downloadBtn.addEventListener('click', showDownloadView);
-      updateBtn.addEventListener('click', updateCurrentLocation);
+      useLocationBtn.addEventListener('click', useCurrentLocation);
+      updateLocationBtn.addEventListener('click', updateLocation);
+      downloadBtn.addEventListener('click', downloadLocation);
       cancelBtn.addEventListener('click', closeModal);
 
       countrySelect.addEventListener('change', async (e) => {
         await loadStates(e.target.value);
-        validateDownloadForm();
-      });
-
-      stateSelect.addEventListener('change', validateDownloadForm);
-
-      downloadSaveBtn.addEventListener('click', downloadAndSaveLocation);
-      downloadCancelBtn.addEventListener('click', () => {
-        modalOptions.style.display = 'block';
-        modalDownloadView.style.display = 'none';
-        modalTitle.textContent = 'Location Access';
-        downloadProgress.style.display = 'none';
+        await updateDownloadButtonText();
       });
 
       modal.addEventListener('click', (e) => {
