@@ -2132,6 +2132,12 @@ const App = {
 
     // Save progress to database
     await this.saveBingoGame();
+
+    // Reload images if in image view mode
+    const gridEl = document.getElementById('bingo-grid');
+    if (gridEl && gridEl.classList.contains('image-view')) {
+      this.loadBingoCellImages(gridEl);
+    }
   },
 
   async saveBingoGame() {
@@ -2158,7 +2164,20 @@ const App = {
 
     if (!toggleBtn || !gridEl) return;
 
-    // Check saved preference
+    // Check if online
+    const isOnline = navigator.onLine;
+
+    // Hide button if offline
+    if (!isOnline) {
+      toggleBtn.style.display = 'none';
+      gridEl.classList.remove('image-view');
+      return;
+    }
+
+    // Show button if online
+    toggleBtn.style.display = 'flex';
+
+    // Check saved preference (only if online)
     const savedView = localStorage.getItem('bingoViewMode') || 'text';
     if (savedView === 'image') {
       gridEl.classList.add('image-view');
