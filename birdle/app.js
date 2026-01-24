@@ -1301,9 +1301,10 @@ const App = {
   async initNewBingo() {
     this.selectedRegion = null;
     this.selectedRegionName = null;
+    this.selectedCoordinates = null;
     this.bindNewBingoEvents();
     await this.loadCountriesForBingo();
-    this.initLocationButtonForBingo();
+    await this.prePopulateCachedLocation();
   },
 
   bindNewBingoEvents() {
@@ -1321,6 +1322,9 @@ const App = {
       const countryCode = e.target.value;
       stateSelect.innerHTML = '<option value="">Loading...</option>';
       stateSelect.disabled = true;
+
+      // Clear precise coordinates when manually changing region
+      this.selectedCoordinates = null;
 
       if (countryCode) {
         this.selectedRegion = countryCode;
@@ -1343,6 +1347,10 @@ const App = {
 
     stateSelect?.addEventListener('change', (e) => {
       const stateCode = e.target.value;
+
+      // Clear precise coordinates when manually changing region
+      this.selectedCoordinates = null;
+
       if (stateCode) {
         this.selectedRegion = stateCode;
         this.selectedRegionName = stateSelect.options[stateSelect.selectedIndex].text;
@@ -1358,13 +1366,19 @@ const App = {
     });
 
     useLocationBtn?.addEventListener('click', async () => {
-      useLocationBtn.textContent = '📍 Getting location...';
+      useLocationBtn.textContent = '📍 Getting precise location...';
       useLocationBtn.disabled = true;
 
       try {
         const location = await LocationService.getLocation(true);
-        if (location) {
-          // Set the region
+        if (location && LocationService.hasValidCoordinates(location)) {
+          // Store coordinates for precise bird selection
+          this.selectedCoordinates = {
+            lat: location.lat,
+            lng: location.lng
+          };
+
+          // Set the region from GPS location
           this.selectedRegion = location.stateCode || location.countryCode;
           this.selectedRegionName = location.stateCode ? location.stateName : location.countryName;
 
@@ -1394,9 +1408,9 @@ const App = {
         }
       } catch (error) {
         console.error('Location error:', error);
-        alert('Could not get location. Please select manually.');
+        alert('Could not get precise location. Please grant location access or select manually.');
       } finally {
-        useLocationBtn.textContent = '📍 Use My Location';
+        useLocationBtn.textContent = '📍 Use My Precise Location';
         useLocationBtn.disabled = false;
       }
     });
@@ -1421,23 +1435,58 @@ const App = {
     }
   },
 
-  initLocationButtonForBingo() {
+  async prePopulateCachedLocation() {
     const cachedLocation = LocationService.getCached();
-    const btn = document.getElementById('use-location-btn');
-    if (btn && cachedLocation) {
-      const displayName = LocationService.getRegionDisplayName(cachedLocation);
-      btn.textContent = `📍 Use ${displayName}`;
+    if (!cachedLocation || !cachedLocation.countryCode) return;
+
+    const countrySelect = document.getElementById('country-select');
+    const stateSelect = document.getElementById('state-select');
+
+    // Set country dropdown
+    countrySelect.value = cachedLocation.countryCode;
+
+    // Set region and name
+    this.selectedRegion = cachedLocation.stateCode || cachedLocation.countryCode;
+    this.selectedRegionName = cachedLocation.stateCode ? cachedLocation.stateName : cachedLocation.countryName;
+
+    // Load and set state if available
+    if (cachedLocation.countryCode) {
+      try {
+        const states = await EBird.getStates(cachedLocation.countryCode);
+        stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
+        states.forEach(s => {
+          stateSelect.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+        });
+        stateSelect.disabled = false;
+
+        if (cachedLocation.stateCode) {
+          stateSelect.value = cachedLocation.stateCode;
+        }
+      } catch (error) {
+        console.error('Error loading states:', error);
+      }
     }
+
+    this.updateRegionInfoForBingo();
+    this.validateNewBingo();
   },
 
   updateRegionInfoForBingo() {
     const regionInfo = document.getElementById('region-info');
     if (!regionInfo) return;
 
-    if (this.selectedRegion) {
+    if (this.selectedCoordinates) {
+      regionInfo.textContent = `📍 Using precise location: ${this.selectedCoordinates.lat.toFixed(4)}, ${this.selectedCoordinates.lng.toFixed(4)}`;
+      regionInfo.style.color = '#4caf50';
+      regionInfo.style.fontWeight = '600';
+    } else if (this.selectedRegion) {
       regionInfo.textContent = `Selected: ${this.selectedRegionName}`;
+      regionInfo.style.color = '';
+      regionInfo.style.fontWeight = '';
     } else {
       regionInfo.textContent = '';
+      regionInfo.style.color = '';
+      regionInfo.style.fontWeight = '';
     }
   },
 
@@ -1461,8 +1510,17 @@ const App = {
     spinner.style.display = 'block';
 
     try {
-      // Get recent observations for the region
-      const observations = await EBird.getRecentObservations(this.selectedRegion);
+      // Get recent observations - use precise coordinates if available, otherwise region
+      let observations;
+      if (this.selectedCoordinates) {
+        observations = await EBird.getNearbyObservations(
+          this.selectedCoordinates.lat,
+          this.selectedCoordinates.lng,
+          50
+        );
+      } else {
+        observations = await EBird.getRecentObservations(this.selectedRegion);
+      }
 
       if (!observations || observations.length < 24) {
         throw new Error('Not enough birds found in this region');
@@ -1498,13 +1556,21 @@ const App = {
       const selectedBirds = birdPool.slice(0, 24);
 
       // Create the game
-      const game = await BirdDB.createBingoGame({
+      const gameData = {
         title,
         regionCode: this.selectedRegion,
         regionName: this.selectedRegionName,
         birds: selectedBirds,
         foundBirds: []
-      });
+      };
+
+      // Add coordinates if using precise location
+      if (this.selectedCoordinates) {
+        gameData.lat = this.selectedCoordinates.lat;
+        gameData.lng = this.selectedCoordinates.lng;
+      }
+
+      const game = await BirdDB.createBingoGame(gameData);
 
       // Navigate to the game
       window.location.href = `bingo?id=${game.id}`;
@@ -1708,6 +1774,8 @@ const App = {
         foundBirds: game.foundBirds || [],
         regionCode: game.regionCode,
         regionName: game.regionName,
+        lat: game.lat,
+        lng: game.lng,
         createdAt: game.createdAt,
         completedAt: game.completedAt,
         completedInSeconds: game.completedInSeconds
@@ -1851,7 +1919,14 @@ const App = {
       minute: '2-digit'
     });
     document.getElementById('bingo-date').textContent = `Started ${startDateStr}`;
-    document.getElementById('bingo-location').textContent = card.regionName || '';
+
+    // Show location with coordinates if available
+    const locationEl = document.getElementById('bingo-location');
+    if (card.lat && card.lng) {
+      locationEl.innerHTML = `${card.regionName || ''} <span style="color: #4caf50; font-weight: 600;">📍 ${card.lat.toFixed(4)}, ${card.lng.toFixed(4)}</span>`;
+    } else {
+      locationEl.textContent = card.regionName || '';
+    }
 
     // Store birds for navigation
     localStorage.setItem('currentBirds', JSON.stringify(card.birds));
