@@ -1461,59 +1461,41 @@ const App = {
     spinner.style.display = 'block';
 
     try {
-      // Fetch species list for the region (returns array of codes)
-      const speciesCodes = await EBird.getSpeciesList(this.selectedRegion);
+      // Get recent observations for the region
+      const observations = await EBird.getRecentObservations(this.selectedRegion);
 
-      if (!speciesCodes || speciesCodes.length < 24) {
+      if (!observations || observations.length < 24) {
         throw new Error('Not enough birds found in this region');
       }
 
-      // Get taxonomy data (bird names) for all species
-      const taxonomy = await EBird.getTaxonomy(speciesCodes);
+      // Count observations per species (for sorting by commonality)
+      const speciesCount = {};
+      const speciesData = {};
 
-      // Get recent observations to calculate rarity
-      const recentObs = await EBird.getRecentObservations(this.selectedRegion);
-      const obsCounts = {};
-      recentObs.forEach(obs => {
-        obsCounts[obs.speciesCode] = (obsCounts[obs.speciesCode] || 0) + 1;
-      });
-
-      // Sort by observation count
-      const sortedBirds = taxonomy.map(b => ({
-        speciesCode: b.speciesCode,
-        comName: b.comName,
-        sciName: b.sciName,
-        obsCount: obsCounts[b.speciesCode] || 0
-      })).sort((a, b) => b.obsCount - a.obsCount);
-
-      // Assign rarity tiers
-      const totalBirds = sortedBirds.length;
-      const commonCount = Math.floor(totalBirds / 3);
-      const rareCount = Math.floor(totalBirds / 3);
-
-      sortedBirds.forEach((bird, i) => {
-        if (i < commonCount) {
-          bird.rarity = 'common';
-        } else if (i < commonCount + rareCount) {
-          bird.rarity = 'rare';
-        } else {
-          bird.rarity = 'ultra';
+      observations.forEach(obs => {
+        if (!speciesCount[obs.speciesCode]) {
+          speciesCount[obs.speciesCode] = 0;
         }
+        speciesCount[obs.speciesCode]++;
+        speciesData[obs.speciesCode] = {
+          speciesCode: obs.speciesCode,
+          comName: obs.comName,
+          sciName: obs.sciName
+        };
       });
 
-      // Select 24 random birds (8 from each rarity)
-      const commonBirds = sortedBirds.filter(b => b.rarity === 'common');
-      const rareBirds = sortedBirds.filter(b => b.rarity === 'rare');
-      const ultraBirds = sortedBirds.filter(b => b.rarity === 'ultra');
+      // Build array and sort by count (most common first)
+      const birds = Object.keys(speciesData)
+        .map(code => ({
+          ...speciesData[code],
+          count: speciesCount[code]
+        }))
+        .sort((a, b) => b.count - a.count);
 
-      const selectedBirds = [
-        ...this.selectRandomBirds(commonBirds, 8),
-        ...this.selectRandomBirds(rareBirds, 8),
-        ...this.selectRandomBirds(ultraBirds, 8)
-      ];
-
-      // Shuffle the birds for the grid
-      this.shuffleArray(selectedBirds);
+      // Take top 100 most common birds as the pool, then randomly pick 24
+      const birdPool = birds.slice(0, Math.min(100, birds.length));
+      this.shuffleArray(birdPool);
+      const selectedBirds = birdPool.slice(0, 24);
 
       // Create the game
       const game = await BirdDB.createBingoGame({
