@@ -177,32 +177,127 @@ const App = {
   },
 
   async loadSearchCountries() {
-    const countryFilter = document.getElementById('country-filter');
-    if (!countryFilter) return;
+    // Load countries into modal dropdown
+    const modalCountryFilter = document.getElementById('modal-country-filter');
+    if (!modalCountryFilter) return;
 
     try {
       const countries = await EBird.getCountries();
       countries.forEach(c => {
-        countryFilter.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+        modalCountryFilter.innerHTML += `<option value="${c.code}">${c.name}</option>`;
       });
     } catch (error) {
       console.error('Failed to load countries:', error);
     }
   },
 
-  // Update location button text based on cache state
-  updateSearchLocationButton() {
-    const btn = document.getElementById('use-location-btn');
-    if (btn && typeof LocationService !== 'undefined') {
-      btn.textContent = LocationService.getButtonText();
+  // Update location button text based on current search location
+  async updateSearchLocationButton() {
+    const btn = document.getElementById('current-location-btn');
+    const btnText = document.getElementById('current-location-text');
+
+    if (!btn || !btnText) return;
+
+    // Check for active search location from lastSearch
+    const lastSearch = JSON.parse(localStorage.getItem('lastSearch') || 'null');
+    if (lastSearch) {
+      if (lastSearch.type === 'location' && lastSearch.lat && lastSearch.lng) {
+        btnText.textContent = `📍 ${lastSearch.lat.toFixed(4)}, ${lastSearch.lng.toFixed(4)}`;
+        return;
+      } else if (lastSearch.type === 'region' && lastSearch.code) {
+        // Try to get a nice display name from cached location
+        const cached = LocationService?.getCached();
+        if (cached && (cached.stateCode === lastSearch.code || cached.countryCode === lastSearch.code)) {
+          btnText.textContent = LocationService.getRegionDisplayName(cached);
+          return;
+        }
+
+        // Try to build display name from lastSearch data
+        if (lastSearch.stateCode && lastSearch.countryCode) {
+          // Fetch region names from API
+          try {
+            const countries = await EBird.getCountries();
+            const country = countries.find(c => c.code === lastSearch.countryCode);
+            if (country) {
+              const states = await EBird.getStates(lastSearch.countryCode);
+              const state = states.find(s => s.code === lastSearch.stateCode);
+              if (state) {
+                btnText.textContent = `${state.name}, ${country.name}`;
+                return;
+              }
+            }
+          } catch (e) {
+            // Fall through to code display
+          }
+        } else if (lastSearch.countryCode) {
+          // Just country
+          try {
+            const countries = await EBird.getCountries();
+            const country = countries.find(c => c.code === lastSearch.countryCode);
+            if (country) {
+              btnText.textContent = country.name;
+              return;
+            }
+          } catch (e) {
+            // Fall through to code display
+          }
+        }
+
+        // Fallback to showing the code
+        btnText.textContent = lastSearch.code;
+        return;
+      }
+    }
+
+    // Fallback to cached location
+    if (typeof LocationService !== 'undefined') {
+      const cached = LocationService.getCached();
+      if (cached) {
+        btnText.textContent = LocationService.getRegionDisplayName(cached);
+      } else {
+        btnText.textContent = 'Select Location';
+      }
     }
   },
 
+  async openLocationModal() {
+    const modal = document.getElementById('location-modal');
+    const modalCountryFilter = document.getElementById('modal-country-filter');
+    const modalStateFilter = document.getElementById('modal-state-filter');
+
+    if (!modal) return;
+
+    // Pre-populate with cached location if available
+    if (typeof LocationService !== 'undefined') {
+      const cached = LocationService.getCached();
+      if (cached && cached.countryCode) {
+        // Set country dropdown
+        modalCountryFilter.value = cached.countryCode;
+
+        // Load states for this country
+        if (cached.stateCode) {
+          const states = await EBird.getStates(cached.countryCode);
+          if (states.length > 0) {
+            modalStateFilter.innerHTML = '<option value="">State/Province...</option>';
+            states.forEach(s => {
+              modalStateFilter.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+            });
+            modalStateFilter.disabled = false;
+            modalStateFilter.value = cached.stateCode;
+          }
+        }
+
+        // Enable apply button
+        const applyBtn = document.getElementById('apply-region-btn');
+        if (applyBtn) applyBtn.disabled = false;
+      }
+    }
+
+    modal.style.display = 'flex';
+  },
+
   async restoreLastSearch() {
-    const countryFilter = document.getElementById('country-filter');
-    const stateFilter = document.getElementById('state-filter');
     const birdSearch = document.getElementById('bird-search');
-    const locationInfo = document.getElementById('location-info');
 
     // Priority 1: Check for lastSearch (user's previous search session)
     const lastSearch = JSON.parse(localStorage.getItem('lastSearch') || 'null');
@@ -214,29 +309,6 @@ const App = {
       }
 
       if (lastSearch.type === 'region') {
-        // Restore country selection
-        if (lastSearch.countryCode && countryFilter) {
-          countryFilter.value = lastSearch.countryCode;
-
-          // Load and restore state selection if applicable
-          if (stateFilter) {
-            const states = await EBird.getStates(lastSearch.countryCode);
-            if (states.length > 0) {
-              stateFilter.innerHTML = '<option value="">State/Province...</option>';
-              states.forEach(s => {
-                stateFilter.innerHTML += `<option value="${s.code}">${s.name}</option>`;
-              });
-              stateFilter.disabled = false;
-              if (lastSearch.stateCode) {
-                stateFilter.value = lastSearch.stateCode;
-              }
-            }
-          }
-        } else if (countryFilter && lastSearch.code) {
-          // Legacy format - just set country from code
-          const countryCode = lastSearch.code.split('-')[0];
-          countryFilter.value = countryCode;
-        }
 
         // Set userLocation from cached location for "Nearest" sorting
         if (typeof LocationService !== 'undefined') {
@@ -287,11 +359,6 @@ const App = {
       } else if (lastSearch.type === 'location') {
         this.userLocation = { lat: lastSearch.lat, lng: lastSearch.lng };
 
-        if (locationInfo) {
-          locationInfo.textContent = `📍 ${lastSearch.lat.toFixed(4)}, ${lastSearch.lng.toFixed(4)} (50km radius)`;
-          locationInfo.style.display = 'block';
-        }
-
         this.showLoading(true);
         const birds = await EBird.getNearbyObservations(lastSearch.lat, lastSearch.lng);
         this.birds = this.deduplicateBirds(birds);
@@ -305,34 +372,6 @@ const App = {
     if (typeof LocationService !== 'undefined') {
       const cached = LocationService.getCached();
       if (cached) {
-        const displayName = LocationService.getRegionDisplayName(cached);
-
-        if (locationInfo) {
-          locationInfo.textContent = `📍 ${displayName}`;
-          locationInfo.style.display = 'block';
-        }
-
-        // Populate country/state dropdowns to match cached location
-        if (countryFilter && cached.countryCode) {
-          countryFilter.value = cached.countryCode;
-
-          // Load states for this country
-          if (stateFilter) {
-            const states = await EBird.getStates(cached.countryCode);
-            if (states.length > 0) {
-              stateFilter.innerHTML = '<option value="">State/Province...</option>';
-              states.forEach(s => {
-                stateFilter.innerHTML += `<option value="${s.code}">${s.name}</option>`;
-              });
-              stateFilter.disabled = false;
-
-              // Set state if available
-              if (cached.stateCode) {
-                stateFilter.value = cached.stateCode;
-              }
-            }
-          }
-        }
 
         // Use GPS coords if available, otherwise use region
         if (LocationService.hasValidCoordinates(cached)) {
@@ -387,57 +426,25 @@ const App = {
   },
 
   bindSearchEvents() {
-    const countryFilter = document.getElementById('country-filter');
-    const stateFilter = document.getElementById('state-filter');
     const sortType = document.getElementById('sort-type');
     const seenFilter = document.getElementById('seen-filter');
     const birdSearch = document.getElementById('bird-search');
-    const useLocationBtn = document.getElementById('use-location-btn');
-    const pickLocationBtn = document.getElementById('pick-location-btn');
+    const currentLocationBtn = document.getElementById('current-location-btn');
     const mapCancelBtn = document.getElementById('map-cancel-btn');
     const mapConfirmBtn = document.getElementById('map-confirm-btn');
 
-    // Use My Location button
-    useLocationBtn?.addEventListener('click', () => {
-      this.useMyLocation();
+    // Current Location button - opens modal
+    currentLocationBtn?.addEventListener('click', () => {
+      this.openLocationModal();
     });
 
-    // Country filter - load states when country selected
-    countryFilter?.addEventListener('change', async (e) => {
-      const countryCode = e.target.value;
-      stateFilter.innerHTML = '<option value="">State/Province...</option>';
-      stateFilter.disabled = true;
-
-      if (countryCode) {
-        // Load states for this country
-        const states = await EBird.getStates(countryCode);
-        if (states.length > 0) {
-          states.forEach(s => {
-            stateFilter.innerHTML += `<option value="${s.code}">${s.name}</option>`;
-          });
-          stateFilter.disabled = false;
-        }
-        // Search by country
-        this.searchByRegion(countryCode);
-      }
-    });
-
-    // State filter - search by state when selected
-    stateFilter?.addEventListener('change', (e) => {
-      const stateCode = e.target.value;
-      const countryCode = countryFilter.value;
-      if (stateCode) {
-        this.searchByRegion(stateCode);
-      } else if (countryCode) {
-        this.searchByRegion(countryCode);
-      }
-    });
-
+    // Sort type
     sortType?.addEventListener('change', (e) => {
       this.currentSort = e.target.value;
       this.renderBirdList();
     });
 
+    // Seen filter
     seenFilter?.addEventListener('change', () => {
       this.renderBirdList();
     });
@@ -449,10 +456,7 @@ const App = {
       this.renderBirdList();
     });
 
-    pickLocationBtn?.addEventListener('click', () => {
-      this.openMapPicker();
-    });
-
+    // Map picker controls
     mapCancelBtn?.addEventListener('click', () => {
       this.closeMapPicker();
     });
@@ -465,6 +469,79 @@ const App = {
     const cacheBtn = document.getElementById('cache-country-btn');
     cacheBtn?.addEventListener('click', () => {
       this.cacheCurrentCountry();
+    });
+
+    // Location modal events
+    this.bindLocationModalEvents();
+  },
+
+  bindLocationModalEvents() {
+    const modal = document.getElementById('location-modal');
+    const closeBtn = document.getElementById('location-modal-close');
+    const modalCountryFilter = document.getElementById('modal-country-filter');
+    const modalStateFilter = document.getElementById('modal-state-filter');
+    const applyRegionBtn = document.getElementById('apply-region-btn');
+    const useGpsBtn = document.getElementById('use-gps-btn');
+    const modalPickMapBtn = document.getElementById('modal-pick-map-btn');
+
+    // Close modal
+    closeBtn?.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    // Close on backdrop click
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+
+    // Country filter - load states when country selected
+    modalCountryFilter?.addEventListener('change', async (e) => {
+      const countryCode = e.target.value;
+      modalStateFilter.innerHTML = '<option value="">State/Province...</option>';
+      modalStateFilter.disabled = true;
+      applyRegionBtn.disabled = !countryCode;
+
+      if (countryCode) {
+        // Load states for this country
+        const states = await EBird.getStates(countryCode);
+        if (states.length > 0) {
+          states.forEach(s => {
+            modalStateFilter.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+          });
+          modalStateFilter.disabled = false;
+        }
+      }
+    });
+
+    // State filter - enable apply button
+    modalStateFilter?.addEventListener('change', () => {
+      applyRegionBtn.disabled = false;
+    });
+
+    // Apply region button
+    applyRegionBtn?.addEventListener('click', () => {
+      const countryCode = modalCountryFilter.value;
+      const stateCode = modalStateFilter.value;
+      const regionCode = stateCode || countryCode;
+
+      if (regionCode) {
+        this.searchByRegion(regionCode);
+        modal.style.display = 'none';
+      }
+    });
+
+    // Use GPS button
+    useGpsBtn?.addEventListener('click', () => {
+      this.useMyLocation();
+      modal.style.display = 'none';
+    });
+
+    // Pick on map button
+    modalPickMapBtn?.addEventListener('click', () => {
+      modal.style.display = 'none';
+      this.openMapPicker();
     });
   },
 
@@ -558,14 +635,18 @@ const App = {
   },
 
   async useMyLocation() {
-    const btn = document.getElementById('use-location-btn');
-    btn.disabled = true;
-    btn.textContent = '📍 Detecting...';
+    const gpsStatus = document.getElementById('gps-status');
+
+    if (gpsStatus) {
+      gpsStatus.textContent = '📍 Detecting location...';
+      gpsStatus.style.display = 'block';
+    }
 
     if (typeof LocationService === 'undefined') {
       alert('Location service not available.');
-      btn.textContent = '📍 Use My Location';
-      btn.disabled = false;
+      if (gpsStatus) {
+        gpsStatus.style.display = 'none';
+      }
       return;
     }
 
@@ -583,12 +664,9 @@ const App = {
         lng
       }));
 
-      // Show location info
-      const locationInfo = document.getElementById('location-info');
-      if (locationInfo) {
+      if (gpsStatus) {
         const displayName = LocationService.getRegionDisplayName(location);
-        locationInfo.textContent = `📍 ${displayName} (50km radius)`;
-        locationInfo.style.display = 'block';
+        gpsStatus.textContent = `✓ Using ${displayName} (50km radius)`;
       }
 
       this.showLoading(true);
@@ -600,13 +678,14 @@ const App = {
       // Hide cache prompt for GPS-based search
       this.updateCachePrompt(null);
 
-      btn.textContent = LocationService.getButtonText();
-      btn.disabled = false;
+      // Update the location button text
+      this.updateSearchLocationButton();
 
     } catch (error) {
       alert(error.message || 'Could not get your location. Please try using "Pick on map" instead.');
-      btn.textContent = LocationService.getButtonText();
-      btn.disabled = false;
+      if (gpsStatus) {
+        gpsStatus.style.display = 'none';
+      }
     }
   },
 
@@ -676,6 +755,9 @@ const App = {
       lng: this.pickedLocation.lng
     }));
 
+    // Update the location button text
+    this.updateSearchLocationButton();
+
     this.showLoading(true);
     EBird.getNearbyObservations(this.pickedLocation.lat, this.pickedLocation.lng).then(birds => {
       this.birds = this.deduplicateBirds(birds);
@@ -688,12 +770,6 @@ const App = {
   },
 
   async searchByRegion(regionCode) {
-    // Hide location info when switching to region search
-    const locationInfo = document.getElementById('location-info');
-    if (locationInfo) {
-      locationInfo.style.display = 'none';
-    }
-
     // Save enhanced search settings for persistence
     const countryCode = regionCode.split('-')[0];
     const stateCode = regionCode.includes('-') ? regionCode : null;
@@ -703,6 +779,9 @@ const App = {
       countryCode,
       stateCode
     }));
+
+    // Update the location button text
+    this.updateSearchLocationButton();
 
     // Set userLocation from cached location for "Nearest" sorting
     if (!this.userLocation && typeof LocationService !== 'undefined') {

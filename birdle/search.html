@@ -18,36 +18,20 @@
     <button id="scroll-to-top" class="scroll-to-top-nav" style="display: none;">↑</button>
   </nav>
 
-  <!-- Location Button -->
-  <button id="use-location-btn" class="location-btn">📍 Use My Location</button>
-  <p id="location-info" class="hint" style="display:none; margin-top: 8px;"></p>
-
-  <!-- Region Filters -->
-  <div class="filter-row region-filters">
-    <select id="country-filter">
-      <option value="">Select country...</option>
-    </select>
-    <select id="state-filter" disabled>
-      <option value="">State/Province...</option>
-    </select>
+  <!-- Search Bar (Top Priority) -->
+  <div class="search-bar">
+    <input type="text" id="bird-search" placeholder="Search birds...">
   </div>
+
+  <!-- Current Location Button -->
+  <button id="current-location-btn" class="current-location-btn">
+    <span id="current-location-text">Select Location</span>
+  </button>
 
   <!-- Cache Button -->
   <div id="cache-prompt" style="display: none; margin: 8px 0; padding: 10px; background: #f5f7ff; border-radius: 6px; font-size: 13px;">
     <span id="cache-prompt-text">Save for offline?</span>
     <button id="cache-country-btn" style="margin-left: 8px; padding: 6px 12px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">Cache Country</button>
-  </div>
-  <div class="filter-row">
-    <button id="pick-location-btn" class="pick-location-btn">📍 Pick on map</button>
-  </div>
-
-  <!-- Map Picker -->
-  <div id="map-container" style="display:none;">
-    <div id="map"></div>
-    <div class="map-actions">
-      <button id="map-cancel-btn">Cancel</button>
-      <button id="map-confirm-btn">Search here</button>
-    </div>
   </div>
 
   <!-- Sort & Filter Controls -->
@@ -62,9 +46,50 @@
     </label>
   </div>
 
-  <!-- Search within list -->
-  <div class="search-bar">
-    <input type="text" id="bird-search" placeholder="Search birds...">
+  <!-- Location Modal -->
+  <div id="location-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h2>Update Search Location</h2>
+
+      <!-- Option 1: Country/Region Dropdown -->
+      <div class="location-option">
+        <h3>Select Region</h3>
+        <div class="filter-row region-filters">
+          <select id="modal-country-filter">
+            <option value="">Select country...</option>
+          </select>
+          <select id="modal-state-filter" disabled>
+            <option value="">State/Province...</option>
+          </select>
+        </div>
+        <button id="apply-region-btn" class="btn-primary" disabled>Apply Region</button>
+      </div>
+
+      <!-- Option 2: Use GPS Coordinates -->
+      <div class="location-option">
+        <h3>Use Current Location</h3>
+        <p class="hint">Use your precise GPS coordinates for hyper-local results</p>
+        <button id="use-gps-btn" class="btn-primary">📍 Use My Location</button>
+        <p id="gps-status" class="hint" style="display:none; margin-top: 8px;"></p>
+      </div>
+
+      <!-- Option 3: Pick on Map -->
+      <div class="location-option">
+        <h3>Pick on Map</h3>
+        <button id="modal-pick-map-btn" class="btn-primary">📍 Pick Location on Map</button>
+      </div>
+
+      <button id="location-modal-close" class="btn-secondary">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Map Picker -->
+  <div id="map-container" style="display:none;">
+    <div id="map"></div>
+    <div class="map-actions">
+      <button id="map-cancel-btn">Cancel</button>
+      <button id="map-confirm-btn">Search here</button>
+    </div>
   </div>
 
   <!-- Loading State -->

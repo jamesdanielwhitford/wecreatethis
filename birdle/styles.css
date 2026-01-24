@@ -708,6 +708,100 @@ input[type="date"].form-input {
   cursor: not-allowed;
 }
 
+/* Current Location Button (Search Page) */
+.current-location-btn {
+  width: 100%;
+  padding: 12px;
+  margin: 12px 0;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.current-location-btn:hover {
+  background: #45a049;
+}
+
+.current-location-btn:active {
+  transform: scale(0.98);
+}
+
+/* Location Option Sections in Modal */
+.location-option {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.location-option:last-of-type {
+  border-bottom: none;
+  margin-bottom: 16px;
+  padding-bottom: 0;
+}
+
+.location-option h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.location-option .hint {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+/* Button styles for modal */
+.btn-primary {
+  padding: 10px 16px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover {
+  background: #45a049;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  padding: 10px 16px;
+  background: #f5f5f5;
+  color: #666;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #e8e8e8;
+}
+
 .region-selects {
   display: flex;
   flex-direction: column;
