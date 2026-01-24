@@ -785,6 +785,9 @@ const App = {
     const list = document.getElementById('bird-list');
     if (!list) return;
 
+    // Check if online
+    const isOnline = navigator.onLine;
+
     let birds;
 
     // If "recent" sort, show recently viewed birds
@@ -827,12 +830,33 @@ const App = {
     list.innerHTML = birds.map(bird => {
       const isSeen = seenCodes.includes(bird.speciesCode);
       const showRemove = this.currentSort === 'recent';
+
+      // Use compact layout when offline
+      if (!isOnline) {
+        return `
+          <li class="bird-item ${isSeen ? 'seen' : ''}" data-code="${bird.speciesCode}">
+            <a href="bird?code=${bird.speciesCode}">
+              <span class="bird-name">${bird.comName}</span>
+              <span class="bird-location">${bird.locName || ''}</span>
+              ${isSeen ? '<span class="seen-badge">✓</span>' : ''}
+            </a>
+            ${showRemove ? `<button class="remove-btn" data-code="${bird.speciesCode}">✕</button>` : ''}
+          </li>
+        `;
+      }
+
+      // Use image layout when online
       return `
         <li class="bird-item ${isSeen ? 'seen' : ''}" data-code="${bird.speciesCode}">
           <a href="bird?code=${bird.speciesCode}">
-            <span class="bird-name">${bird.comName}</span>
-            <span class="bird-location">${bird.locName || ''}</span>
-            ${isSeen ? '<span class="seen-badge">✓</span>' : ''}
+            <div class="bird-thumbnail loading" data-bird="${bird.comName}" data-sci="${bird.sciName || ''}"></div>
+            <div class="bird-info">
+              <span class="bird-name">${bird.comName}</span>
+              <span class="bird-location">${bird.locName || ''}</span>
+            </div>
+            <div class="bird-badges">
+              ${isSeen ? '<span class="seen-badge">✓</span>' : ''}
+            </div>
           </a>
           ${showRemove ? `<button class="remove-btn" data-code="${bird.speciesCode}">✕</button>` : ''}
         </li>
@@ -848,6 +872,11 @@ const App = {
           this.removeRecentBird(btn.dataset.code);
         });
       });
+    }
+
+    // Load images lazily (only if online)
+    if (isOnline) {
+      this.loadBirdThumbnails(list);
     }
 
     // Store birds for detail page (merge with recent birds)
@@ -880,6 +909,53 @@ const App = {
     this.recentBirds = this.recentBirds.filter(b => b.speciesCode !== speciesCode);
     localStorage.setItem('recentBirds', JSON.stringify(this.recentBirds));
     this.renderBirdList();
+  },
+
+  async loadBirdThumbnails(listElement) {
+    const thumbnails = listElement.querySelectorAll('.bird-thumbnail');
+
+    // Use Intersection Observer for lazy loading
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(async (entry) => {
+        if (entry.isIntersecting) {
+          const thumbnail = entry.target;
+          observer.unobserve(thumbnail);
+
+          const birdName = thumbnail.dataset.bird;
+          const sciName = thumbnail.dataset.sci;
+
+          // Try to fetch image
+          let imageUrl = await this.fetchWikipediaImage(birdName);
+          if (!imageUrl && sciName) {
+            imageUrl = await this.fetchWikipediaImage(sciName);
+          }
+
+          if (imageUrl) {
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = birdName;
+            img.loading = 'lazy';
+
+            img.onload = () => {
+              thumbnail.classList.remove('loading');
+              thumbnail.appendChild(img);
+            };
+
+            img.onerror = () => {
+              thumbnail.classList.remove('loading');
+              // Keep empty gray box on error
+            };
+          } else {
+            thumbnail.classList.remove('loading');
+            // Keep empty gray box if no image found
+          }
+        }
+      });
+    }, {
+      rootMargin: '50px' // Start loading 50px before thumbnail is visible
+    });
+
+    thumbnails.forEach(thumbnail => observer.observe(thumbnail));
   },
 
   // ===== BIRD DETAIL PAGE =====
@@ -1602,6 +1678,9 @@ const App = {
     this.bindBingoEvents();
     await this.loadOrCreateBingoCard();
 
+    // Set up view toggle
+    this.setupBingoViewToggle();
+
     // Refresh bingo state when user returns (e.g., after adding a sighting)
     window.addEventListener('pageshow', async (e) => {
       if (e.persisted || performance.navigation.type === 2) {
@@ -1976,7 +2055,15 @@ const App = {
         cellEl.classList.add('free');
         cellEl.textContent = 'FREE';
       } else {
-        cellEl.textContent = cell.comName;
+        // Create text wrapper for name
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'bird-name';
+        nameSpan.textContent = cell.comName;
+        cellEl.appendChild(nameSpan);
+
+        // Store bird data for image loading
+        cellEl.dataset.bird = cell.comName;
+        cellEl.dataset.sci = cell.sciName || '';
 
         if (seenCodes.has(cell.speciesCode)) {
           cellEl.classList.add('found');
@@ -2061,6 +2148,83 @@ const App = {
     } catch (error) {
       console.error('Error saving bingo game:', error);
     }
+  },
+
+  setupBingoViewToggle() {
+    const toggleBtn = document.getElementById('view-toggle-btn');
+    const toggleIcon = document.getElementById('view-toggle-icon');
+    const toggleText = document.getElementById('view-toggle-text');
+    const gridEl = document.getElementById('bingo-grid');
+
+    if (!toggleBtn || !gridEl) return;
+
+    // Check saved preference
+    const savedView = localStorage.getItem('bingoViewMode') || 'text';
+    if (savedView === 'image') {
+      gridEl.classList.add('image-view');
+      toggleIcon.textContent = '📝';
+      toggleText.textContent = 'Show Names';
+      this.loadBingoCellImages(gridEl);
+    }
+
+    toggleBtn.addEventListener('click', () => {
+      const isImageView = gridEl.classList.toggle('image-view');
+
+      if (isImageView) {
+        toggleIcon.textContent = '📝';
+        toggleText.textContent = 'Show Names';
+        localStorage.setItem('bingoViewMode', 'image');
+        this.loadBingoCellImages(gridEl);
+      } else {
+        toggleIcon.textContent = '🖼️';
+        toggleText.textContent = 'Show Images';
+        localStorage.setItem('bingoViewMode', 'text');
+      }
+    });
+  },
+
+  async loadBingoCellImages(gridEl) {
+    const cells = gridEl.querySelectorAll('.bingo-cell:not(.free)');
+
+    cells.forEach(async (cell) => {
+      // Skip if already has image
+      if (cell.querySelector('img')) return;
+
+      const birdName = cell.dataset.bird;
+      const sciName = cell.dataset.sci;
+
+      if (!birdName) return;
+
+      // Add loading state
+      cell.classList.add('loading');
+
+      // Try to fetch image
+      let imageUrl = await this.fetchWikipediaImage(birdName);
+      if (!imageUrl && sciName) {
+        imageUrl = await this.fetchWikipediaImage(sciName);
+      }
+
+      if (imageUrl) {
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = birdName;
+        img.loading = 'lazy';
+
+        img.onload = () => {
+          cell.classList.remove('loading');
+        };
+
+        img.onerror = () => {
+          cell.classList.remove('loading');
+          // Keep gray background on error
+        };
+
+        cell.appendChild(img);
+      } else {
+        cell.classList.remove('loading');
+        // Keep gray background if no image found
+      }
+    });
   },
 
   checkBingo(grid, seenCodes) {

@@ -12,6 +12,9 @@ const LifeList = {
     const emptyState = document.getElementById('empty-state');
     const sections = document.getElementById('life-sections');
 
+    // Check if online
+    const isOnline = navigator.onLine;
+
     // Get all sightings
     const sightings = await BirdDB.getAllSightings();
 
@@ -158,14 +161,30 @@ const LifeList = {
           if (region === '_country') {
             html += `<ul class="bird-list country-birds">`;
             for (const bird of birds) {
-              html += `
-                <li class="bird-item life-bird">
-                  <a href="bird?code=${bird.speciesCode}">
-                    <span class="bird-name">${bird.comName}</span>
-                    <span class="sighting-count">${bird.count}</span>
-                  </a>
-                </li>
-              `;
+              if (isOnline) {
+                html += `
+                  <li class="bird-item life-bird">
+                    <a href="bird?code=${bird.speciesCode}">
+                      <div class="bird-thumbnail loading" data-bird="${bird.comName}" data-sci="${bird.sciName || ''}"></div>
+                      <div class="bird-info">
+                        <span class="bird-name">${bird.comName}</span>
+                      </div>
+                      <div class="bird-badges">
+                        <span class="sighting-count">${bird.count}</span>
+                      </div>
+                    </a>
+                  </li>
+                `;
+              } else {
+                html += `
+                  <li class="bird-item life-bird">
+                    <a href="bird?code=${bird.speciesCode}">
+                      <span class="bird-name">${bird.comName}</span>
+                      <span class="sighting-count">${bird.count}</span>
+                    </a>
+                  </li>
+                `;
+              }
             }
             html += `</ul>`;
           } else {
@@ -180,14 +199,30 @@ const LifeList = {
             `;
 
             for (const bird of birds) {
-              html += `
-                <li class="bird-item life-bird">
-                  <a href="bird?code=${bird.speciesCode}">
-                    <span class="bird-name">${bird.comName}</span>
-                    <span class="sighting-count">${bird.count}</span>
-                  </a>
-                </li>
-              `;
+              if (isOnline) {
+                html += `
+                  <li class="bird-item life-bird">
+                    <a href="bird?code=${bird.speciesCode}">
+                      <div class="bird-thumbnail loading" data-bird="${bird.comName}" data-sci="${bird.sciName || ''}"></div>
+                      <div class="bird-info">
+                        <span class="bird-name">${bird.comName}</span>
+                      </div>
+                      <div class="bird-badges">
+                        <span class="sighting-count">${bird.count}</span>
+                      </div>
+                    </a>
+                  </li>
+                `;
+              } else {
+                html += `
+                  <li class="bird-item life-bird">
+                    <a href="bird?code=${bird.speciesCode}">
+                      <span class="bird-name">${bird.comName}</span>
+                      <span class="sighting-count">${bird.count}</span>
+                    </a>
+                  </li>
+                `;
+              }
             }
 
             html += `</ul></div>`;
@@ -202,6 +237,79 @@ const LifeList = {
 
     sections.innerHTML = html;
     this.bindListEvents();
+
+    // Only load images if online
+    if (isOnline) {
+      this.loadBirdThumbnails();
+    }
+  },
+
+  async loadBirdThumbnails() {
+    const thumbnails = document.querySelectorAll('.bird-thumbnail');
+
+    // Use Intersection Observer for lazy loading
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(async (entry) => {
+        if (entry.isIntersecting) {
+          const thumbnail = entry.target;
+          observer.unobserve(thumbnail);
+
+          const birdName = thumbnail.dataset.bird;
+          const sciName = thumbnail.dataset.sci;
+
+          // Try to fetch image
+          let imageUrl = await this.fetchWikipediaImage(birdName);
+          if (!imageUrl && sciName) {
+            imageUrl = await this.fetchWikipediaImage(sciName);
+          }
+
+          if (imageUrl) {
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = birdName;
+            img.loading = 'lazy';
+
+            img.onload = () => {
+              thumbnail.classList.remove('loading');
+              thumbnail.appendChild(img);
+            };
+
+            img.onerror = () => {
+              thumbnail.classList.remove('loading');
+              // Keep empty gray box on error
+            };
+          } else {
+            thumbnail.classList.remove('loading');
+            // Keep empty gray box if no image found
+          }
+        }
+      });
+    }, {
+      rootMargin: '50px' // Start loading 50px before thumbnail is visible
+    });
+
+    thumbnails.forEach(thumbnail => observer.observe(thumbnail));
+  },
+
+  async fetchWikipediaImage(searchTerm) {
+    try {
+      const title = encodeURIComponent(searchTerm.replace(/ /g, '_'));
+      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages&pithumbsize=400&format=json&origin=*&redirects=1`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      const pages = data.query?.pages;
+      if (pages) {
+        const page = Object.values(pages)[0];
+        if (page.thumbnail?.source) {
+          return page.thumbnail.source;
+        }
+      }
+    } catch (error) {
+      // Silently fail
+    }
+    return null;
   },
 
   bindEvents() {
