@@ -1,10 +1,12 @@
-const CACHE_NAME = 'birdle-v88';
+const CACHE_NAME = 'birdle-v89';
 const ASSETS = [
   '/birdle/index.html',
   '/birdle/search.html',
   '/birdle/bird.html',
   '/birdle/life.html',
   '/birdle/bingo.html',
+  '/birdle/bingo-games.html',
+  '/birdle/new-bingo.html',
   '/birdle/sync.html',
   '/birdle/cache.html',
   '/birdle/styles.css',

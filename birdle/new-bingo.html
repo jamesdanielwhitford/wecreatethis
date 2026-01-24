@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>New Bingo Game - Birdle</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a href="bingo-games" class="back-btn">&larr; Back</a>
+  <h1>New Bingo Game</h1>
+
+  <!-- Title -->
+  <div class="form-group">
+    <label for="game-title">Game Title</label>
+    <input type="text" id="game-title" placeholder="">
+    <p class="hint">Leave blank to use today's date</p>
+  </div>
+
+  <!-- Region Selector -->
+  <div class="form-group">
+    <label>Choose Region</label>
+    <button id="use-location-btn" class="location-btn">📍 Use My Location</button>
+    <div class="region-selects">
+      <select id="country-select">
+        <option value="">Select Country...</option>
+      </select>
+      <select id="state-select" disabled>
+        <option value="">Select State/Province...</option>
+      </select>
+    </div>
+    <p id="region-info" class="hint"></p>
+  </div>
+
+  <!-- Create Button -->
+  <button id="create-game-btn" class="btn create-btn" disabled>Create Game</button>
+
+  <!-- Loading indicator -->
+  <div id="creating-spinner" class="loading" style="display:none;">
+    <p>Creating bingo game...</p>
+  </div>
+
+  <script src="location.js?v=89"></script>
+  <script src="ebird.js?v=89"></script>
+  <script src="db.js?v=89"></script>
+  <script src="app.js?v=89"></script>
+</body>
+</html>

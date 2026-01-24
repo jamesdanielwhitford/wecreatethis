@@ -2,7 +2,7 @@
 // Centralized bird caching system
 
 const DB_NAME = 'birdle-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // Generate UUID for sync
 function generateSyncId() {
@@ -62,6 +62,13 @@ const BirdDB = {
         // Cache metadata store - tracks which birds belong to which cache
         if (!db.objectStoreNames.contains('cache_meta')) {
           db.createObjectStore('cache_meta', { keyPath: 'key' });
+        }
+
+        // Bingo games store - multiple bingo game instances
+        if (!db.objectStoreNames.contains('bingo_games')) {
+          const bingoStore = db.createObjectStore('bingo_games', { keyPath: 'id', autoIncrement: true });
+          bingoStore.createIndex('createdAt', 'createdAt');
+          bingoStore.createIndex('completedAt', 'completedAt');
         }
       };
     });
@@ -704,6 +711,78 @@ const BirdDB = {
     }
 
     return migrated;
+  },
+
+  // ===== BINGO GAMES =====
+
+  async createBingoGame(gameData) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const game = {
+        title: gameData.title || new Date().toLocaleDateString(),
+        regionCode: gameData.regionCode,
+        regionName: gameData.regionName,
+        birds: gameData.birds || [], // Array of {speciesCode, comName, sciName, rarity}
+        foundBirds: gameData.foundBirds || [], // Array of speciesCodes
+        createdAt: new Date().toISOString(),
+        completedAt: null,
+        completedInSeconds: null
+      };
+
+      const tx = this.db.transaction('bingo_games', 'readwrite');
+      const request = tx.objectStore('bingo_games').add(game);
+      request.onsuccess = () => {
+        game.id = request.result;
+        resolve(game);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async getBingoGame(id) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('bingo_games', 'readonly');
+      const request = tx.objectStore('bingo_games').get(id);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async getAllBingoGames() {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('bingo_games', 'readonly');
+      const request = tx.objectStore('bingo_games').getAll();
+      request.onsuccess = () => {
+        // Sort by most recent first
+        const games = request.result.sort((a, b) =>
+          new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        resolve(games);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async updateBingoGame(game) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('bingo_games', 'readwrite');
+      const request = tx.objectStore('bingo_games').put(game);
+      request.onsuccess = () => resolve(game);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async deleteBingoGame(id) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('bingo_games', 'readwrite');
+      const request = tx.objectStore('bingo_games').delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
   }
 };
 
