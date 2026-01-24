@@ -173,6 +173,7 @@ const App = {
     this.updateSearchLocationButton();
     await this.loadSearchCountries();
     this.restoreLastSearch();
+    this.initScrollToTop();
   },
 
   async loadSearchCountries() {
@@ -464,6 +465,28 @@ const App = {
     const cacheBtn = document.getElementById('cache-country-btn');
     cacheBtn?.addEventListener('click', () => {
       this.cacheCurrentCountry();
+    });
+  },
+
+  initScrollToTop() {
+    const scrollToTopBtn = document.getElementById('scroll-to-top');
+    if (!scrollToTopBtn) return;
+
+    // Show/hide button based on scroll position
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 300) {
+        scrollToTopBtn.style.display = 'flex';
+      } else {
+        scrollToTopBtn.style.display = 'none';
+      }
+    });
+
+    // Scroll to top when clicked
+    scrollToTopBtn.addEventListener('click', () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
     });
   },
 

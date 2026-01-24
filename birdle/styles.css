@@ -118,6 +118,10 @@ h1 {
   border-bottom: 1px solid #eee;
 }
 
+.search-navbar {
+  position: relative;
+}
+
 .game-navbar .back-btn {
   margin-bottom: 0;
 }
@@ -1780,4 +1784,26 @@ input[type="date"].form-input {
 
 .found-list .empty::before {
   display: none;
+}
+
+/* Scroll to Top Button in Navbar */
+.scroll-to-top-nav {
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+
+.scroll-to-top-nav:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+}
+
+.scroll-to-top-nav:active {
+  transform: translateY(0);
 }
