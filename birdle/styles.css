@@ -400,6 +400,11 @@ h1 {
   font-weight: bold;
 }
 
+.bingo-badge {
+  font-size: 1.1em;
+  margin-left: 4px;
+}
+
 .empty {
   padding: 20px;
   text-align: center;

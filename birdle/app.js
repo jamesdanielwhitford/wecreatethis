@@ -781,6 +781,26 @@ const App = {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   },
 
+  async getBingoBirdCodes() {
+    // Get all bird species codes from all active bingo games
+    if (typeof BirdDB === 'undefined') return [];
+
+    const games = await BirdDB.getAllBingoGames();
+    const birdCodes = new Set();
+
+    for (const game of games) {
+      if (game.birds && Array.isArray(game.birds)) {
+        game.birds.forEach(bird => {
+          if (bird.speciesCode) {
+            birdCodes.add(bird.speciesCode);
+          }
+        });
+      }
+    }
+
+    return Array.from(birdCodes);
+  },
+
   async renderBirdList() {
     const list = document.getElementById('bird-list');
     if (!list) return;
@@ -803,6 +823,9 @@ const App = {
       const allSightings = await BirdDB.getAllSightings();
       seenCodes = [...new Set(allSightings.map(s => s.speciesCode))];
     }
+
+    // Get all birds on bingo cards
+    const bingoBirdCodes = await this.getBingoBirdCodes();
 
     const seenFilter = document.getElementById('seen-filter');
     if (seenFilter?.checked) {
@@ -829,6 +852,7 @@ const App = {
 
     list.innerHTML = birds.map(bird => {
       const isSeen = seenCodes.includes(bird.speciesCode);
+      const isOnBingoCard = bingoBirdCodes.includes(bird.speciesCode);
       const showRemove = this.currentSort === 'recent';
 
       // Use compact layout when offline
@@ -839,6 +863,7 @@ const App = {
               <span class="bird-name">${bird.comName}</span>
               <span class="bird-location">${bird.locName || ''}</span>
               ${isSeen ? '<span class="seen-badge">✓</span>' : ''}
+              ${isOnBingoCard ? '<span class="bingo-badge">🎲</span>' : ''}
             </a>
             ${showRemove ? `<button class="remove-btn" data-code="${bird.speciesCode}">✕</button>` : ''}
           </li>
@@ -856,6 +881,7 @@ const App = {
             </div>
             <div class="bird-badges">
               ${isSeen ? '<span class="seen-badge">✓</span>' : ''}
+              ${isOnBingoCard ? '<span class="bingo-badge">🎲</span>' : ''}
             </div>
           </a>
           ${showRemove ? `<button class="remove-btn" data-code="${bird.speciesCode}">✕</button>` : ''}
