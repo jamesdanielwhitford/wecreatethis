@@ -2134,8 +2134,7 @@ const App = {
     await this.saveBingoGame();
 
     // Reload images if in image view mode
-    const gridEl = document.getElementById('bingo-grid');
-    if (gridEl && gridEl.classList.contains('image-view')) {
+    if (gridEl.classList.contains('image-view')) {
       this.loadBingoCellImages(gridEl);
     }
   },
