@@ -46,7 +46,6 @@ h1 {
 
 .btn {
   display: flex;
-  flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 12px;
@@ -57,6 +56,24 @@ h1 {
   border: 2px solid #38592D;
   border-radius: 8px;
   transition: background 0.15s, color 0.15s;
+}
+
+.btn:active {
+  background: #38592D;
+  color: #fff;
+}
+
+.btn-icon {
+  font-size: 1.4rem;
+}
+
+.btn-text {
+  font-size: 1.1rem;
+}
+
+/* Homepage-specific button styling */
+.button-container .btn {
+  flex-direction: row;
   /* Make buttons as tall as they are wide, but ensure all 3 fit on screen */
   /* Body max-width is 400px, padding is 20px each side, so button width is ~360px */
   /* Account for: body padding (40px), p tag, location status, margins, gaps */
@@ -66,18 +83,13 @@ h1 {
   max-height: min(360px, calc((100vh - 200px) / 3 - 8px));
 }
 
-.btn:active {
-  background: #38592D;
-  color: #fff;
-}
-
-.btn-icon {
+.button-container .btn-icon {
   /* Scale icon size based on button height */
   /* At min-height 100px = 1.4rem, at max 360px = ~5rem */
   font-size: clamp(1.4rem, calc(0.5rem + 4vh), 5rem);
 }
 
-.btn-text {
+.button-container .btn-text {
   /* Scale text size based on button height */
   /* At min-height 100px = 1.1rem, at max 360px = ~2.5rem */
   font-size: clamp(1.1rem, calc(0.5rem + 2vh), 2.5rem);
