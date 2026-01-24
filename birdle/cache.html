@@ -98,6 +98,11 @@
   <h1>Manage Cache</h1>
   <p class="hint" style="color: #666; font-size: 14px; margin-top: 4px;">Cache countries for offline bird searching</p>
 
+  <a href="sync" class="btn" style="display: inline-block; margin-top: 12px; margin-bottom: 12px; text-decoration: none;">
+    <span class="btn-icon">🔄</span>
+    <span class="btn-text">Sync Devices</span>
+  </a>
+
   <div id="total-summary" class="total-summary" style="display: none;">
     <strong id="total-countries">0</strong> countries cached (<strong id="total-birds">0</strong> birds)
   </div>
@@ -118,8 +123,8 @@
     <p id="progress-text" class="progress-text" style="display: none;"></p>
   </div>
 
-  <script src="db.js?v=86"></script>
-  <script src="ebird.js?v=86"></script>
+  <script src="db.js?v=87"></script>
+  <script src="ebird.js?v=87"></script>
   <script>
     (async function() {
       const cacheList = document.getElementById('cache-list');

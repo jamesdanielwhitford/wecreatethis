@@ -11,15 +11,9 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Navbar with menu -->
+  <!-- Navbar -->
   <nav class="game-navbar">
     <span style="font-weight: bold; font-size: 18px;">Birdle</span>
-    <button id="menu-btn" class="menu-btn">&#8942;</button>
-    <div id="menu-dropdown" class="menu-dropdown" style="display:none;">
-      <a href="cache.html" style="display: block; padding: 12px 16px; text-decoration: none; color: #333;">Manage Cache</a>
-      <a href="sync.html" style="display: block; padding: 12px 16px; text-decoration: none; color: #333;">Sync Devices</a>
-      <a href="#" id="menu-about" style="display: block; padding: 12px 16px; text-decoration: none; color: #666; font-size: 13px;">About</a>
-    </div>
   </nav>
 
   <p style="margin-top: 20px;">Bird Bingo Adventure</p>
@@ -70,12 +64,17 @@
       <span class="btn-icon">🎲</span>
       <span class="btn-text">Bird Bingo</span>
     </a>
+
+    <a href="cache" class="btn">
+      <span class="btn-icon">💾</span>
+      <span class="btn-text">Manage Cache</span>
+    </a>
   </div>
 
-  <script src="db.js?v=86"></script>
-  <script src="location.js?v=86"></script>
-  <script src="ebird.js?v=86"></script>
-  <script src="app.js?v=86"></script>
+  <script src="db.js?v=87"></script>
+  <script src="location.js?v=87"></script>
+  <script src="ebird.js?v=87"></script>
+  <script src="app.js?v=87"></script>
   <script>
     // Location status handling
     (function() {
@@ -272,28 +271,6 @@
       });
 
       showLocationStatus();
-    })();
-
-    // Menu toggle
-    (function() {
-      const menuBtn = document.getElementById('menu-btn');
-      const menuDropdown = document.getElementById('menu-dropdown');
-      const menuAbout = document.getElementById('menu-about');
-
-      menuBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        menuDropdown.style.display = menuDropdown.style.display === 'none' ? 'block' : 'none';
-      });
-
-      document.addEventListener('click', () => {
-        menuDropdown.style.display = 'none';
-      });
-
-      menuAbout.addEventListener('click', (e) => {
-        e.preventDefault();
-        alert('Birdle v86\n\nA bird spotting game.\nTrack your sightings and play Bird Bingo!');
-        menuDropdown.style.display = 'none';
-      });
     })();
 
     // Force service worker update
