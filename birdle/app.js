@@ -127,11 +127,11 @@ const App = {
           }
 
           // If the game was completed, set completion data
-          if (card.bingoAchieved) {
-            game.completedAt = card.bingoAchieved;
-            if (card.createdAt) {
+          if (card.bingoAchieved || card.completedAt) {
+            game.completedAt = card.bingoAchieved || card.completedAt;
+            if (card.createdAt && game.completedAt) {
               const start = new Date(card.createdAt);
-              const end = new Date(card.bingoAchieved);
+              const end = new Date(game.completedAt);
               game.completedInSeconds = Math.floor((end - start) / 1000);
             }
           }
@@ -1379,6 +1379,14 @@ const App = {
             });
             stateSelect.disabled = false;
             stateSelect.value = location.stateCode;
+          } else {
+            // If only country, load states for that country
+            const states = await EBird.getStates(location.countryCode);
+            stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
+            states.forEach(s => {
+              stateSelect.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+            });
+            stateSelect.disabled = false;
           }
 
           this.updateRegionInfoForBingo();
@@ -1454,7 +1462,7 @@ const App = {
 
     try {
       // Fetch birds for the region
-      const birdsData = await EBird.getRegionBirds(this.selectedRegion);
+      const birdsData = await EBird.getSpeciesList(this.selectedRegion);
 
       // Get recent observations to calculate rarity
       const recentObs = await EBird.getRecentObservations(this.selectedRegion);
@@ -1574,6 +1582,11 @@ const App = {
       this.openBingoShareModal();
     });
 
+    document.getElementById('menu-rename-game')?.addEventListener('click', () => {
+      menuDropdown.style.display = 'none';
+      this.openRenameModal();
+    });
+
     document.getElementById('menu-new-game')?.addEventListener('click', () => {
       menuDropdown.style.display = 'none';
       document.getElementById('new-game-modal').style.display = 'flex';
@@ -1613,6 +1626,21 @@ const App = {
     document.getElementById('new-game-modal')?.addEventListener('click', (e) => {
       if (e.target.id === 'new-game-modal') {
         document.getElementById('new-game-modal').style.display = 'none';
+      }
+    });
+
+    // Rename modal
+    document.getElementById('do-rename-btn')?.addEventListener('click', () => {
+      this.renameBingoGame();
+    });
+
+    document.getElementById('rename-cancel-btn')?.addEventListener('click', () => {
+      document.getElementById('rename-modal').style.display = 'none';
+    });
+
+    document.getElementById('rename-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'rename-modal') {
+        document.getElementById('rename-modal').style.display = 'none';
       }
     });
 
@@ -1801,7 +1829,12 @@ const App = {
     document.getElementById('bingo-error').style.display = 'none';
     document.getElementById('bingo-content').style.display = 'block';
 
-    // Set header info - show date and time since sightings are time-based
+    // Load full game to get the title
+    const game = await BirdDB.getBingoGame(this.currentGameId);
+    const gameTitle = game?.title || 'Bird Bingo';
+
+    // Set header info - show game title and date
+    document.getElementById('game-title').textContent = gameTitle;
     const startDateStr = new Date(card.createdAt).toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -2089,6 +2122,50 @@ const App = {
     }
 
     document.getElementById('share-modal').style.display = 'none';
+  },
+
+  openRenameModal() {
+    if (!this.currentGameId) return;
+
+    const renameInput = document.getElementById('rename-input');
+    const modal = document.getElementById('rename-modal');
+
+    // Pre-fill with current game title
+    const currentTitle = document.getElementById('game-title')?.textContent || '';
+    renameInput.value = currentTitle;
+
+    modal.style.display = 'flex';
+    renameInput.focus();
+    renameInput.select();
+  },
+
+  async renameBingoGame() {
+    if (!this.currentGameId) return;
+
+    const renameInput = document.getElementById('rename-input');
+    const newTitle = renameInput.value.trim();
+
+    if (!newTitle) {
+      alert('Please enter a game name');
+      return;
+    }
+
+    try {
+      const game = await BirdDB.getBingoGame(this.currentGameId);
+      if (game) {
+        game.title = newTitle;
+        await BirdDB.updateBingoGame(game);
+
+        // Update the title on the page
+        document.getElementById('game-title').textContent = newTitle;
+
+        // Close modal
+        document.getElementById('rename-modal').style.display = 'none';
+      }
+    } catch (error) {
+      console.error('Error renaming game:', error);
+      alert('Failed to rename game');
+    }
   }
 };
 

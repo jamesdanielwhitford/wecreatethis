@@ -16,13 +16,14 @@
     <button id="menu-btn" class="menu-btn">&#8942;</button>
     <div id="menu-dropdown" class="menu-dropdown" style="display:none;">
       <button id="menu-share-score">Share Score</button>
+      <button id="menu-rename-game">Rename Game</button>
       <button id="menu-new-game">New Game</button>
     </div>
   </nav>
 
   <!-- Bingo Header -->
   <div class="bingo-header">
-    <h1>Bird Bingo</h1>
+    <h1 id="game-title">Bird Bingo</h1>
     <p id="bingo-date" class="bingo-date"></p>
     <p id="bingo-location" class="bingo-location"></p>
   </div>
@@ -77,6 +78,21 @@
     </div>
   </div>
 
+  <!-- Rename Game Modal -->
+  <div id="rename-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3>Rename Game</h3>
+      <div class="form-group">
+        <label for="rename-input">Game Name</label>
+        <input type="text" id="rename-input" class="form-input" placeholder="Enter game name">
+      </div>
+      <div class="modal-actions">
+        <button id="do-rename-btn" class="modal-btn seen">Save</button>
+        <button id="rename-cancel-btn" class="modal-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- New Game Confirmation Modal -->
   <div id="new-game-modal" class="modal" style="display:none;">
     <div class="modal-content">
@@ -89,9 +105,9 @@
     </div>
   </div>
 
-  <script src="location.js?v=89"></script>
-  <script src="db.js?v=89"></script>
-  <script src="ebird.js?v=89"></script>
-  <script src="app.js?v=89"></script>
+  <script src="location.js?v=90"></script>
+  <script src="db.js?v=90"></script>
+  <script src="ebird.js?v=90"></script>
+  <script src="app.js?v=90"></script>
 </body>
 </html>
