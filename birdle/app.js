@@ -20,29 +20,31 @@ const App = {
     if (typeof BirdDB !== 'undefined') {
       await BirdDB.init();
       // Run one-time cleanup migration
-      await this.cleanupGamesData();
+      await this.cleanupRemovedFeatures();
     }
 
     const page = this.detectPage();
     if (page === 'search') this.initSearch();
     if (page === 'bird') this.initBirdDetail();
-    if (page === 'daily') this.initDaily();
     if (page === 'bingo') this.initBingo();
   },
 
-  // One-time migration to clean up removed Region Games feature
-  async cleanupGamesData() {
+  // One-time migration to clean up removed features (Region Games, Lifer Challenge)
+  async cleanupRemovedFeatures() {
     // Check if migration already ran
-    if (localStorage.getItem('games_removed_migration') === 'true') {
+    if (localStorage.getItem('removed_features_migration') === 'true') {
       return;
     }
 
     try {
-      // 1. Remove games from localStorage
+      // 1. Remove Region Games from localStorage
       localStorage.removeItem('games');
       localStorage.removeItem('collapsedSections');
 
-      // 2. Remove game bird caches from IndexedDB
+      // 2. Remove Lifer Challenge from localStorage
+      localStorage.removeItem('liferChallenge');
+
+      // 3. Remove game bird caches from IndexedDB
       const db = await BirdDB.init();
       const tx = db.transaction('cache_meta', 'readwrite');
       const store = tx.objectStore('cache_meta');
@@ -59,11 +61,13 @@ const App = {
 
       await tx.complete;
 
-      console.log('Region Games data cleaned up successfully');
+      console.log('Removed features data cleaned up successfully');
     } catch (error) {
-      console.error('Error cleaning up games data:', error);
+      console.error('Error cleaning up removed features data:', error);
     } finally {
-      // 3. Mark migration complete (even if there was an error, don't retry)
+      // 4. Mark migration complete (even if there was an error, don't retry)
+      localStorage.setItem('removed_features_migration', 'true');
+      // Also set old flag for backwards compatibility
       localStorage.setItem('games_removed_migration', 'true');
     }
   },
@@ -74,7 +78,6 @@ const App = {
     // Support both with and without .html extension
     // Order matters - check more specific paths first
     if (path.includes('search')) return 'search';
-    if (path.includes('daily')) return 'daily';
     if (path.includes('bingo')) return 'bingo';
     if (path.includes('life')) return 'life';
     // Check for 'bird.html', 'bird?', or '/bird' to avoid matching 'birdle'
@@ -789,8 +792,6 @@ const App = {
       const referrer = document.referrer;
       if (referrer.includes('/life')) {
         backBtn.href = 'life';
-      } else if (referrer.includes('/daily')) {
-        backBtn.href = 'daily';
       } else if (referrer.includes('/bingo')) {
         backBtn.href = 'bingo';
       } else if (referrer.includes('/game?')) {
@@ -821,13 +822,6 @@ const App = {
     const birds = JSON.parse(localStorage.getItem('currentBirds') || '[]');
     bird = birds.find(b => b.speciesCode === code);
 
-    // 2. Check lifer challenge
-    if (!bird) {
-      const liferChallenge = JSON.parse(localStorage.getItem('liferChallenge') || 'null');
-      if (liferChallenge?.bird?.speciesCode === code) {
-        bird = liferChallenge.bird;
-      }
-    }
 
     // 3. Check IndexedDB cache
     if (!bird && typeof BirdDB !== 'undefined') {
@@ -1151,426 +1145,6 @@ const App = {
     // Close modal and refresh sightings list
     document.getElementById('sighting-modal').style.display = 'none';
     await this.loadBirdSightings(bird);
-  },
-
-  // ===== LIFER CHALLENGE =====
-  liferChallenge: null,
-
-  async initDaily() {
-    this.bindLiferEvents();
-    await this.loadOrCreateLiferChallenge();
-
-    // Refresh challenge state when user returns to the page (e.g., after adding a sighting)
-    window.addEventListener('pageshow', async (e) => {
-      // Only refresh if returning from back/forward navigation
-      if (e.persisted || performance.navigation.type === 2) {
-        await this.updateLiferFoundState();
-      }
-    });
-
-    // Also refresh when page becomes visible (mobile app switching)
-    document.addEventListener('visibilitychange', async () => {
-      if (!document.hidden && this.liferChallenge) {
-        await this.updateLiferFoundState();
-      }
-    });
-  },
-
-  bindLiferEvents() {
-    // Menu toggle
-    const menuBtn = document.getElementById('menu-btn');
-    const menuDropdown = document.getElementById('menu-dropdown');
-
-    menuBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      menuDropdown.style.display = menuDropdown.style.display === 'none' ? 'block' : 'none';
-    });
-
-    document.addEventListener('click', () => {
-      if (menuDropdown) menuDropdown.style.display = 'none';
-    });
-
-    // Menu share
-    document.getElementById('menu-share-score')?.addEventListener('click', () => {
-      menuDropdown.style.display = 'none';
-      this.openLiferShareModal();
-    });
-
-    // Enable location button (initial state)
-    document.getElementById('enable-location-btn')?.addEventListener('click', () => {
-      this.requestLocationForChallenge();
-    });
-
-    // Retry location button
-    document.getElementById('retry-location-btn')?.addEventListener('click', () => {
-      this.requestLocationForChallenge();
-    });
-
-    // Share complete button
-    document.getElementById('share-complete-btn')?.addEventListener('click', () => {
-      this.openLiferShareModal();
-    });
-
-    // Share modal
-    document.getElementById('share-cancel-btn')?.addEventListener('click', () => {
-      document.getElementById('share-modal').style.display = 'none';
-    });
-
-    document.getElementById('do-share-btn')?.addEventListener('click', () => {
-      this.shareLiferScore();
-    });
-
-    // Close modals on backdrop click
-    document.getElementById('share-modal')?.addEventListener('click', (e) => {
-      if (e.target.id === 'share-modal') {
-        document.getElementById('share-modal').style.display = 'none';
-      }
-    });
-  },
-
-  // Request location permission for lifer challenge
-  async requestLocationForChallenge() {
-    document.getElementById('daily-initial').style.display = 'none';
-    document.getElementById('daily-error').style.display = 'none';
-    document.getElementById('daily-loading').style.display = 'block';
-
-    try {
-      // Force GPS request
-      const location = await LocationService.getLocation(true);
-      await this.generateLiferChallenge(location);
-    } catch (error) {
-      console.error('Location request failed:', error);
-      document.getElementById('daily-loading').style.display = 'none';
-      document.getElementById('daily-error').style.display = 'block';
-      document.getElementById('daily-error').innerHTML = `<p>${error.message}</p><button id="retry-location-btn" class="btn-small">Try Again</button>`;
-      // Re-bind retry button since we replaced innerHTML
-      document.getElementById('retry-location-btn')?.addEventListener('click', () => {
-        this.requestLocationForChallenge();
-      });
-    }
-  },
-
-  async loadOrCreateLiferChallenge() {
-    const today = new Date().toISOString().split('T')[0];
-    const stored = localStorage.getItem('liferChallenge');
-
-    // Get current cached location
-    let cachedLocation = null;
-    if (typeof LocationService !== 'undefined') {
-      cachedLocation = LocationService.getCached();
-    }
-
-    // Check for existing valid challenge - only check date, not location
-    // Once a challenge is set for today, keep it (even if found or location changed)
-    if (stored) {
-      const challenge = JSON.parse(stored);
-      if (challenge.date === today) {
-        this.liferChallenge = challenge;
-        this.renderLiferChallenge();
-        return;
-      }
-    }
-
-    // Need to create new challenge (new day)
-    if (cachedLocation) {
-      // Use cached location - no GPS request needed
-      document.getElementById('daily-loading').style.display = 'block';
-      await this.generateLiferChallenge(cachedLocation);
-      return;
-    }
-
-    // No cached location - show initial state with button
-    document.getElementById('daily-initial').style.display = 'block';
-    document.getElementById('daily-loading').style.display = 'none';
-  },
-
-  async generateLiferChallenge(location) {
-    document.getElementById('daily-initial').style.display = 'none';
-    document.getElementById('daily-loading').style.display = 'block';
-    document.getElementById('daily-error').style.display = 'none';
-    document.getElementById('daily-no-birds').style.display = 'none';
-    document.getElementById('daily-content').style.display = 'none';
-
-    try {
-      let observations;
-      let latitude = location.lat;
-      let longitude = location.lng;
-
-      // Check if we have valid GPS coordinates or need to use region
-      if (LocationService.hasValidCoordinates(location)) {
-        // Use GPS-based search
-        observations = await EBird.getNearbyObservations(latitude, longitude, 50);
-      } else {
-        // Use region-based search
-        const regionCode = LocationService.getRegionCode(location);
-        observations = await EBird.getRecentObservations(regionCode);
-        // Set coordinates to 0 for region-based
-        latitude = 0;
-        longitude = 0;
-      }
-
-      if (observations.length === 0) {
-        throw new Error('No birds found nearby');
-      }
-
-      // Get user's life list (species they've already seen)
-      let lifeListCodes = [];
-      if (typeof BirdDB !== 'undefined') {
-        const allSightings = await BirdDB.getAllSightings();
-        lifeListCodes = [...new Set(allSightings.map(s => s.speciesCode))];
-      }
-
-      // Deduplicate and count observations
-      const speciesCount = {};
-      const speciesData = {};
-
-      observations.forEach(obs => {
-        if (!speciesCount[obs.speciesCode]) {
-          speciesCount[obs.speciesCode] = 0;
-        }
-        speciesCount[obs.speciesCode]++;
-        speciesData[obs.speciesCode] = {
-          speciesCode: obs.speciesCode,
-          comName: obs.comName,
-          sciName: obs.sciName
-        };
-      });
-
-      // Build birds array with counts, excluding life list birds
-      const birds = Object.keys(speciesData)
-        .filter(code => !lifeListCodes.includes(code))
-        .map(code => ({
-          ...speciesData[code],
-          count: speciesCount[code]
-        }));
-
-      // Sort by count (most common first) - pick the most common bird not on life list
-      birds.sort((a, b) => b.count - a.count);
-
-      if (birds.length === 0) {
-        // User has seen all nearby birds!
-        document.getElementById('daily-loading').style.display = 'none';
-        document.getElementById('daily-no-birds').style.display = 'block';
-        return;
-      }
-
-      // Select the most common bird not on life list
-      const targetBird = birds[0];
-
-      // Assign rarity based on where it falls in the full list
-      const total = Object.keys(speciesData).length;
-      const allBirdsSorted = Object.keys(speciesData)
-        .map(code => ({ code, count: speciesCount[code] }))
-        .sort((a, b) => b.count - a.count);
-
-      const targetIndex = allBirdsSorted.findIndex(b => b.code === targetBird.speciesCode);
-      const commonThreshold = Math.floor(total / 3);
-      const rareThreshold = Math.floor(total * 2 / 3);
-
-      if (targetIndex < commonThreshold) {
-        targetBird.rarity = 'common';
-      } else if (targetIndex < rareThreshold) {
-        targetBird.rarity = 'rare';
-      } else {
-        targetBird.rarity = 'ultra';
-      }
-
-      // Get region info - prefer input location for manual locations
-      let locationName, regionCode, regionName;
-
-      if (!LocationService.hasValidCoordinates(location) && location.countryCode) {
-        // Manual location - use the location's region info
-        locationName = LocationService.getRegionDisplayName(location);
-        regionCode = LocationService.getRegionCode(location);
-        regionName = location.stateName || location.countryName || 'Your Area';
-      } else {
-        // GPS location - get from observations
-        locationName = 'Nearby';
-        regionCode = observations[0]?.subnational1Code || observations[0]?.countryCode || 'WORLD';
-        regionName = observations[0]?.subnational1Name || observations[0]?.countryName || 'Your Area';
-
-        // Extract city/location name from first observation if available
-        if (observations[0]?.locName) {
-          const locParts = observations[0].locName.split(',');
-          locationName = locParts[0].trim() || 'Nearby';
-        }
-      }
-
-      // Create challenge
-      const challenge = {
-        date: new Date().toISOString().split('T')[0],
-        lat: latitude,
-        lng: longitude,
-        locationName: locationName,
-        regionCode: regionCode,
-        regionName: regionName,
-        bird: targetBird,
-        createdAt: new Date().toISOString()
-      };
-
-      this.liferChallenge = challenge;
-      localStorage.setItem('liferChallenge', JSON.stringify(challenge));
-
-      await this.renderLiferChallenge();
-
-    } catch (error) {
-      console.error('Failed to create lifer challenge:', error);
-      document.getElementById('daily-loading').style.display = 'none';
-      document.getElementById('daily-error').style.display = 'block';
-      document.getElementById('daily-error').innerHTML = `<p>${error.message || 'Could not load challenge.'}</p><button id="retry-location-btn" class="btn-small">Try Again</button>`;
-      // Re-bind retry button
-      document.getElementById('retry-location-btn')?.addEventListener('click', () => {
-        this.requestLocationForChallenge();
-      });
-    }
-  },
-
-  async renderLiferChallenge() {
-    const challenge = this.liferChallenge;
-    if (!challenge) return;
-
-    document.getElementById('daily-initial').style.display = 'none';
-    document.getElementById('daily-loading').style.display = 'none';
-    document.getElementById('daily-error').style.display = 'none';
-    document.getElementById('daily-no-birds').style.display = 'none';
-    document.getElementById('daily-content').style.display = 'block';
-
-    // Set header info
-    const dateStr = new Date(challenge.date).toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric'
-    });
-    document.getElementById('daily-date').textContent = dateStr;
-
-    // Set location as clickable Google search link
-    const searchQuery = encodeURIComponent(`where to see ${challenge.bird.comName} near me`);
-    const searchUrl = `https://www.google.com/search?q=${searchQuery}`;
-    const locationLink = document.getElementById('daily-location');
-    locationLink.textContent = 'Find it near you →';
-    locationLink.href = searchUrl;
-
-    // Set bird info
-    document.getElementById('target-bird-name').textContent = challenge.bird.comName;
-    const rarityEl = document.getElementById('target-bird-rarity');
-    rarityEl.textContent = challenge.bird.rarity.charAt(0).toUpperCase() + challenge.bird.rarity.slice(1);
-    rarityEl.className = `bird-rarity ${challenge.bird.rarity}`;
-
-    // Set bird detail link
-    const birdLink = document.getElementById('target-bird-link');
-    if (birdLink) {
-      birdLink.href = `bird?code=${challenge.bird.speciesCode}&from=daily`;
-    }
-
-    // Check and update found state based on sightings
-    await this.updateLiferFoundState();
-  },
-
-  async updateLiferFoundState() {
-    const challenge = this.liferChallenge;
-    if (!challenge) return;
-
-    const item = document.getElementById('target-bird-item');
-    const check = document.getElementById('found-check');
-    const completedBanner = document.getElementById('daily-completed');
-
-    // Check if user has any sightings for this bird on this date
-    let hasFoundBird = false;
-    if (typeof BirdDB !== 'undefined') {
-      const sightings = await BirdDB.getSightingsForBird(challenge.bird.speciesCode);
-      // Check if any sighting matches the challenge date
-      hasFoundBird = sightings.some(s => s.date === challenge.date);
-    }
-
-    if (hasFoundBird) {
-      item?.classList.add('found');
-      if (check) check.style.display = 'inline';
-      if (completedBanner) completedBanner.style.display = 'block';
-    } else {
-      item?.classList.remove('found');
-      if (check) check.style.display = 'none';
-      if (completedBanner) completedBanner.style.display = 'none';
-    }
-  },
-
-  async openLiferShareModal() {
-    const challenge = this.liferChallenge;
-    if (!challenge) return;
-
-    // Check if user has found the bird
-    let hasFoundBird = false;
-    if (typeof BirdDB !== 'undefined') {
-      const sightings = await BirdDB.getSightingsForBird(challenge.bird.speciesCode);
-      hasFoundBird = sightings.some(s => s.date === challenge.date);
-    }
-
-    // Generate HTML preview with clickable link
-    const dateStr = new Date(challenge.date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
-
-    const searchQuery = encodeURIComponent(`where to see ${challenge.bird.comName} near me`);
-    const searchUrl = `https://www.google.com/search?q=${searchQuery}`;
-
-    let html = `<strong>Birdle Lifer Challenge - ${dateStr}</strong><br><br>`;
-
-    if (hasFoundBird) {
-      html += `New lifer: ${challenge.bird.comName}!<br>`;
-    } else {
-      html += `Target: ${challenge.bird.comName}<br>`;
-      html += `Still searching...<br>`;
-    }
-
-    html += `<br><a href="${searchUrl}" target="_blank" style="color: #2196f3; text-decoration: none;">Find it near you →</a>`;
-
-    document.getElementById('share-preview').innerHTML = html;
-    document.getElementById('share-modal').style.display = 'flex';
-  },
-
-  async generateLiferShareText() {
-    const challenge = this.liferChallenge;
-    if (!challenge) return '';
-
-    // Check if user has found the bird
-    let hasFoundBird = false;
-    if (typeof BirdDB !== 'undefined') {
-      const sightings = await BirdDB.getSightingsForBird(challenge.bird.speciesCode);
-      hasFoundBird = sightings.some(s => s.date === challenge.date);
-    }
-
-    const dateStr = new Date(challenge.date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
-
-    let text = `Birdle Lifer Challenge - ${dateStr}\n\n`;
-
-    if (hasFoundBird) {
-      text += `New lifer: ${challenge.bird.comName}!\n`;
-    } else {
-      text += `Target: ${challenge.bird.comName}\n`;
-      text += `Still searching...\n`;
-    }
-
-    const searchQuery = encodeURIComponent(`where to see ${challenge.bird.comName} near me`);
-    text += `\nhttps://www.google.com/search?q=${searchQuery}`;
-
-    return text;
-  },
-
-  async shareLiferScore() {
-    const text = await this.generateLiferShareText();
-
-    if (navigator.share) {
-      navigator.share({ text });
-    } else {
-      navigator.clipboard.writeText(text).then(() => {
-        alert('Copied to clipboard!');
-      });
-    }
-
-    document.getElementById('share-modal').style.display = 'none';
   },
 
   // ===== BIRD BINGO =====
