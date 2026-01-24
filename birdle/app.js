@@ -21,6 +21,8 @@ const App = {
       await BirdDB.init();
       // Run one-time cleanup migration
       await this.cleanupRemovedFeatures();
+      // Run bingo migration
+      await this.migrateLegacyBingoCard();
     }
 
     const page = this.detectPage();
@@ -71,6 +73,82 @@ const App = {
       localStorage.setItem('removed_features_migration', 'true');
       // Also set old flag for backwards compatibility
       localStorage.setItem('games_removed_migration', 'true');
+    }
+  },
+
+  // One-time migration to convert old single bingo game to new multi-game system
+  async migrateLegacyBingoCard() {
+    // Check if migration already ran
+    if (localStorage.getItem('bingo_migrated_to_v89') === 'true') {
+      return;
+    }
+
+    try {
+      const oldCard = localStorage.getItem('bingoCard');
+
+      if (oldCard) {
+        const card = JSON.parse(oldCard);
+
+        // Convert old grid format to new birds array
+        // Old format had 25 cells with FREE space at index 12
+        // New format has 24 birds (FREE space added dynamically)
+        const birds = [];
+
+        if (card.grid && Array.isArray(card.grid)) {
+          card.grid.forEach((cell, index) => {
+            // Skip FREE space (index 12)
+            if (!cell.isFree && cell.speciesCode) {
+              birds.push({
+                speciesCode: cell.speciesCode,
+                comName: cell.comName,
+                sciName: cell.sciName,
+                rarity: cell.rarity || 'common'
+              });
+            }
+          });
+        }
+
+        // Only migrate if we have birds
+        if (birds.length > 0) {
+          // Create the game
+          const gameData = {
+            title: 'Migrated Game',
+            regionCode: card.regionCode || card.countryCode || 'US',
+            regionName: card.regionName || card.locationName || 'Unknown',
+            birds: birds,
+            foundBirds: []
+          };
+
+          const game = await BirdDB.createBingoGame(gameData);
+
+          // Update the created date to match the old card
+          if (card.createdAt) {
+            game.createdAt = card.createdAt;
+          }
+
+          // If the game was completed, set completion data
+          if (card.bingoAchieved) {
+            game.completedAt = card.bingoAchieved;
+            if (card.createdAt) {
+              const start = new Date(card.createdAt);
+              const end = new Date(card.bingoAchieved);
+              game.completedInSeconds = Math.floor((end - start) / 1000);
+            }
+          }
+
+          await BirdDB.updateBingoGame(game);
+
+          console.log('Migrated legacy bingo card to game ID:', game.id);
+        }
+
+        // Remove old card from localStorage
+        localStorage.removeItem('bingoCard');
+      }
+    } catch (error) {
+      console.error('Error migrating legacy bingo card:', error);
+    } finally {
+      // Mark migration complete (even if there was an error, don't retry)
+      localStorage.setItem('bingo_migrated_to_v89', 'true');
     }
   },
 
