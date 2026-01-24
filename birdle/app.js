@@ -881,9 +881,9 @@ const App = {
             </div>
             <div class="bird-badges">
               ${isSeen ? '<span class="seen-badge">✓</span>' : ''}
-              ${isOnBingoCard ? '<span class="bingo-badge">🎲</span>' : ''}
             </div>
           </a>
+          ${isOnBingoCard ? '<span class="bingo-badge-corner">🎲</span>' : ''}
           ${showRemove ? `<button class="remove-btn" data-code="${bird.speciesCode}">✕</button>` : ''}
         </li>
       `;

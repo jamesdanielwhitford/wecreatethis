@@ -304,6 +304,7 @@ h1 {
   display: flex;
   align-items: stretch;
   border-bottom: 1px solid #eee;
+  position: relative;
 }
 
 .bird-item a {
@@ -334,6 +335,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .bird-item .bird-thumbnail img {
@@ -403,6 +405,15 @@ h1 {
 .bingo-badge {
   font-size: 1.1em;
   margin-left: 4px;
+}
+
+.bingo-badge-corner {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 1.2em;
+  z-index: 10;
+  pointer-events: none;
 }
 
 .empty {
