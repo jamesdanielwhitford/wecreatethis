@@ -1461,8 +1461,15 @@ const App = {
     spinner.style.display = 'block';
 
     try {
-      // Fetch birds for the region
-      const birdsData = await EBird.getSpeciesList(this.selectedRegion);
+      // Fetch species list for the region (returns array of codes)
+      const speciesCodes = await EBird.getSpeciesList(this.selectedRegion);
+
+      if (!speciesCodes || speciesCodes.length < 24) {
+        throw new Error('Not enough birds found in this region');
+      }
+
+      // Get taxonomy data (bird names) for all species
+      const taxonomy = await EBird.getTaxonomy(speciesCodes);
 
       // Get recent observations to calculate rarity
       const recentObs = await EBird.getRecentObservations(this.selectedRegion);
@@ -1472,7 +1479,7 @@ const App = {
       });
 
       // Sort by observation count
-      const sortedBirds = birdsData.map(b => ({
+      const sortedBirds = taxonomy.map(b => ({
         speciesCode: b.speciesCode,
         comName: b.comName,
         sciName: b.sciName,
