@@ -1581,6 +1581,11 @@ const App = {
       document.getElementById('new-game-modal').style.display = 'flex';
     });
 
+    document.getElementById('menu-delete-game')?.addEventListener('click', () => {
+      menuDropdown.style.display = 'none';
+      document.getElementById('delete-game-modal').style.display = 'flex';
+    });
+
     // Share modal
     document.getElementById('share-cancel-btn')?.addEventListener('click', () => {
       document.getElementById('share-modal').style.display = 'none';
@@ -1630,6 +1635,21 @@ const App = {
     document.getElementById('rename-modal')?.addEventListener('click', (e) => {
       if (e.target.id === 'rename-modal') {
         document.getElementById('rename-modal').style.display = 'none';
+      }
+    });
+
+    // Delete game modal
+    document.getElementById('confirm-delete-game-btn')?.addEventListener('click', () => {
+      this.deleteBingoGame();
+    });
+
+    document.getElementById('cancel-delete-game-btn')?.addEventListener('click', () => {
+      document.getElementById('delete-game-modal').style.display = 'none';
+    });
+
+    document.getElementById('delete-game-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'delete-game-modal') {
+        document.getElementById('delete-game-modal').style.display = 'none';
       }
     });
 
@@ -2154,6 +2174,24 @@ const App = {
     } catch (error) {
       console.error('Error renaming game:', error);
       alert('Failed to rename game');
+    }
+  },
+
+  async deleteBingoGame() {
+    if (!this.currentGameId) return;
+
+    try {
+      // Delete the game from the database
+      await BirdDB.deleteBingoGame(this.currentGameId);
+
+      // Close modal
+      document.getElementById('delete-game-modal').style.display = 'none';
+
+      // Redirect to games list
+      window.location.href = 'bingo-games';
+    } catch (error) {
+      console.error('Error deleting game:', error);
+      alert('Failed to delete game');
     }
   }
 };
