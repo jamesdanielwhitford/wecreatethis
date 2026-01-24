@@ -163,12 +163,22 @@ const App = {
           }
         }
 
-        this.showLoading(true);
         const regionCode = lastSearch.code || lastSearch.stateCode || lastSearch.countryCode;
         const countryCode = (lastSearch.code || lastSearch.countryCode || '').split('-')[0];
         const isCached = await BirdDB.hasCountryCache(countryCode);
 
-        // Try to fetch recent observations first (has location data)
+        // Show cached data instantly if available
+        if (isCached) {
+          const birds = await BirdDB.getCachedBirdsForRegion(regionCode);
+          this.birds = birds;
+          this.showLoading(false);
+          this.renderBirdList();
+          this.updateCachePrompt(countryCode);
+        } else {
+          this.showLoading(true);
+        }
+
+        // Then fetch fresh data from API in the background
         try {
           const birds = await EBird.getRecentObservations(regionCode, true);
           if (birds && birds.length > 0) {
@@ -179,20 +189,17 @@ const App = {
             return;
           }
         } catch (e) {
-          console.log('Network fetch failed, trying cache...');
+          console.log('Network fetch failed, using cached data...', e.message);
+          // Already showing cached data if available, no need to do anything
         }
 
-        // Fallback to cache if available
-        if (isCached) {
-          const birds = await BirdDB.getCachedBirdsForRegion(regionCode);
-          this.birds = birds;
-        } else {
+        // No data available (not cached and API failed)
+        if (!isCached) {
           this.birds = [];
+          this.showLoading(false);
+          this.renderBirdList();
+          this.updateCachePrompt(countryCode);
         }
-
-        this.showLoading(false);
-        this.renderBirdList();
-        this.updateCachePrompt(countryCode);
         return;
       } else if (lastSearch.type === 'location') {
         this.userLocation = { lat: lastSearch.lat, lng: lastSearch.lng };
@@ -244,10 +251,9 @@ const App = {
           }
         }
 
-        this.showLoading(true);
-
         // Use GPS coords if available, otherwise use region
         if (LocationService.hasValidCoordinates(cached)) {
+          this.showLoading(true);
           this.userLocation = { lat: cached.lat, lng: cached.lng };
           EBird.getNearbyObservations(cached.lat, cached.lng).then(birds => {
             this.birds = this.deduplicateBirds(birds);
@@ -259,7 +265,18 @@ const App = {
           const regionCode = LocationService.getRegionCode(cached);
           const countryIsCached = await BirdDB.hasCountryCache(cached.countryCode);
 
-          // Try to fetch recent observations first (has location data)
+          // Show cached data instantly if available
+          if (countryIsCached) {
+            const birds = await BirdDB.getCachedBirdsForRegion(regionCode);
+            this.birds = birds;
+            this.showLoading(false);
+            this.renderBirdList();
+            this.updateCachePrompt(cached.countryCode);
+          } else {
+            this.showLoading(true);
+          }
+
+          // Then fetch fresh data from API in the background
           try {
             const birds = await EBird.getRecentObservations(regionCode, true);
             if (birds && birds.length > 0) {
@@ -270,19 +287,17 @@ const App = {
               return;
             }
           } catch (e) {
-            console.log('Network fetch failed, trying cache...');
+            console.log('Network fetch failed, using cached data...', e.message);
+            // Already showing cached data if available, no need to do anything
           }
 
-          // Fallback to cache if available
-          if (countryIsCached) {
-            const birds = await BirdDB.getCachedBirdsForRegion(regionCode);
-            this.birds = birds;
-          } else {
+          // No data available (not cached and API failed)
+          if (!countryIsCached) {
             this.birds = [];
+            this.showLoading(false);
+            this.renderBirdList();
+            this.updateCachePrompt(cached.countryCode);
           }
-          this.showLoading(false);
-          this.renderBirdList();
-          this.updateCachePrompt(cached.countryCode);
         }
       }
     }
@@ -574,8 +589,6 @@ const App = {
       locationInfo.style.display = 'none';
     }
 
-    this.showLoading(true);
-
     // Save enhanced search settings for persistence
     const countryCode = regionCode.split('-')[0];
     const stateCode = regionCode.includes('-') ? regionCode : null;
@@ -596,8 +609,18 @@ const App = {
 
     const isCached = await BirdDB.hasCountryCache(countryCode);
 
-    // Always try to fetch recent observations first (has location data)
-    // Fall back to cache only if offline
+    // Show cached data instantly if available
+    if (isCached) {
+      const birds = await BirdDB.getCachedBirdsForRegion(regionCode);
+      this.birds = birds;
+      this.showLoading(false);
+      this.renderBirdList();
+      this.updateCachePrompt(countryCode);
+    } else {
+      this.showLoading(true);
+    }
+
+    // Then fetch fresh data from API in the background
     try {
       const birds = await EBird.getRecentObservations(regionCode, true);
       if (birds && birds.length > 0) {
@@ -608,24 +631,17 @@ const App = {
         return;
       }
     } catch (e) {
-      console.log('Network fetch failed, trying cache...', e.message);
+      console.log('Network fetch failed, using cached data...', e.message);
+      // Already showing cached data if available, no need to do anything
     }
 
-    // Fallback to cache if available (offline mode)
-    if (isCached) {
-      const birds = await BirdDB.getCachedBirdsForRegion(regionCode);
-      this.birds = birds;
+    // No data available (not cached and API failed)
+    if (!isCached) {
+      this.birds = [];
       this.showLoading(false);
       this.renderBirdList();
       this.updateCachePrompt(countryCode);
-      return;
     }
-
-    // No data available
-    this.birds = [];
-    this.showLoading(false);
-    this.renderBirdList();
-    this.updateCachePrompt(countryCode);
   },
 
 
