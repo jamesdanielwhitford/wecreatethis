@@ -120,24 +120,6 @@ const BirdDB = {
     });
   },
 
-  async cacheBirdsFromGame(birds, gameId, regionCode) {
-    await this.ready();
-    const codes = [];
-
-    for (const bird of birds) {
-      await this.cacheBird({
-        speciesCode: bird.speciesCode,
-        comName: bird.comName,
-        sciName: bird.sciName,
-        regions: [regionCode]
-      }, 'game');
-      codes.push(bird.speciesCode);
-    }
-
-    // Store cache metadata
-    await this.setCacheMeta(`game_${gameId}_birds`, codes);
-    return codes;
-  },
 
   async updateBirdViewed(speciesCode) {
     await this.ready();
@@ -391,33 +373,6 @@ const BirdDB = {
     });
   },
 
-  async getActiveGameBirdCodes() {
-    await this.ready();
-    return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('cache_meta', 'readonly');
-      const request = tx.objectStore('cache_meta').getAll();
-      request.onsuccess = () => {
-        const allCodes = new Set();
-        for (const meta of request.result) {
-          if (meta.key.startsWith('game_')) {
-            meta.speciesCodes.forEach(c => allCodes.add(c));
-          }
-        }
-        resolve([...allCodes]);
-      };
-      request.onerror = () => reject(request.error);
-    });
-  },
-
-  async deleteGameCache(gameId) {
-    await this.ready();
-    return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('cache_meta', 'readwrite');
-      const request = tx.objectStore('cache_meta').delete(`game_${gameId}_birds`);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  },
 
   // ===== CONTINENT MAPPING =====
 
@@ -493,7 +448,6 @@ const BirdDB = {
     await this.ready();
 
     const allBirds = await this.getAllBirds();
-    const activeMeta = await this.getActiveGameBirdCodes();
 
     // Sort by lastViewed (oldest first)
     allBirds.sort((a, b) => new Date(a.lastViewed) - new Date(b.lastViewed));
@@ -504,9 +458,6 @@ const BirdDB = {
     for (const bird of allBirds) {
       // Never delete birds with sightings
       if (bird.hasSightings) continue;
-
-      // Never delete birds in active games
-      if (activeMeta.includes(bird.speciesCode)) continue;
 
       if (kept >= limit) {
         toDelete.push(bird.speciesCode);
@@ -665,9 +616,6 @@ const BirdDB = {
     let removed = 0;
     let preserved = 0;
 
-    // Get birds protected by games
-    const gameProtectedCodes = await this.getActiveGameBirdCodes();
-
     // Get birds protected by other country caches
     const otherCountries = await this.getCachedCountries();
     const otherCacheProtectedCodes = new Set();
@@ -688,7 +636,6 @@ const BirdDB = {
 
       const isProtected =
         bird.hasSightings ||
-        gameProtectedCodes.includes(speciesCode) ||
         otherCacheProtectedCodes.has(speciesCode);
 
       if (isProtected) {
