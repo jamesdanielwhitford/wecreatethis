@@ -2346,8 +2346,6 @@ const App = {
 
     if (!toggleBtn || !gridEl) return;
 
-    const isOnline = navigator.onLine;
-
     // Always show toggle button - cached images work offline
     toggleBtn.style.display = 'flex';
 
