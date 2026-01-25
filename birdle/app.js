@@ -341,6 +341,15 @@ const App = {
             this.showLoading(false);
             this.renderBirdList();
             this.updateCachePrompt(countryCode);
+
+            // Update cache with fresh coordinates for next time
+            if (isCached) {
+              birds.forEach(bird => {
+                BirdDB.cacheBird(bird, 'api_refresh').catch(err => {
+                  console.warn('Failed to update bird cache:', err);
+                });
+              });
+            }
             return;
           }
         } catch (e) {
@@ -812,6 +821,15 @@ const App = {
         this.showLoading(false);
         this.renderBirdList();
         this.updateCachePrompt(countryCode);
+
+        // Update cache with fresh coordinates for next time
+        if (isCached) {
+          birds.forEach(bird => {
+            BirdDB.cacheBird(bird, 'api_refresh').catch(err => {
+              console.warn('Failed to update bird cache:', err);
+            });
+          });
+        }
         return;
       }
     } catch (e) {

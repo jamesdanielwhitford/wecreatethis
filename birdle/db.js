@@ -112,6 +112,9 @@ const BirdDB = {
       familyName: birdData.familyName || existing?.familyName || null,
       continent: birdData.continent || existing?.continent || null,
       regions: [...new Set([...(existing?.regions || []), ...(birdData.regions || [])])],
+      lat: birdData.lat ?? existing?.lat ?? null,  // Store coordinates if available
+      lng: birdData.lng ?? existing?.lng ?? null,
+      locName: birdData.locName || existing?.locName || null,
       lastViewed: source === 'search' ? new Date() : (existing?.lastViewed || new Date()),
       viewCount: (existing?.viewCount || 0) + (source === 'search' ? 1 : 0),
       hasSightings: birdData.hasSightings || existing?.hasSightings || false,
