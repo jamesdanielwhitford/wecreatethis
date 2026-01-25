@@ -2357,8 +2357,8 @@ const App = {
       gridEl.classList.add('image-view');
       toggleIcon.textContent = '📝';
       toggleText.textContent = 'Show Names';
-      // Only force refetch when online
-      this.loadBingoCellImages(gridEl, isOnline);
+      // Don't force refetch on page load - use cache for instant display
+      this.loadBingoCellImages(gridEl, false);
     }
 
     toggleBtn.addEventListener('click', () => {
