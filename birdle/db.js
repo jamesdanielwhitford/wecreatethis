@@ -727,6 +727,7 @@ const BirdDB = {
         regionName: gameData.regionName,
         birds: gameData.birds || [], // Array of {speciesCode, comName, sciName, rarity}
         foundBirds: gameData.foundBirds || [], // Array of speciesCodes
+        freePosition: gameData.freePosition !== undefined ? gameData.freePosition : 12, // Position of FREE space (0-24)
         createdAt: new Date().toISOString(),
         completedAt: null,
         completedInSeconds: null

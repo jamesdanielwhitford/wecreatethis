@@ -90,14 +90,17 @@ const App = {
         const card = JSON.parse(oldCard);
 
         // Convert old grid format to new birds array
-        // Old format had 25 cells with FREE space at index 12
-        // New format has 24 birds (FREE space added dynamically)
+        // Old format had 25 cells with FREE space at ANY position (randomly placed)
+        // New format has 24 birds with freePosition stored separately
         const birds = [];
+        let freePosition = 12; // Default to center if not found
 
         if (card.grid && Array.isArray(card.grid)) {
           card.grid.forEach((cell, index) => {
-            // Skip FREE space (index 12)
-            if (!cell.isFree && cell.speciesCode) {
+            if (cell.isFree) {
+              // Found the FREE space - record its position
+              freePosition = index;
+            } else if (cell.speciesCode) {
               birds.push({
                 speciesCode: cell.speciesCode,
                 comName: cell.comName,
@@ -110,13 +113,14 @@ const App = {
 
         // Only migrate if we have birds
         if (birds.length > 0) {
-          // Create the game
+          // Create the game with the original FREE position preserved
           const gameData = {
             title: 'Migrated Game',
             regionCode: card.regionCode || card.countryCode || 'US',
             regionName: card.regionName || card.locationName || 'Unknown',
             birds: birds,
-            foundBirds: []
+            foundBirds: [],
+            freePosition: freePosition // Preserve original FREE position
           };
 
           const game = await BirdDB.createBingoGame(gameData);
@@ -138,7 +142,7 @@ const App = {
 
           await BirdDB.updateBingoGame(game);
 
-          console.log('Migrated legacy bingo card to game ID:', game.id);
+          console.log('Migrated legacy bingo card to game ID:', game.id, 'with FREE at position:', freePosition);
         }
 
         // Remove old card from localStorage
@@ -1814,13 +1818,17 @@ const App = {
       this.shuffleArray(birdPool);
       const selectedBirds = birdPool.slice(0, 24);
 
+      // Pick random position for FREE space (0-24)
+      const freePosition = Math.floor(Math.random() * 25);
+
       // Create the game
       const gameData = {
         title,
         regionCode: this.selectedRegion,
         regionName: this.selectedRegionName,
         birds: selectedBirds,
-        foundBirds: []
+        foundBirds: [],
+        freePosition: freePosition
       };
 
       // Add coordinates if using precise location
@@ -2038,6 +2046,7 @@ const App = {
         regionName: game.regionName,
         lat: game.lat,
         lng: game.lng,
+        freePosition: game.freePosition !== undefined ? game.freePosition : 12,
         createdAt: game.createdAt,
         completedAt: game.completedAt,
         completedInSeconds: game.completedInSeconds
@@ -2212,11 +2221,14 @@ const App = {
     }
     const seenCodes = new Set(sightings.map(s => s.speciesCode));
 
-    // Build grid with FREE space in center (index 12)
+    // Get FREE position from card (defaults to 12 if not set - for old games)
+    const freePosition = card.freePosition !== undefined ? card.freePosition : 12;
+
+    // Build grid with FREE space at the stored position
     const grid = [];
     let birdIndex = 0;
     for (let i = 0; i < 25; i++) {
-      if (i === 12) {
+      if (i === freePosition) {
         grid.push({ isFree: true });
       } else {
         grid.push(card.birds[birdIndex++]);
