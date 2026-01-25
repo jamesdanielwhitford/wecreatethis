@@ -119,7 +119,10 @@ h1 {
 }
 
 .search-navbar {
-  position: relative;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 100;
 }
 
 .game-navbar .back-btn {
