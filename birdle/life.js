@@ -223,6 +223,7 @@ const LifeList = {
   async loadBirdThumbnails() {
     const thumbnails = document.querySelectorAll('.bird-thumbnail');
     const autoCacheImages = localStorage.getItem('autoCacheImages') === 'true';
+    const isOffline = !navigator.onLine;
 
     // Use Intersection Observer for lazy loading
     const observer = new IntersectionObserver((entries) => {
@@ -234,10 +235,20 @@ const LifeList = {
           const birdName = thumbnail.dataset.bird;
           const sciName = thumbnail.dataset.sci;
 
-          // Try to fetch image
+          // Try to fetch image URL (from cache or API)
           let imageUrl = await this.fetchWikipediaImage(birdName);
           if (!imageUrl && sciName) {
             imageUrl = await this.fetchWikipediaImage(sciName);
+          }
+
+          // If offline and no cached URL found, switch to text-only immediately
+          if (isOffline && !imageUrl) {
+            thumbnail.classList.remove('loading');
+            const listItem = thumbnail.closest('.bird-item');
+            if (listItem) {
+              listItem.classList.add('text-only-mode');
+            }
+            return;
           }
 
           if (imageUrl) {
@@ -258,8 +269,8 @@ const LifeList = {
 
             img.onerror = () => {
               thumbnail.classList.remove('loading');
-              // If offline and image fails, hide the thumbnail container
-              if (!navigator.onLine) {
+              // If offline and image fails to load, switch to text-only
+              if (isOffline) {
                 const listItem = thumbnail.closest('.bird-item');
                 if (listItem) {
                   listItem.classList.add('text-only-mode');
@@ -268,13 +279,6 @@ const LifeList = {
             };
           } else {
             thumbnail.classList.remove('loading');
-            // If no image URL found and offline, hide thumbnail container
-            if (!navigator.onLine) {
-              const listItem = thumbnail.closest('.bird-item');
-              if (listItem) {
-                listItem.classList.add('text-only-mode');
-              }
-            }
           }
         }
       });
