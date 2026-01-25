@@ -64,7 +64,8 @@
       <div class="modal-actions" style="margin-top: 20px;">
         <button id="modal-use-location-btn" class="modal-btn seen">Use Current Location</button>
         <button id="modal-update-location-btn" class="modal-btn seen" style="display: none;">Update Location</button>
-        <button id="modal-download-btn" class="modal-btn">Download Location</button>
+        <button id="modal-download-names-btn" class="modal-btn">Download Names</button>
+        <button id="modal-download-images-btn" class="modal-btn">Download Names & Images</button>
         <button id="modal-cancel-btn" class="modal-btn cancel">Cancel</button>
       </div>
     </div>
@@ -125,7 +126,8 @@
       // Buttons
       const useLocationBtn = document.getElementById('modal-use-location-btn');
       const updateLocationBtn = document.getElementById('modal-update-location-btn');
-      const downloadBtn = document.getElementById('modal-download-btn');
+      const downloadNamesBtn = document.getElementById('modal-download-names-btn');
+      const downloadImagesBtn = document.getElementById('modal-download-images-btn');
       const cancelBtn = document.getElementById('modal-cancel-btn');
 
       // Form elements
@@ -246,7 +248,8 @@
         const countryCode = countrySelect.value;
 
         if (!countryCode) {
-          downloadBtn.textContent = 'Download Location';
+          downloadNamesBtn.textContent = 'Download Names';
+          downloadImagesBtn.textContent = 'Download Names & Images';
           return;
         }
 
@@ -255,13 +258,16 @@
           const hasCache = await BirdDB.hasCountryCache(countryCode);
 
           if (hasCache) {
-            downloadBtn.textContent = 'Re-download Location';
+            downloadNamesBtn.textContent = 'Re-download Names';
+            downloadImagesBtn.textContent = 'Re-download Names & Images';
           } else {
-            downloadBtn.textContent = 'Download Location';
+            downloadNamesBtn.textContent = 'Download Names';
+            downloadImagesBtn.textContent = 'Download Names & Images';
           }
         } catch (error) {
           console.error('Error checking cache:', error);
-          downloadBtn.textContent = 'Download Location';
+          downloadNamesBtn.textContent = 'Download Names';
+          downloadImagesBtn.textContent = 'Download Names & Images';
         }
       }
 
@@ -317,8 +323,8 @@
         closeModal();
       }
 
-      // Download location and cache birds
-      async function downloadLocation() {
+      // Download location and cache birds (with optional images)
+      async function downloadLocation(cacheImages = false) {
         const countryCode = countrySelect.value;
         const stateCode = stateSelect.value || null;
 
@@ -351,12 +357,18 @@
         downloadProgress.style.display = 'block';
         useLocationBtn.disabled = true;
         updateLocationBtn.disabled = true;
-        downloadBtn.disabled = true;
+        downloadNamesBtn.disabled = true;
+        downloadImagesBtn.disabled = true;
         cancelBtn.disabled = true;
         progressBar.style.width = '0%';
 
         try {
           await BirdDB.init();
+
+          // Enable auto-caching of images if requested
+          if (cacheImages) {
+            localStorage.setItem('autoCacheImages', 'true');
+          }
 
           await BirdDB.cacheCountryBirds(countryCode, (progress) => {
             if (progress.phase === 'fetching') {
@@ -372,6 +384,9 @@
               downloadStatus.textContent = 'Download complete!';
               progressBar.style.width = '100%';
               progressText.textContent = `${progress.cached} birds ready for offline use`;
+              if (cacheImages) {
+                progressText.textContent += ' (images will cache as you browse)';
+              }
             }
           });
 
@@ -380,7 +395,8 @@
             closeModal();
             useLocationBtn.disabled = false;
             updateLocationBtn.disabled = false;
-            downloadBtn.disabled = false;
+            downloadNamesBtn.disabled = false;
+            downloadImagesBtn.disabled = false;
             cancelBtn.disabled = false;
             progressBar.style.width = '0%';
           }, 1500);
@@ -390,7 +406,8 @@
           downloadProgress.style.display = 'none';
           useLocationBtn.disabled = false;
           updateLocationBtn.disabled = false;
-          downloadBtn.disabled = false;
+          downloadNamesBtn.disabled = false;
+          downloadImagesBtn.disabled = false;
           cancelBtn.disabled = false;
           progressBar.style.width = '0%';
         }
@@ -423,7 +440,8 @@
 
       useLocationBtn.addEventListener('click', useCurrentLocation);
       updateLocationBtn.addEventListener('click', updateLocation);
-      downloadBtn.addEventListener('click', downloadLocation);
+      downloadNamesBtn.addEventListener('click', () => downloadLocation(false));
+      downloadImagesBtn.addEventListener('click', () => downloadLocation(true));
       cancelBtn.addEventListener('click', closeModal);
 
       countrySelect.addEventListener('change', async (e) => {

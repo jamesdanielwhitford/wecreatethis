@@ -161,30 +161,19 @@ const LifeList = {
           if (region === '_country') {
             html += `<ul class="bird-list country-birds">`;
             for (const bird of birds) {
-              if (isOnline) {
-                html += `
-                  <li class="bird-item life-bird">
-                    <a href="bird?code=${bird.speciesCode}">
-                      <div class="bird-thumbnail loading" data-bird="${bird.comName}" data-sci="${bird.sciName || ''}"></div>
-                      <div class="bird-info">
-                        <span class="bird-name">${bird.comName}</span>
-                      </div>
-                      <div class="bird-badges">
-                        <span class="sighting-count">${bird.count}</span>
-                      </div>
-                    </a>
-                  </li>
-                `;
-              } else {
-                html += `
-                  <li class="bird-item life-bird">
-                    <a href="bird?code=${bird.speciesCode}">
+              html += `
+                <li class="bird-item life-bird">
+                  <a href="bird?code=${bird.speciesCode}">
+                    <div class="bird-thumbnail loading" data-bird="${bird.comName}" data-sci="${bird.sciName || ''}"></div>
+                    <div class="bird-info">
                       <span class="bird-name">${bird.comName}</span>
+                    </div>
+                    <div class="bird-badges">
                       <span class="sighting-count">${bird.count}</span>
-                    </a>
-                  </li>
-                `;
-              }
+                    </div>
+                  </a>
+                </li>
+              `;
             }
             html += `</ul>`;
           } else {
@@ -199,30 +188,19 @@ const LifeList = {
             `;
 
             for (const bird of birds) {
-              if (isOnline) {
-                html += `
-                  <li class="bird-item life-bird">
-                    <a href="bird?code=${bird.speciesCode}">
-                      <div class="bird-thumbnail loading" data-bird="${bird.comName}" data-sci="${bird.sciName || ''}"></div>
-                      <div class="bird-info">
-                        <span class="bird-name">${bird.comName}</span>
-                      </div>
-                      <div class="bird-badges">
-                        <span class="sighting-count">${bird.count}</span>
-                      </div>
-                    </a>
-                  </li>
-                `;
-              } else {
-                html += `
-                  <li class="bird-item life-bird">
-                    <a href="bird?code=${bird.speciesCode}">
+              html += `
+                <li class="bird-item life-bird">
+                  <a href="bird?code=${bird.speciesCode}">
+                    <div class="bird-thumbnail loading" data-bird="${bird.comName}" data-sci="${bird.sciName || ''}"></div>
+                    <div class="bird-info">
                       <span class="bird-name">${bird.comName}</span>
+                    </div>
+                    <div class="bird-badges">
                       <span class="sighting-count">${bird.count}</span>
-                    </a>
-                  </li>
-                `;
-              }
+                    </div>
+                  </a>
+                </li>
+              `;
             }
 
             html += `</ul></div>`;
@@ -238,14 +216,13 @@ const LifeList = {
     sections.innerHTML = html;
     this.bindListEvents();
 
-    // Only load images if online
-    if (isOnline) {
-      this.loadBirdThumbnails();
-    }
+    // Load images lazily (works offline if images are cached)
+    this.loadBirdThumbnails();
   },
 
   async loadBirdThumbnails() {
     const thumbnails = document.querySelectorAll('.bird-thumbnail');
+    const autoCacheImages = localStorage.getItem('autoCacheImages') === 'true';
 
     // Use Intersection Observer for lazy loading
     const observer = new IntersectionObserver((entries) => {
@@ -272,6 +249,11 @@ const LifeList = {
             img.onload = () => {
               thumbnail.classList.remove('loading');
               thumbnail.appendChild(img);
+
+              // Always cache loaded images for offline use
+              fetch(imageUrl).catch(() => {
+                // Silently fail if caching doesn't work
+              });
             };
 
             img.onerror = () => {
@@ -292,6 +274,14 @@ const LifeList = {
   },
 
   async fetchWikipediaImage(searchTerm) {
+    // Check cache first
+    const cacheKey = `wiki_img_${searchTerm}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      // Return cached URL (or null if we cached a failed lookup)
+      return cached === 'null' ? null : cached;
+    }
+
     try {
       const title = encodeURIComponent(searchTerm.replace(/ /g, '_'));
       const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages&pithumbsize=400&format=json&origin=*&redirects=1`;
@@ -303,12 +293,18 @@ const LifeList = {
       if (pages) {
         const page = Object.values(pages)[0];
         if (page.thumbnail?.source) {
-          return page.thumbnail.source;
+          const imageUrl = page.thumbnail.source;
+          // Cache the successful result
+          localStorage.setItem(cacheKey, imageUrl);
+          return imageUrl;
         }
       }
     } catch (error) {
       // Silently fail
     }
+
+    // Cache the failed lookup to avoid repeated API calls
+    localStorage.setItem(cacheKey, 'null');
     return null;
   },
 

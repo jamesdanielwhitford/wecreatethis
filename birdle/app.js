@@ -957,22 +957,7 @@ const App = {
       const isOnBingoCard = bingoBirdCodes.includes(bird.speciesCode);
       const showRemove = this.currentSort === 'recent';
 
-      // Use compact layout when offline
-      if (!isOnline) {
-        return `
-          <li class="bird-item ${isSeen ? 'seen' : ''}" data-code="${bird.speciesCode}">
-            <a href="bird?code=${bird.speciesCode}">
-              <span class="bird-name">${bird.comName}</span>
-              <span class="bird-location">${bird.locName || ''}</span>
-              ${isSeen ? '<span class="seen-badge">✓</span>' : ''}
-              ${isOnBingoCard ? '<span class="bingo-badge">🎲</span>' : ''}
-            </a>
-            ${showRemove ? `<button class="remove-btn" data-code="${bird.speciesCode}">✕</button>` : ''}
-          </li>
-        `;
-      }
-
-      // Use image layout when online
+      // Always use image layout (images will load from cache if available, even offline)
       return `
         <li class="bird-item ${isSeen ? 'seen' : ''}" data-code="${bird.speciesCode}">
           <a href="bird?code=${bird.speciesCode}">
@@ -1002,10 +987,8 @@ const App = {
       });
     }
 
-    // Load images lazily (only if online)
-    if (isOnline) {
-      this.loadBirdThumbnails(list);
-    }
+    // Load images lazily (works offline if images are cached)
+    this.loadBirdThumbnails(list);
 
     // Store birds for detail page (merge with recent birds)
     const allBirds = [...this.birds, ...this.recentBirds];
@@ -1041,6 +1024,7 @@ const App = {
 
   async loadBirdThumbnails(listElement) {
     const thumbnails = listElement.querySelectorAll('.bird-thumbnail');
+    const autoCacheImages = localStorage.getItem('autoCacheImages') === 'true';
 
     // Use Intersection Observer for lazy loading
     const observer = new IntersectionObserver((entries) => {
@@ -1067,6 +1051,11 @@ const App = {
             img.onload = () => {
               thumbnail.classList.remove('loading');
               thumbnail.appendChild(img);
+
+              // Always cache loaded images for offline use
+              fetch(imageUrl).catch(() => {
+                // Silently fail if caching doesn't work
+              });
             };
 
             img.onerror = () => {
@@ -1226,23 +1215,55 @@ const App = {
     }
   },
 
-  async fetchWikipediaImage(searchTerm) {
+  async fetchWikipediaImage(searchTerm, forceRefetch = false) {
+    // Check cache first (unless forcing refetch)
+    const cacheKey = `wiki_img_${searchTerm}`;
+    console.log('fetchWikipediaImage:', searchTerm, 'forceRefetch:', forceRefetch, 'online:', navigator.onLine);
+
+    if (!forceRefetch) {
+      const cached = localStorage.getItem(cacheKey);
+      console.log('Cached value:', cached);
+      if (cached) {
+        // Skip null cache entries if we're online and it might have been cached while offline
+        if (cached === 'null' && navigator.onLine) {
+          console.log('Skipping null cache entry, will fetch fresh');
+          // Don't return null cache, try to fetch fresh
+        } else {
+          // Return cached URL (or null if we cached a failed lookup)
+          console.log('Returning cached value:', cached);
+          return cached === 'null' ? null : cached;
+        }
+      }
+    }
+
     try {
       const title = encodeURIComponent(searchTerm.replace(/ /g, '_'));
       const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages&pithumbsize=400&format=json&origin=*&redirects=1`;
+      console.log('Fetching from Wikipedia:', url);
 
       const response = await fetch(url);
       const data = await response.json();
+      console.log('Wikipedia API response:', data);
 
       const pages = data.query?.pages;
       if (pages) {
         const page = Object.values(pages)[0];
         if (page.thumbnail?.source) {
-          return page.thumbnail.source;
+          const imageUrl = page.thumbnail.source;
+          console.log('Found image URL:', imageUrl);
+          // Cache the successful result
+          localStorage.setItem(cacheKey, imageUrl);
+          return imageUrl;
         }
       }
     } catch (error) {
-      // Silently fail
+      console.log('Error fetching Wikipedia image:', error);
+    }
+
+    // Cache the failed lookup to avoid repeated API calls (only if online)
+    if (navigator.onLine) {
+      console.log('Caching null result');
+      localStorage.setItem(cacheKey, 'null');
     }
     return null;
   },
@@ -2291,26 +2312,19 @@ const App = {
 
     if (!toggleBtn || !gridEl) return;
 
-    // Check if online
     const isOnline = navigator.onLine;
 
-    // Hide button if offline
-    if (!isOnline) {
-      toggleBtn.style.display = 'none';
-      gridEl.classList.remove('image-view');
-      return;
-    }
-
-    // Show button if online
+    // Always show toggle button - cached images work offline
     toggleBtn.style.display = 'flex';
 
-    // Check saved preference (only if online)
+    // Check saved preference
     const savedView = localStorage.getItem('bingoViewMode') || 'text';
     if (savedView === 'image') {
       gridEl.classList.add('image-view');
       toggleIcon.textContent = '📝';
       toggleText.textContent = 'Show Names';
-      this.loadBingoCellImages(gridEl);
+      // Only force refetch when online
+      this.loadBingoCellImages(gridEl, isOnline);
     }
 
     toggleBtn.addEventListener('click', () => {
@@ -2320,7 +2334,8 @@ const App = {
         toggleIcon.textContent = '📝';
         toggleText.textContent = 'Show Names';
         localStorage.setItem('bingoViewMode', 'image');
-        this.loadBingoCellImages(gridEl);
+        // Force refetch when online to bypass null cache entries from offline mode
+        this.loadBingoCellImages(gridEl, navigator.onLine);
       } else {
         toggleIcon.textContent = '🖼️';
         toggleText.textContent = 'Show Images';
@@ -2329,8 +2344,9 @@ const App = {
     });
   },
 
-  async loadBingoCellImages(gridEl) {
+  async loadBingoCellImages(gridEl, forceRefetch = false) {
     const cells = gridEl.querySelectorAll('.bingo-cell:not(.free)');
+    const autoCacheImages = localStorage.getItem('autoCacheImages') === 'true';
 
     cells.forEach(async (cell) => {
       // Skip if already has image
@@ -2341,34 +2357,56 @@ const App = {
 
       if (!birdName) return;
 
-      // Add loading state
+      // Clear any existing loading state and start fresh
+      cell.classList.remove('loading');
       cell.classList.add('loading');
 
-      // Try to fetch image
-      let imageUrl = await this.fetchWikipediaImage(birdName);
-      if (!imageUrl && sciName) {
-        imageUrl = await this.fetchWikipediaImage(sciName);
-      }
+      try {
+        // Try to fetch image (with optional cache bypass)
+        console.log('Fetching image for:', birdName, 'forceRefetch:', forceRefetch);
+        let imageUrl = await this.fetchWikipediaImage(birdName, forceRefetch);
+        console.log('Got imageUrl for', birdName, ':', imageUrl);
 
-      if (imageUrl) {
-        const img = document.createElement('img');
-        img.src = imageUrl;
-        img.alt = birdName;
-        img.loading = 'lazy';
+        if (!imageUrl && sciName) {
+          console.log('Trying scientific name:', sciName);
+          imageUrl = await this.fetchWikipediaImage(sciName, forceRefetch);
+          console.log('Got imageUrl for', sciName, ':', imageUrl);
+        }
 
-        img.onload = () => {
+        if (imageUrl) {
+          const img = new Image();
+          img.alt = birdName;
+          // Don't use lazy loading for bingo cells - they're all visible
+
+          img.onload = () => {
+            console.log('Image loaded successfully:', birdName);
+            cell.classList.remove('loading');
+            // Only append to DOM if image loaded successfully
+            cell.appendChild(img);
+
+            // Always cache loaded images for offline use (not just when autoCacheImages is enabled)
+            fetch(imageUrl).catch(() => {
+              // Silently fail if caching doesn't work
+            });
+          };
+
+          img.onerror = () => {
+            console.log('Image failed to load:', birdName, imageUrl);
+            cell.classList.remove('loading');
+            // Keep gray background on error, don't append broken image
+          };
+
+          // Set src AFTER setting up handlers to ensure they fire
+          img.src = imageUrl;
+        } else {
+          console.log('No imageUrl found for:', birdName);
           cell.classList.remove('loading');
-        };
-
-        img.onerror = () => {
-          cell.classList.remove('loading');
-          // Keep gray background on error
-        };
-
-        cell.appendChild(img);
-      } else {
+          // Keep gray background if no image found
+        }
+      } catch (error) {
+        console.log('Error loading image for:', birdName, error);
         cell.classList.remove('loading');
-        // Keep gray background if no image found
+        // Keep gray background on error
       }
     });
   },

@@ -85,9 +85,13 @@ async function matchCache(request) {
   let cached = await caches.match(request);
   if (cached) return cached;
 
-  // Try matching without query params
-  cached = await caches.match(request, { ignoreSearch: true });
-  if (cached) return cached;
+  // Only ignore query params for same-origin requests (our app assets)
+  // External APIs (Wikipedia, eBird) need exact query param matching
+  if (url.origin === self.location.origin) {
+    // Try matching without query params for our own assets
+    cached = await caches.match(request, { ignoreSearch: true });
+    if (cached) return cached;
+  }
 
   // For navigation requests, try additional fallbacks
   if (request.mode === 'navigate') {
