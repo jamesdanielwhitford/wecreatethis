@@ -258,11 +258,23 @@ const LifeList = {
 
             img.onerror = () => {
               thumbnail.classList.remove('loading');
-              // Keep empty gray box on error
+              // If offline and image fails, hide the thumbnail container
+              if (!navigator.onLine) {
+                const listItem = thumbnail.closest('.bird-item');
+                if (listItem) {
+                  listItem.classList.add('text-only-mode');
+                }
+              }
             };
           } else {
             thumbnail.classList.remove('loading');
-            // Keep empty gray box if no image found
+            // If no image URL found and offline, hide thumbnail container
+            if (!navigator.onLine) {
+              const listItem = thumbnail.closest('.bird-item');
+              if (listItem) {
+                listItem.classList.add('text-only-mode');
+              }
+            }
           }
         }
       });

@@ -328,6 +328,17 @@ h1 {
   gap: 8px;
 }
 
+/* Text-only mode for offline birds with no cached images */
+.bird-item.text-only-mode .bird-thumbnail {
+  display: none;
+}
+
+.bird-item.text-only-mode a {
+  justify-content: space-between;
+  padding: 12px 0;
+  gap: 8px;
+}
+
 .bird-item .bird-thumbnail {
   width: 160px;
   min-width: 160px;
@@ -1809,6 +1820,21 @@ input[type="date"].form-input {
 /* Text view mode - hide images */
 .bingo-grid:not(.image-view) .bingo-cell img {
   display: none;
+}
+
+/* Text-only mode for offline bingo cells with no cached images */
+.bingo-grid.image-view .bingo-cell.text-only-mode {
+  background: #f5f5f5;
+  padding: 4px;
+}
+
+.bingo-grid.image-view .bingo-cell.text-only-mode .bird-name {
+  display: block;
+}
+
+.bingo-grid.image-view .bingo-cell.text-only-mode.found {
+  background: #4caf50;
+  color: white;
 }
 
 /* Bingo Winner Banner */

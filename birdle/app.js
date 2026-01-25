@@ -1060,11 +1060,23 @@ const App = {
 
             img.onerror = () => {
               thumbnail.classList.remove('loading');
-              // Keep empty gray box on error
+              // If offline and image fails, hide the thumbnail container
+              if (!navigator.onLine) {
+                const listItem = thumbnail.closest('.bird-item');
+                if (listItem) {
+                  listItem.classList.add('text-only-mode');
+                }
+              }
             };
           } else {
             thumbnail.classList.remove('loading');
-            // Keep empty gray box if no image found
+            // If no image URL found and offline, hide thumbnail container
+            if (!navigator.onLine) {
+              const listItem = thumbnail.closest('.bird-item');
+              if (listItem) {
+                listItem.classList.add('text-only-mode');
+              }
+            }
           }
         }
       });
@@ -2393,7 +2405,10 @@ const App = {
           img.onerror = () => {
             console.log('Image failed to load:', birdName, imageUrl);
             cell.classList.remove('loading');
-            // Keep gray background on error, don't append broken image
+            // If offline and image fails, show text-only mode
+            if (!navigator.onLine) {
+              cell.classList.add('text-only-mode');
+            }
           };
 
           // Set src AFTER setting up handlers to ensure they fire
@@ -2401,7 +2416,10 @@ const App = {
         } else {
           console.log('No imageUrl found for:', birdName);
           cell.classList.remove('loading');
-          // Keep gray background if no image found
+          // If no image URL found and offline, show text-only mode
+          if (!navigator.onLine) {
+            cell.classList.add('text-only-mode');
+          }
         }
       } catch (error) {
         console.log('Error loading image for:', birdName, error);
