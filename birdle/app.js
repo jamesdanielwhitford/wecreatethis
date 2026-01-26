@@ -4,7 +4,7 @@ const App = {
   birds: [],
   seenBirds: JSON.parse(localStorage.getItem('seenBirds') || '[]'),
   recentBirds: JSON.parse(localStorage.getItem('recentBirds') || '[]'),
-  currentSort: 'nearest',
+  currentSort: 'most-likely',
   userLocation: null,
   map: null,
   mapMarker: null,
@@ -866,30 +866,11 @@ const App = {
 
     if (this.currentSort === 'alphabetical') {
       sorted.sort((a, b) => a.comName.localeCompare(b.comName));
-    } else if (this.currentSort === 'nearest') {
-      // Use userLocation, or fall back to cached location
-      let refLocation = this.userLocation;
-      if (!refLocation && typeof LocationService !== 'undefined') {
-        const cached = LocationService.getCached();
-        if (cached && cached.lat && cached.lng) {
-          refLocation = { lat: cached.lat, lng: cached.lng };
-        }
-      }
-
-      if (refLocation) {
-        sorted.sort((a, b) => {
-          // Birds without coordinates go to the end
-          const hasA = a.lat != null && a.lng != null;
-          const hasB = b.lat != null && b.lng != null;
-          if (!hasA && !hasB) return a.comName.localeCompare(b.comName);
-          if (!hasA) return 1;
-          if (!hasB) return -1;
-
-          const distA = this.distance(refLocation.lat, refLocation.lng, a.lat, a.lng);
-          const distB = this.distance(refLocation.lat, refLocation.lng, b.lat, b.lng);
-          return distA - distB;
-        });
-      }
+    } else if (this.currentSort === 'most-likely') {
+      // "Most Likely" preserves the eBird API's natural order
+      // The API returns birds chronologically (most recently observed first)
+      // This means actively-seen species appear at the top - a good proxy for "likely to see"
+      return birds;
     }
 
     return sorted;
