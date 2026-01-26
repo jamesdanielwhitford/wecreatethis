@@ -302,6 +302,8 @@ const App = {
 
   async restoreLastSearch() {
     const birdSearch = document.getElementById('bird-search');
+    const sortType = document.getElementById('sort-type');
+    const seenFilter = document.getElementById('seen-filter');
 
     // Priority 1: Check for lastSearch (user's previous search session)
     const lastSearch = JSON.parse(localStorage.getItem('lastSearch') || 'null');
@@ -310,6 +312,15 @@ const App = {
       if (lastSearch.query && birdSearch) {
         birdSearch.value = lastSearch.query;
         this.searchQuery = lastSearch.query.toLowerCase();
+      }
+
+      // Restore filter preferences if saved
+      if (lastSearch.sortBy && sortType) {
+        sortType.value = lastSearch.sortBy;
+        this.currentSort = lastSearch.sortBy;
+      }
+      if (lastSearch.seenOnly !== undefined && seenFilter) {
+        seenFilter.checked = lastSearch.seenOnly;
       }
 
       if (lastSearch.type === 'region') {
@@ -471,11 +482,13 @@ const App = {
     // Sort type
     sortType?.addEventListener('change', (e) => {
       this.currentSort = e.target.value;
+      this.saveFilterPreferences();
       this.renderBirdList();
     });
 
     // Seen filter
     seenFilter?.addEventListener('change', () => {
+      this.saveFilterPreferences();
       this.renderBirdList();
     });
 
@@ -660,6 +673,24 @@ const App = {
     const lastSearch = JSON.parse(localStorage.getItem('lastSearch') || 'null');
     if (lastSearch) {
       lastSearch.query = query;
+      localStorage.setItem('lastSearch', JSON.stringify(lastSearch));
+    }
+  },
+
+  // Save filter preferences to lastSearch
+  saveFilterPreferences() {
+    const lastSearch = JSON.parse(localStorage.getItem('lastSearch') || 'null');
+    if (lastSearch) {
+      const sortType = document.getElementById('sort-type');
+      const seenFilter = document.getElementById('seen-filter');
+
+      if (sortType) {
+        lastSearch.sortBy = sortType.value;
+      }
+      if (seenFilter) {
+        lastSearch.seenOnly = seenFilter.checked;
+      }
+
       localStorage.setItem('lastSearch', JSON.stringify(lastSearch));
     }
   },
