@@ -383,6 +383,16 @@ const BirdDB = {
     });
   },
 
+  // Update the order of species codes in cache_meta (preserves chronological order from API)
+  async updateCacheOrder(countryCode, speciesCodes) {
+    const key = `country_${countryCode}_birds`;
+    const meta = await this.getCacheMeta(key);
+    if (!meta) return; // No cache exists, nothing to update
+
+    // Update the speciesCodes array to match the new order
+    await this.setCacheMeta(key, speciesCodes);
+  },
+
 
   // ===== CONTINENT MAPPING =====
 

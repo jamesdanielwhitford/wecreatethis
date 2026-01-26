@@ -341,17 +341,34 @@ const App = {
         try {
           const birds = await EBird.getRecentObservations(regionCode, true);
           if (birds && birds.length > 0) {
-            this.birds = this.deduplicateBirds(birds);
+            const dedupedBirds = this.deduplicateBirds(birds);
+
+            // Check if bird order has changed - only re-render if different
+            const oldCodes = this.birds.map(b => b.speciesCode).join(',');
+            const newCodes = dedupedBirds.map(b => b.speciesCode).join(',');
+            const orderChanged = oldCodes !== newCodes;
+
+            this.birds = dedupedBirds;
             this.showLoading(false);
-            this.renderBirdList();
+
+            // Only re-render if the order actually changed (prevents image flash)
+            if (orderChanged) {
+              this.renderBirdList();
+            }
             this.updateCachePrompt(countryCode);
 
-            // Update cache with fresh coordinates for next time
+            // Update cache with fresh coordinates and order for next time
             if (isCached) {
               birds.forEach(bird => {
                 BirdDB.cacheBird(bird, 'api_refresh').catch(err => {
                   console.warn('Failed to update bird cache:', err);
                 });
+              });
+
+              // Update the cached bird order to match API's chronological order
+              const speciesCodes = birds.map(b => b.speciesCode);
+              BirdDB.updateCacheOrder(countryCode, speciesCodes).catch(err => {
+                console.warn('Failed to update cache order:', err);
               });
             }
             return;
@@ -821,17 +838,34 @@ const App = {
     try {
       const birds = await EBird.getRecentObservations(regionCode, true);
       if (birds && birds.length > 0) {
-        this.birds = this.deduplicateBirds(birds);
+        const dedupedBirds = this.deduplicateBirds(birds);
+
+        // Check if bird order has changed - only re-render if different
+        const oldCodes = this.birds.map(b => b.speciesCode).join(',');
+        const newCodes = dedupedBirds.map(b => b.speciesCode).join(',');
+        const orderChanged = oldCodes !== newCodes;
+
+        this.birds = dedupedBirds;
         this.showLoading(false);
-        this.renderBirdList();
+
+        // Only re-render if the order actually changed (prevents image flash)
+        if (orderChanged) {
+          this.renderBirdList();
+        }
         this.updateCachePrompt(countryCode);
 
-        // Update cache with fresh coordinates for next time
+        // Update cache with fresh coordinates and order for next time
         if (isCached) {
           birds.forEach(bird => {
             BirdDB.cacheBird(bird, 'api_refresh').catch(err => {
               console.warn('Failed to update bird cache:', err);
             });
+          });
+
+          // Update the cached bird order to match API's chronological order
+          const speciesCodes = birds.map(b => b.speciesCode);
+          BirdDB.updateCacheOrder(countryCode, speciesCodes).catch(err => {
+            console.warn('Failed to update cache order:', err);
           });
         }
         return;
