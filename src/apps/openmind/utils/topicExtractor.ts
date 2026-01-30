@@ -84,7 +84,7 @@ Guidelines:
         }
 
         return parsedResult;
-      } catch (parseError) {
+      } catch (_parseError) {
         console.error('Failed to parse OpenAI response:', result);
         throw new Error('Failed to parse topic extraction response');
       }

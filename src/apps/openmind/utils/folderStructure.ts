@@ -165,7 +165,7 @@ export class FolderStructureManager {
   /**
    * Gets all notes from OpenMind folders for a specific date range
    */
-  async getNotesForDateRange(startDate: Date, endDate: Date, userId: string): Promise<any[]> {
+  async getNotesForDateRange(startDate: Date, endDate: Date, userId: string): Promise<{ created_at: string; [key: string]: unknown }[]> {
     try {
       // Find the root OpenMind folder
       const { data: rootFolder } = await supabase
