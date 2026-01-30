@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Coffee, Sun, Infinity, Brain, Sparkles, Home } from 'lucide-react';
+import { Sun, Infinity, Brain, Sparkles, Home } from 'lucide-react';
 import { SettingsButton } from '../Settings';
 import { RulesButton } from '../Rules';
 import styles from './styles.module.css';
@@ -61,16 +61,6 @@ export function Header({
         >
           {alternateGameName === 'Randle' ? <Infinity size={24} /> : <Sun size={24} />}
         </Link>
-        <a
-          href="https://www.buymeacoffee.com/jameswhitford"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.iconButton}
-          aria-label="Buy me a coffee"
-          role="button"
-        >
-          <Coffee size={24} />
-        </a>
         <SettingsButton
           isHardMode={isHardMode}
           hasStartedGame={hasStartedGame}
