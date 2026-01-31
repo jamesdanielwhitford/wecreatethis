@@ -13,11 +13,8 @@
 <body>
   <!-- Navbar -->
   <nav class="game-navbar">
+    <a href="/" class="home-btn"></a>
     <span style="font-weight: bold; font-size: 18px;">Birdle</span>
-    <button id="menu-btn" class="menu-btn">&#8942;</button>
-    <div id="menu-dropdown" class="menu-dropdown" style="display:none;">
-      <button id="menu-manage-cache">Manage Cache</button>
-    </div>
   </nav>
 
   <div class="button-container">
@@ -59,29 +56,6 @@
   <script src="ebird.js?v=99"></script>
   <script src="app.js?v=99"></script>
   <script>
-    // Menu button handling
-    (function() {
-      const menuBtn = document.getElementById('menu-btn');
-      const menuDropdown = document.getElementById('menu-dropdown');
-      const manageCacheBtn = document.getElementById('menu-manage-cache');
-
-      menuBtn.addEventListener('click', () => {
-        const isVisible = menuDropdown.style.display === 'block';
-        menuDropdown.style.display = isVisible ? 'none' : 'block';
-      });
-
-      manageCacheBtn.addEventListener('click', () => {
-        window.location.href = 'cache';
-      });
-
-      // Close menu when clicking outside
-      document.addEventListener('click', (e) => {
-        if (!menuBtn.contains(e.target) && !menuDropdown.contains(e.target)) {
-          menuDropdown.style.display = 'none';
-        }
-      });
-    })();
-
     // Location-gated buttons handling
     (function() {
       const locationModal = document.getElementById('location-modal');

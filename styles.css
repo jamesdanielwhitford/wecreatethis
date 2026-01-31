@@ -1,0 +1,101 @@
+:root {
+  --navbar-height: 48px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  padding: 20px;
+  max-width: 400px;
+  margin: 0 auto;
+  color: #333;
+}
+
+/* Game Navbar */
+.game-navbar {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: var(--navbar-height);
+  margin: -20px -20px 16px -20px;
+  padding: 0 20px;
+  z-index: 100;
+  border-bottom: 1px solid #eee;
+}
+
+/* Button Container */
+.button-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 32px;
+  padding: 0 20px;
+  justify-content: center;
+}
+
+/* App Item */
+.app-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* App Button */
+.app-btn {
+  display: block;
+  width: 80px;
+  height: 80px;
+  text-decoration: none;
+  background: #f5f5f5 center/cover no-repeat;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.app-btn:hover {
+  opacity: 0.8;
+}
+
+.app-btn:active {
+  transform: scale(0.95);
+}
+
+/* App Name */
+.app-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+  text-align: center;
+  max-width: 100px;
+}
+
+/* Responsive sizing for larger screens */
+@media (min-width: 768px) {
+  body {
+    max-width: 600px;
+  }
+
+  .button-container {
+    gap: 32px;
+    padding: 0 40px;
+  }
+
+  .app-btn {
+    width: 100px;
+    height: 100px;
+  }
+
+  .app-name {
+    font-size: 1rem;
+  }
+}

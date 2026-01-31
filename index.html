@@ -10,16 +10,31 @@
   <title>We Create This</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>We Create This</h1>
-  <nav>
-    <ul>
-      <li><a href="/beautiful-mind/">Beautiful Mind</a></li>
-      <li><a href="/birdle/">Birdle</a></li>
-      <li><a href="/tarot/">Tarot</a></li>
-    </ul>
+  <!-- Navbar -->
+  <nav class="game-navbar">
+    <span style="font-weight: bold; font-size: 18px;">We Create This</span>
   </nav>
+
+  <div class="button-container">
+    <div class="app-item">
+      <a href="/beautiful-mind/" class="app-btn" style="background-image: url('/beautiful-mind/icon-192.png');"></a>
+      <span class="app-name">Beautiful Mind</span>
+    </div>
+
+    <div class="app-item">
+      <a href="/birdle/" class="app-btn" style="background-image: url('/birdle/icon-192.png');"></a>
+      <span class="app-name">Birdle</span>
+    </div>
+
+    <div class="app-item">
+      <a href="/tarot/" class="app-btn" style="background-image: url('/tarot/images/the-fool.jpg');"></a>
+      <span class="app-name">Tarot</span>
+    </div>
+  </div>
+
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js', { scope: '/' });
