@@ -15,6 +15,10 @@ const App = {
   searchQuery: '',
   gameSearchQuery: '',
 
+  saveSearchScrollPosition() {
+    sessionStorage.setItem('searchScrollY', window.scrollY);
+  },
+
   async init() {
     // Initialize IndexedDB
     if (typeof BirdDB !== 'undefined') {
@@ -176,8 +180,12 @@ const App = {
     this.bindSearchEvents();
     this.updateSearchLocationButton();
     await this.loadSearchCountries();
-    this.restoreLastSearch();
+    await this.restoreLastSearch();
     this.initScrollToTop();
+    // Clear the scroll position after all renders are done
+    setTimeout(() => {
+      sessionStorage.removeItem('searchScrollY');
+    }, 500);
   },
 
   async loadSearchCountries() {
@@ -592,14 +600,20 @@ const App = {
     const scrollToTopBtn = document.getElementById('scroll-to-top');
     if (!scrollToTopBtn) return;
 
-    // Show/hide button based on scroll position
-    window.addEventListener('scroll', () => {
+    // Function to update button visibility
+    const updateScrollToTopBtn = () => {
       if (window.scrollY > 300) {
         scrollToTopBtn.style.display = 'flex';
       } else {
         scrollToTopBtn.style.display = 'none';
       }
-    });
+    };
+
+    // Show/hide button based on scroll position
+    window.addEventListener('scroll', updateScrollToTopBtn);
+
+    // Check initial state
+    updateScrollToTopBtn();
 
     // Scroll to top when clicked
     scrollToTopBtn.addEventListener('click', () => {
@@ -1058,12 +1072,48 @@ const App = {
     // Load images lazily (works offline if images are cached)
     this.loadBirdThumbnails(list);
 
+    // Save scroll position when clicking bird links
+    list.querySelectorAll('.bird-item a').forEach(link => {
+      link.addEventListener('click', () => {
+        this.saveSearchScrollPosition();
+      });
+    });
+
     // Store birds for detail page (merge with recent birds)
     const allBirds = [...this.birds, ...this.recentBirds];
     const uniqueBirds = allBirds.filter((bird, index, self) =>
       index === self.findIndex(b => b.speciesCode === bird.speciesCode)
     );
     localStorage.setItem('currentBirds', JSON.stringify(uniqueBirds));
+
+    // Restore scroll position after rendering (if returning from bird detail)
+    const savedY = sessionStorage.getItem('searchScrollY');
+    if (savedY) {
+      const scrollPos = parseInt(savedY, 10);
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollPos);
+        this.updateScrollToTopButton();
+        setTimeout(() => {
+          window.scrollTo(0, scrollPos);
+          this.updateScrollToTopButton();
+        }, 50);
+        setTimeout(() => {
+          window.scrollTo(0, scrollPos);
+          this.updateScrollToTopButton();
+        }, 150);
+      });
+    }
+  },
+
+  updateScrollToTopButton() {
+    const scrollToTopBtn = document.getElementById('scroll-to-top');
+    if (scrollToTopBtn) {
+      if (window.scrollY > 300) {
+        scrollToTopBtn.style.display = 'flex';
+      } else {
+        scrollToTopBtn.style.display = 'none';
+      }
+    }
   },
 
   showLoading(show) {

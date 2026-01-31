@@ -5,6 +5,29 @@ const LifeList = {
     await BirdDB.init();
     await this.renderLifeList();
     this.bindEvents();
+    this.restoreScrollPosition();
+  },
+
+  saveScrollPosition() {
+    sessionStorage.setItem('lifeListScrollY', window.scrollY);
+  },
+
+  restoreScrollPosition() {
+    const savedY = sessionStorage.getItem('lifeListScrollY');
+    if (savedY) {
+      const scrollPos = parseInt(savedY, 10);
+      // Use multiple restoration attempts to handle content loading
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollPos);
+        setTimeout(() => {
+          window.scrollTo(0, scrollPos);
+        }, 50);
+        setTimeout(() => {
+          window.scrollTo(0, scrollPos);
+          sessionStorage.removeItem('lifeListScrollY');
+        }, 150);
+      });
+    }
   },
 
   async renderLifeList() {
@@ -339,6 +362,13 @@ const LifeList = {
   },
 
   bindListEvents() {
+    // Save scroll position when clicking bird links
+    document.querySelectorAll('.bird-item a').forEach(link => {
+      link.addEventListener('click', () => {
+        this.saveScrollPosition();
+      });
+    });
+
     // Continent collapse toggle
     document.querySelectorAll('.continent-title').forEach(title => {
       title.addEventListener('click', () => {
