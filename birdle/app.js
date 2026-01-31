@@ -1630,23 +1630,21 @@ const App = {
     const allSightings = await BirdDB.getAllSightings();
 
     list.innerHTML = games.map(game => {
-      const foundCount = game.foundBirds?.length || 0;
       const totalBirds = game.birds?.length || 24;
       const status = game.completedAt ? 'Completed' : 'In Progress';
       const region = game.regionName || game.regionCode || 'Unknown';
 
-      // Count found birds based on sightings
-      const foundBirdsFromSightings = game.birds.filter(bird => {
-        return allSightings.some(s => s.speciesCode === bird.speciesCode);
-      }).length;
-
-      const actualFoundCount = Math.max(foundCount, foundBirdsFromSightings);
+      // Count found birds based on sightings after the game was created
+      const cardCreatedDate = game.createdAt?.split('T')[0] || '1970-01-01';
+      const validSightings = allSightings.filter(s => s.date >= cardCreatedDate);
+      const seenCodes = new Set(validSightings.map(s => s.speciesCode));
+      const foundCount = game.birds.filter(bird => seenCodes.has(bird.speciesCode)).length;
 
       return `
         <li>
           <a href="bingo?id=${game.id}">
             <span class="game-title">${game.title}</span>
-            <span class="game-info">${region} · ${actualFoundCount}/${totalBirds} found · ${status}</span>
+            <span class="game-info">${region} · ${foundCount}/${totalBirds} found · ${status}</span>
           </a>
         </li>
       `;
