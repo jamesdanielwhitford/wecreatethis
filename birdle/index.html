@@ -26,20 +26,32 @@
       <span class="btn-text" id="location-text">Grant location access</span>
     </a>
 
-    <a href="search" class="btn">
+    <a href="search" class="btn requires-location">
       <span class="btn-icon">🔍</span>
       <span class="btn-text">Search</span>
     </a>
 
-    <a href="life" class="btn">
+    <a href="life" class="btn requires-location">
       <span class="btn-icon">📋</span>
       <span class="btn-text">Life List</span>
     </a>
 
-    <a href="bingo-games" class="btn">
+    <a href="bingo-games" class="btn requires-location">
       <span class="btn-icon">🎲</span>
       <span class="btn-text">Bird Bingo</span>
     </a>
+  </div>
+
+  <!-- Location Access Modal -->
+  <div id="location-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h3>Location Required</h3>
+      <p style="margin-bottom: 20px; color: #666;">Birdle needs your location to find birds in your area. Please grant location access to continue.</p>
+      <div class="modal-actions">
+        <button id="modal-grant-btn" class="modal-btn seen">Grant Location Access</button>
+        <button id="modal-close-btn" class="modal-btn cancel">Close</button>
+      </div>
+    </div>
   </div>
 
   <script src="db.js?v=99"></script>
@@ -68,6 +80,74 @@
           menuDropdown.style.display = 'none';
         }
       });
+    })();
+
+    // Location-gated buttons handling
+    (function() {
+      const locationModal = document.getElementById('location-modal');
+      const modalGrantBtn = document.getElementById('modal-grant-btn');
+      const modalCloseBtn = document.getElementById('modal-close-btn');
+      const requiresLocationBtns = document.querySelectorAll('.requires-location');
+
+      function updateButtonStates() {
+        const hasLocation = LocationService.hasCached();
+        requiresLocationBtns.forEach(btn => {
+          if (hasLocation) {
+            btn.classList.remove('disabled');
+          } else {
+            btn.classList.add('disabled');
+          }
+        });
+      }
+
+      // Handle clicks on disabled buttons
+      requiresLocationBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          if (btn.classList.contains('disabled')) {
+            e.preventDefault();
+            locationModal.style.display = 'flex';
+          }
+        });
+      });
+
+      // Modal close button
+      modalCloseBtn.addEventListener('click', () => {
+        locationModal.style.display = 'none';
+      });
+
+      // Modal grant button - trigger location request
+      modalGrantBtn.addEventListener('click', async () => {
+        modalGrantBtn.textContent = 'Getting location...';
+        modalGrantBtn.disabled = true;
+
+        try {
+          await LocationService.getLocation(true);
+          locationModal.style.display = 'none';
+          updateButtonStates();
+          // Update the location button display
+          window.dispatchEvent(new Event('locationUpdated'));
+          // Navigate to cache page after getting location
+          window.location.href = 'cache';
+        } catch (error) {
+          alert(error.message);
+        } finally {
+          modalGrantBtn.textContent = 'Grant Location Access';
+          modalGrantBtn.disabled = false;
+        }
+      });
+
+      // Close modal when clicking outside
+      locationModal.addEventListener('click', (e) => {
+        if (e.target === locationModal) {
+          locationModal.style.display = 'none';
+        }
+      });
+
+      // Initialize button states
+      updateButtonStates();
+
+      // Listen for location updates
+      window.addEventListener('locationUpdated', updateButtonStates);
     })();
 
     // Location status handling
@@ -127,6 +207,8 @@
           try {
             await LocationService.getLocation(true);
             updateLocationButton();
+            // Notify other components that location was updated
+            window.dispatchEvent(new Event('locationUpdated'));
             // Navigate to cache page after getting location
             window.location.href = 'cache';
           } catch (error) {
@@ -139,6 +221,9 @@
 
       // Initialize on load
       updateLocationButton();
+
+      // Listen for location updates from modal
+      window.addEventListener('locationUpdated', updateLocationButton);
     })();
 
     // Force service worker update

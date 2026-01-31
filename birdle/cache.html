@@ -21,27 +21,6 @@
       font-size: 16px;
       margin-bottom: 12px;
     }
-    .current-location-display {
-      background: #f5f5f5;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 12px;
-    }
-    .current-location-display .location-name {
-      font-weight: 500;
-      font-size: 16px;
-    }
-    .current-location-display .location-status {
-      font-size: 13px;
-      color: #666;
-      margin-top: 4px;
-    }
-    .current-location-display .location-status.cached {
-      color: #4caf50;
-    }
-    .current-location-display .location-status.not-cached {
-      color: #c00;
-    }
     .location-form {
       margin-top: 12px;
     }
@@ -51,13 +30,31 @@
     .location-form select {
       width: 100%;
       padding: 12px;
+      padding-right: 36px;
       font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 8px;
+      background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 12px center;
+      -webkit-appearance: none;
+      appearance: none;
     }
     .location-form select:disabled {
       background: #f5f5f5;
       color: #999;
+    }
+    .location-status-inline {
+      font-size: 13px;
+      padding: 8px 0;
+      margin-bottom: 8px;
+    }
+    .location-status-inline.cached {
+      color: #4caf50;
+    }
+    .location-status-inline.not-cached {
+      color: #c00;
+    }
+    .btn-action.full-width {
+      margin-top: 8px;
     }
     .btn-row {
       display: flex;
@@ -113,6 +110,7 @@
     }
     .cache-info {
       flex: 1;
+      cursor: pointer;
     }
     .cache-name {
       font-weight: 500;
@@ -175,18 +173,9 @@
   <a href="index" class="back-btn">&larr; Back</a>
   <h1>Location & Cache</h1>
 
-  <!-- Current Location Section -->
+  <!-- Location Section -->
   <div class="section">
-    <h2>Current Location</h2>
-    <div id="current-location-display" class="current-location-display">
-      <div class="location-name" id="current-location-name">No location set</div>
-      <div class="location-status" id="current-location-status"></div>
-    </div>
-
-    <button id="use-gps-btn" class="btn-action secondary full-width">
-      📍 Use Current GPS Location
-    </button>
-
+    <h2>Set Location</h2>
     <div class="location-form">
       <div class="form-row">
         <select id="country-select">
@@ -198,10 +187,13 @@
           <option value="">Select State/Province...</option>
         </select>
       </div>
-      <div class="btn-row">
-        <button id="set-location-btn" class="btn-action secondary" disabled>Set Location</button>
-        <button id="download-btn" class="btn-action primary" disabled>Download for Offline</button>
-      </div>
+      <div id="location-status" class="location-status-inline"></div>
+      <button id="use-gps-btn" class="btn-action secondary full-width">
+        📍 Use Current Location
+      </button>
+      <button id="download-btn" class="btn-action primary full-width" disabled>
+        Download for Offline
+      </button>
     </div>
 
     <div id="progress-container" class="progress-container">
@@ -237,12 +229,10 @@
   <script>
     (async function() {
       // Elements
-      const currentLocationName = document.getElementById('current-location-name');
-      const currentLocationStatus = document.getElementById('current-location-status');
       const useGpsBtn = document.getElementById('use-gps-btn');
       const countrySelect = document.getElementById('country-select');
       const stateSelect = document.getElementById('state-select');
-      const setLocationBtn = document.getElementById('set-location-btn');
+      const locationStatus = document.getElementById('location-status');
       const downloadBtn = document.getElementById('download-btn');
       const progressContainer = document.getElementById('progress-container');
       const progressText = document.getElementById('progress-text');
@@ -267,50 +257,69 @@
         return '🌍';
       }
 
-      // Update current location display
-      async function updateCurrentLocationDisplay() {
-        const cached = LocationService.getCached();
+      // Update location status display
+      async function updateLocationStatus() {
+        const countryCode = countrySelect.value;
 
-        if (cached) {
-          const displayName = LocationService.getRegionDisplayName(cached);
-          const globe = getGlobeEmoji(cached.countryCode);
-          currentLocationName.textContent = `${globe} ${displayName}`;
-
-          // Check if country is cached
-          const hasCache = await BirdDB.hasCountryCache(cached.countryCode);
+        if (countryCode) {
+          const hasCache = await BirdDB.hasCountryCache(countryCode);
           if (hasCache) {
-            const meta = await BirdDB.getCountryCacheMeta(cached.countryCode);
-            currentLocationStatus.textContent = `✓ ${meta.speciesCodes.length} birds downloaded`;
-            currentLocationStatus.className = 'location-status cached';
+            const meta = await BirdDB.getCountryCacheMeta(countryCode);
+            locationStatus.textContent = `✓ ${meta.speciesCodes.length} birds downloaded`;
+            locationStatus.className = 'location-status-inline cached';
+            downloadBtn.textContent = 'Re-download';
           } else {
-            currentLocationStatus.textContent = '⚠ Not downloaded for offline use';
-            currentLocationStatus.className = 'location-status not-cached';
+            locationStatus.textContent = '⚠ Not downloaded for offline use';
+            locationStatus.className = 'location-status-inline not-cached';
+            downloadBtn.textContent = 'Download for Offline';
           }
-
-          // Pre-select in dropdowns
-          if (cached.countryCode && countrySelect.value !== cached.countryCode) {
-            countrySelect.value = cached.countryCode;
-            await loadStates(cached.countryCode);
-            if (cached.stateCode) {
-              stateSelect.value = cached.stateCode;
-            }
-          }
+          downloadBtn.disabled = false;
         } else {
-          currentLocationName.textContent = 'No location set';
-          currentLocationStatus.textContent = 'Set a location to get started';
-          currentLocationStatus.className = 'location-status';
+          locationStatus.textContent = '';
+          locationStatus.className = 'location-status-inline';
+          downloadBtn.textContent = 'Download for Offline';
+          downloadBtn.disabled = true;
         }
-
-        updateButtonStates();
       }
 
       // Load countries dropdown
       async function loadCountries() {
         countries = await EBird.getCountries();
-        countrySelect.innerHTML = '<option value="">Select Country...</option>';
-        countries.forEach(c => {
-          countrySelect.innerHTML += `<option value="${c.code}">${c.name}</option>`;
-        });
+        cachedCountries = await BirdDB.getCachedCountries();
+        const cachedCodes = new Set(cachedCountries.map(c => c.countryCode));
+
+        let html = '<option value="">Select Country...</option>';
+
+        // Add downloaded countries section if any exist
+        if (cachedCountries.length > 0) {
+          html += '<optgroup label="Downloaded">';
+          countries.filter(c => cachedCodes.has(c.code)).forEach(c => {
+            html += `<option value="${c.code}">${c.name}</option>`;
+          });
+          html += '</optgroup>';
+          html += '<optgroup label="All Countries">';
+          countries.forEach(c => {
+            html += `<option value="${c.code}">${c.name}</option>`;
+          });
+          html += '</optgroup>';
+        } else {
+          countries.forEach(c => {
+            html += `<option value="${c.code}">${c.name}</option>`;
+          });
+        }
+
+        countrySelect.innerHTML = html;
+
+        // Pre-select current location
+        const cached = LocationService.getCached();
+        if (cached && cached.countryCode) {
+          countrySelect.value = cached.countryCode;
+          await loadStates(cached.countryCode);
+          if (cached.stateCode) {
+            stateSelect.value = cached.stateCode;
+          }
+        }
+        await updateLocationStatus();
       }
 
       // Load states for selected country
@@ -330,22 +339,8 @@
         }
       }
 
-      // Update button states
-      async function updateButtonStates() {
-        const countryCode = countrySelect.value;
-        setLocationBtn.disabled = !countryCode;
-        downloadBtn.disabled = !countryCode;
-
-        if (countryCode) {
-          const hasCache = await BirdDB.hasCountryCache(countryCode);
-          downloadBtn.textContent = hasCache ? 'Re-download' : 'Download for Offline';
-        } else {
-          downloadBtn.textContent = 'Download for Offline';
-        }
-      }
-
-      // Set location from dropdowns
-      function setLocationFromDropdowns() {
+      // Save location from current dropdown values
+      function saveLocationFromDropdowns() {
         const countryCode = countrySelect.value;
         const stateCode = stateSelect.value || null;
 
@@ -364,7 +359,35 @@
           displayName: stateName ? `${stateName}, ${countryName}` : countryName
         };
         LocationService.saveToCache(location);
-        updateCurrentLocationDisplay();
+      }
+
+      // Refresh country dropdown to update Downloaded section
+      async function refreshCountryDropdown() {
+        const currentValue = countrySelect.value;
+        cachedCountries = await BirdDB.getCachedCountries();
+        const cachedCodes = new Set(cachedCountries.map(c => c.countryCode));
+
+        let html = '<option value="">Select Country...</option>';
+
+        if (cachedCountries.length > 0) {
+          html += '<optgroup label="Downloaded">';
+          countries.filter(c => cachedCodes.has(c.code)).forEach(c => {
+            html += `<option value="${c.code}">${c.name}</option>`;
+          });
+          html += '</optgroup>';
+          html += '<optgroup label="All Countries">';
+          countries.forEach(c => {
+            html += `<option value="${c.code}">${c.name}</option>`;
+          });
+          html += '</optgroup>';
+        } else {
+          countries.forEach(c => {
+            html += `<option value="${c.code}">${c.name}</option>`;
+          });
+        }
+
+        countrySelect.innerHTML = html;
+        countrySelect.value = currentValue;
       }
 
       // Download country for offline use
@@ -372,15 +395,14 @@
         const countryCode = countrySelect.value;
         if (!countryCode) return;
 
-        // Set location first
-        setLocationFromDropdowns();
+        // Enable auto-caching of images
+        localStorage.setItem('autoCacheImages', 'true');
 
         // Show progress
         progressContainer.classList.add('visible');
         progressText.textContent = 'Starting download...';
         progressBar.style.width = '0%';
         downloadBtn.disabled = true;
-        setLocationBtn.disabled = true;
 
         try {
           await BirdDB.cacheCountryBirds(countryCode, (progress) => {
@@ -397,12 +419,12 @@
             }
           });
 
-          await updateCurrentLocationDisplay();
+          await updateLocationStatus();
           await renderCacheList();
+          await refreshCountryDropdown();
 
           setTimeout(() => {
             progressContainer.classList.remove('visible');
-            updateButtonStates();
           }, 2000);
         } catch (error) {
           console.error('Download error:', error);
@@ -411,7 +433,7 @@
           setTimeout(() => {
             progressContainer.classList.remove('visible');
             progressText.style.color = '';
-            updateButtonStates();
+            updateLocationStatus();
           }, 3000);
         }
       }
@@ -423,8 +445,17 @@
         useGpsBtn.disabled = true;
 
         try {
-          await LocationService.getLocation(true);
-          await updateCurrentLocationDisplay();
+          const location = await LocationService.getLocation(true);
+          // Update dropdowns to match GPS location
+          if (location.countryCode) {
+            countrySelect.value = location.countryCode;
+            await loadStates(location.countryCode);
+            if (location.stateCode) {
+              stateSelect.value = location.stateCode;
+            }
+          }
+          await updateLocationStatus();
+          await renderCacheList();
         } catch (error) {
           alert(error.message);
         }
@@ -456,6 +487,7 @@
 
             const li = document.createElement('li');
             li.className = 'cache-item' + (isCurrent ? ' current' : '');
+            li.dataset.code = cache.countryCode;
             li.innerHTML = `
               <div class="cache-info">
                 <div class="cache-name">${globe} ${countryName}${isCurrent ? ' (current)' : ''}</div>
@@ -482,8 +514,9 @@
         }
 
         await BirdDB.removeCountryFromCache(countryCode);
-        await updateCurrentLocationDisplay();
+        await updateLocationStatus();
         await renderCacheList();
+        await refreshCountryDropdown();
       }
 
       // Re-download cache for a country
@@ -498,32 +531,44 @@
 
       countrySelect.addEventListener('change', async (e) => {
         await loadStates(e.target.value);
-        await updateButtonStates();
+        saveLocationFromDropdowns();
+        await updateLocationStatus();
+        await renderCacheList();
       });
 
-      stateSelect.addEventListener('change', updateButtonStates);
-
-      setLocationBtn.addEventListener('click', () => {
-        setLocationFromDropdowns();
+      stateSelect.addEventListener('change', async () => {
+        saveLocationFromDropdowns();
+        await updateLocationStatus();
       });
 
       downloadBtn.addEventListener('click', downloadCountry);
 
-      cacheList.addEventListener('click', (e) => {
+      cacheList.addEventListener('click', async (e) => {
         const btn = e.target.closest('.cache-btn');
-        if (!btn) return;
+        if (btn) {
+          const code = btn.dataset.code;
+          if (btn.classList.contains('delete')) {
+            removeCache(code);
+          } else if (btn.classList.contains('refresh')) {
+            redownloadCache(code);
+          }
+          return;
+        }
 
-        const code = btn.dataset.code;
-        if (btn.classList.contains('delete')) {
-          removeCache(code);
-        } else if (btn.classList.contains('refresh')) {
-          redownloadCache(code);
+        // Tap on cache item to set as current location
+        const item = e.target.closest('.cache-item');
+        if (item && item.dataset.code) {
+          const code = item.dataset.code;
+          countrySelect.value = code;
+          await loadStates(code);
+          saveLocationFromDropdowns();
+          await updateLocationStatus();
+          await renderCacheList();
         }
       });
 
       // Initial load
       await loadCountries();
-      await updateCurrentLocationDisplay();
       await renderCacheList();
     })();
   </script>
