@@ -17,12 +17,12 @@
   <div class="form-group">
     <label for="game-title">Game Title</label>
     <input type="text" id="game-title" placeholder="">
-    <p class="hint">Leave blank to use today's date</p>
+    <p class="hint" id="default-title-hint">Leave blank to use today's date</p>
   </div>
 
   <!-- Region Selector -->
   <div class="form-group">
-    <label>Choose Region</label>
+    <label>Choose Your Location</label>
     <div class="region-selects">
       <select id="country-select">
         <option value="">Select Country...</option>
@@ -31,8 +31,10 @@
         <option value="">Select State/Province...</option>
       </select>
     </div>
+    <p class="hint" style="margin: 16px 0; text-align: center; color: #333; font-size: 15px; font-weight: 600;">Or</p>
     <button id="use-location-btn" class="location-btn">📍 Use My Precise Location</button>
-    <p id="region-info" class="hint"></p>
+    <p class="hint" style="margin-top: 8px; margin-bottom: 16px; text-align: center; font-size: 13px; font-weight: 600; color: #666;">For a more accurate list</p>
+    <p id="region-info" class="hint" style="text-align: center; margin-top: 16px;"></p>
   </div>
 
   <!-- Create Button -->
@@ -47,5 +49,18 @@
   <script src="ebird.js?v=99"></script>
   <script src="db.js?v=99"></script>
   <script src="app.js?v=99"></script>
+  <script>
+    // Set default title placeholder
+    (function() {
+      const titleInput = document.getElementById('game-title');
+      const defaultTitleHint = document.getElementById('default-title-hint');
+      const defaultTitle = new Date().toLocaleDateString();
+
+      if (titleInput && defaultTitleHint) {
+        titleInput.placeholder = defaultTitle;
+        defaultTitleHint.textContent = `Leave blank for "${defaultTitle}"`;
+      }
+    })();
+  </script>
 </body>
 </html>

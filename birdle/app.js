@@ -195,9 +195,30 @@ const App = {
 
     try {
       const countries = await EBird.getCountries();
-      countries.forEach(c => {
-        modalCountryFilter.innerHTML += `<option value="${c.code}">${c.name}</option>`;
-      });
+      const cachedCountries = await BirdDB.getCachedCountries();
+      const cachedCodes = new Set(cachedCountries.map(c => c.countryCode));
+
+      let html = '<option value="">Select country...</option>';
+
+      // Add downloaded countries section if any exist
+      if (cachedCountries.length > 0) {
+        html += '<optgroup label="Downloaded">';
+        countries.filter(c => cachedCodes.has(c.code)).forEach(c => {
+          html += `<option value="${c.code}">${c.name}</option>`;
+        });
+        html += '</optgroup>';
+        html += '<optgroup label="All Countries">';
+        countries.forEach(c => {
+          html += `<option value="${c.code}">${c.name}</option>`;
+        });
+        html += '</optgroup>';
+      } else {
+        countries.forEach(c => {
+          html += `<option value="${c.code}">${c.name}</option>`;
+        });
+      }
+
+      modalCountryFilter.innerHTML = html;
     } catch (error) {
       console.error('Failed to load countries:', error);
     }
@@ -1783,10 +1804,30 @@ const App = {
 
     try {
       const countries = await EBird.getCountries();
-      select.innerHTML = '<option value="">Select Country...</option>';
-      countries.forEach(c => {
-        select.innerHTML += `<option value="${c.code}">${c.name}</option>`;
-      });
+      const cachedCountries = await BirdDB.getCachedCountries();
+      const cachedCodes = new Set(cachedCountries.map(c => c.countryCode));
+
+      let html = '<option value="">Select Country...</option>';
+
+      // Add downloaded countries section if any exist
+      if (cachedCountries.length > 0) {
+        html += '<optgroup label="Downloaded">';
+        countries.filter(c => cachedCodes.has(c.code)).forEach(c => {
+          html += `<option value="${c.code}">${c.name}</option>`;
+        });
+        html += '</optgroup>';
+        html += '<optgroup label="All Countries">';
+        countries.forEach(c => {
+          html += `<option value="${c.code}">${c.name}</option>`;
+        });
+        html += '</optgroup>';
+      } else {
+        countries.forEach(c => {
+          html += `<option value="${c.code}">${c.name}</option>`;
+        });
+      }
+
+      select.innerHTML = html;
     } catch (error) {
       console.error('Error loading countries:', error);
     }
