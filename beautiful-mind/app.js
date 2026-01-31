@@ -673,6 +673,7 @@ async function renderNavigation(container) {
   container.innerHTML = `
     <div class="nav-view">
       <header>
+        <a href="/" class="home-btn"></a>
         <h1>Notes</h1>
         <div class="header-actions">
           <button id="newNote">+ New</button>

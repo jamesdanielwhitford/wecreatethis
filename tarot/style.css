@@ -47,7 +47,7 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Page Header with Deck Button */
+/* Page Header with Home and Deck Buttons */
 .page-header {
     display: flex;
     justify-content: space-between;
@@ -57,6 +57,30 @@ body {
 
 .page-header h1 {
     margin-bottom: 0;
+    flex: 1;
+    text-align: center;
+}
+
+.home-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    background: rgba(255, 255, 255, 0.1) url('icon-192.png') center/cover no-repeat;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.home-btn:hover {
+    opacity: 0.8;
+}
+
+.home-btn:active {
+    transform: scale(0.95);
 }
 
 .deck-btn {

@@ -6,6 +6,38 @@ This repository contains multiple offline-first web applications, each living in
 
 - **birdle/** - Bird spotting game using eBird API (Bird Bingo). See [birdle/CLAUDE.md](birdle/CLAUDE.md) for details.
 - **beautiful-mind/** - Offline notes app with text, image, video, and audio support. E-reader themed with dual storage (File System API/IndexedDB). See [beautiful-mind/CLAUDE.md](beautiful-mind/CLAUDE.md) for details.
+- **tarot/** - Tarot card reading app. See [tarot/CLAUDE.md](tarot/CLAUDE.md) for details.
+
+## Adding New Apps to the Homepage
+
+The root `index.html` displays all apps as rounded square icon buttons. To add a new app:
+
+1. **Create the app directory** with required PWA files:
+   - `manifest.json` - PWA manifest
+   - `icon-192.png` and `icon-512.png` - App icons (preferably square)
+   - `sw.js` - Service worker
+   - `CLAUDE.md` - Project documentation
+
+2. **Add a new app item to `index.html`** in the `.button-container` div:
+   ```html
+   <div class="app-item">
+     <a href="/your-app/" class="app-btn" style="background-image: url('/your-app/icon-192.png');"></a>
+     <span class="app-name">Your App Name</span>
+   </div>
+   ```
+
+3. **Icon requirements:**
+   - The icon should be square (1:1 aspect ratio)
+   - Use `icon-192.png` as the background image source
+   - If no icon exists, use an appropriate fallback image from the app
+
+4. **Layout behavior:**
+   - Buttons are 80x80px on mobile, 100x100px on larger screens
+   - Buttons wrap automatically to multiple rows as needed
+   - All buttons remain perfectly square regardless of screen size
+   - Centered layout with responsive gaps (24px mobile, 32px desktop)
+
+5. **Update this CLAUDE.md** to list the new project in the Projects section above.
 
 ## Shared Conventions
 

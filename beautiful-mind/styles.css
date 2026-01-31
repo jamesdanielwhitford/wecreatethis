@@ -157,10 +157,34 @@ label input, label textarea {
   margin-bottom: 1rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--border);
+  gap: 0.75rem;
 }
 
 .nav-view h1 {
   font-size: 1.5rem;
+  flex: 1;
+}
+
+.home-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  background: rgba(90, 74, 58, 0.15) url('icon-192.png') center/cover no-repeat;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.home-btn:hover {
+  opacity: 0.8;
+}
+
+.home-btn:active {
+  transform: scale(0.95);
 }
 
 .header-actions {
