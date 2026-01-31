@@ -4,6 +4,8 @@
 # Environment variables
 .env
 
+node_modules/
+
 CLAUDE.md
 .claude
 **/CLAUDE.md

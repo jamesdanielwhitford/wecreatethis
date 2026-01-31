@@ -21,20 +21,21 @@ h1 {
   margin-bottom: 8px;
 }
 
-/* Location status on homepage */
-#location-status {
-  margin-top: 8px;
+/* Location button color states */
+.btn.location-unset {
+  border-color: #c00;
 }
 
-#location-status a,
-#location-status p {
-  font-size: 1rem;
-  margin: 0;
+.btn.location-unset:active {
+  background: #c00;
 }
 
-#location-status #update-location {
-  display: inline-block;
-  margin-top: 8px;
+.btn.location-set {
+  border-color: #4caf50;
+}
+
+.btn.location-set:active {
+  background: #4caf50;
 }
 
 .button-container {
@@ -74,13 +75,12 @@ h1 {
 /* Homepage-specific button styling */
 .button-container .btn {
   flex-direction: row;
-  /* Make buttons as tall as they are wide, but ensure all 3 fit on screen */
-  /* Body max-width is 400px, padding is 20px each side, so button width is ~360px */
-  /* Account for: body padding (40px), p tag, location status, margins, gaps */
-  /* Three buttons + two 12px gaps between them */
-  min-height: 100px;
-  height: calc((100vh - 200px) / 3 - 8px);
-  max-height: min(360px, calc((100vh - 200px) / 3 - 8px));
+  /* Make buttons fill available height, ensure all 4 fit on screen */
+  /* Account for: navbar, body padding, gaps between buttons */
+  /* Four buttons + three 12px gaps between them */
+  min-height: 80px;
+  height: calc((100vh - 140px) / 4 - 9px);
+  max-height: min(280px, calc((100vh - 140px) / 4 - 9px));
 }
 
 .button-container .btn-icon {

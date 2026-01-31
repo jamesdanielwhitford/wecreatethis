@@ -20,58 +20,12 @@
     </div>
   </nav>
 
-  <p style="margin-top: 20px;">Bird Bingo Adventure</p>
-
-  <div id="location-status">
-    <a href="#" id="location-btn" style="color: #c00;">Grant location access</a>
-    <div id="cache-status" style="display: none; font-size: 12px; color: #666; margin-top: 4px;"></div>
-  </div>
-
-  <!-- Location Access Modal -->
-  <div id="location-modal" class="modal" style="display: none;">
-    <div class="modal-content">
-      <h3 id="modal-title">Location Access</h3>
-
-      <!-- Country/Region dropdowns (always visible) -->
-      <div class="form-group">
-        <label>Country</label>
-        <select id="modal-country" class="form-select">
-          <option value="">Select Country...</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>State/Province</label>
-        <select id="modal-state" class="form-select" disabled>
-          <option value="">Select State/Province...</option>
-        </select>
-      </div>
-
-      <!-- Download progress (hidden by default) -->
-      <div id="download-progress" style="display: none; margin-top: 16px;">
-        <div style="font-size: 14px; color: #333; margin-bottom: 12px; font-weight: 500;">
-          <span id="download-status">Downloading birds for offline access...</span>
-        </div>
-        <div class="progress-bar-container">
-          <div id="progress-bar" class="progress-bar"></div>
-        </div>
-        <div id="progress-text" style="font-size: 12px; color: #666; margin-top: 8px; text-align: center;"></div>
-        <div style="font-size: 12px; color: #999; margin-top: 8px; text-align: center;">
-          Please do not navigate away until complete
-        </div>
-      </div>
-
-      <!-- Action buttons -->
-      <div class="modal-actions" style="margin-top: 20px;">
-        <button id="modal-use-location-btn" class="modal-btn seen">Use Current Location</button>
-        <button id="modal-update-location-btn" class="modal-btn seen" style="display: none;">Update Location</button>
-        <button id="modal-download-names-btn" class="modal-btn">Download Names</button>
-        <button id="modal-download-images-btn" class="modal-btn">Download Names & Images</button>
-        <button id="modal-cancel-btn" class="modal-btn cancel">Cancel</button>
-      </div>
-    </div>
-  </div>
-
   <div class="button-container">
+    <a href="#" id="location-btn" class="btn location-unset">
+      <span class="btn-icon" id="location-icon">📍</span>
+      <span class="btn-text" id="location-text">Grant location access</span>
+    </a>
+
     <a href="search" class="btn">
       <span class="btn-icon">🔍</span>
       <span class="btn-text">Search</span>
@@ -119,339 +73,67 @@
     // Location status handling
     (function() {
       const locationBtn = document.getElementById('location-btn');
-      const cacheStatus = document.getElementById('cache-status');
-      const modal = document.getElementById('location-modal');
-      const modalTitle = document.getElementById('modal-title');
-
-      // Buttons
-      const useLocationBtn = document.getElementById('modal-use-location-btn');
-      const updateLocationBtn = document.getElementById('modal-update-location-btn');
-      const downloadNamesBtn = document.getElementById('modal-download-names-btn');
-      const downloadImagesBtn = document.getElementById('modal-download-images-btn');
-      const cancelBtn = document.getElementById('modal-cancel-btn');
-
-      // Form elements
-      const countrySelect = document.getElementById('modal-country');
-      const stateSelect = document.getElementById('modal-state');
-      const downloadProgress = document.getElementById('download-progress');
-      const progressText = document.getElementById('progress-text');
+      const locationIcon = document.getElementById('location-icon');
+      const locationText = document.getElementById('location-text');
 
       // Get globe emoji based on continent
       function getGlobeEmoji(countryCode) {
         const continent = BirdDB.getContinent(countryCode);
 
-        // 🌍 Africa/Europe
         if (continent === 'Africa' || continent === 'Europe') {
           return '🌍';
-        }
-        // 🌏 Asia/Oceania (Australia)
-        else if (continent === 'Asia' || continent === 'Oceania') {
+        } else if (continent === 'Asia' || continent === 'Oceania') {
           return '🌏';
-        }
-        // 🌎 Americas (North/South America)
-        else if (continent === 'North America' || continent === 'South America') {
+        } else if (continent === 'North America' || continent === 'South America') {
           return '🌎';
-        }
-        // Default to Africa globe
-        else {
+        } else {
           return '🌍';
         }
       }
 
-      // Update location button text and color
+      // Update location button text and icon
       function updateLocationButton() {
         const cached = LocationService.getCached();
+
         if (cached) {
           const displayName = LocationService.getRegionDisplayName(cached);
           const globe = getGlobeEmoji(cached.countryCode);
-          locationBtn.textContent = `${globe} ${displayName}`;
-          locationBtn.style.color = '#4caf50';
-
-          // Check/trigger country cache
-          updateCacheStatus(cached.countryCode);
+          locationIcon.textContent = globe;
+          locationText.textContent = displayName;
+          locationBtn.classList.add('location-set');
+          locationBtn.classList.remove('location-unset');
         } else {
-          locationBtn.textContent = 'Grant location access';
-          locationBtn.style.color = '#c00';
-          cacheStatus.style.display = 'none';
+          locationIcon.textContent = '📍';
+          locationText.textContent = 'Grant location access';
+          locationBtn.classList.add('location-unset');
+          locationBtn.classList.remove('location-set');
         }
       }
 
-      // Update cache status display
-      async function updateCacheStatus(countryCode) {
-        if (!countryCode) return;
-
-        try {
-          await BirdDB.init();
-          const hasCache = await BirdDB.hasCountryCache(countryCode);
-
-          if (hasCache) {
-            const meta = await BirdDB.getCountryCacheMeta(countryCode);
-            cacheStatus.textContent = `${meta.speciesCodes.length} birds cached`;
-            cacheStatus.style.display = 'block';
-            cacheStatus.style.color = '#4caf50';
-          } else {
-            cacheStatus.style.display = 'none';
-          }
-        } catch (error) {
-          console.error('Error checking cache status:', error);
-        }
-      }
-
-      // Open modal with dynamic options based on current state
-      async function openModal() {
-        const cached = LocationService.getCached();
-        const hasLocation = cached !== null;
-
-        // Show/hide buttons based on whether user has location set
-        if (hasLocation) {
-          // Has location - show "Update Location" button, hide "Use Current Location"
-          useLocationBtn.style.display = 'none';
-          updateLocationBtn.style.display = 'block';
-          modalTitle.textContent = 'Update Location';
-        } else {
-          // No location - show "Use Current Location" button, hide "Update Location"
-          useLocationBtn.style.display = 'block';
-          updateLocationBtn.style.display = 'none';
-          modalTitle.textContent = 'Location Access';
-        }
-
-        // Load countries if not already loaded
-        if (countrySelect.options.length <= 1) {
-          countrySelect.innerHTML = '<option value="">Loading...</option>';
-          const countries = await EBird.getCountries();
-          countrySelect.innerHTML = '<option value="">Select Country...</option>';
-          countries.forEach(c => {
-            countrySelect.innerHTML += `<option value="${c.code}">${c.name}</option>`;
-          });
-        }
-
-        // Pre-select current location if cached
-        if (cached && cached.countryCode) {
-          countrySelect.value = cached.countryCode;
-          await loadStates(cached.countryCode);
-          if (cached.stateCode) {
-            stateSelect.value = cached.stateCode;
-          }
-        }
-
-        // Update download button text based on whether selected location is cached
-        await updateDownloadButtonText();
-
-        // Reset progress display
-        downloadProgress.style.display = 'none';
-
-        modal.style.display = 'flex';
-      }
-
-      // Update download button text based on whether location is cached
-      async function updateDownloadButtonText() {
-        const countryCode = countrySelect.value;
-
-        if (!countryCode) {
-          downloadNamesBtn.textContent = 'Download Names';
-          downloadImagesBtn.textContent = 'Download Names & Images';
-          return;
-        }
-
-        try {
-          await BirdDB.init();
-          const hasCache = await BirdDB.hasCountryCache(countryCode);
-
-          if (hasCache) {
-            downloadNamesBtn.textContent = 'Re-download Names';
-            downloadImagesBtn.textContent = 'Re-download Names & Images';
-          } else {
-            downloadNamesBtn.textContent = 'Download Names';
-            downloadImagesBtn.textContent = 'Download Names & Images';
-          }
-        } catch (error) {
-          console.error('Error checking cache:', error);
-          downloadNamesBtn.textContent = 'Download Names';
-          downloadImagesBtn.textContent = 'Download Names & Images';
-        }
-      }
-
-      // Close modal
-      function closeModal() {
-        modal.style.display = 'none';
-        downloadProgress.style.display = 'none';
-      }
-
-      // Use current location (GPS)
-      async function useCurrentLocation() {
-        const originalText = useLocationBtn.textContent;
-        useLocationBtn.textContent = 'Getting location...';
-        useLocationBtn.disabled = true;
-
-        try {
-          await LocationService.getLocation(true);
-          updateLocationButton();
-          closeModal();
-        } catch (error) {
-          alert(error.message);
-          useLocationBtn.textContent = originalText;
-          useLocationBtn.disabled = false;
-        }
-      }
-
-      // Update location (from dropdowns)
-      async function updateLocation() {
-        const countryCode = countrySelect.value;
-        const stateCode = stateSelect.value || null;
-
-        if (!countryCode) {
-          alert('Please select a country');
-          return;
-        }
-
-        // Get country/state names
-        const countryName = countrySelect.options[countrySelect.selectedIndex].text;
-        const stateName = stateCode ? stateSelect.options[stateSelect.selectedIndex].text : null;
-
-        // Save location
-        const location = {
-          lat: 0,
-          lng: 0,
-          countryCode,
-          countryName,
-          stateCode,
-          stateName,
-          displayName: stateName ? `${stateName}, ${countryName}` : countryName
-        };
-        LocationService.saveToCache(location);
-        updateLocationButton();
-        closeModal();
-      }
-
-      // Download location and cache birds (with optional images)
-      async function downloadLocation(cacheImages = false) {
-        const countryCode = countrySelect.value;
-        const stateCode = stateSelect.value || null;
-
-        if (!countryCode) {
-          alert('Please select a country');
-          return;
-        }
-
-        // Get country/state names
-        const countryName = countrySelect.options[countrySelect.selectedIndex].text;
-        const stateName = stateCode ? stateSelect.options[stateSelect.selectedIndex].text : null;
-
-        // Save location first
-        const location = {
-          lat: 0,
-          lng: 0,
-          countryCode,
-          countryName,
-          stateCode,
-          stateName,
-          displayName: stateName ? `${stateName}, ${countryName}` : countryName
-        };
-        LocationService.saveToCache(location);
-
-        // Get progress elements
-        const progressBar = document.getElementById('progress-bar');
-        const downloadStatus = document.getElementById('download-status');
-
-        // Show progress and disable buttons
-        downloadProgress.style.display = 'block';
-        useLocationBtn.disabled = true;
-        updateLocationBtn.disabled = true;
-        downloadNamesBtn.disabled = true;
-        downloadImagesBtn.disabled = true;
-        cancelBtn.disabled = true;
-        progressBar.style.width = '0%';
-
-        try {
-          await BirdDB.init();
-
-          // Enable auto-caching of images if requested
-          if (cacheImages) {
-            localStorage.setItem('autoCacheImages', 'true');
-          }
-
-          await BirdDB.cacheCountryBirds(countryCode, (progress) => {
-            if (progress.phase === 'fetching') {
-              downloadStatus.textContent = 'Fetching species list...';
-              progressBar.style.width = '10%';
-              progressText.textContent = `Found ${progress.total} species`;
-            } else if (progress.phase === 'caching') {
-              downloadStatus.textContent = 'Downloading birds for offline access...';
-              const percent = Math.round((progress.cached / progress.total) * 100);
-              progressBar.style.width = `${percent}%`;
-              progressText.textContent = `${progress.cached} / ${progress.total} birds cached`;
-            } else if (progress.phase === 'done') {
-              downloadStatus.textContent = 'Download complete!';
-              progressBar.style.width = '100%';
-              progressText.textContent = `${progress.cached} birds ready for offline use`;
-              if (cacheImages) {
-                progressText.textContent += ' (images will cache as you browse)';
-              }
-            }
-          });
-
-          updateLocationButton();
-          setTimeout(() => {
-            closeModal();
-            useLocationBtn.disabled = false;
-            updateLocationBtn.disabled = false;
-            downloadNamesBtn.disabled = false;
-            downloadImagesBtn.disabled = false;
-            cancelBtn.disabled = false;
-            progressBar.style.width = '0%';
-          }, 1500);
-        } catch (error) {
-          console.error('Error caching birds:', error);
-          alert('Failed to download birds. Please try again.');
-          downloadProgress.style.display = 'none';
-          useLocationBtn.disabled = false;
-          updateLocationBtn.disabled = false;
-          downloadNamesBtn.disabled = false;
-          downloadImagesBtn.disabled = false;
-          cancelBtn.disabled = false;
-          progressBar.style.width = '0%';
-        }
-      }
-
-      // Load states for selected country
-      async function loadStates(countryCode) {
-        stateSelect.innerHTML = '<option value="">Loading...</option>';
-        stateSelect.disabled = true;
-
-        if (countryCode) {
-          const states = await EBird.getStates(countryCode);
-          stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
-          states.forEach(s => {
-            stateSelect.innerHTML += `<option value="${s.code}">${s.name}</option>`;
-          });
-          stateSelect.disabled = false;
-        } else {
-          stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
-        }
-      }
-
-
-      // Event listeners
+      // Handle location button click
       locationBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        await BirdDB.init(); // Ensure DB is ready
-        await openModal();
-      });
+        const cached = LocationService.getCached();
 
-      useLocationBtn.addEventListener('click', useCurrentLocation);
-      updateLocationBtn.addEventListener('click', updateLocation);
-      downloadNamesBtn.addEventListener('click', () => downloadLocation(false));
-      downloadImagesBtn.addEventListener('click', () => downloadLocation(true));
-      cancelBtn.addEventListener('click', closeModal);
+        if (cached) {
+          // Already have location - go to cache page
+          window.location.href = 'cache';
+        } else {
+          // No location - request GPS immediately
+          locationIcon.textContent = '⏳';
+          locationText.textContent = 'Getting location...';
+          locationBtn.style.pointerEvents = 'none';
 
-      countrySelect.addEventListener('change', async (e) => {
-        await loadStates(e.target.value);
-        await updateDownloadButtonText();
-      });
-
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          closeModal();
+          try {
+            await LocationService.getLocation(true);
+            updateLocationButton();
+            // Navigate to cache page after getting location
+            window.location.href = 'cache';
+          } catch (error) {
+            alert(error.message);
+            updateLocationButton();
+            locationBtn.style.pointerEvents = 'auto';
+          }
         }
       });
 
