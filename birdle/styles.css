@@ -121,7 +121,7 @@ h1 {
   top: 0;
   background: #fff;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   height: var(--navbar-height);
   margin: -20px -20px 16px -20px;
@@ -129,6 +129,11 @@ h1 {
   z-index: 100;
   border-bottom: 1px solid #eee;
   position: relative;
+}
+
+/* Center content only on the home page navbar (when it only has title + home button) */
+.game-navbar:not(.search-navbar) {
+  justify-content: center;
 }
 
 .home-btn {
