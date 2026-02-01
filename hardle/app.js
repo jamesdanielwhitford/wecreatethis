@@ -91,8 +91,14 @@ function setupEventListeners() {
   document.addEventListener('keydown', handleKeyboardInput);
 
   // On-screen keyboard clicks
-  document.querySelectorAll('.key').forEach(key => {
+  const keys = document.querySelectorAll('.key');
+  keys.forEach(key => {
     key.addEventListener('click', handleKeyClick);
+    // Also add touchend for better mobile support
+    key.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      handleKeyClick(e);
+    });
   });
 
   // Tile clicks (for marking in Hard mode)
@@ -186,11 +192,18 @@ function handleKeyboardInput(e) {
 function handleKeyClick(e) {
   if (game.gameOver) return;
 
-  const key = e.target.dataset.key;
+  // Get the button element (in case the click was on the emoji text)
+  const button = e.target.closest('.key');
+  if (!button) return;
 
-  if (key === 'ENTER') {
+  const key = button.dataset.key;
+
+  // Handle both 'Enter'/'ENTER' and 'Backspace'/'BACKSPACE'
+  const keyUpper = key.toUpperCase();
+
+  if (keyUpper === 'ENTER') {
     handleSubmit();
-  } else if (key === 'BACK') {
+  } else if (keyUpper === 'BACKSPACE') {
     handleBackspace();
   } else {
     handleLetter(key);

@@ -300,6 +300,9 @@ body {
   flex: 1;
   max-width: 38px;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .key:active {
@@ -313,24 +316,7 @@ body {
   max-width: 62px;
   font-size: 1.3rem;
   font-weight: 700;
-}
-
-.key-enter {
-  background: var(--score-green);
-  color: white;
-}
-
-.key-backspace {
-  background: var(--score-red);
-  color: white;
-}
-
-.key-enter:active {
-  background: #3d8b40;
-}
-
-.key-backspace:active {
-  background: #cc3737;
+  pointer-events: auto;
 }
 
 /* Keyboard color states */
@@ -344,6 +330,27 @@ body {
   color: white;
 }
 
+/* Enter and Backspace buttons - must come after keyboard states for specificity */
+.key-enter {
+  background: var(--score-green) !important;
+  color: white !important;
+}
+
+.key-backspace {
+  background: var(--score-red) !important;
+  color: white !important;
+  pointer-events: auto !important;
+  z-index: 10;
+}
+
+.key-enter:active {
+  background: #3d8b40 !important;
+}
+
+.key-backspace:active {
+  background: #cc3737 !important;
+}
+
 /* Keyboard outline states (Hard Mode) */
 .key.key-outline-incorrect::before {
   content: '';
@@ -352,6 +359,7 @@ body {
   border: 3px solid var(--score-red);
   border-radius: 6px;
   pointer-events: none;
+  z-index: -1;
 }
 
 .key.key-outline-correct::before {
@@ -361,6 +369,7 @@ body {
   border: 3px solid var(--score-green);
   border-radius: 6px;
   pointer-events: none;
+  z-index: -1;
 }
 
 /* Modals */
