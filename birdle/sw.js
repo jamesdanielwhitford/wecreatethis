@@ -1,4 +1,4 @@
-const CACHE_NAME = 'birdle-v104';
+const CACHE_NAME = 'birdle-v105';
 const ASSETS = [
   '/birdle/',
   '/birdle/index.html',
@@ -50,7 +50,16 @@ self.addEventListener('install', (event) => {
           const response = await fetch(url);
           if (response.ok) {
             const cleanResponse = await stripRedirectMetadata(response);
-            await cache.put(url, cleanResponse);
+
+            // Cache under the requested URL
+            await cache.put(url, cleanResponse.clone());
+
+            // If the response was redirected, also cache under the final URL
+            if (response.redirected && response.url !== url) {
+              const finalUrl = new URL(response.url).pathname;
+              await cache.put(finalUrl, cleanResponse.clone());
+              console.log(`Cached ${url} as both ${url} and ${finalUrl}`);
+            }
           }
         } catch (err) {
           console.warn('Failed to cache:', url, err);
