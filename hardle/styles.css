@@ -206,7 +206,18 @@ body {
   background: var(--score-green);
 }
 
-/* Row background colors */
+/* Tile background colors for submitted guesses */
+.tile.wrong {
+  background: rgba(255, 68, 68, 0.2);
+  border-color: var(--score-red);
+}
+
+.tile.correct {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: var(--score-green);
+}
+
+/* Row background colors (legacy - may not be used) */
 .row.row-red .tile {
   background: rgba(255, 68, 68, 0.2);
   border-color: var(--score-red);
@@ -529,4 +540,48 @@ body {
   .btn:active {
     opacity: 0.7;
   }
+}
+
+/* Notification Toast */
+.notification {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 12px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 0.95rem;
+  font-weight: 500;
+  z-index: 2000;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.notification.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Shake Animation */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.tile.shake {
+  animation: shake 0.3s ease;
+}
+
+/* Answer word styling in modal */
+.answer-word {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--primary-color);
+  margin: 16px 0;
 }
