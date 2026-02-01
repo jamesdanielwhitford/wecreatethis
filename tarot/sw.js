@@ -1,6 +1,6 @@
 // Service Worker for Tarot Reader
 
-const CACHE_NAME = 'tarot-v27';
+const CACHE_NAME = 'tarot-v28';
 const ASSETS = [
   '/tarot/',
   '/tarot/index.html',
@@ -194,17 +194,21 @@ async function matchCache(request) {
       if (cached) return cached;
     }
 
-    // Try both with and without .html extension
+    // Try both with and without .html extension (with and without query params)
     // Cloudflare redirects .html -> extensionless, so we need to check both
     if (url.pathname.endsWith('.html')) {
-      // Has .html - try without it
+      // Has .html - try without it (with and without query params)
       const noExtUrl = url.pathname.slice(0, -5);
-      cached = await caches.match(noExtUrl);
+      cached = await caches.match(noExtUrl + url.search);
+      if (cached) return cached;
+      cached = await caches.match(noExtUrl, { ignoreSearch: true });
       if (cached) return cached;
     } else if (!url.pathname.endsWith('/')) {
-      // No extension - try adding .html
+      // No extension - try adding .html (with and without query params)
       const htmlUrl = url.pathname + '.html';
-      cached = await caches.match(htmlUrl);
+      cached = await caches.match(htmlUrl + url.search);
+      if (cached) return cached;
+      cached = await caches.match(htmlUrl, { ignoreSearch: true });
       if (cached) return cached;
     }
   }
