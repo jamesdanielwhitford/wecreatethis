@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wecreatethis-v6';
+const CACHE_NAME = 'wecreatethis-v7';
 const ASSETS = [
   '/',
   '/index.html',
@@ -37,7 +37,16 @@ self.addEventListener('install', (event) => {
           const response = await fetch(url);
           if (response.ok) {
             const cleanResponse = await stripRedirectMetadata(response);
-            await cache.put(url, cleanResponse);
+
+            // Cache under the requested URL
+            await cache.put(url, cleanResponse.clone());
+
+            // If the response was redirected, also cache under the final URL
+            if (response.redirected && response.url !== url) {
+              const finalUrl = new URL(response.url).pathname;
+              await cache.put(finalUrl, cleanResponse.clone());
+              console.log(`Cached ${url} as both ${url} and ${finalUrl}`);
+            }
           }
         } catch (err) {
           console.warn('Failed to cache:', url, err);
@@ -81,15 +90,27 @@ async function matchCache(request) {
 
   // For navigation requests, try additional fallbacks
   if (request.mode === 'navigate') {
-    // Handle / or /index.html
-    if (url.pathname === '/' || url.pathname === '/index.html') {
-      cached = await caches.match('/index.html');
-      if (!cached) cached = await caches.match('/');
+    // Handle /index.html -> /
+    if (url.pathname === '/index.html') {
+      cached = await caches.match('/');
       if (cached) return cached;
     }
 
-    // Try adding .html suffix for extensionless URLs
-    if (!url.pathname.includes('.') && !url.pathname.endsWith('/')) {
+    // Handle / -> /index.html
+    if (url.pathname === '/') {
+      cached = await caches.match('/index.html');
+      if (cached) return cached;
+    }
+
+    // Try both with and without .html extension
+    // Cloudflare redirects .html -> extensionless, so we need to check both
+    if (url.pathname.endsWith('.html')) {
+      // Has .html - try without it
+      const noExtUrl = url.pathname.slice(0, -5);
+      cached = await caches.match(noExtUrl);
+      if (cached) return cached;
+    } else if (!url.pathname.endsWith('/')) {
+      // No extension - try adding .html
       const htmlUrl = url.pathname + '.html';
       cached = await caches.match(htmlUrl);
       if (cached) return cached;
