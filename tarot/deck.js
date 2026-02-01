@@ -60,7 +60,7 @@ function renderCardGrid(containerId, cards) {
         cardEl.addEventListener('click', () => {
             // Save scroll position before navigating
             saveScrollPosition();
-            window.location.href = `deck-card-detail.html?cardName=${encodeURIComponent(card.name)}`;
+            window.location.href = `deck-card-detail?cardName=${encodeURIComponent(card.name)}`;
         });
 
         container.appendChild(cardEl);

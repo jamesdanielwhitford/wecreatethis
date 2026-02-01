@@ -1,13 +1,13 @@
 // Service Worker for Tarot Reader
 
-const CACHE_NAME = 'tarot-v28';
+const CACHE_NAME = 'tarot-v29';
 const ASSETS = [
   '/tarot/',
-  '/tarot/index.html',
-  '/tarot/reading.html',
-  '/tarot/card-detail.html',
-  '/tarot/deck.html',
-  '/tarot/deck-card-detail.html',
+  '/tarot/index',
+  '/tarot/reading',
+  '/tarot/card-detail',
+  '/tarot/deck',
+  '/tarot/deck-card-detail',
   '/tarot/style.css',
   '/tarot/app.js',
   '/tarot/reading.js',
@@ -101,42 +101,36 @@ const ASSETS = [
   '/tarot/images/World.webp'
 ];
 
-// Helper: Create a clean response without redirect metadata (for Safari)
-function stripRedirectMetadata(response) {
-  if (!response.redirected) {
-    return response.clone();
+// Normalize URL to canonical extensionless format
+function normalizeUrl(url) {
+  const urlObj = new URL(url);
+  let path = urlObj.pathname;
+
+  // Remove .html extension
+  if (path.endsWith('.html')) {
+    path = path.slice(0, -5);
   }
-  // Create new Response without redirect flag
-  return response.blob().then(body => {
-    return new Response(body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers
-    });
-  });
+
+  // Normalize /tarot/index -> /tarot/
+  if (path.endsWith('/index')) {
+    path = path.slice(0, -5);
+  }
+
+  return urlObj.origin + path;
 }
 
-// Install - cache all assets with redirect stripping
+// Install - cache all assets
 self.addEventListener('install', (event) => {
   console.log('Service worker installing:', CACHE_NAME);
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      // Fetch each asset individually and strip redirect metadata
       const fetchPromises = ASSETS.map(async (url) => {
         try {
           const response = await fetch(url);
           if (response.ok) {
-            const cleanResponse = await stripRedirectMetadata(response);
-
-            // Cache under the requested URL
-            await cache.put(url, cleanResponse.clone());
-
-            // If the response was redirected, also cache under the final URL
-            if (response.redirected && response.url !== url) {
-              const finalUrl = new URL(response.url).pathname;
-              await cache.put(finalUrl, cleanResponse.clone());
-              console.log(`Cached ${url} as both ${url} and ${finalUrl}`);
-            }
+            // Cache under normalized URL
+            const normalized = normalizeUrl(url);
+            await cache.put(normalized, response.clone());
           }
         } catch (err) {
           console.warn('Failed to cache:', url, err);
@@ -145,7 +139,6 @@ self.addEventListener('install', (event) => {
       await Promise.all(fetchPromises);
     })
   );
-  // Force immediate activation
   self.skipWaiting();
 });
 
@@ -164,83 +157,34 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Helper to match cache, ignoring query params
+// Match cache using normalized URL (ignores query params)
 async function matchCache(request) {
-  const url = new URL(request.url);
-
-  // Try exact match first
-  let cached = await caches.match(request);
-  if (cached) return cached;
-
-  // Try matching without query params (for same-origin only)
-  if (url.origin === self.location.origin) {
-    cached = await caches.match(request, { ignoreSearch: true });
-    if (cached) return cached;
-  }
-
-  // For navigation requests, try additional fallbacks
-  if (request.mode === 'navigate') {
-    // Handle /tarot/index.html -> /tarot/ or /tarot
-    if (url.pathname === '/tarot/index.html') {
-      cached = await caches.match('/tarot/');
-      if (cached) return cached;
-      cached = await caches.match('/tarot');
-      if (cached) return cached;
-    }
-
-    // Handle /tarot/ or /tarot -> /tarot/index.html
-    if (url.pathname === '/tarot/' || url.pathname === '/tarot') {
-      cached = await caches.match('/tarot/index.html');
-      if (cached) return cached;
-    }
-
-    // Try both with and without .html extension (with and without query params)
-    // Cloudflare redirects .html -> extensionless, so we need to check both
-    if (url.pathname.endsWith('.html')) {
-      // Has .html - try without it (with and without query params)
-      const noExtUrl = url.pathname.slice(0, -5);
-      cached = await caches.match(noExtUrl + url.search);
-      if (cached) return cached;
-      cached = await caches.match(noExtUrl, { ignoreSearch: true });
-      if (cached) return cached;
-    } else if (!url.pathname.endsWith('/')) {
-      // No extension - try adding .html (with and without query params)
-      const htmlUrl = url.pathname + '.html';
-      cached = await caches.match(htmlUrl + url.search);
-      if (cached) return cached;
-      cached = await caches.match(htmlUrl, { ignoreSearch: true });
-      if (cached) return cached;
-    }
-  }
-
-  return null;
+  const normalized = normalizeUrl(request.url);
+  const cache = await caches.open(CACHE_NAME);
+  return cache.match(normalized);
 }
 
-// Fetch - cache first with background update (instant load, updates silently)
+// Fetch - cache first with background update
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     matchCache(event.request).then(async (cached) => {
       // Start background network request for updates
       const networkPromise = fetch(event.request).then(async (response) => {
-        // Cache successful GET requests in background
         if (response.ok && event.request.method === 'GET') {
-          const cleanResponse = await stripRedirectMetadata(response);
-          const responseToCache = cleanResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+          const cache = await caches.open(CACHE_NAME);
+          const normalized = normalizeUrl(event.request.url);
+          cache.put(normalized, response.clone());
         }
         return response;
-      }).catch(() => null); // Ignore network errors silently
+      }).catch(() => null);
 
       // Return cached response immediately if available
       if (cached) {
-        // Update cache in background (user doesn't wait)
-        networkPromise;
+        networkPromise; // Update in background
         return cached;
       }
 
-      // No cache, wait for network (first visit only)
+      // No cache, wait for network
       const networkResponse = await networkPromise;
       if (networkResponse) {
         return networkResponse;
@@ -248,11 +192,10 @@ self.addEventListener('fetch', (event) => {
 
       // Network failed and no cache, return offline page
       if (event.request.mode === 'navigate') {
-        const fallback = await caches.match('/tarot/index.html');
+        const fallback = await matchCache(new Request('/tarot/'));
         if (fallback) return fallback;
       }
 
-      // Return a proper 503 response instead of throwing or returning null
       return new Response('Offline - content not cached', {
         status: 503,
         statusText: 'Service Unavailable',
@@ -267,7 +210,6 @@ self.addEventListener('message', async (event) => {
   const { type, deckId, imageUrls } = event.data;
 
   if (type === 'CACHE_DECK') {
-    // Cache new deck images
     const cache = await caches.open(CACHE_NAME);
     const headers = { 'User-Agent': 'Mozilla/5.0' };
 
@@ -275,8 +217,7 @@ self.addEventListener('message', async (event) => {
       try {
         const response = await fetch(url, { headers });
         if (response.ok) {
-          const cleanResponse = await stripRedirectMetadata(response);
-          await cache.put(url, cleanResponse);
+          await cache.put(url, response);
         }
       } catch (err) {
         console.warn('Failed to cache deck image:', url, err);
@@ -285,7 +226,6 @@ self.addEventListener('message', async (event) => {
 
     console.log(`Cached deck: ${deckId}`);
   } else if (type === 'REMOVE_DECK') {
-    // Remove old deck images from cache
     const cache = await caches.open(CACHE_NAME);
 
     for (const url of imageUrls) {

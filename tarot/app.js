@@ -37,7 +37,7 @@ function setupEventListeners() {
 
     // Navigate to deck browser
     deckBtn.addEventListener('click', () => {
-        window.location.href = 'deck.html';
+        window.location.href = 'deck';
     });
 }
 
@@ -127,7 +127,7 @@ function setupTitleMessageModal() {
         selectedSpreadType = null;
 
         // Navigate to the reading detail page
-        window.location.href = `reading.html?id=${reading.id}`;
+        window.location.href = `reading?id=${reading.id}`;
     });
 
     // Cancel button
@@ -207,7 +207,7 @@ async function loadReadingsList() {
 
         return `
             <li class="reading-item">
-                <a href="reading.html?id=${reading.id}" class="reading-link">
+                <a href="reading?id=${reading.id}" class="reading-link">
                     <span class="reading-title">${reading.title}</span>
                     <span class="reading-info">${reading.spreadName} • ${dateStr}</span>
                 </a>

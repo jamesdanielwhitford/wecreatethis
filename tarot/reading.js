@@ -14,7 +14,7 @@ async function loadReading() {
     const readingId = parseInt(urlParams.get('id'));
 
     if (!readingId) {
-        window.location.href = 'index.html';
+        window.location.href = 'index';
         return;
     }
 
@@ -22,7 +22,7 @@ async function loadReading() {
 
     if (!currentReading) {
         alert('Reading not found');
-        window.location.href = 'index.html';
+        window.location.href = 'index';
         return;
     }
 
@@ -88,7 +88,7 @@ function displayReading(reading) {
 
             // Navigate to card detail when clicked
             cardEl.addEventListener('click', () => {
-                window.location.href = `card-detail.html?readingId=${currentReading.id}&cardIndex=${index}`;
+                window.location.href = `card-detail?readingId=${currentReading.id}&cardIndex=${index}`;
             });
         } else {
             // Show face-down card with procedural pattern overlay

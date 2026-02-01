@@ -12,7 +12,7 @@ function loadCardDetail() {
     const cardName = urlParams.get('cardName');
 
     if (!cardName) {
-        window.location.href = 'deck.html';
+        window.location.href = 'deck';
         return;
     }
 
@@ -21,7 +21,7 @@ function loadCardDetail() {
 
     if (!currentCard) {
         alert('Card not found');
-        window.location.href = 'deck.html';
+        window.location.href = 'deck';
         return;
     }
 

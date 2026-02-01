@@ -15,7 +15,7 @@ async function loadCardDetail() {
     cardIndex = parseInt(urlParams.get('cardIndex'));
 
     if (!readingId || cardIndex === null) {
-        window.location.href = 'index.html';
+        window.location.href = 'index';
         return;
     }
 
@@ -23,7 +23,7 @@ async function loadCardDetail() {
 
     if (!currentReading || !currentReading.cards[cardIndex]) {
         alert('Card not found');
-        window.location.href = 'index.html';
+        window.location.href = 'index';
         return;
     }
 
@@ -45,7 +45,7 @@ async function loadCardDetail() {
             await updateReading(currentReading);
         }
 
-        window.location.href = `reading.html?id=${readingId}`;
+        window.location.href = `reading?id=${readingId}`;
     });
 }
 
