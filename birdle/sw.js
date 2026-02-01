@@ -1,15 +1,15 @@
-const CACHE_NAME = 'birdle-v106';
+const CACHE_NAME = 'birdle-v107';
 const ASSETS = [
   '/birdle/',
-  '/birdle/index.html',
-  '/birdle/search.html',
-  '/birdle/bird.html',
-  '/birdle/life.html',
-  '/birdle/bingo.html',
-  '/birdle/bingo-games.html',
-  '/birdle/new-bingo.html',
-  '/birdle/sync.html',
-  '/birdle/cache.html',
+  '/birdle/index',
+  '/birdle/search',
+  '/birdle/bird',
+  '/birdle/life',
+  '/birdle/bingo',
+  '/birdle/bingo-games',
+  '/birdle/new-bingo',
+  '/birdle/sync',
+  '/birdle/cache',
   '/birdle/styles.css',
   '/birdle/app.js',
   '/birdle/db.js',
@@ -24,42 +24,36 @@ const ASSETS = [
   '/birdle/icon-512.png'
 ];
 
-// Helper: Create a clean response without redirect metadata (for Safari)
-function stripRedirectMetadata(response) {
-  if (!response.redirected) {
-    return response.clone();
+// Normalize URL to canonical extensionless format
+function normalizeUrl(url) {
+  const urlObj = new URL(url);
+  let path = urlObj.pathname;
+
+  // Remove .html extension
+  if (path.endsWith('.html')) {
+    path = path.slice(0, -5);
   }
-  // Create new Response without redirect flag
-  return response.blob().then(body => {
-    return new Response(body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers
-    });
-  });
+
+  // Normalize /birdle/index -> /birdle/
+  if (path.endsWith('/index')) {
+    path = path.slice(0, -5);
+  }
+
+  return urlObj.origin + path;
 }
 
-// Install - cache all assets with redirect stripping
+// Install - cache all assets
 self.addEventListener('install', (event) => {
   console.log('Service worker installing:', CACHE_NAME);
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      // Fetch each asset individually and strip redirect metadata
       const fetchPromises = ASSETS.map(async (url) => {
         try {
           const response = await fetch(url);
           if (response.ok) {
-            const cleanResponse = await stripRedirectMetadata(response);
-
-            // Cache under the requested URL
-            await cache.put(url, cleanResponse.clone());
-
-            // If the response was redirected, also cache under the final URL
-            if (response.redirected && response.url !== url) {
-              const finalUrl = new URL(response.url).pathname;
-              await cache.put(finalUrl, cleanResponse.clone());
-              console.log(`Cached ${url} as both ${url} and ${finalUrl}`);
-            }
+            // Cache under normalized URL
+            const normalized = normalizeUrl(url);
+            await cache.put(normalized, response.clone());
           }
         } catch (err) {
           console.warn('Failed to cache:', url, err);
@@ -68,7 +62,6 @@ self.addEventListener('install', (event) => {
       await Promise.all(fetchPromises);
     })
   );
-  // Force immediate activation
   self.skipWaiting();
 });
 
@@ -87,91 +80,52 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Helper to match cache, ignoring query params (e.g., ?v=80)
+// Match cache using normalized URL (ignores query params for HTML pages)
 async function matchCache(request) {
   const url = new URL(request.url);
 
-  // Try exact match first (with query params, in case it was cached that way)
-  let cached = await caches.match(request);
-  if (cached) return cached;
-
-  // Only ignore query params for same-origin requests (our app assets)
-  // External APIs (Wikipedia, eBird) need exact query param matching
-  if (url.origin === self.location.origin) {
-    // Try matching without query params for our own assets
-    cached = await caches.match(request, { ignoreSearch: true });
-    if (cached) return cached;
+  // Only normalize same-origin HTML requests
+  // External APIs (Wikipedia, eBird) need exact matching
+  if (url.origin === self.location.origin && request.mode === 'navigate') {
+    const normalized = normalizeUrl(request.url);
+    const cache = await caches.open(CACHE_NAME);
+    return cache.match(normalized);
   }
 
-  // For navigation requests, try additional fallbacks
-  if (request.mode === 'navigate') {
-    // Handle /birdle/index.html -> /birdle/ or /birdle
-    if (url.pathname === '/birdle/index.html') {
-      cached = await caches.match('/birdle/');
-      if (cached) return cached;
-      cached = await caches.match('/birdle');
-      if (cached) return cached;
-    }
-
-    // Handle /birdle/ or /birdle -> /birdle/index.html
-    if (url.pathname === '/birdle/' || url.pathname === '/birdle') {
-      cached = await caches.match('/birdle/index.html');
-      if (cached) return cached;
-    }
-
-    // Try both with and without .html extension (with and without query params)
-    // Cloudflare redirects .html -> extensionless, so we need to check both
-    if (url.pathname.endsWith('.html')) {
-      // Has .html - try without it (with and without query params)
-      const noExtUrl = url.pathname.slice(0, -5);
-      cached = await caches.match(noExtUrl + url.search);
-      if (cached) return cached;
-      cached = await caches.match(noExtUrl, { ignoreSearch: true });
-      if (cached) return cached;
-    } else if (!url.pathname.endsWith('/')) {
-      // No extension - try adding .html (with and without query params)
-      const htmlUrl = url.pathname + '.html';
-      cached = await caches.match(htmlUrl + url.search);
-      if (cached) return cached;
-      cached = await caches.match(htmlUrl, { ignoreSearch: true });
-      if (cached) return cached;
-    }
-  }
-
-  return null;
+  // For other requests, try exact match
+  return caches.match(request);
 }
 
-// Fetch - network first, fallback to cache (ensures updates when online)
+// Fetch - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request).then(async (response) => {
       // Cache successful GET requests
       if (response.ok && event.request.method === 'GET') {
-        // Always strip redirect metadata before caching AND returning
-        const cleanResponse = await stripRedirectMetadata(response);
-
-        // Clone BEFORE returning (avoids race condition with body consumption)
-        const responseToCache = cleanResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-
-        // Return clean response to client (Safari requires this)
-        return cleanResponse;
+        const url = new URL(event.request.url);
+        // Only normalize same-origin HTML pages
+        if (url.origin === self.location.origin && event.request.mode === 'navigate') {
+          const cache = await caches.open(CACHE_NAME);
+          const normalized = normalizeUrl(event.request.url);
+          cache.put(normalized, response.clone());
+        } else {
+          // Cache external resources as-is
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(event.request, response.clone());
+        }
       }
       return response;
     }).catch(async () => {
-      // Network failed, try cache (ignores query params, handles extensionless URLs)
+      // Network failed, try cache
       const cached = await matchCache(event.request);
       if (cached) {
         return cached;
       }
       // No cache, return offline page for navigation
       if (event.request.mode === 'navigate') {
-        const fallback = await caches.match('/birdle/index.html');
+        const fallback = await matchCache(new Request('/birdle/'));
         if (fallback) return fallback;
       }
-      // Return a proper 503 response instead of throwing or returning null
       return new Response('Offline - content not cached', {
         status: 503,
         statusText: 'Service Unavailable',
