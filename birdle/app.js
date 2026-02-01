@@ -2157,7 +2157,7 @@ const App = {
 
     if (!gameId) {
       // No game ID - redirect to games list
-      window.location.href = "bingo-games';
+      window.location.href = 'bingo-games';
       return;
     }
 
