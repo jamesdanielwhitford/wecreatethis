@@ -78,6 +78,9 @@ function init() {
       UI.showEndGameModal(game.won, game.guesses.length, game.answer);
     }, 500);
   }
+
+  // Set up viewport height handler for mobile Safari keyboard
+  setupViewportHandler();
 }
 
 /**
@@ -316,6 +319,32 @@ function handlePlayAgain() {
 
   // Save new state
   game.saveState('randle-game');
+}
+
+/**
+ * Handle viewport changes for mobile Safari keyboard
+ * Uses Visual Viewport API to adjust height when keyboard appears
+ */
+function setupViewportHandler() {
+  if (!window.visualViewport) return;
+
+  function handleViewportChange() {
+    const gameContainer = document.querySelector('.game-container');
+    if (!gameContainer) return;
+
+    const navbarHeight = 48; // CSS variable --navbar-height
+    const viewportHeight = window.visualViewport.height;
+
+    // Set the container height to the visual viewport height minus navbar
+    gameContainer.style.height = `${viewportHeight - navbarHeight}px`;
+  }
+
+  // Listen for viewport changes (keyboard show/hide)
+  window.visualViewport.addEventListener('resize', handleViewportChange);
+  window.visualViewport.addEventListener('scroll', handleViewportChange);
+
+  // Set initial height
+  handleViewportChange();
 }
 
 // Initialize app when DOM is ready
