@@ -1,16 +1,16 @@
 :root {
   --navbar-height: 48px;
+  --tile-gap: 5px;
 
-  /* Calculate sizes based on available viewport height */
-  /* Available height = 100vh - navbar - padding (top 12px + bottom 8px = 20px) - gaps between board and keyboard (12px) */
-  /* Board needs: 8 rows * (tile-size + gap) - gap */
-  /* Keyboard needs: 3 rows * 48px + 2 gaps of 6px = 156px */
-  /* Total: board + keyboard + gaps must fit in (100vh - 48px - 20px - 12px) */
-  --available-height: calc(100vh - 80px);
+  /* Actual viewport height (set by JavaScript) */
+  /* This gives us the REAL visible height, accounting for Safari's URL bar */
+  --actual-vh: 1vh;
+
+  /* Calculate sizes based on actual visible viewport */
+  --available-height: calc(var(--actual-vh, 1vh) * 100 - 80px);
   --keyboard-height: 156px;
   --board-height: calc(var(--available-height) - var(--keyboard-height));
   --tile-size: calc((var(--board-height) - 35px) / 8); /* 7 gaps of 5px = 35px */
-  --tile-gap: 5px;
   --score-box-width: calc(var(--tile-size) * 0.8);
 
   /* Colors */
@@ -57,9 +57,10 @@ body {
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  height: 100vh;
-  height: 100dvh; /* Dynamic viewport height for mobile browsers */
-  position: fixed; /* Prevent Safari from scrolling when keyboard appears */
+  touch-action: manipulation; /* Prevent double-tap zoom */
+  /* Use actual viewport height from JavaScript */
+  height: calc(var(--actual-vh, 1vh) * 100);
+  position: fixed; /* Prevent Safari from scrolling */
   width: 100%;
   top: 0;
   left: 0;
@@ -69,12 +70,15 @@ body {
 .game-navbar {
   position: sticky;
   top: 0;
+  top: env(safe-area-inset-top, 0); /* Account for notch on iPhone */
   background: var(--bg-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
   height: var(--navbar-height);
   padding: 0 12px;
+  padding-left: max(12px, env(safe-area-inset-left, 12px));
+  padding-right: max(12px, env(safe-area-inset-right, 12px));
   z-index: 100;
   border-bottom: 1px solid var(--border-color);
 }
@@ -138,17 +142,12 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 12px 8px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom, 8px)); /* Account for home indicator */
   gap: 12px;
-  height: calc(100vh - var(--navbar-height));
-  height: calc(100dvh - var(--navbar-height));
+  /* Use actual viewport height from JavaScript */
+  height: calc(var(--actual-vh, 1vh) * 100 - var(--navbar-height));
   overflow: hidden;
-}
-
-/* iOS Safari keyboard fix - use Visual Viewport height */
-@supports (height: 100svh) {
-  .game-container {
-    height: calc(100svh - var(--navbar-height));
-  }
+  position: relative;
 }
 
 /* Game Board */

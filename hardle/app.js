@@ -322,29 +322,31 @@ function handlePlayAgain() {
 }
 
 /**
- * Handle viewport changes for mobile Safari keyboard
- * Uses Visual Viewport API to adjust height when keyboard appears
+ * Handle viewport changes for mobile Safari URL bar
+ * Uses window.innerHeight (actual visible height) instead of 100vh
+ * which includes the space behind the URL bar on Safari
  */
 function setupViewportHandler() {
-  if (!window.visualViewport) return;
-
   function handleViewportChange() {
-    const gameContainer = document.querySelector('.game-container');
-    if (!gameContainer) return;
+    // Use innerHeight which gives us the ACTUAL visible viewport
+    // This changes when Safari's URL bar shows/hides
+    const actualHeight = window.innerHeight;
 
-    const navbarHeight = 48; // CSS variable --navbar-height
-    const viewportHeight = window.visualViewport.height;
-
-    // Set the container height to the visual viewport height minus navbar
-    gameContainer.style.height = `${viewportHeight - navbarHeight}px`;
+    // Update CSS custom property for actual viewport height
+    document.documentElement.style.setProperty('--actual-vh', `${actualHeight * 0.01}px`);
   }
 
-  // Listen for viewport changes (keyboard show/hide)
-  window.visualViewport.addEventListener('resize', handleViewportChange);
-  window.visualViewport.addEventListener('scroll', handleViewportChange);
+  // Listen for viewport changes (URL bar show/hide, orientation change)
+  window.addEventListener('resize', handleViewportChange);
+  window.addEventListener('orientationchange', () => {
+    setTimeout(handleViewportChange, 100);
+  });
 
-  // Set initial height
+  // Initial calculation
   handleViewportChange();
+
+  // Recalculate after brief delay to catch Safari's initial state
+  setTimeout(handleViewportChange, 100);
 }
 
 // Initialize app when DOM is ready
