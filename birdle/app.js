@@ -1182,11 +1182,15 @@ const App = {
 
           const birdName = thumbnail.dataset.bird;
           const sciName = thumbnail.dataset.sci;
+          console.log('[Thumbnail] Loading image for:', birdName);
 
           // Try to fetch image URL (from cache or API)
           let imageUrl = await this.fetchWikipediaImage(birdName);
+          console.log('[Thumbnail] Image URL from common name:', imageUrl);
           if (!imageUrl && sciName) {
+            console.log('[Thumbnail] Trying scientific name:', sciName);
             imageUrl = await this.fetchWikipediaImage(sciName);
+            console.log('[Thumbnail] Image URL from scientific name:', imageUrl);
           }
 
           // If offline and no cached URL found, switch to text-only immediately
@@ -1201,9 +1205,8 @@ const App = {
 
           if (imageUrl) {
             const img = document.createElement('img');
-            img.src = imageUrl;
             img.alt = birdName;
-            img.loading = 'lazy';
+            // Don't use native lazy loading - we're already using Intersection Observer
 
             img.onload = () => {
               thumbnail.classList.remove('loading');
@@ -1216,6 +1219,7 @@ const App = {
             };
 
             img.onerror = () => {
+              console.warn('Image failed to load:', imageUrl, 'for bird:', birdName);
               thumbnail.classList.remove('loading');
               // If offline and image fails to load, switch to text-only
               if (isOffline) {
@@ -1225,7 +1229,11 @@ const App = {
                 }
               }
             };
+
+            // Set src after event handlers are attached
+            img.src = imageUrl;
           } else {
+            console.warn('No image URL found for bird:', birdName, 'sciName:', sciName);
             thumbnail.classList.remove('loading');
           }
         }
@@ -1380,19 +1388,19 @@ const App = {
   async fetchWikipediaImage(searchTerm, forceRefetch = false) {
     // Check cache first (unless forcing refetch)
     const cacheKey = `wiki_img_${searchTerm}`;
-    console.log('fetchWikipediaImage:', searchTerm, 'forceRefetch:', forceRefetch, 'online:', navigator.onLine);
 
     if (!forceRefetch) {
       const cached = localStorage.getItem(cacheKey);
-      console.log('Cached value:', cached);
       if (cached) {
         // Skip null cache entries if we're online and it might have been cached while offline
         if (cached === 'null' && navigator.onLine) {
-          console.log('Skipping null cache entry, will fetch fresh');
+          console.log('[WikiAPI] Skipping null cache for', searchTerm, '- will fetch fresh');
           // Don't return null cache, try to fetch fresh
         } else {
           // Return cached URL (or null if we cached a failed lookup)
-          console.log('Returning cached value:', cached);
+          if (cached !== 'null') {
+            console.log('[WikiAPI] ✓ Using cached image for:', searchTerm);
+          }
           return cached === 'null' ? null : cached;
         }
       }
@@ -1401,30 +1409,30 @@ const App = {
     try {
       const title = encodeURIComponent(searchTerm.replace(/ /g, '_'));
       const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages&pithumbsize=400&format=json&origin=*&redirects=1`;
-      console.log('Fetching from Wikipedia:', url);
+      console.log('[WikiAPI] Fetching:', searchTerm);
 
       const response = await fetch(url);
       const data = await response.json();
-      console.log('Wikipedia API response:', data);
 
       const pages = data.query?.pages;
       if (pages) {
         const page = Object.values(pages)[0];
         if (page.thumbnail?.source) {
           const imageUrl = page.thumbnail.source;
-          console.log('Found image URL:', imageUrl);
+          console.log('[WikiAPI] ✓ Found image for:', searchTerm);
           // Cache the successful result
           localStorage.setItem(cacheKey, imageUrl);
           return imageUrl;
         }
       }
+      console.log('[WikiAPI] ✗ No image found for:', searchTerm);
     } catch (error) {
-      console.log('Error fetching Wikipedia image:', error);
+      console.error('[WikiAPI] ✗ Error fetching image for', searchTerm, ':', error);
     }
 
     // Cache the failed lookup to avoid repeated API calls (only if online)
     if (navigator.onLine) {
-      console.log('Caching null result');
+      console.log('[WikiAPI] Caching null result for:', searchTerm);
       localStorage.setItem(cacheKey, 'null');
     }
     return null;
