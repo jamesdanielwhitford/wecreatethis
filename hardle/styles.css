@@ -59,6 +59,10 @@ body {
   -webkit-tap-highlight-color: transparent;
   height: 100vh;
   height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  position: fixed; /* Prevent Safari from scrolling when keyboard appears */
+  width: 100%;
+  top: 0;
+  left: 0;
 }
 
 /* Navbar */
@@ -138,6 +142,13 @@ body {
   height: calc(100vh - var(--navbar-height));
   height: calc(100dvh - var(--navbar-height));
   overflow: hidden;
+}
+
+/* iOS Safari keyboard fix - use Visual Viewport height */
+@supports (height: 100svh) {
+  .game-container {
+    height: calc(100svh - var(--navbar-height));
+  }
 }
 
 /* Game Board */
