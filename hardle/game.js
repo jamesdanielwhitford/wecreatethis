@@ -19,7 +19,7 @@ const GameState = {
   keyboardColors: {}, // { 'A': 'correct' | 'incorrect' | 'outline-correct' | 'outline-incorrect' }
 
   // Easy mode deduction tracking
-  knownCorrect: new Set(),
+  knownCorrect: new Map(), // Maps letter → count (for duplicate letters)
   knownIncorrect: new Set(),
   maxFrequency: new Map(),
 
@@ -51,7 +51,7 @@ const GameState = {
     }
 
     this.keyboardColors = {};
-    this.knownCorrect = new Set();
+    this.knownCorrect = new Map(); // Maps letter → count
     this.knownIncorrect = new Set();
     this.maxFrequency = new Map();
 
@@ -290,7 +290,8 @@ const GameState = {
           for (let col = 0; col < 4; col++) {
             if (this.tiles[row][col].dot !== 'correct') {
               this.tiles[row][col].dot = 'correct';
-              this.knownCorrect.add(word[col]);
+              const letter = word[col];
+              this.knownCorrect.set(letter, (this.knownCorrect.get(letter) || 0) + 1);
               changed = true;
             }
           }
@@ -326,11 +327,52 @@ const GameState = {
           for (let col = 0; col < 4; col++) {
             if (this.tiles[row][col].dot === null) {
               this.tiles[row][col].dot = 'correct';
-              this.knownCorrect.add(word[col]);
+              const letter = word[col];
+              this.knownCorrect.set(letter, (this.knownCorrect.get(letter) || 0) + 1);
               changed = true;
             }
           }
         }
+
+        // Rule 5: Handle duplicate letters - if a letter appears more times than the score allows, mark excess as incorrect
+        // Count unmarked tiles by letter
+        const unmarkedIndices = [];
+        for (let col = 0; col < 4; col++) {
+          if (this.tiles[row][col].dot === null) {
+            unmarkedIndices.push(col);
+          }
+        }
+
+        // Count occurrences of each letter in unmarked positions
+        const letterCounts = new Map();
+        unmarkedIndices.forEach(index => {
+          const letter = word[index];
+          letterCounts.set(letter, (letterCounts.get(letter) || 0) + 1);
+        });
+
+        // For each letter, if count > (score - correctCount), mark excess as incorrect
+        letterCounts.forEach((count, letter) => {
+          const maxPossible = score - correctCount;
+          if (count > maxPossible) {
+            // Update max frequency tracking
+            if (!this.maxFrequency.has(letter) || this.maxFrequency.get(letter) > maxPossible) {
+              this.maxFrequency.set(letter, maxPossible);
+            }
+
+            // Mark excess instances as incorrect (from the end of the word)
+            const excess = count - maxPossible;
+            let marked = 0;
+
+            for (let i = unmarkedIndices.length - 1; i >= 0 && marked < excess; i--) {
+              const col = unmarkedIndices[i];
+              if (word[col] === letter) {
+                this.tiles[row][col].dot = 'incorrect';
+                marked++;
+                changed = true;
+              }
+            }
+          }
+        });
       }
 
       if (!changed) break; // No more deductions possible
@@ -348,8 +390,8 @@ const GameState = {
       }
     }
 
-    // Mark correct letters
-    for (const letter of this.knownCorrect) {
+    // Mark correct letters (iterate over Map keys)
+    for (const letter of this.knownCorrect.keys()) {
       this.keyboardColors[letter] = 'correct';
     }
   },
@@ -393,7 +435,7 @@ const GameState = {
       isHardMode: this.isHardMode,
       tiles: this.tiles,
       keyboardColors: this.keyboardColors,
-      knownCorrect: Array.from(this.knownCorrect),
+      knownCorrect: Array.from(this.knownCorrect.entries()), // Save Map as array of [key, value] pairs
       knownIncorrect: Array.from(this.knownIncorrect),
       mode: this.mode
     };
@@ -431,7 +473,7 @@ const GameState = {
       this.isHardMode = state.isHardMode !== undefined ? state.isHardMode : true;
       this.tiles = state.tiles || this.tiles;
       this.keyboardColors = state.keyboardColors || {};
-      this.knownCorrect = new Set(state.knownCorrect || []);
+      this.knownCorrect = new Map(state.knownCorrect || []); // Restore Map from array of [key, value] pairs
       this.knownIncorrect = new Set(state.knownIncorrect || []);
 
       return true;

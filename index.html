@@ -33,13 +33,23 @@
       <a href="/tarot/" class="app-btn" style="background-image: url('/tarot/icon-192.png');"></a>
       <span class="app-name">Tarot</span>
     </div>
+
+    <div class="app-item">
+      <a href="/hardle/" class="app-btn" style="background-image: url('/hardle/icon-192.png');"></a>
+      <span class="app-name">Hardle</span>
+    </div>
+
+    <div class="app-item">
+      <a href="/hardle/randle" class="app-btn" style="background-image: url('/hardle/icon-192.png');"></a>
+      <span class="app-name">Randle</span>
+    </div>
   </div>
 
   <script>
     if ('serviceWorker' in navigator) {
       // Clean up old/orphaned service workers from deleted projects
       navigator.serviceWorker.getRegistrations().then(registrations => {
-        const validScopes = ['/', '/birdle/', '/tarot/', '/beautiful-mind/'];
+        const validScopes = ['/', '/birdle/', '/tarot/', '/beautiful-mind/', '/hardle/'];
         registrations.forEach(registration => {
           const scope = new URL(registration.scope).pathname;
           if (!validScopes.includes(scope)) {

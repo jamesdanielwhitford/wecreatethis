@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wecreatethis-v9';
+const CACHE_NAME = 'wecreatethis-v10';
 const ASSETS = [
   '/',
   '/index',
@@ -8,6 +8,7 @@ const ASSETS = [
   '/icon-512.png',
   '/beautiful-mind/icon-192.png',
   '/birdle/icon-192.png',
+  '/hardle/icon-192.png',
   '/tarot/icon-192.png'
 ];
 
