@@ -1,5 +1,6 @@
-const CACHE_NAME = 'birdle-v101';
+const CACHE_NAME = 'birdle-v103';
 const ASSETS = [
+  '/birdle/',
   '/birdle/index.html',
   '/birdle/search.html',
   '/birdle/bird.html',
@@ -139,9 +140,15 @@ self.addEventListener('fetch', (event) => {
       }
       // No cache, return offline page for navigation
       if (event.request.mode === 'navigate') {
-        return caches.match('/birdle/index.html');
+        const fallback = await caches.match('/birdle/index.html');
+        if (fallback) return fallback;
       }
-      throw new Error('No network and no cache available');
+      // Return a proper 503 response instead of throwing or returning null
+      return new Response('Offline - content not cached', {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: { 'Content-Type': 'text/plain' }
+      });
     })
   );
 });

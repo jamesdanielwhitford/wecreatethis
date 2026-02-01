@@ -37,6 +37,19 @@
 
   <script>
     if ('serviceWorker' in navigator) {
+      // Clean up old/orphaned service workers from deleted projects
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        const validScopes = ['/', '/birdle/', '/tarot/', '/beautiful-mind/'];
+        registrations.forEach(registration => {
+          const scope = new URL(registration.scope).pathname;
+          if (!validScopes.includes(scope)) {
+            console.log('Unregistering orphaned service worker:', scope);
+            registration.unregister();
+          }
+        });
+      });
+
+      // Register the homepage service worker
       navigator.serviceWorker.register('/sw.js', { scope: '/' });
     }
   </script>
