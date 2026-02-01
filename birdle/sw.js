@@ -96,6 +96,14 @@ async function matchCache(request) {
 
   // For navigation requests, try additional fallbacks
   if (request.mode === 'navigate') {
+    // Handle /birdle/index.html -> /birdle/ or /birdle
+    if (url.pathname === '/birdle/index.html') {
+      cached = await caches.match('/birdle/');
+      if (cached) return cached;
+      cached = await caches.match('/birdle');
+      if (cached) return cached;
+    }
+
     // Handle /birdle/ or /birdle -> /birdle/index.html
     if (url.pathname === '/birdle/' || url.pathname === '/birdle') {
       cached = await caches.match('/birdle/index.html');

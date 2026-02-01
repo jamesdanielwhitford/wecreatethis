@@ -1,4 +1,4 @@
-const CACHE_NAME = 'beautiful-mind-v4';
+const CACHE_NAME = 'beautiful-mind-v5';
 const ASSETS = [
   '/beautiful-mind/',
   '/beautiful-mind/index.html',
@@ -81,6 +81,14 @@ async function matchCache(request) {
 
   // For navigation requests, try additional fallbacks
   if (request.mode === 'navigate') {
+    // Handle /beautiful-mind/index.html -> /beautiful-mind/ or /beautiful-mind
+    if (url.pathname === '/beautiful-mind/index.html') {
+      cached = await caches.match('/beautiful-mind/');
+      if (cached) return cached;
+      cached = await caches.match('/beautiful-mind');
+      if (cached) return cached;
+    }
+
     // Handle /beautiful-mind/ or /beautiful-mind -> /beautiful-mind/index.html
     if (url.pathname === '/beautiful-mind/' || url.pathname === '/beautiful-mind') {
       cached = await caches.match('/beautiful-mind/index.html');

@@ -1,6 +1,6 @@
 // Service Worker for Tarot Reader
 
-const CACHE_NAME = 'tarot-v25';
+const CACHE_NAME = 'tarot-v26';
 const ASSETS = [
   '/tarot/',
   '/tarot/index.html',
@@ -171,6 +171,14 @@ async function matchCache(request) {
 
   // For navigation requests, try additional fallbacks
   if (request.mode === 'navigate') {
+    // Handle /tarot/index.html -> /tarot/ or /tarot
+    if (url.pathname === '/tarot/index.html') {
+      cached = await caches.match('/tarot/');
+      if (cached) return cached;
+      cached = await caches.match('/tarot');
+      if (cached) return cached;
+    }
+
     // Handle /tarot/ or /tarot -> /tarot/index.html
     if (url.pathname === '/tarot/' || url.pathname === '/tarot') {
       cached = await caches.match('/tarot/index.html');
