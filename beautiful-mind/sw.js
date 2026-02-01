@@ -1,4 +1,4 @@
-const CACHE_NAME = 'beautiful-mind-v3';
+const CACHE_NAME = 'beautiful-mind-v4';
 const ASSETS = [
   '/beautiful-mind/',
   '/beautiful-mind/index.html',
@@ -87,8 +87,15 @@ async function matchCache(request) {
       if (cached) return cached;
     }
 
-    // Try adding .html suffix for extensionless URLs
-    if (!url.pathname.includes('.') && !url.pathname.endsWith('/')) {
+    // Try both with and without .html extension
+    // Cloudflare redirects .html -> extensionless, so we need to check both
+    if (url.pathname.endsWith('.html')) {
+      // Has .html - try without it
+      const noExtUrl = url.pathname.slice(0, -5);
+      cached = await caches.match(noExtUrl);
+      if (cached) return cached;
+    } else if (!url.pathname.endsWith('/')) {
+      // No extension - try adding .html
       const htmlUrl = url.pathname + '.html';
       cached = await caches.match(htmlUrl);
       if (cached) return cached;
