@@ -1,6 +1,7 @@
 {
   "name": "We Create This",
   "short_name": "WCT",
+  "version": "5",
   "description": "App hub",
   "start_url": "/",
   "scope": "/",

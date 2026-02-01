@@ -1,6 +1,6 @@
 // Service Worker for Tarot Reader
 
-const CACHE_NAME = 'tarot-v21';
+const CACHE_NAME = 'tarot-v22';
 const ASSETS = [
   '/tarot/index.html',
   '/tarot/reading.html',
@@ -216,9 +216,16 @@ self.addEventListener('fetch', (event) => {
 
       // Network failed and no cache, return offline page
       if (event.request.mode === 'navigate') {
-        return caches.match('/tarot/index.html');
+        const fallback = await caches.match('/tarot/index.html');
+        if (fallback) return fallback;
       }
-      throw new Error('No network and no cache available');
+
+      // Return a proper 503 response instead of throwing or returning null
+      return new Response('Offline - content not cached', {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: { 'Content-Type': 'text/plain' }
+      });
     })
   );
 });
