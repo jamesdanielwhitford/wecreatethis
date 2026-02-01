@@ -348,8 +348,8 @@ const App = {
         sortType.value = lastSearch.sortBy;
         this.currentSort = lastSearch.sortBy;
       }
-      if (lastSearch.seenOnly !== undefined && seenFilter) {
-        seenFilter.checked = lastSearch.seenOnly;
+      if (lastSearch.seenFilter && seenFilter) {
+        seenFilter.value = lastSearch.seenFilter;
       }
 
       if (lastSearch.type === 'region') {
@@ -723,7 +723,7 @@ const App = {
         lastSearch.sortBy = sortType.value;
       }
       if (seenFilter) {
-        lastSearch.seenOnly = seenFilter.checked;
+        lastSearch.seenFilter = seenFilter.value;
       }
 
       localStorage.setItem('lastSearch', JSON.stringify(lastSearch));
@@ -1033,9 +1033,16 @@ const App = {
     const bingoBirdCodes = await this.getBingoBirdCodes();
 
     const seenFilter = document.getElementById('seen-filter');
-    if (seenFilter?.checked) {
+    const filterValue = seenFilter?.value || 'all';
+
+    if (filterValue === 'only') {
+      // Only show seen birds
       birds = birds.filter(b => seenCodes.includes(b.speciesCode));
+    } else if (filterValue === 'hide') {
+      // Hide seen birds
+      birds = birds.filter(b => !seenCodes.includes(b.speciesCode));
     }
+    // 'all' - show all birds (no filtering)
 
     // Filter by search query
     if (this.searchQuery) {
