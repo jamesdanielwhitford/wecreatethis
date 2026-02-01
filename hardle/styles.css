@@ -311,7 +311,26 @@ body {
 .key-backspace {
   flex: 1.5;
   max-width: 62px;
-  font-size: 0.75rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.key-enter {
+  background: var(--score-green);
+  color: white;
+}
+
+.key-backspace {
+  background: var(--score-red);
+  color: white;
+}
+
+.key-enter:active {
+  background: #3d8b40;
+}
+
+.key-backspace:active {
+  background: #cc3737;
 }
 
 /* Keyboard color states */
@@ -497,7 +516,7 @@ body {
 
   .key-enter,
   .key-backspace {
-    font-size: 0.8rem;
+    font-size: 1.4rem;
   }
 }
 
@@ -521,7 +540,7 @@ body {
 
   .key-enter,
   .key-backspace {
-    font-size: 0.85rem;
+    font-size: 1.5rem;
   }
 }
 
