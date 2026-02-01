@@ -2169,7 +2169,7 @@ const App = {
 
       if (!game) {
         alert('Game not found');
-        window.location.href = "bingo-games';
+        window.location.href = 'bingo-games';
         return;
       }
 
@@ -2191,13 +2191,13 @@ const App = {
     } catch (error) {
       console.error('Error loading game:', error);
       alert('Failed to load game');
-      window.location.href = "bingo-games';
+      window.location.href = 'bingo-games';
     }
   },
 
   async startNewBingoGame() {
     // Navigate to new game page
-    window.location.href = "new-bingo';
+    window.location.href = 'new-bingo';
   },
 
   async generateBingoCard(location) {
@@ -2796,7 +2796,7 @@ const App = {
       document.getElementById('delete-game-modal').style.display = 'none';
 
       // Redirect to games list
-      window.location.href = "bingo-games';
+      window.location.href = 'bingo-games';
     } catch (error) {
       console.error('Error deleting game:', error);
       alert('Failed to delete game');
