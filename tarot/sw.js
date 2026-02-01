@@ -1,6 +1,6 @@
 // Service Worker for Tarot Reader
 
-const CACHE_NAME = 'tarot-v22';
+const CACHE_NAME = 'tarot-v23';
 const ASSETS = [
   '/tarot/index.html',
   '/tarot/reading.html',
@@ -162,21 +162,24 @@ async function matchCache(request) {
   let cached = await caches.match(request);
   if (cached) return cached;
 
-  // Try matching without query params
-  cached = await caches.match(request, { ignoreSearch: true });
-  if (cached) return cached;
+  // Try matching without query params (for same-origin only)
+  if (url.origin === self.location.origin) {
+    cached = await caches.match(request, { ignoreSearch: true });
+    if (cached) return cached;
+  }
 
   // For navigation requests, try additional fallbacks
   if (request.mode === 'navigate') {
-    // Try adding .html suffix for extensionless URLs
-    if (!url.pathname.includes('.') && !url.pathname.endsWith('/')) {
-      const htmlUrl = new URL(url.pathname + '.html', url.origin);
-      cached = await caches.match(htmlUrl.href);
-      if (cached) return cached;
-    }
-    // Handle /tarot/ -> /tarot/index.html
+    // Handle /tarot/ or /tarot -> /tarot/index.html
     if (url.pathname === '/tarot/' || url.pathname === '/tarot') {
       cached = await caches.match('/tarot/index.html');
+      if (cached) return cached;
+    }
+
+    // Try adding .html suffix for extensionless URLs (e.g., /tarot/reading -> /tarot/reading.html)
+    if (!url.pathname.includes('.') && !url.pathname.endsWith('/')) {
+      const htmlUrl = url.pathname + '.html';
+      cached = await caches.match(htmlUrl);
       if (cached) return cached;
     }
   }

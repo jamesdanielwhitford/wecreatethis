@@ -1975,7 +1975,7 @@ const App = {
       const game = await BirdDB.createBingoGame(gameData);
 
       // Navigate to the game
-      window.location.href = `bingo?id=${game.id}`;
+      window.location.href = `bingo.html?id=${game.id}`;
     } catch (error) {
       console.error('Error creating bingo game:', error);
       alert('Failed to create bingo game. Please try again.');
@@ -2157,7 +2157,7 @@ const App = {
 
     if (!gameId) {
       // No game ID - redirect to games list
-      window.location.href = 'bingo-games';
+      window.location.href = 'bingo-games.html';
       return;
     }
 
@@ -2169,7 +2169,7 @@ const App = {
 
       if (!game) {
         alert('Game not found');
-        window.location.href = 'bingo-games';
+        window.location.href = 'bingo-games.html';
         return;
       }
 
@@ -2191,13 +2191,13 @@ const App = {
     } catch (error) {
       console.error('Error loading game:', error);
       alert('Failed to load game');
-      window.location.href = 'bingo-games';
+      window.location.href = 'bingo-games.html';
     }
   },
 
   async startNewBingoGame() {
     // Navigate to new game page
-    window.location.href = 'new-bingo';
+    window.location.href = 'new-bingo.html';
   },
 
   async generateBingoCard(location) {
@@ -2402,7 +2402,7 @@ const App = {
 
         // Click to navigate to bird detail
         cellEl.addEventListener('click', () => {
-          window.location.href = `bird?code=${cell.speciesCode}&from=bingo&gameId=${this.currentGameId}`;
+          window.location.href = `bird.html?code=${cell.speciesCode}&from=bingo&gameId=${this.currentGameId}`;
         });
       }
 
@@ -2796,7 +2796,7 @@ const App = {
       document.getElementById('delete-game-modal').style.display = 'none';
 
       // Redirect to games list
-      window.location.href = 'bingo-games';
+      window.location.href = 'bingo-games.html';
     } catch (error) {
       console.error('Error deleting game:', error);
       alert('Failed to delete game');

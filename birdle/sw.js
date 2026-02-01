@@ -1,4 +1,4 @@
-const CACHE_NAME = 'birdle-v100';
+const CACHE_NAME = 'birdle-v101';
 const ASSETS = [
   '/birdle/index.html',
   '/birdle/search.html',
@@ -95,15 +95,16 @@ async function matchCache(request) {
 
   // For navigation requests, try additional fallbacks
   if (request.mode === 'navigate') {
-    // Try adding .html suffix for extensionless URLs
-    if (!url.pathname.includes('.') && !url.pathname.endsWith('/')) {
-      const htmlUrl = new URL(url.pathname + '.html', url.origin);
-      cached = await caches.match(htmlUrl.href);
-      if (cached) return cached;
-    }
-    // Handle /birdle/ -> /birdle/index.html
+    // Handle /birdle/ or /birdle -> /birdle/index.html
     if (url.pathname === '/birdle/' || url.pathname === '/birdle') {
       cached = await caches.match('/birdle/index.html');
+      if (cached) return cached;
+    }
+
+    // Try adding .html suffix for extensionless URLs (e.g., /birdle/search -> /birdle/search.html)
+    if (!url.pathname.includes('.') && !url.pathname.endsWith('/')) {
+      const htmlUrl = url.pathname + '.html';
+      cached = await caches.match(htmlUrl);
       if (cached) return cached;
     }
   }

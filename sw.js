@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wecreatethis-v5';
+const CACHE_NAME = 'wecreatethis-v6';
 const ASSETS = [
   '/',
   '/index.html',
@@ -73,9 +73,11 @@ async function matchCache(request) {
   let cached = await caches.match(request);
   if (cached) return cached;
 
-  // Try matching without query params
-  cached = await caches.match(request, { ignoreSearch: true });
-  if (cached) return cached;
+  // Try matching without query params (for same-origin only)
+  if (url.origin === self.location.origin) {
+    cached = await caches.match(request, { ignoreSearch: true });
+    if (cached) return cached;
+  }
 
   // For navigation requests, try additional fallbacks
   if (request.mode === 'navigate') {
@@ -83,6 +85,13 @@ async function matchCache(request) {
     if (url.pathname === '/' || url.pathname === '/index.html') {
       cached = await caches.match('/index.html');
       if (!cached) cached = await caches.match('/');
+      if (cached) return cached;
+    }
+
+    // Try adding .html suffix for extensionless URLs
+    if (!url.pathname.includes('.') && !url.pathname.endsWith('/')) {
+      const htmlUrl = url.pathname + '.html';
+      cached = await caches.match(htmlUrl);
       if (cached) return cached;
     }
   }
