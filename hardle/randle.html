@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Randle">
+  <title>Randle - Random Word Game</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="game-navbar">
+    <a href="/" class="home-btn"></a>
+    <span class="nav-title">Randle</span>
+    <div class="nav-actions">
+      <button id="mode-toggle-btn" class="icon-btn" aria-label="Toggle game mode">
+        <span id="mode-icon">🧠</span>
+      </button>
+      <button id="rules-btn" class="icon-btn" aria-label="Show rules">❓</button>
+      <button id="settings-btn" class="icon-btn" aria-label="Settings">⚙️</button>
+    </div>
+  </nav>
+
+  <!-- Main Game Container -->
+  <div class="game-container">
+    <!-- Game Board: 8 rows × 4 columns + score column -->
+    <div class="board">
+      <!-- Row 1 -->
+      <div class="row" data-row="0">
+        <div class="tile" data-row="0" data-col="0"></div>
+        <div class="tile" data-row="0" data-col="1"></div>
+        <div class="tile" data-row="0" data-col="2"></div>
+        <div class="tile" data-row="0" data-col="3"></div>
+        <div class="score-box" data-row="0"></div>
+      </div>
+      <!-- Row 2 -->
+      <div class="row" data-row="1">
+        <div class="tile" data-row="1" data-col="0"></div>
+        <div class="tile" data-row="1" data-col="1"></div>
+        <div class="tile" data-row="1" data-col="2"></div>
+        <div class="tile" data-row="1" data-col="3"></div>
+        <div class="score-box" data-row="1"></div>
+      </div>
+      <!-- Row 3 -->
+      <div class="row" data-row="2">
+        <div class="tile" data-row="2" data-col="0"></div>
+        <div class="tile" data-row="2" data-col="1"></div>
+        <div class="tile" data-row="2" data-col="2"></div>
+        <div class="tile" data-row="2" data-col="3"></div>
+        <div class="score-box" data-row="2"></div>
+      </div>
+      <!-- Row 4 -->
+      <div class="row" data-row="3">
+        <div class="tile" data-row="3" data-col="0"></div>
+        <div class="tile" data-row="3" data-col="1"></div>
+        <div class="tile" data-row="3" data-col="2"></div>
+        <div class="tile" data-row="3" data-col="3"></div>
+        <div class="score-box" data-row="3"></div>
+      </div>
+      <!-- Row 5 -->
+      <div class="row" data-row="4">
+        <div class="tile" data-row="4" data-col="0"></div>
+        <div class="tile" data-row="4" data-col="1"></div>
+        <div class="tile" data-row="4" data-col="2"></div>
+        <div class="tile" data-row="4" data-col="3"></div>
+        <div class="score-box" data-row="4"></div>
+      </div>
+      <!-- Row 6 -->
+      <div class="row" data-row="5">
+        <div class="tile" data-row="5" data-col="0"></div>
+        <div class="tile" data-row="5" data-col="1"></div>
+        <div class="tile" data-row="5" data-col="2"></div>
+        <div class="tile" data-row="5" data-col="3"></div>
+        <div class="score-box" data-row="5"></div>
+      </div>
+      <!-- Row 7 -->
+      <div class="row" data-row="6">
+        <div class="tile" data-row="6" data-col="0"></div>
+        <div class="tile" data-row="6" data-col="1"></div>
+        <div class="tile" data-row="6" data-col="2"></div>
+        <div class="tile" data-row="6" data-col="3"></div>
+        <div class="score-box" data-row="6"></div>
+      </div>
+      <!-- Row 8 -->
+      <div class="row" data-row="7">
+        <div class="tile" data-row="7" data-col="0"></div>
+        <div class="tile" data-row="7" data-col="1"></div>
+        <div class="tile" data-row="7" data-col="2"></div>
+        <div class="tile" data-row="7" data-col="3"></div>
+        <div class="score-box" data-row="7"></div>
+      </div>
+    </div>
+
+    <!-- QWERTY Keyboard -->
+    <div class="keyboard">
+      <div class="keyboard-row">
+        <button class="key" data-key="Q">Q</button>
+        <button class="key" data-key="W">W</button>
+        <button class="key" data-key="E">E</button>
+        <button class="key" data-key="R">R</button>
+        <button class="key" data-key="T">T</button>
+        <button class="key" data-key="Y">Y</button>
+        <button class="key" data-key="U">U</button>
+        <button class="key" data-key="I">I</button>
+        <button class="key" data-key="O">O</button>
+        <button class="key" data-key="P">P</button>
+      </div>
+      <div class="keyboard-row">
+        <button class="key" data-key="A">A</button>
+        <button class="key" data-key="S">S</button>
+        <button class="key" data-key="D">D</button>
+        <button class="key" data-key="F">F</button>
+        <button class="key" data-key="G">G</button>
+        <button class="key" data-key="H">H</button>
+        <button class="key" data-key="J">J</button>
+        <button class="key" data-key="K">K</button>
+        <button class="key" data-key="L">L</button>
+      </div>
+      <div class="keyboard-row">
+        <button class="key key-enter" data-key="Enter">ENTER</button>
+        <button class="key" data-key="Z">Z</button>
+        <button class="key" data-key="X">X</button>
+        <button class="key" data-key="C">C</button>
+        <button class="key" data-key="V">V</button>
+        <button class="key" data-key="B">B</button>
+        <button class="key" data-key="N">N</button>
+        <button class="key" data-key="M">M</button>
+        <button class="key key-backspace" data-key="Backspace">⌫</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules Modal -->
+  <div id="rules-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>How to Play</h2>
+        <button class="modal-close" data-modal="rules-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h3>Goal</h3>
+        <p>Guess the 4-letter word in 8 attempts or less.</p>
+
+        <h3>Feedback</h3>
+        <p>After each guess, you'll see a <strong>score</strong> (0-4) showing how many letters from your guess appear in the answer.</p>
+        <ul>
+          <li><strong>Score 0</strong>: All letters wrong (red row)</li>
+          <li><strong>Score 1-4</strong>: Partial match (yellow score box)</li>
+          <li><strong>Exact match</strong>: You win! (green row)</li>
+        </ul>
+
+        <h3>Game Modes</h3>
+        <p><strong>🧠 Hard Mode (Manual)</strong>: Click tiles to manually mark letters as correct (green) or incorrect (red).</p>
+        <p><strong>✨ Easy Mode (Automatic)</strong>: The game automatically deduces correct/incorrect letters with colored dots.</p>
+
+        <h3>Navigation</h3>
+        <p><strong>Hardle (☀️)</strong>: One daily word that changes at midnight.</p>
+        <p><strong>Randle (♾️)</strong>: Random word each game. Play as many times as you want!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="modal-close" data-modal="settings-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-item">
+          <label for="dark-mode-toggle">Dark Mode</label>
+          <input type="checkbox" id="dark-mode-toggle">
+        </div>
+        <div class="setting-item">
+          <label>Game Mode</label>
+          <p id="current-mode-text">🧠 Hard Mode (Manual)</p>
+        </div>
+        <div class="setting-item">
+          <a href="index.html" class="link-btn">Play Hardle (Daily Mode) ☀️</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Game Modal -->
+  <div id="end-game-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="end-game-title">You Won!</h2>
+        <button class="modal-close" data-modal="end-game-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="end-game-message">Congratulations! You guessed the word in <span id="attempts-count">0</span> attempts.</p>
+        <p>The word was: <strong id="answer-word"></strong></p>
+        <button id="share-btn" class="btn">Share Results 📋</button>
+        <button id="play-again-btn" class="btn" style="display: inline-block; margin-top: 12px;">Play Again 🔄</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/hardle/sw.js', {
+        scope: '/hardle/',
+        updateViaCache: 'none'
+      });
+    }
+  </script>
+</body>
+</html>

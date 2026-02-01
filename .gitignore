@@ -4,6 +4,8 @@
 # Environment variables
 .env
 
+hardle/react-reference/
+
 node_modules/
 
 CLAUDE.md

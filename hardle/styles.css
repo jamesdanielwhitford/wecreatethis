@@ -1,0 +1,532 @@
+:root {
+  --navbar-height: 48px;
+
+  /* Calculate sizes based on available viewport height */
+  /* Available height = 100vh - navbar - padding (top 12px + bottom 8px = 20px) - gaps between board and keyboard (12px) */
+  /* Board needs: 8 rows * (tile-size + gap) - gap */
+  /* Keyboard needs: 3 rows * 48px + 2 gaps of 6px = 156px */
+  /* Total: board + keyboard + gaps must fit in (100vh - 48px - 20px - 12px) */
+  --available-height: calc(100vh - 80px);
+  --keyboard-height: 156px;
+  --board-height: calc(var(--available-height) - var(--keyboard-height));
+  --tile-size: calc((var(--board-height) - 35px) / 8); /* 7 gaps of 5px = 35px */
+  --tile-gap: 5px;
+  --score-box-width: calc(var(--tile-size) * 0.8);
+
+  /* Colors */
+  --bg-color: #fff;
+  --text-color: #333;
+  --border-color: #ddd;
+  --tile-bg: #fff;
+  --tile-empty-border: #ccc;
+  --tile-filled-border: #666;
+  --score-red: #ff4444;
+  --score-yellow: #ffc107;
+  --score-green: #4caf50;
+  --key-bg: #e0e0e0;
+  --key-hover: #d0d0d0;
+  --key-active: #bbb;
+  --modal-overlay: rgba(0, 0, 0, 0.5);
+}
+
+/* Dark mode */
+[data-theme="dark"] {
+  --bg-color: #1a1a1a;
+  --text-color: #e0e0e0;
+  --border-color: #444;
+  --tile-bg: #2a2a2a;
+  --tile-empty-border: #555;
+  --tile-filled-border: #999;
+  --key-bg: #3a3a3a;
+  --key-hover: #4a4a4a;
+  --key-active: #555;
+  --modal-overlay: rgba(0, 0, 0, 0.7);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg-color);
+  color: var(--text-color);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height for mobile browsers */
+}
+
+/* Navbar */
+.game-navbar {
+  position: sticky;
+  top: 0;
+  background: var(--bg-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: var(--navbar-height);
+  padding: 0 12px;
+  z-index: 100;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.home-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  text-decoration: none;
+  color: var(--text-color);
+  font-size: 1.2rem;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.home-btn::before {
+  content: '←';
+}
+
+.home-btn:active {
+  background: var(--key-hover);
+}
+
+.nav-title {
+  font-weight: bold;
+  font-size: 1.1rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.nav-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.icon-btn:active {
+  background: var(--key-hover);
+}
+
+/* Main Game Container */
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 8px;
+  gap: 12px;
+  height: calc(100vh - var(--navbar-height));
+  height: calc(100dvh - var(--navbar-height));
+  overflow: hidden;
+}
+
+/* Game Board */
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tile-gap);
+  width: 100%;
+  max-width: 340px;
+  flex-shrink: 0;
+}
+
+.row {
+  display: flex;
+  gap: var(--tile-gap);
+  justify-content: center;
+}
+
+/* Tiles */
+.tile {
+  width: var(--tile-size);
+  height: var(--tile-size);
+  background: var(--tile-bg);
+  border: 2px solid var(--tile-empty-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--tile-size) * 0.5); /* Scale font with tile size */
+  font-weight: bold;
+  text-transform: uppercase;
+  position: relative;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.tile.filled {
+  border-color: var(--tile-filled-border);
+}
+
+/* Tile marks (Hard Mode - borders) */
+.tile.mark-incorrect {
+  border: 3px solid var(--score-red);
+}
+
+.tile.mark-correct {
+  border: 3px solid var(--score-green);
+}
+
+/* Tile dots (Easy Mode - top-right dots) */
+.tile.dot-incorrect::after,
+.tile.dot-correct::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.tile.dot-incorrect::after {
+  background: var(--score-red);
+}
+
+.tile.dot-correct::after {
+  background: var(--score-green);
+}
+
+/* Row background colors */
+.row.row-red .tile {
+  background: rgba(255, 68, 68, 0.2);
+  border-color: var(--score-red);
+}
+
+.row.row-green .tile {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: var(--score-green);
+}
+
+/* Score Box */
+.score-box {
+  width: var(--score-box-width);
+  height: var(--tile-size);
+  background: var(--tile-bg);
+  border: 2px solid var(--tile-empty-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--tile-size) * 0.45); /* Scale font with tile size */
+  font-weight: bold;
+}
+
+.score-box.score-filled {
+  background: var(--score-yellow);
+  border-color: var(--score-yellow);
+  color: #333;
+}
+
+.score-box.score-zero {
+  background: var(--score-red);
+  border-color: var(--score-red);
+  color: white;
+}
+
+.score-box.score-win {
+  background: var(--score-green);
+  border-color: var(--score-green);
+  color: white;
+}
+
+/* Keyboard */
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 500px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.keyboard-row {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.key {
+  min-width: 28px;
+  height: 48px;
+  background: var(--key-bg);
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.1s, transform 0.05s;
+  flex: 1;
+  max-width: 38px;
+  position: relative;
+}
+
+.key:active {
+  background: var(--key-active);
+  transform: scale(0.95);
+}
+
+.key-enter,
+.key-backspace {
+  flex: 1.5;
+  max-width: 62px;
+  font-size: 0.75rem;
+}
+
+/* Keyboard color states */
+.key.key-incorrect {
+  background: var(--score-red);
+  color: white;
+}
+
+.key.key-correct {
+  background: var(--score-green);
+  color: white;
+}
+
+/* Keyboard outline states (Hard Mode) */
+.key.key-outline-incorrect::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 3px solid var(--score-red);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.key.key-outline-correct::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 3px solid var(--score-green);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+/* Modals */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--bg-color);
+  border-radius: 12px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: var(--text-color);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.modal-close:active {
+  background: var(--key-hover);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-body h3 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-size: 1.1rem;
+}
+
+.modal-body h3:first-child {
+  margin-top: 0;
+}
+
+.modal-body p {
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.modal-body ul {
+  margin-left: 20px;
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+/* Settings */
+.setting-item {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-item label {
+  font-weight: 500;
+}
+
+.setting-item input[type="checkbox"] {
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.link-btn {
+  display: inline-block;
+  padding: 10px 16px;
+  background: var(--key-bg);
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--text-color);
+  transition: background 0.15s;
+}
+
+.link-btn:active {
+  background: var(--key-active);
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 12px 24px;
+  background: var(--key-bg);
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text-color);
+  transition: background 0.15s, transform 0.05s;
+}
+
+.btn:active {
+  background: var(--key-active);
+  transform: scale(0.98);
+}
+
+/* Responsive adjustments for larger screens */
+@media (min-height: 700px) {
+  :root {
+    --keyboard-height: 168px; /* Slightly taller keys */
+  }
+
+  .key {
+    height: 52px;
+    font-size: 1rem;
+  }
+
+  .key-enter,
+  .key-backspace {
+    font-size: 0.8rem;
+  }
+}
+
+@media (min-height: 800px) {
+  :root {
+    --keyboard-height: 180px;
+    --tile-gap: 6px;
+    --board-height: calc(var(--available-height) - var(--keyboard-height));
+    --tile-size: calc((var(--board-height) - 42px) / 8); /* 7 gaps of 6px = 42px */
+  }
+
+  .game-container {
+    gap: 16px;
+  }
+
+  .key {
+    height: 56px;
+    font-size: 1.1rem;
+    max-width: 48px;
+  }
+
+  .key-enter,
+  .key-backspace {
+    font-size: 0.85rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .board {
+    max-width: 400px;
+  }
+
+  .keyboard {
+    max-width: 600px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Touch feedback enhancement */
+@media (hover: none) {
+  .key:active,
+  .icon-btn:active,
+  .btn:active {
+    opacity: 0.7;
+  }
+}

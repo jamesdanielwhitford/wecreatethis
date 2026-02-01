@@ -1,0 +1,24 @@
+{
+  "name": "Hardle & Randle - Word Games",
+  "short_name": "Hardle",
+  "description": "Guess 4-letter words in 8 attempts. Daily and random modes available.",
+  "start_url": "/hardle/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#333333",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
