@@ -77,6 +77,22 @@ function init() {
     if (game.guesses.length === 0) {
       game.isHardMode = preferredMode === 'hard';
     }
+
+    // Re-run mode-specific logic to ensure UI is properly restored
+    if (game.guesses.length > 0) {
+      if (!game.isHardMode) {
+        // Easy mode: Re-run deduction to ensure dots are displayed
+        // This is important because:
+        // 1. Deduction logic may have been updated since last save
+        // 2. Saved tiles might not have dots properly set
+        // 3. User might have refreshed mid-game
+        game.deduceTiles();
+        game.updateKeyboardFromDeduction();
+      } else {
+        // Hard mode: Re-apply keyboard outlines from manual marks
+        game.updateKeyboardFromMarks();
+      }
+    }
   } else {
     console.log('Starting new game');
   }
