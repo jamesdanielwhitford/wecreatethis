@@ -339,23 +339,29 @@ body {
 
 /* Enter and Backspace buttons - must come after keyboard states for specificity */
 .key-enter {
-  background: var(--score-green) !important;
-  color: white !important;
+  background: #a5d6a7 !important; /* Very light pastel green */
+  color: #000 !important; /* Black for maximum contrast */
+  border: none !important;
+  box-shadow: none !important;
+  font-weight: 800 !important;
 }
 
 .key-backspace {
-  background: var(--score-red) !important;
-  color: white !important;
+  background: #ffab91 !important; /* Very light pastel coral/peach */
+  color: #000 !important; /* Black for maximum contrast */
   pointer-events: auto !important;
   z-index: 10;
+  border: none !important;
+  box-shadow: none !important;
+  font-weight: 800 !important;
 }
 
 .key-enter:active {
-  background: #3d8b40 !important;
+  background: #81c784 !important;
 }
 
 .key-backspace:active {
-  background: #cc3737 !important;
+  background: #ff8a80 !important;
 }
 
 /* Keyboard outline states (Hard Mode) */
