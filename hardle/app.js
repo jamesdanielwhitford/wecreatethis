@@ -4,6 +4,8 @@
 
 // Global game state instance
 let game;
+// Make game accessible to UI module
+window.game = null;
 
 /**
  * Initialize the app on page load
@@ -66,6 +68,9 @@ function init() {
   game = Object.create(GameState);
   game.init(answer, preferredMode, cacheKey, isTestle);
 
+  // Make game accessible globally for UI module
+  window.game = game;
+
   // Try to load saved state
   const loaded = game.loadState(cacheKey);
 
@@ -112,18 +117,17 @@ function init() {
   // Set up event listeners
   setupEventListeners();
 
-  // Show end game modal if game is already over
-  if (game.gameOver) {
-    setTimeout(() => {
-      UI.showEndGameModal(game.won, game.guesses.length, game.answer);
-    }, 500);
-  }
-
   // Set up viewport height handler for mobile Safari keyboard
   setupViewportHandler();
 
+  // Determine if we should show info modal
+  const visitKey = isTestle ? 'testle-visited' : isRandle ? 'randle-visited' : 'hardle-visited';
+  const isFirstVisit = !localStorage.getItem(visitKey);
+  const hasInfoHash = window.location.hash === '#info';
+  const shouldShowInfoModal = hasInfoHash || isFirstVisit;
+
   // Check if URL has #info hash and open modal
-  if (window.location.hash === '#info') {
+  if (hasInfoHash) {
     setTimeout(() => {
       UI.showModal('info-modal');
       updateModeSelectionUI();
@@ -134,15 +138,20 @@ function init() {
   }
 
   // Show modal on first visit
-  const visitKey = isTestle ? 'testle-visited' : isRandle ? 'randle-visited' : 'hardle-visited';
-
-  if (!localStorage.getItem(visitKey)) {
+  if (isFirstVisit) {
     setTimeout(() => {
       UI.showModal('info-modal');
       updateModeSelectionUI();
       updateStartPlayingButton();
     }, 500);
     localStorage.setItem(visitKey, 'true');
+  }
+
+  // Show end game modal if game is already over (but only if info modal isn't being shown)
+  if (game.gameOver && !shouldShowInfoModal) {
+    setTimeout(() => {
+      UI.showEndGameModal(game.won, game.guesses.length, game.answer);
+    }, 500);
   }
 }
 
@@ -520,6 +529,13 @@ function updateStartPlayingButton() {
  */
 function handleStartPlaying() {
   UI.hideModal('info-modal');
+
+  // Show end game modal if game is over
+  if (game.gameOver) {
+    setTimeout(() => {
+      UI.showEndGameModal(game.won, game.guesses.length, game.answer);
+    }, 300);
+  }
 }
 
 /**

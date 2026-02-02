@@ -155,6 +155,13 @@ const UI = {
     const modal = document.getElementById(modalId);
     if (modal) {
       modal.classList.remove('active');
+
+      // If closing info modal and game is over, show end game modal
+      if (modalId === 'info-modal' && window.game && window.game.gameOver) {
+        setTimeout(() => {
+          this.showEndGameModal(window.game.won, window.game.guesses.length, window.game.answer);
+        }, 300);
+      }
     }
   },
 
