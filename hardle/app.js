@@ -121,6 +121,29 @@ function init() {
 
   // Set up viewport height handler for mobile Safari keyboard
   setupViewportHandler();
+
+  // Check if URL has #info hash and open modal
+  if (window.location.hash === '#info') {
+    setTimeout(() => {
+      UI.showModal('info-modal');
+      updateModeSelectionUI();
+      updateStartPlayingButton();
+      // Remove hash from URL without reloading
+      history.replaceState(null, null, window.location.pathname);
+    }, 100);
+  }
+
+  // Show modal on first visit
+  const visitKey = isTestle ? 'testle-visited' : isRandle ? 'randle-visited' : 'hardle-visited';
+
+  if (!localStorage.getItem(visitKey)) {
+    setTimeout(() => {
+      UI.showModal('info-modal');
+      updateModeSelectionUI();
+      updateStartPlayingButton();
+    }, 500);
+    localStorage.setItem(visitKey, 'true');
+  }
 }
 
 /**
@@ -152,7 +175,14 @@ function setupEventListeners() {
     infoBtn.addEventListener('click', () => {
       UI.showModal('info-modal');
       updateModeSelectionUI();
+      updateStartPlayingButton();
     });
+  }
+
+  // Start Playing button
+  const startPlayingBtn = document.getElementById('start-playing-btn');
+  if (startPlayingBtn) {
+    startPlayingBtn.addEventListener('click', handleStartPlaying);
   }
 
   // Mode selection buttons
@@ -424,8 +454,7 @@ function handleModeSelection(mode) {
 function updateModeSelectionUI() {
   const hardBtn = document.getElementById('select-hard-mode');
   const easyBtn = document.getElementById('select-easy-mode');
-  const hardRules = document.getElementById('hard-mode-rules');
-  const easyRules = document.getElementById('easy-mode-rules');
+  const marksDescription = document.getElementById('marks-description');
 
   if (hardBtn && easyBtn) {
     if (game.isHardMode) {
@@ -437,16 +466,60 @@ function updateModeSelectionUI() {
     }
   }
 
-  // Show/hide appropriate rules
-  if (hardRules && easyRules) {
+  // Update the marks example description and visuals based on mode
+  if (marksDescription) {
+    const exampleTiles = marksDescription.closest('.example').querySelectorAll('.example-tile');
+
     if (game.isHardMode) {
-      hardRules.style.display = 'block';
-      easyRules.style.display = 'none';
+      marksDescription.textContent = 'Tap tiles to mark them with colored borders to track your thinking.';
+      // Show marks (borders)
+      exampleTiles.forEach(tile => {
+        tile.classList.remove('example-red-dot', 'example-green-dot');
+      });
+      if (exampleTiles[0]) exampleTiles[0].classList.add('example-green-mark');
+      if (exampleTiles[1]) exampleTiles[1].classList.add('example-red-mark');
+      if (exampleTiles[2]) exampleTiles[2].classList.add('example-green-mark');
+      if (exampleTiles[3]) exampleTiles[3].classList.add('example-red-mark');
     } else {
-      hardRules.style.display = 'none';
-      easyRules.style.display = 'block';
+      marksDescription.textContent = 'The game automatically adds colored dots to show which letters are correct or incorrect.';
+      // Show dots
+      exampleTiles.forEach(tile => {
+        tile.classList.remove('example-red-mark', 'example-green-mark');
+      });
+      if (exampleTiles[0]) exampleTiles[0].classList.add('example-green-dot');
+      if (exampleTiles[1]) exampleTiles[1].classList.add('example-red-dot');
+      if (exampleTiles[2]) exampleTiles[2].classList.add('example-green-dot');
+      if (exampleTiles[3]) exampleTiles[3].classList.add('example-red-dot');
     }
   }
+}
+
+/**
+ * Update the Start Playing button based on game state
+ */
+function updateStartPlayingButton() {
+  const startPlayingBtn = document.getElementById('start-playing-btn');
+  if (!startPlayingBtn) return;
+
+  const isHardle = !window.location.pathname.includes('randle') && !window.location.pathname.includes('testle');
+
+  // For Hardle: Check if game is completed
+  if (isHardle && game.gameOver) {
+    startPlayingBtn.textContent = 'Try Randle';
+    startPlayingBtn.onclick = () => {
+      window.location.href = 'randle.html';
+    };
+  } else {
+    startPlayingBtn.textContent = 'Start Playing!';
+    startPlayingBtn.onclick = handleStartPlaying;
+  }
+}
+
+/**
+ * Handle Start Playing button click
+ */
+function handleStartPlaying() {
+  UI.hideModal('info-modal');
 }
 
 /**

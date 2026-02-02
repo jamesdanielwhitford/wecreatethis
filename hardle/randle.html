@@ -18,7 +18,9 @@
     <a href="/" class="home-btn"></a>
     <span class="nav-title">Randle</span>
     <div class="nav-actions">
-      <button id="info-btn" class="icon-btn" aria-label="Game info and settings">ℹ️</button>
+      <button id="info-btn" class="text-icon-btn" aria-label="Game info and settings">
+        <span class="text-icon">i</span>
+      </button>
     </div>
   </nav>
 
@@ -135,76 +137,91 @@
   <div id="info-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>How to Play</h2>
+        <h2>Welcome to</h2>
         <button class="modal-close" data-modal="info-modal">&times;</button>
       </div>
       <div class="modal-body">
+
         <!-- Game Variant Selection -->
-        <div class="mode-selection">
-          <h3>Game Variant</h3>
-          <div class="mode-buttons">
-            <a href="index.html" class="mode-btn" data-variant="hardle">
-              <span class="mode-icon">☀️</span>
-              <span class="mode-label">Hardle</span>
-              <span class="mode-desc">Daily word</span>
-            </a>
-            <a href="randle.html" class="mode-btn active" data-variant="randle">
-              <span class="mode-icon">♾️</span>
-              <span class="mode-label">Randle</span>
-              <span class="mode-desc">Infinite mode</span>
-            </a>
-          </div>
+        <div class="mode-buttons" style="margin-bottom: 8px;">
+          <a href="index.html#info" class="mode-btn" data-variant="hardle">
+            <span class="mode-label">Hardle</span>
+          </a>
+          <a href="randle.html#info" class="mode-btn active" data-variant="randle">
+            <span class="mode-label">Randle</span>
+          </a>
         </div>
 
+        <p style="text-align: center; margin-bottom: 4px;">Guess the 4-letter word in 8 attempts or less</p>
+        <p style="text-align: center; margin-bottom: 16px; font-size: 0.9rem; color: var(--text-secondary);">Play as many times as you want</p>
+
         <!-- Mode Selection -->
-        <div class="mode-selection">
-          <h3>Game Mode</h3>
-          <div class="mode-buttons">
-            <button id="select-hard-mode" class="mode-btn active" data-mode="hard">
-              <span class="mode-icon">🧠</span>
-              <span class="mode-label">Hard Mode</span>
-            </button>
-            <button id="select-easy-mode" class="mode-btn" data-mode="easy">
-              <span class="mode-icon">✨</span>
-              <span class="mode-label">Easy Mode</span>
-            </button>
-          </div>
+        <p style="text-align: center; margin-bottom: 8px;">in</p>
+        <div class="mode-buttons" style="margin-bottom: 24px;">
+          <button id="select-hard-mode" class="mode-btn active" data-mode="hard">
+            <span class="mode-label">Hard Mode</span>
+          </button>
+          <button id="select-easy-mode" class="mode-btn" data-mode="easy">
+            <span class="mode-label">Easy Mode</span>
+          </button>
         </div>
+
+        <h3 style="text-align: center; margin-bottom: 16px;">How to Play</h3>
 
         <!-- Rules Section (content changes based on mode) -->
         <div class="rules-section">
-          <h3>Goal</h3>
-          <p>Guess the 4-letter word in 8 attempts or less.</p>
-
-          <h3>Feedback</h3>
-          <p>After each guess, you'll see a <strong>score</strong> (0-4) showing how many letters from your guess appear in the answer.</p>
-          <ul>
-            <li><strong>Score 0</strong>: All letters wrong (red row)</li>
-            <li><strong>Score 1-4</strong>: Partial match (yellow score box)</li>
-            <li><strong>Exact match</strong>: You win! (green row)</li>
-          </ul>
-
-          <!-- Hard Mode Rules -->
-          <div id="hard-mode-rules" class="mode-rules">
-            <h3>🧠 Hard Mode (Manual)</h3>
-            <p>Click tiles to manually mark letters as correct (green border) or incorrect (red border). The keyboard will show outlines based on your marks.</p>
-            <ul>
-              <li>Click a tile once: Red border (incorrect)</li>
-              <li>Click again: Green border (correct)</li>
-              <li>Click again: Remove mark</li>
-            </ul>
+          <!-- Example 1: Partial match -->
+          <div class="example">
+            <div class="example-row">
+              <div class="example-tile">W</div>
+              <div class="example-tile">O</div>
+              <div class="example-tile">R</div>
+              <div class="example-tile">D</div>
+              <div class="example-score example-score-partial">2</div>
+            </div>
+            <p class="example-description">A score shows how many letters from your guess are in the target word.</p>
           </div>
 
-          <!-- Easy Mode Rules -->
-          <div id="easy-mode-rules" class="mode-rules" style="display: none;">
-            <h3>✨ Easy Mode (Automatic)</h3>
-            <p>The game automatically deduces correct/incorrect letters based on scores. Tiles show colored dots, and the keyboard updates automatically.</p>
-            <ul>
-              <li>Red dot: Letter proven incorrect</li>
-              <li>Green dot: Letter proven correct</li>
-              <li>Keyboard colors update as you play</li>
-            </ul>
+          <!-- Example 2: Red - No match -->
+          <div class="example">
+            <div class="example-row">
+              <div class="example-tile example-red">W</div>
+              <div class="example-tile example-red">O</div>
+              <div class="example-tile example-red">L</div>
+              <div class="example-tile example-red">F</div>
+              <div class="example-score example-score-zero">0</div>
+            </div>
+            <p class="example-description">Red tiles and 0 score mean none of these letters are in the target word.</p>
           </div>
+
+          <!-- Example 3: With marks (changes based on mode) -->
+          <div class="example">
+            <div class="example-row">
+              <div class="example-tile">R</div>
+              <div class="example-tile">U</div>
+              <div class="example-tile">D</div>
+              <div class="example-tile">E</div>
+              <div class="example-score example-score-partial">2</div>
+            </div>
+            <p class="example-description" id="marks-description">Tap tiles to mark them with colored borders to track your thinking.</p>
+          </div>
+
+          <!-- Example 4: Green - Win! -->
+          <div class="example">
+            <div class="example-row">
+              <div class="example-tile example-green">D</div>
+              <div class="example-tile example-green">R</div>
+              <div class="example-tile example-green">I</div>
+              <div class="example-tile example-green">P</div>
+              <div class="example-score example-score-win">4</div>
+            </div>
+            <p class="example-description">Green tiles mean you win!</p>
+          </div>
+        </div>
+
+        <!-- Start Playing Button -->
+        <div style="text-align: center; margin-top: 24px;">
+          <button id="start-playing-btn" class="btn btn-primary" style="min-width: 160px;">Start Playing!</button>
         </div>
       </div>
     </div>
@@ -220,8 +237,8 @@
       <div class="modal-body">
         <p id="end-game-message">Congratulations! You guessed the word in <span id="attempts-count">0</span> attempts.</p>
         <p>The word was: <strong id="answer-word"></strong></p>
-        <button id="share-btn" class="btn">Share Results 📋</button>
-        <button id="play-again-btn" class="btn" style="display: inline-block; margin-top: 12px;">Play Again 🔄</button>
+        <button id="share-btn" class="btn">Share Results</button>
+        <button id="play-again-btn" class="btn" style="display: inline-block; margin-top: 12px;">Play Again</button>
       </div>
     </div>
   </div>

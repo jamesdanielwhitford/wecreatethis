@@ -135,6 +135,42 @@ body {
   background: var(--key-hover);
 }
 
+/* Text icon button in circle */
+.text-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--text-color);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.text-icon-btn .text-icon {
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.text-icon-btn:active {
+  background: var(--key-hover);
+}
+
+.text-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .text-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
 /* Main Game Container */
 .game-container {
   display: flex;
@@ -525,6 +561,39 @@ body {
   transform: scale(0.98);
 }
 
+/* Colorful Start Playing Button */
+.btn-primary {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+  transform: scale(0.98) translateY(0);
+  box-shadow: 0 2px 10px rgba(76, 175, 80, 0.4);
+}
+
+/* Dark mode adjustments for primary button */
+[data-theme="dark"] .btn-primary {
+  background: linear-gradient(135deg, #66bb6a 0%, #5cb860 100%);
+  box-shadow: 0 4px 15px rgba(102, 187, 106, 0.3);
+}
+
+[data-theme="dark"] .btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(102, 187, 106, 0.5);
+}
+
+[data-theme="dark"] .btn-primary:active {
+  background: linear-gradient(135deg, #5cb860 0%, #4caf50 100%);
+  box-shadow: 0 2px 10px rgba(102, 187, 106, 0.3);
+}
+
 /* Responsive adjustments for larger screens */
 @media (min-height: 700px) {
   :root {
@@ -728,6 +797,131 @@ body {
   padding: 12px 16px;
   border-radius: 4px;
   margin-top: 12px;
+}
+
+/* Example Tiles in Modal */
+.examples {
+  margin-bottom: 24px;
+}
+
+.example {
+  margin-bottom: 16px;
+}
+
+.example-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(40px, 45px)) minmax(40px, 45px);
+  gap: 4px;
+  margin-bottom: 8px;
+  justify-content: flex-start;
+}
+
+.example-tile {
+  aspect-ratio: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--text-color);
+  border-radius: 4px;
+  background: var(--tile-bg);
+  border: 2px solid var(--tile-filled-border);
+}
+
+.example-tile.example-red {
+  background: rgba(255, 68, 68, 0.2);
+  border-color: var(--score-red);
+}
+
+.example-tile.example-green {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: var(--score-green);
+}
+
+.example-tile.example-red-mark {
+  border: 3px solid var(--score-red) !important;
+}
+
+.example-tile.example-green-mark {
+  border: 3px solid var(--score-green) !important;
+}
+
+/* Example dots for easy mode */
+.example-tile.example-red-dot::after,
+.example-tile.example-green-dot::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.example-tile.example-red-dot::after {
+  background: var(--score-red);
+}
+
+.example-tile.example-green-dot::after {
+  background: var(--score-green);
+}
+
+.example-tile {
+  position: relative;
+}
+
+.example-score {
+  height: 100%;
+  aspect-ratio: 1;
+  border: 2px solid var(--tile-empty-border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  font-weight: bold;
+  border-radius: 50%;
+  color: var(--text-color);
+  background: var(--tile-bg);
+}
+
+.example-score.example-score-partial {
+  background: rgba(255, 193, 7, 0.15);
+  border-color: var(--score-yellow);
+  border-width: 3px;
+}
+
+.example-score.example-score-zero {
+  background: rgba(255, 68, 68, 0.15);
+  border-color: var(--score-red);
+  border-width: 3px;
+}
+
+.example-score.example-score-win {
+  background: rgba(76, 175, 80, 0.15);
+  border-color: var(--score-green);
+  border-width: 3px;
+}
+
+.example-description {
+  font-size: 14px;
+  color: var(--text-color);
+  opacity: 0.8;
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+/* Responsive adjustments for larger screens */
+@media (min-width: 768px) {
+  .example-tile,
+  .example-score {
+    font-size: 24px;
+  }
+
+  .example-description {
+    font-size: 15px;
+  }
 }
 
 /* System theme preference */
