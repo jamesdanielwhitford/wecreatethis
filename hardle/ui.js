@@ -115,15 +115,19 @@ const UI = {
       const letter = keyElement.dataset.key.toUpperCase();
       const color = gameState.keyboardColors[letter];
 
-      // Reset classes
+      // Reset classes (but preserve key-enter and key-backspace)
+      const isEnter = keyElement.classList.contains('key-enter');
+      const isBackspace = keyElement.classList.contains('key-backspace');
       keyElement.className = 'key';
+      if (isEnter) keyElement.classList.add('key-enter');
+      if (isBackspace) keyElement.classList.add('key-backspace');
 
       // Add letter for data attribute
       keyElement.dataset.key = letter;
 
-      // Add color class if exists
+      // Add color class if exists (with key- prefix)
       if (color) {
-        keyElement.classList.add(color);
+        keyElement.classList.add(`key-${color}`);
       }
     });
   },
