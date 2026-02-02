@@ -8,6 +8,7 @@ const GameState = {
   gameOver: false,
   won: false,
   isHardMode: true,
+  isTestMode: false,
 
   // Tile states: array of 8 rows, each with 4 tiles
   // Each tile: { letter: '', mark: null, dot: null }
@@ -28,8 +29,9 @@ const GameState = {
    * @param {string} answer - The answer word (uppercase)
    * @param {string} mode - 'hard' or 'easy'
    * @param {string} cacheKey - The localStorage key for this game
+   * @param {boolean} testMode - If true, skip word validation
    */
-  init(answer, mode = 'hard', cacheKey = null) {
+  init(answer, mode = 'hard', cacheKey = null, testMode = false) {
     this.answer = answer.toUpperCase();
     this.currentGuess = '';
     this.guesses = [];
@@ -37,6 +39,7 @@ const GameState = {
     this.gameOver = false;
     this.won = false;
     this.isHardMode = mode === 'hard';
+    this.isTestMode = testMode;
     this.cacheKey = cacheKey; // Store cache key for saving
 
     // Initialize 8x4 tile grid
@@ -100,8 +103,8 @@ const GameState = {
     if (this.gameOver) return { success: false, message: 'Game is over' };
     if (this.currentGuess.length !== 4) return { success: false, message: 'Not enough letters' };
 
-    // Validate word
-    if (!isValidWord(this.currentGuess)) {
+    // Validate word (skip validation in test mode)
+    if (!this.isTestMode && !isValidWord(this.currentGuess)) {
       return { success: false, message: 'Not a valid word' };
     }
 
@@ -250,137 +253,300 @@ const GameState = {
 
   /**
    * Easy mode: Automatically deduce which tiles are correct/incorrect
+   * Uses recursive constraint propagation algorithm
    */
   deduceTiles() {
-    // Iterate through all submitted guesses and deduce
-    for (let iteration = 0; iteration < 10; iteration++) {
-      let changed = false;
+    // Letter knowledge: track min/max count for each letter in target
+    const letterMin = {}; // Minimum times letter appears in target
+    const letterMax = {}; // Maximum times letter appears in target
 
+    // Initialize all letters with [0, 4] range
+    for (let i = 0; i < 26; i++) {
+      const letter = String.fromCharCode(65 + i);
+      letterMin[letter] = 0;
+      letterMax[letter] = 4;
+    }
+
+    // Clear all dots before re-deducing (fresh start each time)
+    for (let row = 0; row < this.currentRow; row++) {
+      for (let col = 0; col < 4; col++) {
+        this.tiles[row][col].dot = null;
+      }
+    }
+
+    let changed = true;
+    let iterations = 0;
+    const maxIterations = 50; // Safety limit
+
+    while (changed && iterations < maxIterations) {
+      changed = false;
+      iterations++;
+
+      // ═══════════════════════════════════════════════════════════════
+      // PHASE 1: Apply letter knowledge to mark tiles
+      // ═══════════════════════════════════════════════════════════════
       for (let row = 0; row < this.currentRow; row++) {
-        const guess = this.guesses[row];
-        const score = guess.score;
-        const word = guess.word;
+        const word = this.guesses[row].word;
 
-        // Rule 0: Apply known incorrect/correct letters from previous guesses
+        // Rule: If letterMax[L] = 0, any tile with L is incorrect
         for (let col = 0; col < 4; col++) {
           const letter = word[col];
-
-          // Mark as incorrect if we know it's wrong (and not also correct)
-          if (this.knownIncorrect.has(letter) && !this.knownCorrect.has(letter) && this.tiles[row][col].dot !== 'incorrect') {
+          if (letterMax[letter] === 0 && this.tiles[row][col].dot !== 'incorrect') {
             this.tiles[row][col].dot = 'incorrect';
             changed = true;
           }
+        }
 
-          // Mark as correct if we know it's right
-          if (this.knownCorrect.has(letter) && this.tiles[row][col].dot !== 'correct') {
-            this.tiles[row][col].dot = 'correct';
+        // Rule: Duplicate frequency limit
+        // If letter L appears N times but maxCount[L] = M < N, at most M can be correct
+        const letterPositions = this.getLetterPositions(word);
+
+        for (const [letter, positions] of Object.entries(letterPositions)) {
+          const max = letterMax[letter];
+          const correctCount = positions.filter(p => this.tiles[row][p].dot === 'correct').length;
+          const unknowns = positions.filter(p => this.tiles[row][p].dot === null);
+
+          // At most (max - correctCount) unknowns can become correct
+          const canBecomeCorrect = max - correctCount;
+
+          if (unknowns.length > canBecomeCorrect && canBecomeCorrect >= 0) {
+            // Mark excess from the end as incorrect (left-to-right convention)
+            let excess = unknowns.length - canBecomeCorrect;
+            for (let i = unknowns.length - 1; i >= 0 && excess > 0; i--) {
+              this.tiles[row][unknowns[i]].dot = 'incorrect';
+              changed = true;
+              excess--;
+            }
+          }
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // PHASE 2: Apply score-based rules
+      // ═══════════════════════════════════════════════════════════════
+      for (let row = 0; row < this.currentRow; row++) {
+        const word = this.guesses[row].word;
+        const score = this.guesses[row].score;
+
+        // Count current tile states
+        let correctCount = 0;
+        let incorrectCount = 0;
+        for (let col = 0; col < 4; col++) {
+          if (this.tiles[row][col].dot === 'correct') correctCount++;
+          if (this.tiles[row][col].dot === 'incorrect') incorrectCount++;
+        }
+
+        // Rule: Score saturation - if correctCount == score, rest are incorrect
+        if (correctCount === score) {
+          for (let col = 0; col < 4; col++) {
+            if (this.tiles[row][col].dot === null) {
+              this.tiles[row][col].dot = 'incorrect';
+              changed = true;
+            }
+          }
+        }
+
+        // Rule: Elimination completion - if incorrectCount == 4 - score, rest are correct
+        if (incorrectCount === 4 - score) {
+          for (let col = 0; col < 4; col++) {
+            if (this.tiles[row][col].dot === null) {
+              this.tiles[row][col].dot = 'correct';
+              changed = true;
+            }
+          }
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // PHASE 3: Advanced deduction using contribution bounds
+      // ═══════════════════════════════════════════════════════════════
+      for (let row = 0; row < this.currentRow; row++) {
+        const word = this.guesses[row].word;
+        const score = this.guesses[row].score;
+        const letterPositions = this.getLetterPositions(word);
+
+        // Calculate min/max contribution for each letter in this guess
+        let totalMinContrib = 0;
+        let totalMaxContrib = 0;
+        const minContrib = {};
+        const maxContrib = {};
+
+        for (const [letter, positions] of Object.entries(letterPositions)) {
+          const occ = positions.length;
+          minContrib[letter] = Math.min(letterMin[letter], occ);
+          maxContrib[letter] = Math.min(letterMax[letter], occ);
+          totalMinContrib += minContrib[letter];
+          totalMaxContrib += maxContrib[letter];
+        }
+
+        // If totalMinContrib == score, we know exact contributions
+        if (totalMinContrib === score) {
+          for (const [letter, positions] of Object.entries(letterPositions)) {
+            const contrib = minContrib[letter];
+            for (let i = 0; i < positions.length; i++) {
+              const col = positions[i];
+              if (i < contrib) {
+                if (this.tiles[row][col].dot !== 'correct') {
+                  this.tiles[row][col].dot = 'correct';
+                  changed = true;
+                }
+              } else {
+                if (this.tiles[row][col].dot !== 'incorrect') {
+                  this.tiles[row][col].dot = 'incorrect';
+                  changed = true;
+                }
+              }
+            }
+          }
+        }
+
+        // If totalMaxContrib == score, all letters contribute their max
+        if (totalMaxContrib === score && totalMaxContrib > 0) {
+          for (const [letter, positions] of Object.entries(letterPositions)) {
+            const contrib = maxContrib[letter];
+            for (let i = 0; i < positions.length; i++) {
+              const col = positions[i];
+              if (i < contrib) {
+                if (this.tiles[row][col].dot !== 'correct') {
+                  this.tiles[row][col].dot = 'correct';
+                  changed = true;
+                }
+              } else {
+                if (this.tiles[row][col].dot !== 'incorrect') {
+                  this.tiles[row][col].dot = 'incorrect';
+                  changed = true;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // PHASE 4: Learn letter constraints from resolved tiles
+      // ═══════════════════════════════════════════════════════════════
+      for (let row = 0; row < this.currentRow; row++) {
+        const word = this.guesses[row].word;
+        const score = this.guesses[row].score;
+        const letterPositions = this.getLetterPositions(word);
+
+        // Special case: Score 0 means all unique letters have maxCount = 0
+        if (score === 0) {
+          for (const letter of new Set(word)) {
+            if (letterMax[letter] !== 0) {
+              letterMax[letter] = 0;
+              changed = true;
+            }
+          }
+          continue;
+        }
+
+        // Special case: Single unique letter (e.g., AAAA, BBBB)
+        // The score directly tells us exact count in target
+        const uniqueLetters = Object.keys(letterPositions);
+        if (uniqueLetters.length === 1) {
+          const letter = uniqueLetters[0];
+          if (letterMin[letter] < score) {
+            letterMin[letter] = score;
+            changed = true;
+          }
+          if (letterMax[letter] > score) {
+            letterMax[letter] = score;
             changed = true;
           }
         }
 
-        // Rule 1: Score 0 means all letters are incorrect
-        if (score === 0) {
-          for (let col = 0; col < 4; col++) {
-            if (this.tiles[row][col].dot !== 'incorrect') {
-              this.tiles[row][col].dot = 'incorrect';
-              this.knownIncorrect.add(word[col]);
+        // Learn from fully resolved letters
+        for (const [letter, positions] of Object.entries(letterPositions)) {
+          const states = positions.map(p => this.tiles[row][p].dot);
+          const allResolved = states.every(s => s === 'correct' || s === 'incorrect');
+
+          if (allResolved) {
+            const correctCount = states.filter(s => s === 'correct').length;
+
+            // Update minCount: target has at least this many of the letter
+            if (letterMin[letter] < correctCount) {
+              letterMin[letter] = correctCount;
+              changed = true;
+            }
+
+            // Update maxCount: if some tiles are incorrect, target has at most correctCount
+            // (the incorrect ones exceeded target frequency)
+            if (letterMax[letter] > correctCount) {
+              letterMax[letter] = correctCount;
               changed = true;
             }
           }
         }
 
-        // Rule 2: Exact match means all letters are correct
-        if (word === this.answer) {
-          for (let col = 0; col < 4; col++) {
-            if (this.tiles[row][col].dot !== 'correct') {
-              this.tiles[row][col].dot = 'correct';
-              const letter = word[col];
-              this.knownCorrect.set(letter, (this.knownCorrect.get(letter) || 0) + 1);
+        // Learn from contribution bounds when some letters have known min/max
+        // If we know exactly how much some letters contribute, we can deduce others
+        let knownMinContribution = 0;
+        let knownMaxContribution = 0;
+        let unknownLetters = [];
+
+        for (const [letter, positions] of Object.entries(letterPositions)) {
+          const occ = positions.length;
+          const minC = Math.min(letterMin[letter], occ);
+          const maxC = Math.min(letterMax[letter], occ);
+
+          if (minC === maxC) {
+            // We know exact contribution of this letter
+            knownMinContribution += minC;
+            knownMaxContribution += maxC;
+          } else {
+            unknownLetters.push({ letter, positions, minC, maxC });
+          }
+        }
+
+        // If only one letter has unknown contribution, we can solve for it
+        if (unknownLetters.length === 1) {
+          const { letter, positions, minC, maxC } = unknownLetters[0];
+          const requiredContribution = score - knownMinContribution;
+
+          // The unknown letter must contribute exactly requiredContribution
+          if (requiredContribution >= minC && requiredContribution <= maxC) {
+            if (letterMin[letter] < requiredContribution) {
+              letterMin[letter] = requiredContribution;
+              changed = true;
+            }
+            if (letterMax[letter] > requiredContribution) {
+              letterMax[letter] = requiredContribution;
               changed = true;
             }
           }
         }
-
-        // Rule 3: If known correct count equals score, rest are incorrect
-        let correctCount = 0;
-        for (let col = 0; col < 4; col++) {
-          if (this.tiles[row][col].dot === 'correct') {
-            correctCount++;
-          }
-        }
-
-        if (correctCount === score && score < 4) {
-          for (let col = 0; col < 4; col++) {
-            if (this.tiles[row][col].dot === null) {
-              this.tiles[row][col].dot = 'incorrect';
-              this.knownIncorrect.add(word[col]);
-              changed = true;
-            }
-          }
-        }
-
-        // Rule 4: If incorrect count + score = 4, rest are correct
-        let incorrectCount = 0;
-        for (let col = 0; col < 4; col++) {
-          if (this.tiles[row][col].dot === 'incorrect') {
-            incorrectCount++;
-          }
-        }
-
-        if (incorrectCount + score === 4 && score > 0) {
-          for (let col = 0; col < 4; col++) {
-            if (this.tiles[row][col].dot === null) {
-              this.tiles[row][col].dot = 'correct';
-              const letter = word[col];
-              this.knownCorrect.set(letter, (this.knownCorrect.get(letter) || 0) + 1);
-              changed = true;
-            }
-          }
-        }
-
-        // Rule 5: Handle duplicate letters - if a letter appears more times than the score allows, mark excess as incorrect
-        // Count unmarked tiles by letter
-        const unmarkedIndices = [];
-        for (let col = 0; col < 4; col++) {
-          if (this.tiles[row][col].dot === null) {
-            unmarkedIndices.push(col);
-          }
-        }
-
-        // Count occurrences of each letter in unmarked positions
-        const letterCounts = new Map();
-        unmarkedIndices.forEach(index => {
-          const letter = word[index];
-          letterCounts.set(letter, (letterCounts.get(letter) || 0) + 1);
-        });
-
-        // For each letter, if count > (score - correctCount), mark excess as incorrect
-        letterCounts.forEach((count, letter) => {
-          const maxPossible = score - correctCount;
-          if (count > maxPossible) {
-            // Update max frequency tracking
-            if (!this.maxFrequency.has(letter) || this.maxFrequency.get(letter) > maxPossible) {
-              this.maxFrequency.set(letter, maxPossible);
-            }
-
-            // Mark excess instances as incorrect (from the end of the word)
-            const excess = count - maxPossible;
-            let marked = 0;
-
-            for (let i = unmarkedIndices.length - 1; i >= 0 && marked < excess; i--) {
-              const col = unmarkedIndices[i];
-              if (word[col] === letter) {
-                this.tiles[row][col].dot = 'incorrect';
-                marked++;
-                changed = true;
-              }
-            }
-          }
-        });
       }
-
-      if (!changed) break; // No more deductions possible
     }
+
+    // Update knownCorrect and knownIncorrect for keyboard coloring
+    this.knownCorrect.clear();
+    this.knownIncorrect.clear();
+
+    for (let i = 0; i < 26; i++) {
+      const letter = String.fromCharCode(65 + i);
+      if (letterMin[letter] > 0) {
+        this.knownCorrect.set(letter, letterMin[letter]);
+      }
+      if (letterMax[letter] === 0) {
+        this.knownIncorrect.add(letter);
+      }
+    }
+  },
+
+  /**
+   * Helper: Get positions of each letter in a word
+   * @param {string} word - The word to analyze
+   * @returns {Object} - Map of letter -> array of positions
+   */
+  getLetterPositions(word) {
+    const positions = {};
+    for (let col = 0; col < word.length; col++) {
+      const letter = word[col];
+      if (!positions[letter]) positions[letter] = [];
+      positions[letter].push(col);
+    }
+    return positions;
   },
 
   /**
@@ -442,6 +608,7 @@ const GameState = {
       gameOver: this.gameOver,
       won: this.won,
       isHardMode: this.isHardMode,
+      isTestMode: this.isTestMode,
       tiles: this.tiles,
       keyboardColors: this.keyboardColors,
       knownCorrect: Array.from(this.knownCorrect.entries()), // Save Map as array of [key, value] pairs
@@ -476,6 +643,7 @@ const GameState = {
       this.gameOver = state.gameOver || false;
       this.won = state.won || false;
       this.isHardMode = state.isHardMode !== undefined ? state.isHardMode : true;
+      this.isTestMode = state.isTestMode !== undefined ? state.isTestMode : false;
       this.tiles = state.tiles || this.tiles;
       this.keyboardColors = state.keyboardColors || {};
       this.knownCorrect = new Map(state.knownCorrect || []); // Restore Map from array of [key, value] pairs

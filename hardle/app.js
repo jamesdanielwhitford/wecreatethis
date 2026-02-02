@@ -12,12 +12,22 @@ function init() {
   // Initialize theme
   UI.initTheme();
 
-  // Determine game mode (hardle vs randle)
+  // Determine game mode (hardle vs randle vs testle)
   const isRandle = window.location.pathname.includes('randle');
+  const isTestle = window.location.pathname.includes('testle');
 
   // Get the answer word
   let answer;
-  if (isRandle) {
+  if (isTestle) {
+    // Testle: Try to load existing game, otherwise get random word
+    const savedState = localStorage.getItem('testle-game');
+    if (savedState) {
+      const parsed = JSON.parse(savedState);
+      answer = parsed.answer;
+    } else {
+      answer = getRandomWord();
+    }
+  } else if (isRandle) {
     // Randle: Try to load existing game, otherwise get random word
     const savedState = localStorage.getItem('randle-game');
     if (savedState) {
@@ -45,16 +55,16 @@ function init() {
     }
   }
 
-  // Get preferred mode (separate for Hardle and Randle)
-  const modeKey = isRandle ? 'randle-preferred-mode' : 'hardle-preferred-mode';
+  // Get preferred mode (separate for Hardle, Randle, and Testle)
+  const modeKey = isTestle ? 'testle-preferred-mode' : isRandle ? 'randle-preferred-mode' : 'hardle-preferred-mode';
   const preferredMode = localStorage.getItem(modeKey) || 'hard';
 
   // Determine cache key
-  const cacheKey = isRandle ? 'randle-game' : 'hardle-game';
+  const cacheKey = isTestle ? 'testle-game' : isRandle ? 'randle-game' : 'hardle-game';
 
   // Initialize game state
   game = Object.create(GameState);
-  game.init(answer, preferredMode, cacheKey);
+  game.init(answer, preferredMode, cacheKey, isTestle);
 
   // Try to load saved state
   const loaded = game.loadState(cacheKey);
@@ -71,9 +81,12 @@ function init() {
     console.log('Starting new game');
   }
 
-  // For testing: log the answer in Randle mode
+  // For testing: log the answer in Randle/Testle mode
   if (isRandle) {
     console.log('🎯 RANDLE ANSWER:', answer);
+  }
+  if (isTestle) {
+    console.log('🧪 TESTLE ANSWER:', answer);
   }
 
   // Initial render
@@ -169,6 +182,26 @@ function setupEventListeners() {
   if (playAgainBtn) {
     playAgainBtn.addEventListener('click', handlePlayAgain);
   }
+
+  // Reset button (Testle only)
+  const resetBtn = document.getElementById('reset-btn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', handleReset);
+  }
+
+  // Set Word button (Testle only)
+  const setWordBtn = document.getElementById('set-word-btn');
+  if (setWordBtn) {
+    setWordBtn.addEventListener('click', handleSetWord);
+  }
+
+  // Custom word input - auto uppercase
+  const customWordInput = document.getElementById('custom-word-input');
+  if (customWordInput) {
+    customWordInput.addEventListener('input', (e) => {
+      e.target.value = e.target.value.toUpperCase();
+    });
+  }
 }
 
 /**
@@ -244,12 +277,11 @@ function handleSubmit() {
     return;
   }
 
-  // Update UI
-  UI.renderRow(game, game.currentRow - 1); // Render the submitted row
+  // Update UI - render entire board since Easy mode deduction affects all rows
+  UI.renderBoard(game);
   UI.renderKeyboard(game);
 
   // Save state
-  const cacheKey = window.location.pathname.includes('randle') ? 'randle-game' : 'hardle-game';
   game.saveState();
 
   // Check if game is over
@@ -289,7 +321,6 @@ function handleTileClick(e) {
   UI.renderKeyboard(game);
 
   // Save state
-  const cacheKey = window.location.pathname.includes('randle') ? 'randle-game' : 'hardle-game';
   game.saveState();
 }
 
@@ -299,6 +330,7 @@ function handleTileClick(e) {
 function handleModeSelection(mode) {
   const isHardMode = mode === 'hard';
   const isRandle = window.location.pathname.includes('randle');
+  const isTestle = window.location.pathname.includes('testle');
 
   // If mode is already selected, do nothing
   if (game.isHardMode === isHardMode) {
@@ -310,14 +342,14 @@ function handleModeSelection(mode) {
   const hasGuesses = game.guesses.length > 0;
 
   // Hardle: Don't allow switching mid-game
-  if (!isRandle && hasGuesses && !game.gameOver) {
+  if (!isRandle && !isTestle && hasGuesses && !game.gameOver) {
     alert('You cannot change modes during a Hardle game. Finish this game first!');
     updateModeSelectionUI();
     return;
   }
 
-  // Randle: Allow switching but reset the game
-  if (isRandle && hasGuesses && !game.gameOver) {
+  // Randle/Testle: Allow switching but reset the game
+  if ((isRandle || isTestle) && hasGuesses && !game.gameOver) {
     const confirm = window.confirm(
       'Switching modes will start a new game with a new word. Continue?'
     );
@@ -326,8 +358,13 @@ function handleModeSelection(mode) {
       return;
     }
 
-    // Start new Randle game with new mode
-    game.newGame(mode);
+    // Start new game with new mode
+    if (isTestle) {
+      const newWord = getRandomWord();
+      game.init(newWord, mode, 'testle-game', true);
+    } else {
+      game.newGame(mode);
+    }
   } else {
     // No guesses yet or game over - just switch mode
     game.isHardMode = isHardMode;
@@ -352,8 +389,8 @@ function handleModeSelection(mode) {
     }
   }
 
-  // Save mode preference (separate for Hardle and Randle)
-  const modeKey = isRandle ? 'randle-preferred-mode' : 'hardle-preferred-mode';
+  // Save mode preference (separate for Hardle, Randle, and Testle)
+  const modeKey = isTestle ? 'testle-preferred-mode' : isRandle ? 'randle-preferred-mode' : 'hardle-preferred-mode';
   localStorage.setItem(modeKey, mode);
 
   // Update UI
@@ -411,6 +448,73 @@ function handlePlayAgain() {
 
   // Save new state
   game.saveState();
+}
+
+/**
+ * Handle Reset (Testle only) - Clear all guesses
+ */
+function handleReset() {
+  if (!confirm('Reset all guesses? The target word will remain the same.')) {
+    return;
+  }
+
+  // Keep the same answer but reset all guesses
+  const currentAnswer = game.answer;
+  const mode = game.isHardMode ? 'hard' : 'easy';
+
+  // Re-initialize with same answer
+  game.init(currentAnswer, mode, 'testle-game', true);
+
+  // Update UI
+  UI.renderBoard(game);
+  UI.renderKeyboard(game);
+
+  // Save state
+  game.saveState();
+}
+
+/**
+ * Handle Set Word (Testle only) - Set custom target word
+ */
+function handleSetWord() {
+  const input = document.getElementById('custom-word-input');
+  const newWord = input.value.toUpperCase().trim();
+
+  // Validate input
+  if (newWord.length !== 4) {
+    alert('Please enter exactly 4 letters');
+    return;
+  }
+
+  if (!/^[A-Z]{4}$/.test(newWord)) {
+    alert('Please enter only letters (A-Z)');
+    return;
+  }
+
+  // Confirm if game has started
+  if (game.guesses.length > 0) {
+    if (!confirm('Setting a new word will reset the game. Continue?')) {
+      return;
+    }
+  }
+
+  // Initialize new game with custom word
+  const mode = game.isHardMode ? 'hard' : 'easy';
+  game.init(newWord, mode, 'testle-game', true);
+
+  // Update UI
+  UI.hideAllModals();
+  UI.renderBoard(game);
+  UI.renderKeyboard(game);
+
+  // Clear input
+  input.value = '';
+
+  // Save state
+  game.saveState();
+
+  // Show confirmation
+  console.log('🧪 TESTLE TARGET SET TO:', newWord);
 }
 
 /**
