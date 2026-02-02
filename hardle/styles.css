@@ -442,7 +442,7 @@ body {
   border-radius: 12px;
   max-width: 500px;
   width: 100%;
-  max-height: 90vh;
+  max-height: calc(var(--actual-vh, 1vh) * 90);
   overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
