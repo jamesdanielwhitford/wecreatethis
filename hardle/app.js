@@ -45,16 +45,27 @@ function init() {
     }
   }
 
+  // Get preferred mode (default to hard)
+  const preferredMode = localStorage.getItem('preferred-mode') || 'hard';
+
+  // Determine cache key
+  const cacheKey = isRandle ? 'randle-game' : 'hardle-game';
+
   // Initialize game state
   game = Object.create(GameState);
-  game.init(answer, 'hard'); // Default to hard mode
+  game.init(answer, preferredMode, cacheKey);
 
   // Try to load saved state
-  const cacheKey = isRandle ? 'randle-game' : 'hardle-game';
   const loaded = game.loadState(cacheKey);
 
   if (loaded) {
     console.log('Loaded saved game state');
+
+    // If no guesses yet, apply preferred mode
+    // This allows users to change mode preference between sessions
+    if (game.guesses.length === 0) {
+      game.isHardMode = preferredMode === 'hard';
+    }
   } else {
     console.log('Starting new game');
   }
@@ -67,7 +78,6 @@ function init() {
   // Initial render
   UI.renderBoard(game);
   UI.renderKeyboard(game);
-  UI.updateModeIcon(game.isHardMode);
 
   // Set up event listeners
   setupEventListeners();
@@ -106,22 +116,24 @@ function setupEventListeners() {
     tile.addEventListener('click', handleTileClick);
   });
 
-  // Mode toggle button
-  const modeToggle = document.getElementById('mode-toggle-btn');
-  if (modeToggle) {
-    modeToggle.addEventListener('click', handleModeToggle);
+  // Info button
+  const infoBtn = document.getElementById('info-btn');
+  if (infoBtn) {
+    infoBtn.addEventListener('click', () => {
+      UI.showModal('info-modal');
+      updateModeSelectionUI();
+    });
   }
 
-  // Rules button
-  const rulesBtn = document.getElementById('rules-btn');
-  if (rulesBtn) {
-    rulesBtn.addEventListener('click', () => UI.showModal('rules-modal'));
-  }
+  // Mode selection buttons
+  const hardModeBtn = document.getElementById('select-hard-mode');
+  const easyModeBtn = document.getElementById('select-easy-mode');
 
-  // Settings button
-  const settingsBtn = document.getElementById('settings-btn');
-  if (settingsBtn) {
-    settingsBtn.addEventListener('click', () => UI.showModal('settings-modal'));
+  if (hardModeBtn) {
+    hardModeBtn.addEventListener('click', () => handleModeSelection('hard'));
+  }
+  if (easyModeBtn) {
+    easyModeBtn.addEventListener('click', () => handleModeSelection('easy'));
   }
 
   // Modal close buttons
@@ -142,14 +154,6 @@ function setupEventListeners() {
       }
     });
   });
-
-  // Dark mode toggle
-  const darkModeToggle = document.getElementById('dark-mode-toggle');
-  if (darkModeToggle) {
-    darkModeToggle.addEventListener('change', () => {
-      UI.toggleDarkMode();
-    });
-  }
 
   // Share button
   const shareBtn = document.getElementById('share-btn');
@@ -245,7 +249,7 @@ function handleSubmit() {
 
   // Save state
   const cacheKey = window.location.pathname.includes('randle') ? 'randle-game' : 'hardle-game';
-  game.saveState(cacheKey);
+  game.saveState();
 
   // Check if game is over
   if (game.gameOver) {
@@ -285,45 +289,86 @@ function handleTileClick(e) {
 
   // Save state
   const cacheKey = window.location.pathname.includes('randle') ? 'randle-game' : 'hardle-game';
-  game.saveState(cacheKey);
+  game.saveState();
 }
 
 /**
- * Handle mode toggle (Hard ↔ Easy)
+ * Handle mode selection from info modal
  */
-function handleModeToggle() {
+function handleModeSelection(mode) {
+  const isHardMode = mode === 'hard';
+
+  // If mode is already selected, do nothing
+  if (game.isHardMode === isHardMode) {
+    updateModeSelectionUI();
+    return;
+  }
+
   // Don't allow switching mid-game if there are guesses
   if (game.guesses.length > 0 && !game.gameOver) {
     const confirm = window.confirm(
       'Switching modes will reset your current game. Continue?'
     );
-    if (!confirm) return;
+    if (!confirm) {
+      updateModeSelectionUI();
+      return;
+    }
   }
 
+  // Save mode preference
+  localStorage.setItem('preferred-mode', mode);
+
+  // Toggle the mode
   game.toggleMode();
 
   // Update UI
   UI.renderBoard(game);
   UI.renderKeyboard(game);
-  UI.updateModeIcon(game.isHardMode);
+  updateModeSelectionUI();
 
   // Save state
   const cacheKey = window.location.pathname.includes('randle') ? 'randle-game' : 'hardle-game';
-  game.saveState(cacheKey);
+  game.saveState();
+}
+
+/**
+ * Update mode selection buttons in the info modal
+ */
+function updateModeSelectionUI() {
+  const hardBtn = document.getElementById('select-hard-mode');
+  const easyBtn = document.getElementById('select-easy-mode');
+  const hardRules = document.getElementById('hard-mode-rules');
+  const easyRules = document.getElementById('easy-mode-rules');
+
+  if (hardBtn && easyBtn) {
+    if (game.isHardMode) {
+      hardBtn.classList.add('active');
+      easyBtn.classList.remove('active');
+    } else {
+      hardBtn.classList.remove('active');
+      easyBtn.classList.add('active');
+    }
+  }
+
+  // Show/hide appropriate rules
+  if (hardRules && easyRules) {
+    if (game.isHardMode) {
+      hardRules.style.display = 'block';
+      easyRules.style.display = 'none';
+    } else {
+      hardRules.style.display = 'none';
+      easyRules.style.display = 'block';
+    }
+  }
 }
 
 /**
  * Handle Play Again (Randle only)
  */
 function handlePlayAgain() {
-  // Clear saved state
-  localStorage.removeItem('randle-game');
-
-  // Get new random word
-  const newAnswer = getRandomWord();
-
-  // Reset game
-  game.init(newAnswer, game.isHardMode);
+  // Get new random word and reset game
+  const mode = game.isHardMode ? 'hard' : 'easy';
+  game.newGame(mode);
 
   // Update UI
   UI.hideAllModals();
@@ -331,7 +376,7 @@ function handlePlayAgain() {
   UI.renderKeyboard(game);
 
   // Save new state
-  game.saveState('randle-game');
+  game.saveState();
 }
 
 /**

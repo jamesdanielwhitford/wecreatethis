@@ -26,16 +26,18 @@ const GameState = {
   /**
    * Initialize a new game
    * @param {string} answer - The answer word (uppercase)
-   * @param {string} mode - 'hardle' or 'randle'
+   * @param {string} mode - 'hard' or 'easy'
+   * @param {string} cacheKey - The localStorage key for this game
    */
-  init(answer, mode = 'hardle') {
+  init(answer, mode = 'hard', cacheKey = null) {
     this.answer = answer.toUpperCase();
     this.currentGuess = '';
     this.guesses = [];
     this.currentRow = 0;
     this.gameOver = false;
     this.won = false;
-    this.mode = mode;
+    this.isHardMode = mode === 'hard';
+    this.cacheKey = cacheKey; // Store cache key for saving
 
     // Initialize 8x4 tile grid
     this.tiles = [];
@@ -54,9 +56,6 @@ const GameState = {
     this.knownCorrect = new Map(); // Maps letter → count
     this.knownIncorrect = new Set();
     this.maxFrequency = new Map();
-
-    // Load saved state if exists
-    this.loadState();
   },
 
   /**
@@ -425,6 +424,11 @@ const GameState = {
    * Save game state to localStorage
    */
   saveState() {
+    if (!this.cacheKey) {
+      console.error('saveState requires cacheKey to be set in init()');
+      return;
+    }
+
     const state = {
       answer: this.answer,
       currentGuess: this.currentGuess,
@@ -436,26 +440,22 @@ const GameState = {
       tiles: this.tiles,
       keyboardColors: this.keyboardColors,
       knownCorrect: Array.from(this.knownCorrect.entries()), // Save Map as array of [key, value] pairs
-      knownIncorrect: Array.from(this.knownIncorrect),
-      mode: this.mode
+      knownIncorrect: Array.from(this.knownIncorrect)
     };
 
-    const key = this.mode === 'hardle'
-      ? `hardle-${this.getTodayDateString()}`
-      : `randle-${this.answer}`;
+    // Add date for Hardle games (for midnight reset check)
+    if (this.cacheKey === 'hardle-game') {
+      state.date = new Date().toISOString().split('T')[0];
+    }
 
-    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem(this.cacheKey, JSON.stringify(state));
   },
 
   /**
    * Load game state from localStorage
    */
-  loadState() {
-    const key = this.mode === 'hardle'
-      ? `hardle-${this.getTodayDateString()}`
-      : `randle-${this.answer}`;
-
-    const saved = localStorage.getItem(key);
+  loadState(cacheKey) {
+    const saved = localStorage.getItem(cacheKey);
     if (!saved) return false;
 
     try {
@@ -497,15 +497,18 @@ const GameState = {
   /**
    * Start a new game (Randle only)
    */
-  newGame() {
-    if (this.mode === 'hardle') return; // Can't start new daily game
-
+  /**
+   * Start a new Randle game (only for Randle mode)
+   * @param {string} mode - 'hard' or 'easy'
+   */
+  newGame(mode = 'hard') {
     // Clear old cache
-    const oldKey = `randle-${this.answer}`;
-    localStorage.removeItem(oldKey);
+    if (this.cacheKey) {
+      localStorage.removeItem(this.cacheKey);
+    }
 
     // Generate new word
     const newAnswer = getRandomWord();
-    this.init(newAnswer, 'randle');
+    this.init(newAnswer, mode, 'randle-game');
   }
 };

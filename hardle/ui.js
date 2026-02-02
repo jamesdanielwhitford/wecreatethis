@@ -132,21 +132,6 @@ const UI = {
     });
   },
 
-  /**
-   * Update the mode toggle icon (🧠 for Hard, ✨ for Easy)
-   */
-  updateModeIcon(isHardMode) {
-    const modeIcon = document.getElementById('mode-icon');
-    const modeButton = document.getElementById('mode-toggle-btn');
-
-    if (modeIcon) {
-      modeIcon.textContent = isHardMode ? '🧠' : '✨';
-    }
-
-    if (modeButton) {
-      modeButton.title = isHardMode ? 'Switch to Easy Mode' : 'Switch to Hard Mode';
-    }
-  },
 
   /**
    * Show a modal by ID
@@ -317,34 +302,13 @@ const UI = {
   },
 
   /**
-   * Toggle dark mode
-   */
-  toggleDarkMode() {
-    const html = document.documentElement;
-    const currentTheme = html.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-    html.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-
-    // Update checkbox state
-    const toggleCheckbox = document.getElementById('dark-mode-toggle');
-    if (toggleCheckbox) {
-      toggleCheckbox.checked = newTheme === 'dark';
-    }
-  },
-
-  /**
-   * Initialize theme on page load
+   * Initialize theme on page load (uses system preference)
    */
   initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-
-    const toggleCheckbox = document.getElementById('dark-mode-toggle');
-    if (toggleCheckbox) {
-      toggleCheckbox.checked = savedTheme === 'dark';
-    }
+    // Remove any stored theme preference - we use system theme now
+    localStorage.removeItem('theme');
+    // Remove data-theme attribute to use system preference
+    document.documentElement.removeAttribute('data-theme');
   },
 
   /**

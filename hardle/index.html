@@ -18,11 +18,7 @@
     <a href="/" class="home-btn"></a>
     <span class="nav-title">Hardle</span>
     <div class="nav-actions">
-      <button id="mode-toggle-btn" class="icon-btn" aria-label="Toggle game mode">
-        <span id="mode-icon">🧠</span>
-      </button>
-      <button id="rules-btn" class="icon-btn" aria-label="Show rules">❓</button>
-      <button id="settings-btn" class="icon-btn" aria-label="Settings">⚙️</button>
+      <button id="info-btn" class="icon-btn" aria-label="Game info and settings">ℹ️</button>
     </div>
   </nav>
 
@@ -135,54 +131,80 @@
     </div>
   </div>
 
-  <!-- Rules Modal -->
-  <div id="rules-modal" class="modal">
+  <!-- Info Modal -->
+  <div id="info-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
         <h2>How to Play</h2>
-        <button class="modal-close" data-modal="rules-modal">&times;</button>
+        <button class="modal-close" data-modal="info-modal">&times;</button>
       </div>
       <div class="modal-body">
-        <h3>Goal</h3>
-        <p>Guess the 4-letter word in 8 attempts or less.</p>
-
-        <h3>Feedback</h3>
-        <p>After each guess, you'll see a <strong>score</strong> (0-4) showing how many letters from your guess appear in the answer.</p>
-        <ul>
-          <li><strong>Score 0</strong>: All letters wrong (red row)</li>
-          <li><strong>Score 1-4</strong>: Partial match (yellow score box)</li>
-          <li><strong>Exact match</strong>: You win! (green row)</li>
-        </ul>
-
-        <h3>Game Modes</h3>
-        <p><strong>🧠 Hard Mode (Manual)</strong>: Click tiles to manually mark letters as correct (green) or incorrect (red).</p>
-        <p><strong>✨ Easy Mode (Automatic)</strong>: The game automatically deduces correct/incorrect letters with colored dots.</p>
-
-        <h3>Navigation</h3>
-        <p><strong>Hardle (☀️)</strong>: One daily word that changes at midnight.</p>
-        <p><strong>Randle (♾️)</strong>: Random word each game. Play as many times as you want!</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Settings Modal -->
-  <div id="settings-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Settings</h2>
-        <button class="modal-close" data-modal="settings-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="setting-item">
-          <label for="dark-mode-toggle">Dark Mode</label>
-          <input type="checkbox" id="dark-mode-toggle">
+        <!-- Game Variant Selection -->
+        <div class="mode-selection">
+          <h3>Game Variant</h3>
+          <div class="mode-buttons">
+            <a href="index.html" class="mode-btn active" data-variant="hardle">
+              <span class="mode-icon">☀️</span>
+              <span class="mode-label">Hardle</span>
+              <span class="mode-desc">Daily word</span>
+            </a>
+            <a href="randle.html" class="mode-btn" data-variant="randle">
+              <span class="mode-icon">♾️</span>
+              <span class="mode-label">Randle</span>
+              <span class="mode-desc">Infinite mode</span>
+            </a>
+          </div>
         </div>
-        <div class="setting-item">
-          <label>Game Mode</label>
-          <p id="current-mode-text">🧠 Hard Mode (Manual)</p>
+
+        <!-- Mode Selection -->
+        <div class="mode-selection">
+          <h3>Game Mode</h3>
+          <div class="mode-buttons">
+            <button id="select-hard-mode" class="mode-btn active" data-mode="hard">
+              <span class="mode-icon">🧠</span>
+              <span class="mode-label">Hard Mode</span>
+            </button>
+            <button id="select-easy-mode" class="mode-btn" data-mode="easy">
+              <span class="mode-icon">✨</span>
+              <span class="mode-label">Easy Mode</span>
+            </button>
+          </div>
         </div>
-        <div class="setting-item">
-          <a href="randle.html" class="link-btn">Play Randle (Random Mode) ♾️</a>
+
+        <!-- Rules Section (content changes based on mode) -->
+        <div class="rules-section">
+          <h3>Goal</h3>
+          <p>Guess the 4-letter word in 8 attempts or less.</p>
+
+          <h3>Feedback</h3>
+          <p>After each guess, you'll see a <strong>score</strong> (0-4) showing how many letters from your guess appear in the answer.</p>
+          <ul>
+            <li><strong>Score 0</strong>: All letters wrong (red row)</li>
+            <li><strong>Score 1-4</strong>: Partial match (yellow score box)</li>
+            <li><strong>Exact match</strong>: You win! (green row)</li>
+          </ul>
+
+          <!-- Hard Mode Rules -->
+          <div id="hard-mode-rules" class="mode-rules">
+            <h3>🧠 Hard Mode (Manual)</h3>
+            <p>Click tiles to manually mark letters as correct (green border) or incorrect (red border). The keyboard will show outlines based on your marks.</p>
+            <ul>
+              <li>Click a tile once: Red border (incorrect)</li>
+              <li>Click again: Green border (correct)</li>
+              <li>Click again: Remove mark</li>
+            </ul>
+          </div>
+
+          <!-- Easy Mode Rules -->
+          <div id="easy-mode-rules" class="mode-rules" style="display: none;">
+            <h3>✨ Easy Mode (Automatic)</h3>
+            <p>The game automatically deduces correct/incorrect letters based on scores. Tiles show colored dots, and the keyboard updates automatically.</p>
+            <ul>
+              <li>Red dot: Letter proven incorrect</li>
+              <li>Green dot: Letter proven correct</li>
+              <li>Keyboard colors update as you play</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
