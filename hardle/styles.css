@@ -240,11 +240,11 @@ body {
 
 /* Score Box */
 .score-box {
-  width: var(--score-box-width);
+  width: var(--tile-size);
   height: var(--tile-size);
   background: var(--tile-bg);
   border: 2px solid var(--tile-empty-border);
-  border-radius: 6px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -252,22 +252,28 @@ body {
   font-weight: bold;
 }
 
-.score-box.score-filled {
-  background: var(--score-yellow);
+.score-box.score-filled,
+.score-box.partial {
+  background: rgba(255, 193, 7, 0.15);
   border-color: var(--score-yellow);
-  color: #333;
+  border-width: 3px;
+  color: var(--text-color);
 }
 
-.score-box.score-zero {
-  background: var(--score-red);
+.score-box.score-zero,
+.score-box.zero {
+  background: rgba(255, 68, 68, 0.15);
   border-color: var(--score-red);
-  color: white;
+  border-width: 3px;
+  color: var(--text-color);
 }
 
-.score-box.score-win {
-  background: var(--score-green);
+.score-box.score-win,
+.score-box.winning {
+  background: rgba(76, 175, 80, 0.15);
   border-color: var(--score-green);
-  color: white;
+  border-width: 3px;
+  color: var(--text-color);
 }
 
 /* Keyboard */
@@ -587,13 +593,14 @@ body {
   top: 80px;
   left: 50%;
   transform: translateX(-50%) translateY(-20px);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--tile-bg);
+  color: var(--text-color);
+  border: 2px solid var(--border-color);
   padding: 12px 24px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600;
   z-index: 2000;
   opacity: 0;
   transition: opacity 0.3s ease, transform 0.3s ease;

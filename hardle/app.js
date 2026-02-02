@@ -45,8 +45,9 @@ function init() {
     }
   }
 
-  // Get preferred mode (default to hard)
-  const preferredMode = localStorage.getItem('preferred-mode') || 'hard';
+  // Get preferred mode (separate for Hardle and Randle)
+  const modeKey = isRandle ? 'randle-preferred-mode' : 'hardle-preferred-mode';
+  const preferredMode = localStorage.getItem(modeKey) || 'hard';
 
   // Determine cache key
   const cacheKey = isRandle ? 'randle-game' : 'hardle-game';
@@ -297,6 +298,7 @@ function handleTileClick(e) {
  */
 function handleModeSelection(mode) {
   const isHardMode = mode === 'hard';
+  const isRandle = window.location.pathname.includes('randle');
 
   // If mode is already selected, do nothing
   if (game.isHardMode === isHardMode) {
@@ -304,22 +306,55 @@ function handleModeSelection(mode) {
     return;
   }
 
-  // Don't allow switching mid-game if there are guesses
-  if (game.guesses.length > 0 && !game.gameOver) {
+  // Check if game has started
+  const hasGuesses = game.guesses.length > 0;
+
+  // Hardle: Don't allow switching mid-game
+  if (!isRandle && hasGuesses && !game.gameOver) {
+    alert('You cannot change modes during a Hardle game. Finish this game first!');
+    updateModeSelectionUI();
+    return;
+  }
+
+  // Randle: Allow switching but reset the game
+  if (isRandle && hasGuesses && !game.gameOver) {
     const confirm = window.confirm(
-      'Switching modes will reset your current game. Continue?'
+      'Switching modes will start a new game with a new word. Continue?'
     );
     if (!confirm) {
       updateModeSelectionUI();
       return;
     }
+
+    // Start new Randle game with new mode
+    game.newGame(mode);
+  } else {
+    // No guesses yet or game over - just switch mode
+    game.isHardMode = isHardMode;
+
+    // Clear tile marks/dots when switching
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 4; col++) {
+        game.tiles[row][col].mark = null;
+        game.tiles[row][col].dot = null;
+      }
+    }
+
+    // If switching to Easy mode, run deduction on existing guesses
+    if (!isHardMode && hasGuesses) {
+      game.deduceTiles();
+      game.updateKeyboardFromDeduction();
+    }
+
+    // If switching to Hard mode, clear keyboard colors except solid ones
+    if (isHardMode) {
+      game.updateKeyboardFromMarks();
+    }
   }
 
-  // Save mode preference
-  localStorage.setItem('preferred-mode', mode);
-
-  // Toggle the mode
-  game.toggleMode();
+  // Save mode preference (separate for Hardle and Randle)
+  const modeKey = isRandle ? 'randle-preferred-mode' : 'hardle-preferred-mode';
+  localStorage.setItem(modeKey, mode);
 
   // Update UI
   UI.renderBoard(game);
@@ -327,7 +362,6 @@ function handleModeSelection(mode) {
   updateModeSelectionUI();
 
   // Save state
-  const cacheKey = window.location.pathname.includes('randle') ? 'randle-game' : 'hardle-game';
   game.saveState();
 }
 

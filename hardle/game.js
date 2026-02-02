@@ -119,6 +119,11 @@ const GameState = {
       this.won = true;
       this.gameOver = true;
       this.updateKeyboardForWin();
+
+      // Move to next row (for consistent rendering)
+      this.currentRow++;
+      this.currentGuess = '';
+
       this.saveState();
       return { success: true, message: 'You won!', score, won: true, lost: false };
     }
