@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hardle-v38';
+const CACHE_NAME = 'hardle-v49';
 
 // Normalize URLs to canonical format (extensionless, no query params)
 function normalizeUrl(url) {
@@ -25,9 +25,9 @@ function normalizeUrl(url) {
 
 // Assets to cache on install
 const ASSETS = [
-  '/hardle/',
-  '/hardle/randle',
-  '/hardle/testle',
+  '/hardle/index.html',
+  '/hardle/randle.html',
+  '/hardle/testle.html',
   '/hardle/styles.css',
   '/hardle/words.js',
   '/hardle/game.js',
