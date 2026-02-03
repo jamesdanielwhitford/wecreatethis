@@ -121,7 +121,9 @@ function normalizeUrl(url) {
 
 The site migrated from `wecreatethis.pages.dev` to `wecreatethis.com`. Since IndexedDB is origin-specific, user data doesn't automatically transfer between domains.
 
-### Manual Migration Page
+### Manual Migration Page (⚠️ Still Debugging)
+
+**Status:** Migration system is functional but experiencing some edge case issues with database initialization and data detection. Active debugging in progress.
 
 **URL:** `wecreatethis.com/migrate.html` (hidden, not linked from apps)
 
@@ -132,23 +134,32 @@ The site migrated from `wecreatethis.pages.dev` to `wecreatethis.com`. Since Ind
   - On `wecreatethis.com`: User-facing UI for importing data
   - On `wecreatethis.pages.dev`: Popup helper that exports data
 
+**Recent Changes:**
+- Removed all automatic migration triggers from apps (no more auto-popups)
+- Added ability to re-run migration multiple times (button stays visible)
+- Implemented proper database schema initialization with all indexes
+- Fixed "object store not found" errors by handling `onupgradeneeded` properly
+
 **How it works:**
 1. Send user to `wecreatethis.com/migrate.html`
 2. User clicks "Start Migration" button
 3. Opens popup window to `wecreatethis.pages.dev/migrate.html`
 4. Popup reads IndexedDB data from old domain
 5. Popup sends data via `postMessage` to main window
-6. Main window imports data into new domain's IndexedDB
-7. Shows success/failure status per app
-8. User can retry if needed
+6. Main window properly initializes database schemas if needed
+7. Main window imports data into new domain's IndexedDB (uses `put()` to avoid duplicates)
+8. Shows success/failure status per app
+9. User can retry anytime if needed
 
 **Features:**
-- ✅ Zero automatic behavior - completely manual
+- ✅ Zero automatic behavior - completely manual and opt-in
 - ✅ Clear UI showing what will be migrated
 - ✅ Real-time progress per app
-- ✅ Retry functionality if popup fails
+- ✅ Can be run multiple times safely (no duplicates)
+- ✅ Proper database initialization with all required indexes
 - ✅ Works only when user explicitly visits the page
 - ✅ No interruption for users who started on new domain
+- ⚠️ Some edge cases still being debugged
 
 ### Why Popup Instead of Iframe?
 
@@ -156,13 +167,27 @@ The site migrated from `wecreatethis.pages.dev` to `wecreatethis.com`. Since Ind
 
 **Solution:** Popup windows are first-party contexts with full storage access. The popup can read the actual IndexedDB data and send it back via postMessage.
 
+### Database Schemas
+
+Migration properly initializes all databases with correct versions and indexes:
+
+**Birdle (`birdle-db` v2):**
+- `sightings` store: indexes on `speciesCode`, `date`, `regionCode`, `syncId` (unique)
+- `bingo_games` store: indexes on `createdAt`, `completedAt`
+
+**Tarot (`tarot-reader-db` v1):**
+- `readings` store: indexes on `date`, `spreadType`
+
+**Beautiful Mind (`notes-app` v1):**
+- `notes` store: index on `folder`
+
 ### Data Migrated Per App
 
-| App | Database | Stores Migrated |
-|-----|----------|-----------------|
-| Birdle | `birdle-db` | `sightings`, `bingo_games` |
-| Tarot | `tarot-reader-db` | `readings` |
-| Beautiful Mind | `notes-app` | `notes` (IndexedDB only, not File System handles) |
+| App | Database | Version | Stores Migrated |
+|-----|----------|---------|-----------------|
+| Birdle | `birdle-db` | v2 | `sightings`, `bingo_games` |
+| Tarot | `tarot-reader-db` | v1 | `readings` |
+| Beautiful Mind | `notes-app` | v1 | `notes` (IndexedDB only, not File System handles) |
 
 **Note:** Beautiful Mind's File System Access API handles are origin-bound and cannot be transferred. Desktop users will need to re-select their notes folder on the new domain (files remain on disk, just need re-authorization).
 
