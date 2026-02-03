@@ -1,4 +1,8 @@
 # Cloudflare Pages / Netlify redirects
+
+# Domain-wide redirect from old domain to new domain
+https://wecreatethis.pages.dev/* https://wecreatethis.com/:splat 301
+
 # Client-side routing support for sub-apps
 
 # Invisible Ink - serve index.html for all invisibleink routes
