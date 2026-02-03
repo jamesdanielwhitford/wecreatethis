@@ -3,28 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <title>Data Migration Helper</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #1a1a2e;
+      color: #eee;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #333;
+      border-top-color: #6c5ce7;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .status {
+      color: #a0a0a0;
+    }
+    .success {
+      color: #00b894;
+    }
+    .error {
+      color: #e74c3c;
+    }
+  </style>
 </head>
 <body>
+<div class="container">
+  <div class="spinner" id="spinner"></div>
+  <p class="status" id="status">Exporting your data...</p>
+</div>
 <script>
 /**
  * Migration Helper - runs on wecreatethis.pages.dev
- * Reads IndexedDB data and sends to parent window (wecreatethis.com)
+ * Opens as popup, reads IndexedDB, sends to opener window (wecreatethis.com)
  */
 
 const ALLOWED_ORIGINS = [
   'https://wecreatethis.com',
   'https://www.wecreatethis.com',
-  'http://localhost:8000', // for local testing
+  'http://localhost:8000',
   'http://localhost:3000',
   'http://127.0.0.1:8000',
   'http://127.0.0.1:3000'
 ];
 
-// Database configurations
 const DATABASES = [
   {
     name: 'birdle-db',
-    stores: ['sightings', 'bingo_games'] // Only user data, not cache
+    stores: ['sightings', 'bingo_games']
   },
   {
     name: 'tarot-reader-db',
@@ -32,42 +72,131 @@ const DATABASES = [
   },
   {
     name: 'notes-app',
-    stores: ['notes'] // Not 'handles' - those are origin-bound
+    stores: ['notes']
   }
 ];
 
-// Listen for migration requests from parent
-window.addEventListener('message', async (event) => {
-  if (!ALLOWED_ORIGINS.includes(event.origin)) {
-    console.log('Migration helper: Ignoring message from unauthorized origin:', event.origin);
-    return;
+const statusEl = document.getElementById('status');
+const spinnerEl = document.getElementById('spinner');
+
+function updateStatus(message, type = 'normal') {
+  statusEl.textContent = message;
+  statusEl.className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'status';
+  if (type !== 'normal') {
+    spinnerEl.style.display = 'none';
   }
+}
 
-  if (event.data?.type === 'REQUEST_MIGRATION_DATA') {
-    console.log('Migration helper: Received migration request from', event.origin);
+// Check if we're in a popup/iframe context
+const isPopup = window.opener !== null;
+const isIframe = window.parent !== window;
 
-    try {
-      console.log('Migration helper: Starting data export...');
-      const data = await exportAllData();
-      console.log('Migration helper: Export complete, data:', JSON.stringify(data).slice(0, 500));
-      console.log('Migration helper: Sending data back to', event.origin);
-      event.source.postMessage({
-        type: 'MIGRATION_DATA',
-        data: data,
-        success: true
-      }, event.origin);
-      console.log('Migration helper: Data sent successfully');
-    } catch (error) {
-      console.error('Migration helper: Error exporting data:', error);
-      event.source.postMessage({
-        type: 'MIGRATION_DATA',
-        data: null,
-        success: false,
-        error: error.message
-      }, event.origin);
+if (isPopup || isIframe) {
+  // Running as popup or iframe - handle migration request
+  const targetWindow = isPopup ? window.opener : window.parent;
+
+  // Listen for explicit requests (for iframe mode)
+  window.addEventListener('message', async (event) => {
+    if (!ALLOWED_ORIGINS.includes(event.origin)) {
+      console.log('Migration helper: Ignoring message from unauthorized origin:', event.origin);
+      return;
     }
+
+    if (event.data?.type === 'REQUEST_MIGRATION_DATA') {
+      await performExportAndSend(event.origin, event.source);
+    }
+  });
+
+  // For popup mode, start immediately
+  if (isPopup) {
+    // Detect opener's origin
+    (async () => {
+      try {
+        updateStatus('Reading your data...');
+        console.log('Migration helper: Popup mode - starting export');
+
+        const data = await exportAllData();
+        console.log('Migration helper: Export complete, found databases:', Object.keys(data));
+
+        updateStatus('Sending to new site...');
+
+        // Try to post to opener - we don't know the exact origin, so try all allowed
+        let sent = false;
+        for (const origin of ALLOWED_ORIGINS) {
+          if (origin.startsWith('http://localhost') || origin.startsWith('http://127')) continue;
+          try {
+            targetWindow.postMessage({
+              type: 'MIGRATION_DATA',
+              data: data,
+              success: true
+            }, origin);
+            sent = true;
+            console.log('Migration helper: Data sent to', origin);
+          } catch (e) {
+            console.log('Migration helper: Could not send to', origin);
+          }
+        }
+
+        if (Object.keys(data).length > 0) {
+          updateStatus('Data exported! This window will close...', 'success');
+        } else {
+          updateStatus('No data found to migrate.', 'success');
+        }
+
+        // Close popup after a short delay
+        setTimeout(() => window.close(), 1500);
+
+      } catch (error) {
+        console.error('Migration helper: Error:', error);
+        updateStatus('Error: ' + error.message, 'error');
+        targetWindow.postMessage({
+          type: 'MIGRATION_DATA',
+          data: null,
+          success: false,
+          error: error.message
+        }, '*');
+      }
+    })();
+  } else {
+    // Iframe mode - signal ready and wait for request
+    targetWindow.postMessage({ type: 'MIGRATION_HELPER_READY' }, '*');
+    console.log('Migration helper: Iframe mode - ready and waiting');
+    updateStatus('Ready for migration request...');
   }
-});
+} else {
+  // Not in popup or iframe - show instructions
+  updateStatus('Open this page from wecreatethis.com to migrate data.', 'error');
+}
+
+async function performExportAndSend(origin, target) {
+  try {
+    console.log('Migration helper: Received request from', origin);
+    updateStatus('Reading your data...');
+
+    const data = await exportAllData();
+    console.log('Migration helper: Export complete:', JSON.stringify(data).slice(0, 200));
+
+    updateStatus('Sending to new site...');
+    target.postMessage({
+      type: 'MIGRATION_DATA',
+      data: data,
+      success: true
+    }, origin);
+
+    updateStatus('Data sent!', 'success');
+    console.log('Migration helper: Data sent successfully');
+
+  } catch (error) {
+    console.error('Migration helper: Error:', error);
+    updateStatus('Error: ' + error.message, 'error');
+    target.postMessage({
+      type: 'MIGRATION_DATA',
+      data: null,
+      success: false,
+      error: error.message
+    }, origin);
+  }
+}
 
 async function exportAllData() {
   const result = {};
@@ -78,17 +207,16 @@ async function exportAllData() {
     try {
       console.log(`Migration helper: Trying to export ${dbConfig.name}...`);
       const dbData = await exportDatabase(dbConfig.name, dbConfig.stores);
-      console.log(`Migration helper: ${dbConfig.name} result:`, dbData);
+      console.log(`Migration helper: ${dbConfig.name} result - stores:`, Object.keys(dbData), 'items:', Object.values(dbData).map(arr => arr.length));
       if (dbData && Object.keys(dbData).length > 0) {
         result[dbConfig.name] = dbData;
       }
     } catch (error) {
       console.log(`Migration helper: Could not read ${dbConfig.name}:`, error.message);
-      // Continue with other databases
     }
   }
 
-  console.log('Migration helper: Final export result:', result);
+  console.log('Migration helper: Final export result - databases:', Object.keys(result));
   return result;
 }
 
@@ -104,8 +232,9 @@ function exportDatabase(dbName, storeNames) {
       const db = event.target.result;
       const result = {};
 
-      // Check which stores actually exist
       const existingStores = Array.from(db.objectStoreNames);
+      console.log(`Migration helper: ${dbName} has stores:`, existingStores);
+
       const storesToExport = storeNames.filter(s => existingStores.includes(s));
 
       if (storesToExport.length === 0) {
@@ -117,6 +246,7 @@ function exportDatabase(dbName, storeNames) {
       try {
         for (const storeName of storesToExport) {
           const data = await exportStore(db, storeName);
+          console.log(`Migration helper: ${dbName}.${storeName} has ${data.length} items`);
           if (data.length > 0) {
             result[storeName] = data;
           }
@@ -139,7 +269,6 @@ function exportStore(db, storeName) {
       const request = store.getAll();
 
       request.onsuccess = () => {
-        // Convert ArrayBuffer to base64 for transfer
         const data = request.result.map(item => serializeItem(item));
         resolve(data);
       };
@@ -153,7 +282,6 @@ function exportStore(db, storeName) {
   });
 }
 
-// Serialize item, converting ArrayBuffer to base64
 function serializeItem(item) {
   if (!item || typeof item !== 'object') return item;
 
@@ -188,13 +316,6 @@ function arrayBufferToBase64(buffer) {
   }
   return btoa(binary);
 }
-
-// Signal that the helper is ready
-if (window.parent !== window) {
-  window.parent.postMessage({ type: 'MIGRATION_HELPER_READY' }, '*');
-}
-
-console.log('Migration helper loaded and ready');
 </script>
 </body>
 </html>

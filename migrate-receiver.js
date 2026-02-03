@@ -1,13 +1,14 @@
 /**
  * Migration Receiver - runs on wecreatethis.com
- * Loads data from wecreatethis.pages.dev via hidden iframe and imports to local IndexedDB
+ * Loads data from wecreatethis.pages.dev via popup window and imports to local IndexedDB
+ * Uses popup instead of iframe to bypass storage partitioning
  *
  * Usage: Include this script and call:
  *   migrateFromOldDomain({ dbName: 'birdle-db', stores: {...} })
  */
 
 const MIGRATION_SOURCE = 'https://wecreatethis.pages.dev/migrate.html';
-const MIGRATION_TIMEOUT = 10000; // 10 seconds
+const MIGRATION_TIMEOUT = 15000; // 15 seconds
 
 /**
  * Check if we should attempt migration
@@ -54,19 +55,24 @@ async function migrateFromOldDomain(config) {
   }
 
   onProgress({ status: 'starting', message: 'Checking for data from old site...' });
+  console.log(`Migration: Starting migration check for ${dbName}`);
 
   try {
-    // Load data from old domain via iframe
+    // Load data from old domain via popup
     const data = await loadDataFromOldDomain();
+
+    console.log('Migration: Received data:', data ? Object.keys(data) : 'null');
 
     if (!data || !data[dbName]) {
       // No data to migrate for this database
       localStorage.setItem(`migration_completed_${dbName}`, 'no_data');
+      console.log(`Migration: No data found for ${dbName}`);
       return { migrated: false, reason: 'no_data' };
     }
 
     const dbData = data[dbName];
     onProgress({ status: 'importing', message: 'Importing your data...' });
+    console.log(`Migration: Importing ${Object.keys(dbData).length} stores for ${dbName}`);
 
     // Import the data
     const importResult = await importData(dbName, dbData, stores);
@@ -75,6 +81,7 @@ async function migrateFromOldDomain(config) {
     localStorage.setItem(`migration_completed_${dbName}`, Date.now().toString());
 
     onProgress({ status: 'complete', message: 'Data imported successfully!' });
+    console.log(`Migration: Complete for ${dbName}`, importResult);
 
     return {
       migrated: true,
@@ -98,21 +105,20 @@ async function migrateFromOldDomain(config) {
 }
 
 /**
- * Load data from old domain via iframe postMessage
+ * Load data from old domain via popup window
+ * Popup has first-party storage access, bypassing storage partitioning
  * @returns {Promise<Object>} The exported data
  */
 function loadDataFromOldDomain() {
   return new Promise((resolve, reject) => {
-    let iframe = null;
+    let popup = null;
     let timeoutId = null;
     let resolved = false;
 
     const cleanup = () => {
       if (timeoutId) clearTimeout(timeoutId);
       window.removeEventListener('message', messageHandler);
-      if (iframe && iframe.parentNode) {
-        iframe.parentNode.removeChild(iframe);
-      }
+      // Don't close popup - it closes itself after sending data
     };
 
     const messageHandler = (event) => {
@@ -121,17 +127,14 @@ function loadDataFromOldDomain() {
         return;
       }
 
-      if (event.data?.type === 'MIGRATION_HELPER_READY') {
-        // Helper is ready, request the data
-        iframe.contentWindow.postMessage(
-          { type: 'REQUEST_MIGRATION_DATA' },
-          'https://wecreatethis.pages.dev'
-        );
-      } else if (event.data?.type === 'MIGRATION_DATA') {
+      console.log('Migration: Received message from popup:', event.data?.type);
+
+      if (event.data?.type === 'MIGRATION_DATA') {
         resolved = true;
         cleanup();
 
         if (event.data.success) {
+          console.log('Migration: Data received successfully');
           resolve(event.data.data);
         } else {
           reject(new Error(event.data.error || 'Failed to export data'));
@@ -141,28 +144,36 @@ function loadDataFromOldDomain() {
 
     window.addEventListener('message', messageHandler);
 
-    // Create hidden iframe
-    iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = MIGRATION_SOURCE;
+    // Open popup window
+    // Small window since it just shows a loading spinner
+    const width = 400;
+    const height = 200;
+    const left = (screen.width - width) / 2;
+    const top = (screen.height - height) / 2;
 
-    // Handle iframe load errors
-    iframe.onerror = () => {
-      if (!resolved) {
-        resolved = true;
-        cleanup();
-        reject(new Error('Failed to load migration helper'));
-      }
-    };
+    console.log('Migration: Opening popup to', MIGRATION_SOURCE);
 
-    document.body.appendChild(iframe);
+    popup = window.open(
+      MIGRATION_SOURCE,
+      'migration_helper',
+      `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
+    );
+
+    if (!popup || popup.closed) {
+      cleanup();
+      console.log('Migration: Popup was blocked');
+      // Popup blocked - treat as no data (user can manually migrate later)
+      resolve(null);
+      return;
+    }
 
     // Timeout
     timeoutId = setTimeout(() => {
       if (!resolved) {
         resolved = true;
         cleanup();
-        // Treat timeout as "no data" rather than error - old site may not be accessible
+        console.log('Migration: Timeout waiting for popup');
+        // Treat timeout as "no data" rather than error
         resolve(null);
       }
     }, MIGRATION_TIMEOUT);
@@ -192,10 +203,11 @@ async function importData(dbName, dbData, storeConfigs) {
 
           // Check if store exists
           if (!db.objectStoreNames.contains(storeName)) {
-            console.log(`Store ${storeName} not found, skipping`);
+            console.log(`Migration: Store ${storeName} not found, skipping`);
             continue;
           }
 
+          console.log(`Migration: Importing ${items.length} items to ${storeName}`);
           const count = await importStore(db, storeName, items, storeConfigs[storeName]);
           result[storeName] = count;
         }
@@ -236,7 +248,7 @@ function importStore(db, storeName, items, storeConfig = {}) {
         const request = store.put(deserialized);
         request.onsuccess = () => imported++;
       } catch (error) {
-        console.warn(`Could not import item to ${storeName}:`, error);
+        console.warn(`Migration: Could not import item to ${storeName}:`, error);
       }
     }
   });
