@@ -188,13 +188,22 @@ function setupEventListeners() {
     });
   }
 
+  // Quick Settings button
+  const quickSettingsBtn = document.getElementById('quick-settings-btn');
+  if (quickSettingsBtn) {
+    quickSettingsBtn.addEventListener('click', () => {
+      UI.showModal('quick-settings-modal');
+      updateQuickModeSelectionUI();
+    });
+  }
+
   // Start Playing button
   const startPlayingBtn = document.getElementById('start-playing-btn');
   if (startPlayingBtn) {
     startPlayingBtn.addEventListener('click', handleStartPlaying);
   }
 
-  // Mode selection buttons
+  // Mode selection buttons (info modal)
   const hardModeBtn = document.getElementById('select-hard-mode');
   const easyModeBtn = document.getElementById('select-easy-mode');
 
@@ -204,6 +213,30 @@ function setupEventListeners() {
   if (easyModeBtn) {
     easyModeBtn.addEventListener('click', () => handleModeSelection('easy'));
   }
+
+  // Mode selection buttons (quick settings modal)
+  const quickHardModeBtn = document.getElementById('quick-select-hard-mode');
+  const quickEasyModeBtn = document.getElementById('quick-select-easy-mode');
+
+  if (quickHardModeBtn) {
+    quickHardModeBtn.addEventListener('click', () => {
+      handleModeSelection('hard');
+      updateQuickModeSelectionUI();
+    });
+  }
+  if (quickEasyModeBtn) {
+    quickEasyModeBtn.addEventListener('click', () => {
+      handleModeSelection('easy');
+      updateQuickModeSelectionUI();
+    });
+  }
+
+  // Close quick settings button
+  document.querySelectorAll('.close-quick-settings').forEach(btn => {
+    btn.addEventListener('click', () => {
+      UI.hideModal('quick-settings-modal');
+    });
+  });
 
   // Modal close buttons
   document.querySelectorAll('.modal-close').forEach(btn => {
@@ -499,6 +532,24 @@ function updateModeSelectionUI() {
       if (exampleTiles[1]) exampleTiles[1].classList.add('example-red-dot');
       if (exampleTiles[2]) exampleTiles[2].classList.add('example-green-dot');
       if (exampleTiles[3]) exampleTiles[3].classList.add('example-red-dot');
+    }
+  }
+}
+
+/**
+ * Update mode selection buttons in the quick settings modal
+ */
+function updateQuickModeSelectionUI() {
+  const hardBtn = document.getElementById('quick-select-hard-mode');
+  const easyBtn = document.getElementById('quick-select-easy-mode');
+
+  if (hardBtn && easyBtn) {
+    if (game.isHardMode) {
+      hardBtn.classList.add('active');
+      easyBtn.classList.remove('active');
+    } else {
+      hardBtn.classList.remove('active');
+      easyBtn.classList.add('active');
     }
   }
 }

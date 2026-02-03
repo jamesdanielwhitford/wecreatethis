@@ -18,8 +18,10 @@
     <a href="/" class="home-btn"></a>
     <span class="nav-title">Hardle</span>
     <div class="nav-actions">
-      <button id="info-btn" class="text-icon-btn" aria-label="Game info and settings">
-        <span class="text-icon">i</span>
+      <button id="info-btn" class="text-icon-btn" aria-label="How to play">
+        <span class="text-icon">?</span>
+      </button>
+      <button id="quick-settings-btn" class="text-icon-btn icon-btn-plus" aria-label="Quick settings">
       </button>
     </div>
   </nav>
@@ -137,38 +139,24 @@
   <div id="info-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Welcome to</h2>
+        <h2>How to Play</h2>
         <button class="modal-close" data-modal="info-modal">&times;</button>
       </div>
       <div class="modal-body">
 
-        <!-- Game Variant Selection -->
-        <div class="mode-buttons" style="margin-bottom: 8px;">
-          <a href="index.html#info" class="mode-btn active" data-variant="hardle">
-            <span class="mode-label">Hardle</span>
-          </a>
-          <a href="randle.html#info" class="mode-btn" data-variant="randle">
-            <span class="mode-label">Randle</span>
-          </a>
-        </div>
+        <!-- Brief Description -->
+        <p style="margin-bottom: 16px;">Guess the 4-letter word in 8 attempts or less.</p>
 
-        <p style="text-align: center; margin-bottom: 4px;">Guess the 4-letter word in 8 attempts or less</p>
-        <p style="text-align: center; margin-bottom: 16px; font-size: 0.9rem; color: var(--text-secondary);">A new word every day</p>
+        <!-- Quick Rules -->
+        <ul style="margin-bottom: 20px; padding-left: 20px;">
+          <li style="margin-bottom: 8px;">Each guess must be a valid 4-letter word.</li>
+          <li style="margin-bottom: 8px;">The score shows how many letters from your guess are in the target word.</li>
+          <li style="margin-bottom: 8px;">A new word is available every day.</li>
+        </ul>
 
-        <!-- Mode Selection -->
-        <p style="text-align: center; margin-bottom: 8px;">in</p>
-        <div class="mode-buttons" style="margin-bottom: 24px;">
-          <button id="select-hard-mode" class="mode-btn active" data-mode="hard">
-            <span class="mode-label">Hard Mode</span>
-          </button>
-          <button id="select-easy-mode" class="mode-btn" data-mode="easy">
-            <span class="mode-label">Easy Mode</span>
-          </button>
-        </div>
+        <!-- Examples Section -->
+        <h3 style="margin-bottom: 16px;">Examples</h3>
 
-        <h3 style="text-align: center; margin-bottom: 16px;">How to Play</h3>
-
-        <!-- Rules Section (content changes based on mode) -->
         <div class="rules-section">
           <!-- Example 1: Partial match -->
           <div class="example">
@@ -179,7 +167,7 @@
               <div class="example-tile">D</div>
               <div class="example-score example-score-partial">2</div>
             </div>
-            <p class="example-description">A score shows how many letters from your guess are in the target word.</p>
+            <p class="example-description">A score of 2 means two letters from your guess are in the target word.</p>
           </div>
 
           <!-- Example 2: Red - No match -->
@@ -219,9 +207,80 @@
           </div>
         </div>
 
+        <!-- Divider -->
+        <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+
+        <!-- Game Variant Selection -->
+        <p style="text-align: center; margin-bottom: 12px; font-size: 0.9rem; color: var(--text-secondary);">Switch Game</p>
+        <div class="mode-buttons" style="margin-bottom: 8px;">
+          <a href="index.html#info" class="mode-btn active" data-variant="hardle" style="text-decoration: none;">
+            <span class="mode-label">Hardle</span>
+          </a>
+          <a href="randle.html#info" class="mode-btn" data-variant="randle" style="text-decoration: none;">
+            <span class="mode-label">Randle</span>
+          </a>
+        </div>
+        <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+          <span style="flex: 1; font-size: 0.85rem; color: var(--text-secondary); text-align: center;">One daily puzzle</span>
+          <span style="flex: 1; font-size: 0.85rem; color: var(--text-secondary); text-align: center;">Unlimited rounds</span>
+        </div>
+
+        <!-- Mode Selection -->
+        <p style="text-align: center; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-secondary);">Difficulty</p>
+        <div class="mode-buttons" style="margin-bottom: 20px;">
+          <button id="select-hard-mode" class="mode-btn active" data-mode="hard">
+            <span class="mode-label">Hard Mode</span>
+          </button>
+          <button id="select-easy-mode" class="mode-btn" data-mode="easy">
+            <span class="mode-label">Easy Mode</span>
+          </button>
+        </div>
+
         <!-- Start Playing Button -->
-        <div style="text-align: center; margin-top: 24px;">
+        <div style="text-align: center;">
           <button id="start-playing-btn" class="btn btn-primary" style="min-width: 160px;">Start Playing!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Settings Modal -->
+  <div id="quick-settings-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="modal-close" data-modal="quick-settings-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Game Variant Selection -->
+        <p style="text-align: center; margin-bottom: 12px; font-size: 0.9rem; color: var(--text-secondary);">Switch Game</p>
+        <div class="mode-buttons" style="margin-bottom: 8px;">
+          <a href="index.html" class="mode-btn active" data-variant="hardle" style="text-decoration: none;">
+            <span class="mode-label">Hardle</span>
+          </a>
+          <a href="randle.html" class="mode-btn" data-variant="randle" style="text-decoration: none;">
+            <span class="mode-label">Randle</span>
+          </a>
+        </div>
+        <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+          <span style="flex: 1; font-size: 0.85rem; color: var(--text-secondary); text-align: center;">One daily puzzle</span>
+          <span style="flex: 1; font-size: 0.85rem; color: var(--text-secondary); text-align: center;">Unlimited rounds</span>
+        </div>
+
+        <!-- Mode Selection -->
+        <p style="text-align: center; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-secondary);">Difficulty</p>
+        <div class="mode-buttons" style="margin-bottom: 20px;">
+          <button id="quick-select-hard-mode" class="mode-btn active" data-mode="hard">
+            <span class="mode-label">Hard Mode</span>
+          </button>
+          <button id="quick-select-easy-mode" class="mode-btn" data-mode="easy">
+            <span class="mode-label">Easy Mode</span>
+          </button>
+        </div>
+
+        <!-- Close Button -->
+        <div style="text-align: center;">
+          <button class="btn btn-primary close-quick-settings" style="min-width: 160px;">Done</button>
         </div>
       </div>
     </div>
