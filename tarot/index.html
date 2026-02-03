@@ -109,7 +109,29 @@
     </div>
 
     <script src="db.js"></script>
+    <script src="/migrate-receiver.js"></script>
     <script src="tarot-data.js"></script>
     <script src="app.js"></script>
+    <script>
+        // Run migration from old domain (pages.dev) on first visit
+        (async function() {
+            try {
+                await initDB();
+                const result = await migrateFromOldDomain({
+                    dbName: 'tarot-reader-db',
+                    stores: {
+                        readings: { keyPath: 'id', autoIncrement: true }
+                    }
+                });
+                if (result.migrated) {
+                    console.log('Tarot migration complete:', result.imported);
+                    // Refresh the readings list to show imported data
+                    if (typeof loadReadings === 'function') loadReadings();
+                }
+            } catch (e) {
+                console.log('Migration skipped or failed:', e.message);
+            }
+        })();
+    </script>
 </body>
 </html>

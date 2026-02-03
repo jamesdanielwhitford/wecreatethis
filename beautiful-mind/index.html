@@ -16,11 +16,35 @@
   <canvas id="grain"></canvas>
   <div id="app"></div>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="/migrate-receiver.js"></script>
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/beautiful-mind/sw.js', { scope: '/beautiful-mind/' });
     }
+
+    // Run migration from old domain (pages.dev) on first visit
+    (async function() {
+      try {
+        // Wait for app.js to define openDB
+        if (typeof openDB === 'function') {
+          await openDB();
+          const result = await migrateFromOldDomain({
+            dbName: 'notes-app',
+            stores: {
+              notes: { keyPath: 'id' }
+            }
+          });
+          if (result.migrated) {
+            console.log('Beautiful Mind migration complete:', result.imported);
+            // Refresh the app to show imported notes
+            location.reload();
+          }
+        }
+      } catch (e) {
+        console.log('Migration skipped or failed:', e.message);
+      }
+    })();
   </script>
 </body>
 </html>

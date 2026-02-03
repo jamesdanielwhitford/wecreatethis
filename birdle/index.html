@@ -52,9 +52,30 @@
   </div>
 
   <script src="db.js"></script>
+  <script src="/migrate-receiver.js"></script>
   <script src="location.js"></script>
   <script src="ebird.js"></script>
   <script src="app.js"></script>
+  <script>
+    // Run migration from old domain (pages.dev) on first visit
+    (async function() {
+      try {
+        await BirdDB.init();
+        const result = await migrateFromOldDomain({
+          dbName: 'birdle-db',
+          stores: {
+            sightings: { keyPath: 'id', autoIncrement: true },
+            bingo_games: { keyPath: 'id', autoIncrement: true }
+          }
+        });
+        if (result.migrated) {
+          console.log('Birdle migration complete:', result.imported);
+        }
+      } catch (e) {
+        console.log('Migration skipped or failed:', e.message);
+      }
+    })();
+  </script>
   <script>
     // Location-gated buttons handling
     (function() {

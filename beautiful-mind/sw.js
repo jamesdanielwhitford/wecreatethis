@@ -1,4 +1,4 @@
-const CACHE_NAME = 'beautiful-mind-v8';
+const CACHE_NAME = 'beautiful-mind-v9';
 const ASSETS = [
   '/beautiful-mind/',
   '/beautiful-mind/index',
@@ -8,6 +8,7 @@ const ASSETS = [
   '/beautiful-mind/icon-192.png',
   '/beautiful-mind/icon-512.png',
   '/beautiful-mind/apple-touch-icon.png',
+  '/migrate-receiver.js',
   'https://cdn.jsdelivr.net/npm/marked/marked.min.js'
 ];
 

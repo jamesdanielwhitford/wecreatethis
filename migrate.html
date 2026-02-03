@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Data Migration Helper</title>
+</head>
+<body>
+<script>
+/**
+ * Migration Helper - runs on wecreatethis.pages.dev
+ * Reads IndexedDB data and sends to parent window (wecreatethis.com)
+ */
+
+const ALLOWED_ORIGINS = [
+  'https://wecreatethis.com',
+  'https://www.wecreatethis.com',
+  'http://localhost:8000', // for local testing
+  'http://localhost:3000',
+  'http://127.0.0.1:8000',
+  'http://127.0.0.1:3000'
+];
+
+// Database configurations
+const DATABASES = [
+  {
+    name: 'birdle-db',
+    stores: ['sightings', 'bingo_games'] // Only user data, not cache
+  },
+  {
+    name: 'tarot-reader-db',
+    stores: ['readings']
+  },
+  {
+    name: 'notes-app',
+    stores: ['notes'] // Not 'handles' - those are origin-bound
+  }
+];
+
+// Listen for migration requests from parent
+window.addEventListener('message', async (event) => {
+  if (!ALLOWED_ORIGINS.includes(event.origin)) {
+    console.log('Migration helper: Ignoring message from unauthorized origin:', event.origin);
+    return;
+  }
+
+  if (event.data?.type === 'REQUEST_MIGRATION_DATA') {
+    console.log('Migration helper: Received migration request from', event.origin);
+
+    try {
+      const data = await exportAllData();
+      event.source.postMessage({
+        type: 'MIGRATION_DATA',
+        data: data,
+        success: true
+      }, event.origin);
+    } catch (error) {
+      console.error('Migration helper: Error exporting data:', error);
+      event.source.postMessage({
+        type: 'MIGRATION_DATA',
+        data: null,
+        success: false,
+        error: error.message
+      }, event.origin);
+    }
+  }
+});
+
+async function exportAllData() {
+  const result = {};
+
+  for (const dbConfig of DATABASES) {
+    try {
+      const dbData = await exportDatabase(dbConfig.name, dbConfig.stores);
+      if (dbData && Object.keys(dbData).length > 0) {
+        result[dbConfig.name] = dbData;
+      }
+    } catch (error) {
+      console.log(`Migration helper: Could not read ${dbConfig.name}:`, error.message);
+      // Continue with other databases
+    }
+  }
+
+  return result;
+}
+
+function exportDatabase(dbName, storeNames) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(dbName);
+
+    request.onerror = () => {
+      reject(new Error(`Could not open database: ${dbName}`));
+    };
+
+    request.onsuccess = async (event) => {
+      const db = event.target.result;
+      const result = {};
+
+      // Check which stores actually exist
+      const existingStores = Array.from(db.objectStoreNames);
+      const storesToExport = storeNames.filter(s => existingStores.includes(s));
+
+      if (storesToExport.length === 0) {
+        db.close();
+        resolve(result);
+        return;
+      }
+
+      try {
+        for (const storeName of storesToExport) {
+          const data = await exportStore(db, storeName);
+          if (data.length > 0) {
+            result[storeName] = data;
+          }
+        }
+        db.close();
+        resolve(result);
+      } catch (error) {
+        db.close();
+        reject(error);
+      }
+    };
+  });
+}
+
+function exportStore(db, storeName) {
+  return new Promise((resolve, reject) => {
+    try {
+      const transaction = db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        // Convert ArrayBuffer to base64 for transfer
+        const data = request.result.map(item => serializeItem(item));
+        resolve(data);
+      };
+
+      request.onerror = () => {
+        reject(new Error(`Could not read store: ${storeName}`));
+      };
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+// Serialize item, converting ArrayBuffer to base64
+function serializeItem(item) {
+  if (!item || typeof item !== 'object') return item;
+
+  const result = {};
+  for (const [key, value] of Object.entries(item)) {
+    if (value instanceof ArrayBuffer) {
+      result[key] = {
+        __type: 'ArrayBuffer',
+        data: arrayBufferToBase64(value)
+      };
+    } else if (value instanceof Uint8Array) {
+      result[key] = {
+        __type: 'Uint8Array',
+        data: arrayBufferToBase64(value.buffer)
+      };
+    } else if (Array.isArray(value)) {
+      result[key] = value.map(v => serializeItem(v));
+    } else if (value && typeof value === 'object' && !(value instanceof Date)) {
+      result[key] = serializeItem(value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+// Signal that the helper is ready
+if (window.parent !== window) {
+  window.parent.postMessage({ type: 'MIGRATION_HELPER_READY' }, '*');
+}
+
+console.log('Migration helper loaded and ready');
+</script>
+</body>
+</html>
