@@ -404,21 +404,25 @@ body {
 .key.key-outline-incorrect::before {
   content: '';
   position: absolute;
-  inset: -3px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   border: 3px solid var(--score-red);
   border-radius: 6px;
   pointer-events: none;
-  z-index: -1;
 }
 
 .key.key-outline-correct::before {
   content: '';
   position: absolute;
-  inset: -3px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   border: 3px solid var(--score-green);
   border-radius: 6px;
   pointer-events: none;
-  z-index: -1;
 }
 
 /* Modals */

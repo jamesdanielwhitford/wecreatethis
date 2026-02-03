@@ -441,6 +441,20 @@ const GameState = {
           continue;
         }
 
+        // Rule: Duplicate letter constraint from score
+        // If a letter appears K times in the guess and K > score,
+        // then the answer can have at most 'score' instances of that letter
+        // Example: ZOOM with score 1 → O appears 2 times but score is only 1
+        //          → if answer had 2+ O's, score would be ≥2, but it's 1
+        //          → therefore letterMax[O] ≤ 1
+        for (const [letter, positions] of Object.entries(letterPositions)) {
+          const K = positions.length;
+          if (K > score && letterMax[letter] > score) {
+            letterMax[letter] = score;
+            changed = true;
+          }
+        }
+
         // Special case: Single unique letter (e.g., AAAA, BBBB)
         // The score directly tells us exact count in target
         const uniqueLetters = Object.keys(letterPositions);
