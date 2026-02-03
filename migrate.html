@@ -210,6 +210,7 @@
 
   <button class="btn btn-primary" id="startBtn">Start Migration</button>
   <button class="btn btn-secondary" id="retryBtn" style="display: none;">Retry Migration</button>
+  <button class="btn btn-secondary" id="resetBtn">Reset All Databases</button>
 
   <div class="back-link">
     <a href="/">← Back to Home</a>
@@ -460,13 +461,57 @@ function runUIMode() {
 
   const startBtn = document.getElementById('startBtn');
   const retryBtn = document.getElementById('retryBtn');
+  const resetBtn = document.getElementById('resetBtn');
   const messageBox = document.getElementById('messageBox');
 
   startBtn.addEventListener('click', startMigration);
   retryBtn.addEventListener('click', startMigration);
+  resetBtn.addEventListener('click', resetAllDatabases);
 
   // Check if already migrated
   checkMigrationStatus();
+}
+
+async function resetAllDatabases() {
+  if (!confirm('This will DELETE all app databases on this domain. Are you sure?\n\nYou can re-run migration afterwards to restore your data.')) {
+    return;
+  }
+
+  showMessage('Deleting databases...', 'info');
+
+  const results = [];
+  for (const db of DATABASES) {
+    try {
+      await new Promise((resolve, reject) => {
+        const request = indexedDB.deleteDatabase(db.name);
+        request.onsuccess = () => {
+          results.push(`✓ Deleted ${db.displayName}`);
+          resolve();
+        };
+        request.onerror = () => reject(new Error(`Failed to delete ${db.name}`));
+        request.onblocked = () => {
+          results.push(`⚠ ${db.displayName} is in use - close all app tabs`);
+          resolve();
+        };
+      });
+    } catch (error) {
+      results.push(`✗ Error deleting ${db.displayName}: ${error.message}`);
+    }
+  }
+
+  // Clear migration status
+  for (const db of DATABASES) {
+    localStorage.removeItem(`migration_completed_${db.name}`);
+  }
+
+  showMessage(results.join('\n') + '\n\nDatabases reset! You can now run migration again.', 'success');
+
+  // Reset UI
+  for (const db of DATABASES) {
+    const statusEl = document.querySelector(`.app-status[data-db="${db.name}"]`);
+    statusEl.textContent = 'Pending';
+    statusEl.className = 'app-status';
+  }
 }
 
 function checkMigrationStatus() {
