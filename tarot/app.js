@@ -7,7 +7,7 @@ let selectedSpreadType = null;
 document.addEventListener('DOMContentLoaded', async () => {
     await initDB();
     registerServiceWorker();
-    loadReadingsList();
+    await loadReadingsList();
     setupEventListeners();
     setupSpreadSelectionModal();
     setupTitleMessageModal();
