@@ -1,4 +1,4 @@
-const CACHE_NAME = 'birdle-v108';
+const CACHE_NAME = 'birdle-v109';
 const ASSETS = [
   '/birdle/',
   '/birdle/index',
@@ -21,7 +21,8 @@ const ASSETS = [
   '/birdle/sync/sync.js',
   '/birdle/manifest.json',
   '/birdle/icon-192.png',
-  '/birdle/icon-512.png'
+  '/birdle/icon-512.png',
+  '/migrate-receiver.js'
 ];
 
 // Normalize URL to canonical extensionless format

@@ -1,6 +1,6 @@
 // Service Worker for Tarot Reader
 
-const CACHE_NAME = 'tarot-v29';
+const CACHE_NAME = 'tarot-v30';
 const ASSETS = [
   '/tarot/',
   '/tarot/index',
@@ -17,6 +17,7 @@ const ASSETS = [
   '/tarot/deck-manager.js',
   '/tarot/db.js',
   '/tarot/tarot-data.js',
+  '/migrate-receiver.js',
   '/tarot/card-descriptions.js',
   '/tarot/card-back-patterns.js',
   '/tarot/manifest.json',
