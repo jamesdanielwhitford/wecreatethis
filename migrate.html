@@ -2,19 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Data Migration Helper</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Migration - We Create This</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      line-height: 1.6;
+    }
+    /* Export helper mode (popup) */
+    .export-mode {
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      margin: 0;
-      background: #1a1a2e;
-      color: #eee;
     }
-    .container {
+    .export-container {
       text-align: center;
       padding: 2rem;
     }
@@ -39,17 +48,179 @@
     .error {
       color: #e74c3c;
     }
+    /* User interface mode */
+    .ui-mode {
+      display: none;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+    .ui-mode.active {
+      display: block;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #fff;
+    }
+    .intro {
+      color: #a0a0a0;
+      margin-bottom: 2rem;
+      line-height: 1.8;
+    }
+    .app-list {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .app-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid #1a1a2e;
+    }
+    .app-item:last-child {
+      border-bottom: none;
+    }
+    .app-name {
+      font-weight: 500;
+      color: #fff;
+    }
+    .app-status {
+      font-size: 0.9rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+      background: #2c3e50;
+      color: #95a5a6;
+    }
+    .app-status.success {
+      background: #00b89420;
+      color: #00b894;
+    }
+    .app-status.error {
+      background: #e74c3c20;
+      color: #e74c3c;
+    }
+    .app-status.migrating {
+      background: #6c5ce720;
+      color: #6c5ce7;
+    }
+    .btn {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #6c5ce7;
+      color: white;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #5f4fd1;
+      transform: translateY(-1px);
+    }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: #2c3e50;
+      color: #ecf0f1;
+      margin-top: 1rem;
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: #34495e;
+    }
+    .message-box {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .message-box.show {
+      display: block;
+    }
+    .message-box.info {
+      background: #3498db20;
+      color: #3498db;
+      border-left: 3px solid #3498db;
+    }
+    .message-box.success {
+      background: #00b89420;
+      color: #00b894;
+      border-left: 3px solid #00b894;
+    }
+    .message-box.error {
+      background: #e74c3c20;
+      color: #e74c3c;
+      border-left: 3px solid #e74c3c;
+    }
+    .back-link {
+      text-align: center;
+      margin-top: 2rem;
+    }
+    .back-link a {
+      color: #6c5ce7;
+      text-decoration: none;
+    }
+    .back-link a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
-<div class="container">
-  <div class="spinner" id="spinner"></div>
-  <p class="status" id="status">Exporting your data...</p>
+<!-- Export helper mode (shown in popup) -->
+<div class="export-mode" id="exportMode">
+  <div class="export-container">
+    <div class="spinner" id="spinner"></div>
+    <p class="status" id="status">Exporting your data...</p>
+  </div>
 </div>
+
+<!-- User interface mode (shown when visited directly) -->
+<div class="ui-mode" id="uiMode">
+  <h1>🔄 Migrate Your Data</h1>
+  <p class="intro">
+    This tool will transfer your saved data from <strong>wecreatethis.pages.dev</strong> to <strong>wecreatethis.com</strong>.
+  </p>
+
+  <div id="messageBox" class="message-box"></div>
+
+  <div class="app-list">
+    <div class="app-item">
+      <span class="app-name">🐦 Birdle</span>
+      <span class="app-status" data-db="birdle-db">Pending</span>
+    </div>
+    <div class="app-item">
+      <span class="app-name">🔮 Tarot</span>
+      <span class="app-status" data-db="tarot-reader-db">Pending</span>
+    </div>
+    <div class="app-item">
+      <span class="app-name">📝 Beautiful Mind</span>
+      <span class="app-status" data-db="notes-app">Pending</span>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="startBtn">Start Migration</button>
+  <button class="btn btn-secondary" id="retryBtn" style="display: none;">Retry Migration</button>
+
+  <div class="back-link">
+    <a href="/">← Back to Home</a>
+  </div>
+</div>
+
 <script>
 /**
- * Migration Helper - runs on wecreatethis.pages.dev
- * Opens as popup, reads IndexedDB, sends to opener window (wecreatethis.com)
+ * Dual-purpose migration page:
+ * 1. Export helper mode (popup from old domain) - exports data
+ * 2. User interface mode (visited directly on new domain) - imports data
  */
 
 const ALLOWED_ORIGINS = [
@@ -64,35 +235,66 @@ const ALLOWED_ORIGINS = [
 const DATABASES = [
   {
     name: 'birdle-db',
-    stores: ['sightings', 'bingo_games']
+    stores: ['sightings', 'bingo_games'],
+    displayName: '🐦 Birdle',
+    storeConfigs: {
+      sightings: { keyPath: 'id', autoIncrement: true },
+      bingo_games: { keyPath: 'id', autoIncrement: true }
+    }
   },
   {
     name: 'tarot-reader-db',
-    stores: ['readings']
+    stores: ['readings'],
+    displayName: '🔮 Tarot',
+    storeConfigs: {
+      readings: { keyPath: 'id', autoIncrement: true }
+    }
   },
   {
     name: 'notes-app',
-    stores: ['notes']
+    stores: ['notes'],
+    displayName: '📝 Beautiful Mind',
+    storeConfigs: {
+      notes: { keyPath: 'id', autoIncrement: true }
+    }
   }
 ];
 
-const statusEl = document.getElementById('status');
-const spinnerEl = document.getElementById('spinner');
+const MIGRATION_SOURCE = 'https://wecreatethis.pages.dev/migrate.html';
+const MIGRATION_TIMEOUT = 15000;
 
-function updateStatus(message, type = 'normal') {
-  statusEl.textContent = message;
-  statusEl.className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'status';
-  if (type !== 'normal') {
-    spinnerEl.style.display = 'none';
-  }
-}
-
-// Check if we're in a popup/iframe context
+// Determine which mode to run in
+const isOldDomain = window.location.hostname === 'wecreatethis.pages.dev';
 const isPopup = window.opener !== null;
 const isIframe = window.parent !== window;
 
-if (isPopup || isIframe) {
-  // Running as popup or iframe - handle migration request
+if (isPopup || isIframe || isOldDomain) {
+  // EXPORT HELPER MODE: Running as popup or on old domain
+  runExportMode();
+} else {
+  // USER INTERFACE MODE: Show migration UI
+  runUIMode();
+}
+
+// ============================================================================
+// EXPORT HELPER MODE (Popup on old domain)
+// ============================================================================
+
+function runExportMode() {
+  document.getElementById('exportMode').style.display = 'flex';
+  document.getElementById('uiMode').style.display = 'none';
+
+  const statusEl = document.getElementById('status');
+  const spinnerEl = document.getElementById('spinner');
+
+  function updateStatus(message, type = 'normal') {
+    statusEl.textContent = message;
+    statusEl.className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'status';
+    if (type !== 'normal') {
+      spinnerEl.style.display = 'none';
+    }
+  }
+
   const targetWindow = isPopup ? window.opener : window.parent;
 
   // Listen for explicit requests (for iframe mode)
@@ -103,13 +305,12 @@ if (isPopup || isIframe) {
     }
 
     if (event.data?.type === 'REQUEST_MIGRATION_DATA') {
-      await performExportAndSend(event.origin, event.source);
+      await performExportAndSend(event.origin, event.source, updateStatus);
     }
   });
 
   // For popup mode, start immediately
   if (isPopup) {
-    // Detect opener's origin
     (async () => {
       try {
         updateStatus('Reading your data...');
@@ -120,8 +321,7 @@ if (isPopup || isIframe) {
 
         updateStatus('Sending to new site...');
 
-        // Try to post to opener - we don't know the exact origin, so try all allowed
-        let sent = false;
+        // Try to post to opener
         for (const origin of ALLOWED_ORIGINS) {
           if (origin.startsWith('http://localhost') || origin.startsWith('http://127')) continue;
           try {
@@ -130,7 +330,6 @@ if (isPopup || isIframe) {
               data: data,
               success: true
             }, origin);
-            sent = true;
             console.log('Migration helper: Data sent to', origin);
           } catch (e) {
             console.log('Migration helper: Could not send to', origin);
@@ -143,7 +342,6 @@ if (isPopup || isIframe) {
           updateStatus('No data found to migrate.', 'success');
         }
 
-        // Close popup after a short delay
         setTimeout(() => window.close(), 1500);
 
       } catch (error) {
@@ -157,18 +355,16 @@ if (isPopup || isIframe) {
         }, '*');
       }
     })();
-  } else {
-    // Iframe mode - signal ready and wait for request
+  } else if (isIframe) {
     targetWindow.postMessage({ type: 'MIGRATION_HELPER_READY' }, '*');
     console.log('Migration helper: Iframe mode - ready and waiting');
     updateStatus('Ready for migration request...');
+  } else {
+    updateStatus('Exporting data from old domain...');
   }
-} else {
-  // Not in popup or iframe - show instructions
-  updateStatus('Open this page from wecreatethis.com to migrate data.', 'error');
 }
 
-async function performExportAndSend(origin, target) {
+async function performExportAndSend(origin, target, updateStatus) {
   try {
     console.log('Migration helper: Received request from', origin);
     updateStatus('Reading your data...');
@@ -197,6 +393,294 @@ async function performExportAndSend(origin, target) {
     }, origin);
   }
 }
+
+// ============================================================================
+// USER INTERFACE MODE (Main migration page)
+// ============================================================================
+
+function runUIMode() {
+  document.getElementById('exportMode').style.display = 'none';
+  document.getElementById('uiMode').classList.add('active');
+
+  const startBtn = document.getElementById('startBtn');
+  const retryBtn = document.getElementById('retryBtn');
+  const messageBox = document.getElementById('messageBox');
+
+  startBtn.addEventListener('click', startMigration);
+  retryBtn.addEventListener('click', startMigration);
+
+  // Check if already migrated
+  checkMigrationStatus();
+}
+
+function checkMigrationStatus() {
+  let allMigrated = true;
+  for (const db of DATABASES) {
+    const status = localStorage.getItem(`migration_completed_${db.name}`);
+    const statusEl = document.querySelector(`.app-status[data-db="${db.name}"]`);
+
+    if (status) {
+      if (status === 'no_data') {
+        statusEl.textContent = 'No data';
+        statusEl.classList.add('success');
+      } else if (status === 'failed') {
+        statusEl.textContent = 'Failed';
+        statusEl.classList.add('error');
+        allMigrated = false;
+      } else {
+        statusEl.textContent = 'Migrated ✓';
+        statusEl.classList.add('success');
+      }
+    } else {
+      allMigrated = false;
+    }
+  }
+
+  if (allMigrated) {
+    showMessage('All data has been migrated successfully!', 'success');
+    document.getElementById('startBtn').style.display = 'none';
+  }
+}
+
+async function startMigration() {
+  const startBtn = document.getElementById('startBtn');
+  const retryBtn = document.getElementById('retryBtn');
+
+  startBtn.disabled = true;
+  retryBtn.style.display = 'none';
+  showMessage('Opening migration window...', 'info');
+
+  // Reset status for all apps
+  for (const db of DATABASES) {
+    const statusEl = document.querySelector(`.app-status[data-db="${db.name}"]`);
+    statusEl.textContent = 'Waiting...';
+    statusEl.className = 'app-status';
+  }
+
+  try {
+    const data = await loadDataFromOldDomain();
+
+    if (!data) {
+      showMessage('No data found on old domain, or migration was cancelled.', 'info');
+      startBtn.disabled = false;
+      retryBtn.style.display = 'block';
+      return;
+    }
+
+    // Import data for each database
+    let totalImported = 0;
+    for (const db of DATABASES) {
+      const statusEl = document.querySelector(`.app-status[data-db="${db.name}"]`);
+
+      if (data[db.name]) {
+        statusEl.textContent = 'Importing...';
+        statusEl.classList.add('migrating');
+
+        try {
+          const result = await importData(db.name, data[db.name], db.storeConfigs);
+          const count = Object.values(result).reduce((sum, n) => sum + n, 0);
+          totalImported += count;
+
+          statusEl.textContent = count > 0 ? `Imported ${count} items ✓` : 'No data';
+          statusEl.className = 'app-status success';
+          localStorage.setItem(`migration_completed_${db.name}`, Date.now().toString());
+        } catch (error) {
+          statusEl.textContent = 'Error';
+          statusEl.className = 'app-status error';
+          localStorage.setItem(`migration_completed_${db.name}`, 'failed');
+          console.error(`Import error for ${db.name}:`, error);
+        }
+      } else {
+        statusEl.textContent = 'No data';
+        statusEl.className = 'app-status success';
+        localStorage.setItem(`migration_completed_${db.name}`, 'no_data');
+      }
+    }
+
+    if (totalImported > 0) {
+      showMessage(`Successfully imported ${totalImported} items!`, 'success');
+    } else {
+      showMessage('Migration complete. No data needed to be transferred.', 'info');
+    }
+
+    startBtn.style.display = 'none';
+
+  } catch (error) {
+    showMessage(`Error: ${error.message}`, 'error');
+    startBtn.disabled = false;
+    retryBtn.style.display = 'block';
+    console.error('Migration error:', error);
+  }
+}
+
+function loadDataFromOldDomain() {
+  return new Promise((resolve, reject) => {
+    let popup = null;
+    let timeoutId = null;
+    let resolved = false;
+
+    const cleanup = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      window.removeEventListener('message', messageHandler);
+    };
+
+    const messageHandler = (event) => {
+      if (!event.origin.includes('wecreatethis.pages.dev')) {
+        return;
+      }
+
+      console.log('Migration UI: Received message from popup:', event.data?.type);
+
+      if (event.data?.type === 'MIGRATION_DATA') {
+        resolved = true;
+        cleanup();
+
+        if (event.data.success) {
+          console.log('Migration UI: Data received successfully');
+          resolve(event.data.data);
+        } else {
+          reject(new Error(event.data.error || 'Failed to export data'));
+        }
+      }
+    };
+
+    window.addEventListener('message', messageHandler);
+
+    // Open popup window
+    const width = 400;
+    const height = 200;
+    const left = (screen.width - width) / 2;
+    const top = (screen.height - height) / 2;
+
+    console.log('Migration UI: Opening popup to', MIGRATION_SOURCE);
+
+    popup = window.open(
+      MIGRATION_SOURCE,
+      'migration_helper',
+      `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
+    );
+
+    if (!popup || popup.closed) {
+      cleanup();
+      console.log('Migration UI: Popup was blocked');
+      reject(new Error('Popup was blocked. Please allow popups and try again.'));
+      return;
+    }
+
+    // Timeout
+    timeoutId = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        cleanup();
+        if (popup && !popup.closed) {
+          popup.close();
+        }
+        console.log('Migration UI: Timeout waiting for popup');
+        reject(new Error('Migration timed out. Please try again.'));
+      }
+    }, MIGRATION_TIMEOUT);
+  });
+}
+
+function showMessage(text, type) {
+  const messageBox = document.getElementById('messageBox');
+  messageBox.textContent = text;
+  messageBox.className = `message-box ${type} show`;
+}
+
+// ============================================================================
+// IMPORT FUNCTIONS (UI Mode)
+// ============================================================================
+
+async function importData(dbName, dbData, storeConfigs) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(dbName);
+
+    request.onerror = () => reject(new Error('Could not open database'));
+
+    request.onsuccess = async (event) => {
+      const db = event.target.result;
+      const result = {};
+
+      try {
+        for (const [storeName, items] of Object.entries(dbData)) {
+          if (!items || items.length === 0) continue;
+
+          if (!db.objectStoreNames.contains(storeName)) {
+            console.log(`Migration: Store ${storeName} not found, skipping`);
+            continue;
+          }
+
+          console.log(`Migration: Importing ${items.length} items to ${storeName}`);
+          const count = await importStore(db, storeName, items);
+          result[storeName] = count;
+        }
+
+        db.close();
+        resolve(result);
+      } catch (error) {
+        db.close();
+        reject(error);
+      }
+    };
+  });
+}
+
+function importStore(db, storeName, items) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+    let imported = 0;
+
+    transaction.oncomplete = () => resolve(imported);
+    transaction.onerror = () => reject(transaction.error);
+
+    for (const item of items) {
+      const deserialized = deserializeItem(item);
+
+      try {
+        const request = store.put(deserialized);
+        request.onsuccess = () => imported++;
+      } catch (error) {
+        console.warn(`Migration: Could not import item to ${storeName}:`, error);
+      }
+    }
+  });
+}
+
+function deserializeItem(item) {
+  if (!item || typeof item !== 'object') return item;
+
+  if (item.__type === 'ArrayBuffer' && item.data) {
+    return base64ToArrayBuffer(item.data);
+  }
+  if (item.__type === 'Uint8Array' && item.data) {
+    return new Uint8Array(base64ToArrayBuffer(item.data));
+  }
+
+  const result = Array.isArray(item) ? [] : {};
+  for (const [key, value] of Object.entries(item)) {
+    if (value && typeof value === 'object') {
+      result[key] = deserializeItem(value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+function base64ToArrayBuffer(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+// ============================================================================
+// EXPORT FUNCTIONS (Export Helper Mode)
+// ============================================================================
 
 async function exportAllData() {
   const result = {};
