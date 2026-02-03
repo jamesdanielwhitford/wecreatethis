@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wecreatethis-v11';
+const CACHE_NAME = 'wecreatethis-v12';
 const ASSETS = [
   '/',
   '/index',
@@ -7,7 +7,6 @@ const ASSETS = [
   '/icon-192.png',
   '/icon-512.png',
   '/migrate.html',
-  '/migrate-receiver.js',
   '/beautiful-mind/icon-192.png',
   '/birdle/icon-192.png',
   '/hardle/icon-192.png',

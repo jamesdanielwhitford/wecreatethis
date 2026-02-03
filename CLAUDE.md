@@ -98,10 +98,10 @@ function normalizeUrl(url) {
 - Consistent behavior across all apps
 
 ### Current Service Worker Versions
-- **Birdle**: v107
-- **Tarot**: v29
-- **Beautiful Mind**: v8
-- **Homepage**: v9
+- **Birdle**: v110
+- **Tarot**: v31
+- **Beautiful Mind**: v10
+- **Homepage**: v12
 
 ### Version Management
 - Service worker cache format: `projectname-vN`
@@ -114,6 +114,75 @@ function normalizeUrl(url) {
 - ES6+ features where appropriate
 - Clear variable names and comments for complex logic
 - Modular design with separate files for concerns (db.js, api.js, etc.)
+
+---
+
+## Cross-Domain Data Migration
+
+The site migrated from `wecreatethis.pages.dev` to `wecreatethis.com`. Since IndexedDB is origin-specific, user data doesn't automatically transfer between domains.
+
+### Manual Migration Page
+
+**URL:** `wecreatethis.com/migrate.html` (hidden, not linked from apps)
+
+**Purpose:** On-demand data transfer for users moving from old domain to new domain.
+
+**Files:**
+- `migrate.html` - Dual-purpose migration page deployed to both domains:
+  - On `wecreatethis.com`: User-facing UI for importing data
+  - On `wecreatethis.pages.dev`: Popup helper that exports data
+
+**How it works:**
+1. Send user to `wecreatethis.com/migrate.html`
+2. User clicks "Start Migration" button
+3. Opens popup window to `wecreatethis.pages.dev/migrate.html`
+4. Popup reads IndexedDB data from old domain
+5. Popup sends data via `postMessage` to main window
+6. Main window imports data into new domain's IndexedDB
+7. Shows success/failure status per app
+8. User can retry if needed
+
+**Features:**
+- ✅ Zero automatic behavior - completely manual
+- ✅ Clear UI showing what will be migrated
+- ✅ Real-time progress per app
+- ✅ Retry functionality if popup fails
+- ✅ Works only when user explicitly visits the page
+- ✅ No interruption for users who started on new domain
+
+### Why Popup Instead of Iframe?
+
+**Storage Partitioning Issue:** Modern browsers implement storage partitioning for privacy. Third-party iframes get isolated storage even if same-origin, meaning an iframe from `pages.dev` loaded on `wecreatethis.com` cannot access the real `pages.dev` IndexedDB.
+
+**Solution:** Popup windows are first-party contexts with full storage access. The popup can read the actual IndexedDB data and send it back via postMessage.
+
+### Data Migrated Per App
+
+| App | Database | Stores Migrated |
+|-----|----------|-----------------|
+| Birdle | `birdle-db` | `sightings`, `bingo_games` |
+| Tarot | `tarot-reader-db` | `readings` |
+| Beautiful Mind | `notes-app` | `notes` (IndexedDB only, not File System handles) |
+
+**Note:** Beautiful Mind's File System Access API handles are origin-bound and cannot be transferred. Desktop users will need to re-select their notes folder on the new domain (files remain on disk, just need re-authorization).
+
+### Testing Migration
+
+1. Ensure data exists on `wecreatethis.pages.dev` (check IndexedDB in DevTools)
+2. Visit `wecreatethis.com/migrate.html` in browser
+3. Click "Start Migration" and allow popup
+4. Verify status updates and success messages
+5. To test again, clear migration flags:
+   ```javascript
+   localStorage.removeItem('migration_completed_birdle-db');
+   localStorage.removeItem('migration_completed_tarot-reader-db');
+   localStorage.removeItem('migration_completed_notes-app');
+   ```
+
+### Requirements
+- Old domain (`wecreatethis.pages.dev`) must remain accessible
+- User must be online during migration
+- User must allow popup window when prompted
 
 ---
 
