@@ -235,27 +235,58 @@ const ALLOWED_ORIGINS = [
 const DATABASES = [
   {
     name: 'birdle-db',
+    version: 2,
     stores: ['sightings', 'bingo_games'],
     displayName: '🐦 Birdle',
     storeConfigs: {
-      sightings: { keyPath: 'id', autoIncrement: true },
-      bingo_games: { keyPath: 'id', autoIncrement: true }
+      sightings: {
+        keyPath: 'id',
+        autoIncrement: true,
+        indexes: [
+          { name: 'speciesCode', keyPath: 'speciesCode', unique: false },
+          { name: 'date', keyPath: 'date', unique: false },
+          { name: 'regionCode', keyPath: 'regionCode', unique: false },
+          { name: 'syncId', keyPath: 'syncId', unique: true }
+        ]
+      },
+      bingo_games: {
+        keyPath: 'id',
+        autoIncrement: true,
+        indexes: [
+          { name: 'createdAt', keyPath: 'createdAt', unique: false },
+          { name: 'completedAt', keyPath: 'completedAt', unique: false }
+        ]
+      }
     }
   },
   {
     name: 'tarot-reader-db',
+    version: 1,
     stores: ['readings'],
     displayName: '🔮 Tarot',
     storeConfigs: {
-      readings: { keyPath: 'id', autoIncrement: true }
+      readings: {
+        keyPath: 'id',
+        autoIncrement: true,
+        indexes: [
+          { name: 'date', keyPath: 'date', unique: false },
+          { name: 'spreadType', keyPath: 'spreadType', unique: false }
+        ]
+      }
     }
   },
   {
     name: 'notes-app',
+    version: 1,
     stores: ['notes'],
     displayName: '📝 Beautiful Mind',
     storeConfigs: {
-      notes: { keyPath: 'id', autoIncrement: true }
+      notes: {
+        keyPath: 'id',
+        indexes: [
+          { name: 'folder', keyPath: 'folder', unique: false }
+        ]
+      }
     }
   }
 ];
@@ -593,9 +624,37 @@ function showMessage(text, type) {
 
 async function importData(dbName, dbData, storeConfigs) {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(dbName);
+    // Find database config to get version
+    const dbConfig = DATABASES.find(d => d.name === dbName);
+    const version = dbConfig ? dbConfig.version : 1;
+
+    const request = indexedDB.open(dbName, version);
 
     request.onerror = () => reject(new Error('Could not open database'));
+
+    // Create stores if they don't exist (first time opening)
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      console.log(`Migration: Initializing ${dbName} schema`);
+
+      for (const [storeName, config] of Object.entries(storeConfigs)) {
+        if (!db.objectStoreNames.contains(storeName)) {
+          console.log(`Migration: Creating store ${storeName}`);
+          const store = db.createObjectStore(storeName, {
+            keyPath: config.keyPath,
+            autoIncrement: config.autoIncrement
+          });
+
+          // Create indexes if specified
+          if (config.indexes && config.indexes.length > 0) {
+            for (const index of config.indexes) {
+              store.createIndex(index.name, index.keyPath, { unique: index.unique });
+              console.log(`Migration: Created index ${index.name} on ${storeName}`);
+            }
+          }
+        }
+      }
+    };
 
     request.onsuccess = async (event) => {
       const db = event.target.result;
