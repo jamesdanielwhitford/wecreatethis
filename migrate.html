@@ -437,8 +437,7 @@ function checkMigrationStatus() {
   }
 
   if (allMigrated) {
-    showMessage('All data has been migrated successfully!', 'success');
-    document.getElementById('startBtn').style.display = 'none';
+    showMessage('All data has been migrated successfully! You can run it again if needed.', 'success');
   }
 }
 
@@ -498,12 +497,12 @@ async function startMigration() {
     }
 
     if (totalImported > 0) {
-      showMessage(`Successfully imported ${totalImported} items!`, 'success');
+      showMessage(`Successfully imported ${totalImported} items! You can run again if needed.`, 'success');
     } else {
       showMessage('Migration complete. No data needed to be transferred.', 'info');
     }
 
-    startBtn.style.display = 'none';
+    startBtn.disabled = false;
 
   } catch (error) {
     showMessage(`Error: ${error.message}`, 'error');
