@@ -47,12 +47,16 @@ window.addEventListener('message', async (event) => {
     console.log('Migration helper: Received migration request from', event.origin);
 
     try {
+      console.log('Migration helper: Starting data export...');
       const data = await exportAllData();
+      console.log('Migration helper: Export complete, data:', JSON.stringify(data).slice(0, 500));
+      console.log('Migration helper: Sending data back to', event.origin);
       event.source.postMessage({
         type: 'MIGRATION_DATA',
         data: data,
         success: true
       }, event.origin);
+      console.log('Migration helper: Data sent successfully');
     } catch (error) {
       console.error('Migration helper: Error exporting data:', error);
       event.source.postMessage({
@@ -68,9 +72,13 @@ window.addEventListener('message', async (event) => {
 async function exportAllData() {
   const result = {};
 
+  console.log('Migration helper: Checking databases:', DATABASES.map(d => d.name));
+
   for (const dbConfig of DATABASES) {
     try {
+      console.log(`Migration helper: Trying to export ${dbConfig.name}...`);
       const dbData = await exportDatabase(dbConfig.name, dbConfig.stores);
+      console.log(`Migration helper: ${dbConfig.name} result:`, dbData);
       if (dbData && Object.keys(dbData).length > 0) {
         result[dbConfig.name] = dbData;
       }
@@ -80,6 +88,7 @@ async function exportAllData() {
     }
   }
 
+  console.log('Migration helper: Final export result:', result);
   return result;
 }
 
