@@ -1,4 +1,4 @@
-const CACHE_NAME = 'birdle-v110';
+const CACHE_NAME = 'birdle-v111';
 const ASSETS = [
   '/birdle/',
   '/birdle/index',
