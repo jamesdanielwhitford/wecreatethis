@@ -235,10 +235,19 @@ const ALLOWED_ORIGINS = [
 const DATABASES = [
   {
     name: 'birdle-db',
-    version: 2,
-    stores: ['sightings', 'bingo_games'],
+    version: 3,
+    stores: ['sightings', 'bingo_games'], // Only migrate user data, not cached API data
     displayName: '🐦 Birdle',
     storeConfigs: {
+      birds: {
+        keyPath: 'speciesCode',
+        autoIncrement: false,
+        indexes: [
+          { name: 'lastViewed', keyPath: 'lastViewed', unique: false },
+          { name: 'hasSightings', keyPath: 'hasSightings', unique: false },
+          { name: 'continent', keyPath: 'continent', unique: false }
+        ]
+      },
       sightings: {
         keyPath: 'id',
         autoIncrement: true,
@@ -248,6 +257,11 @@ const DATABASES = [
           { name: 'regionCode', keyPath: 'regionCode', unique: false },
           { name: 'syncId', keyPath: 'syncId', unique: true }
         ]
+      },
+      cache_meta: {
+        keyPath: 'key',
+        autoIncrement: false,
+        indexes: []
       },
       bingo_games: {
         keyPath: 'id',
@@ -277,12 +291,18 @@ const DATABASES = [
   },
   {
     name: 'notes-app',
-    version: 1,
-    stores: ['notes'],
+    version: 2,
+    stores: ['notes', 'handles'],
     displayName: '📝 Beautiful Mind',
     storeConfigs: {
+      handles: {
+        keyPath: undefined,
+        autoIncrement: false,
+        indexes: []
+      },
       notes: {
         keyPath: 'id',
+        autoIncrement: false,
         indexes: [
           { name: 'folder', keyPath: 'folder', unique: false }
         ]
@@ -352,20 +372,25 @@ function runExportMode() {
 
         updateStatus('Sending to new site...');
 
-        // Try to post to opener
-        for (const origin of ALLOWED_ORIGINS) {
-          if (origin.startsWith('http://localhost') || origin.startsWith('http://127')) continue;
-          try {
-            targetWindow.postMessage({
-              type: 'MIGRATION_DATA',
-              data: data,
-              success: true
-            }, origin);
-            console.log('Migration helper: Data sent to', origin);
-          } catch (e) {
-            console.log('Migration helper: Could not send to', origin);
+        // Get the actual opener's origin and send only to that
+        let targetOrigin = '*';
+        try {
+          // Try to get the opener's origin (may fail due to CORS)
+          if (window.opener && window.opener.location.origin) {
+            targetOrigin = window.opener.location.origin;
+            console.log('Migration helper: Detected opener origin:', targetOrigin);
           }
+        } catch (e) {
+          // If we can't access origin due to CORS, send to wildcard
+          console.log('Migration helper: Could not detect opener origin, using wildcard');
         }
+
+        targetWindow.postMessage({
+          type: 'MIGRATION_DATA',
+          data: data,
+          success: true
+        }, targetOrigin);
+        console.log('Migration helper: Data sent to', targetOrigin);
 
         if (Object.keys(data).length > 0) {
           updateStatus('Data exported! This window will close...', 'success');
@@ -555,7 +580,9 @@ function loadDataFromOldDomain() {
     };
 
     const messageHandler = (event) => {
+      // Accept messages from the old domain (pages.dev)
       if (!event.origin.includes('wecreatethis.pages.dev')) {
+        console.log('Migration UI: Ignoring message from:', event.origin);
         return;
       }
 
@@ -640,10 +667,17 @@ async function importData(dbName, dbData, storeConfigs) {
       for (const [storeName, config] of Object.entries(storeConfigs)) {
         if (!db.objectStoreNames.contains(storeName)) {
           console.log(`Migration: Creating store ${storeName}`);
-          const store = db.createObjectStore(storeName, {
-            keyPath: config.keyPath,
-            autoIncrement: config.autoIncrement
-          });
+
+          // Build options object, only including defined values
+          const options = {};
+          if (config.keyPath !== undefined) {
+            options.keyPath = config.keyPath;
+          }
+          if (config.autoIncrement !== undefined) {
+            options.autoIncrement = config.autoIncrement;
+          }
+
+          const store = db.createObjectStore(storeName, options);
 
           // Create indexes if specified
           if (config.indexes && config.indexes.length > 0) {
