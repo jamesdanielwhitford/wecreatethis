@@ -222,7 +222,7 @@ const GameState = {
       }
     }
 
-    // Scan all marked tiles
+    // Pass 1: Apply red (incorrect) marks first
     for (let row = 0; row < this.currentRow; row++) {
       for (let col = 0; col < 4; col++) {
         const tile = this.tiles[row][col];
@@ -233,7 +233,20 @@ const GameState = {
           if (!this.keyboardColors[letter] || this.keyboardColors[letter].startsWith('outline-')) {
             this.keyboardColors[letter] = 'outline-incorrect';
           }
-        } else if (tile.mark === 'correct') {
+        }
+      }
+    }
+
+    // Pass 2: Apply green (correct) marks - these override red marks
+    // Green always wins because knowing a letter is correct somewhere
+    // is more important than knowing it's wrong somewhere else
+    for (let row = 0; row < this.currentRow; row++) {
+      for (let col = 0; col < 4; col++) {
+        const tile = this.tiles[row][col];
+        const letter = tile.letter;
+
+        if (tile.mark === 'correct') {
+          // Don't override solid colors, but DO override outline-incorrect
           if (!this.keyboardColors[letter] || this.keyboardColors[letter].startsWith('outline-')) {
             this.keyboardColors[letter] = 'outline-correct';
           }
