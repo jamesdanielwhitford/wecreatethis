@@ -10,17 +10,84 @@
   <title>Chessle</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 </head>
 <body>
-  <nav class="navbar">
+  <div class="page-header">
+    <a href="/" class="home-btn"></a>
     <h1>Chessle</h1>
-  </nav>
+    <button id="stats-btn" class="stats-btn" title="Statistics">♔</button>
+  </div>
 
-  <main class="container">
-    <h2>Welcome to Chessle</h2>
-    <p>Chess puzzle game coming soon...</p>
-  </main>
+  <ul id="games-list" class="games-list"></ul>
+
+  <!-- Floating Action Button -->
+  <div class="fab-container">
+    <button id="new-game-fab" class="fab"></button>
+  </div>
+
+  <!-- Game Type Selection Modal -->
+  <div id="game-select-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h3>Select Game Mode</h3>
+
+      <div class="game-options">
+        <button class="game-option" data-mode="daily">
+          <span class="game-name">Daily Puzzle</span>
+          <span class="game-description">Today's challenge for everyone</span>
+        </button>
+        <button class="game-option" data-mode="practice">
+          <span class="game-name">Practice</span>
+          <span class="game-description">Random puzzle to sharpen your skills</span>
+        </button>
+        <button class="game-option" data-mode="challenge">
+          <span class="game-name">Challenge</span>
+          <span class="game-description">Advanced difficulty puzzle</span>
+        </button>
+      </div>
+
+      <div class="modal-actions">
+        <button id="cancel-game-btn" class="modal-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rename Game Modal -->
+  <div id="rename-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h3>Rename Game</h3>
+
+      <div class="form-group">
+        <label for="rename-input">New Title</label>
+        <input type="text" id="rename-input" class="form-input" placeholder="Enter new title">
+      </div>
+
+      <div class="modal-actions">
+        <button id="save-rename-btn" class="modal-btn primary">Save</button>
+        <button id="cancel-rename-btn" class="modal-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h3>Delete Game</h3>
+
+      <p class="delete-message">Are you sure you want to delete "<span id="delete-game-title"></span>"?</p>
+      <p class="hint">This action cannot be undone.</p>
+
+      <div class="modal-actions">
+        <button id="confirm-delete-btn" class="modal-btn danger">Delete</button>
+        <button id="cancel-delete-btn" class="modal-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
