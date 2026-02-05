@@ -361,6 +361,38 @@ body {
   border-color: var(--accent);
 }
 
+/* Color Toggle (White/Black picker) */
+.color-toggle {
+  display: flex;
+  gap: 0;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.color-option {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: var(--secondary-bg);
+  color: var(--text-muted);
+  font-family: "Cinzel", serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.color-option:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.color-option.selected {
+  background: var(--accent);
+  color: var(--primary-bg);
+  font-weight: 600;
+}
+
 .hint {
   font-size: 0.85rem;
   color: var(--text-muted);

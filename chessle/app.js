@@ -17,20 +17,38 @@ const createGameBtn = document.getElementById('create-game-btn');
 const gameTitleInput = document.getElementById('game-title-input');
 const playerAliasInput = document.getElementById('player-alias-input');
 const tauntInput = document.getElementById('taunt-input');
+const colorToggle = document.getElementById('color-toggle');
 const renameModal = document.getElementById('rename-modal');
 const deleteModal = document.getElementById('delete-modal');
 
 // Store games in memory
 let games = [];
 
+// Selected color for new game
+let selectedColor = 'white';
+
 // Chess pieces for random alias generation
 const chessPieces = ['Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'];
 
-// Generate random alias
-function generateRandomAlias() {
+// Generate random alias based on chosen color
+function generateRandomAlias(color) {
   const piece = chessPieces[Math.floor(Math.random() * chessPieces.length)];
-  return `White ${piece}`;
+  const colorName = color === 'white' ? 'White' : 'Black';
+  return `${colorName} ${piece}`;
 }
+
+// Color toggle handling
+colorToggle.addEventListener('click', (e) => {
+  const btn = e.target.closest('.color-option');
+  if (!btn) return;
+
+  selectedColor = btn.dataset.color;
+  colorToggle.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+
+  // Update alias placeholder to match chosen color
+  playerAliasInput.placeholder = generateRandomAlias(selectedColor);
+});
 
 // App initialization
 document.addEventListener('DOMContentLoaded', async () => {
@@ -89,9 +107,14 @@ newGameFab.addEventListener('click', () => {
   playerAliasInput.value = '';
   tauntInput.value = '';
 
+  // Reset color toggle to white
+  selectedColor = 'white';
+  colorToggle.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
+  colorToggle.querySelector('[data-color="white"]').classList.add('selected');
+
   // Show the actual defaults as grey placeholder text
   gameTitleInput.placeholder = formatDate(new Date().toISOString());
-  playerAliasInput.placeholder = generateRandomAlias();
+  playerAliasInput.placeholder = generateRandomAlias(selectedColor);
   tauntInput.placeholder = 'Your move';
 
   createGameModal.style.display = 'flex';
@@ -109,28 +132,32 @@ createGameBtn.addEventListener('click', async () => {
   const title = gameTitleInput.value.trim() || gameTitleInput.placeholder;
   const taunt = tauntInput.value.trim() || tauntInput.placeholder;
 
+  // Generate UUID for game ID
+  const gameUUID = generateUUID();
+
   // Create game object
   const now = new Date().toISOString();
   const game = {
+    id: gameUUID,
     title: title,
     createdAt: now,
     updatedAt: now,
     turnCount: 0,
-    playerWhiteAlias: playerAlias,
-    playerBlackAlias: 'Waiting for opponent...',
+    playerColor: selectedColor,
+    playerWhiteAlias: selectedColor === 'white' ? playerAlias : 'Waiting for opponent...',
+    playerBlackAlias: selectedColor === 'black' ? playerAlias : 'Waiting for opponent...',
     currentTaunt: taunt,
-    // Game state will be added later
-    boardState: 'initial', // Placeholder
+    boardState: null, // Will be set by game.js on load
     currentTurn: 'white',
     moveHistory: []
   };
 
   try {
-    const gameId = await saveGame(game);
-    console.log('Game created with ID:', gameId);
+    await saveGame(game);
+    console.log('Game created with UUID:', gameUUID);
 
     // Navigate to game page
-    window.location.href = `/chessle/game?id=${gameId}`;
+    window.location.href = `/chessle/game?id=${gameUUID}`;
   } catch (error) {
     console.error('Failed to create game:', error);
     alert('Failed to create game. Please try again.');

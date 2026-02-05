@@ -35,7 +35,6 @@ const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
 
 // Current game data
 let currentGame = null;
-let gameId = null;
 
 // Chess piece Unicode symbols
 const PIECES = {
@@ -46,6 +45,15 @@ const PIECES = {
   knight: '♞',
   pawn: '♟'
 };
+
+// Chess pieces for random alias generation
+const chessPieces = ['Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'];
+
+function generateRandomAlias(color) {
+  const piece = chessPieces[Math.floor(Math.random() * chessPieces.length)];
+  const colorName = color === 'white' ? 'White' : 'Black';
+  return `${colorName} ${piece}`;
+}
 
 // Initial board state (8x8 array, row 0 = rank 8, row 7 = rank 1)
 const initialBoardState = [
@@ -96,7 +104,7 @@ const initialBoardState = [
 ];
 
 // Board state
-let boardState = JSON.parse(JSON.stringify(initialBoardState));
+let boardState = cloneBoard(initialBoardState);
 
 // Snapshot of board before player starts moving (for reset)
 let preMoveBoard = null;
@@ -110,18 +118,30 @@ let moveState = 'idle';
 // Track the player's single valid move (from/to)
 let playerMove = null;
 
-// Which color this player controls (default white for now, will come from game data later)
+// Which color this player controls
 let playerColor = 'white';
+
+// Whether the board is flipped (black's perspective)
+let boardFlipped = false;
 
 // Deep copy a board state
 function cloneBoard(board) {
   return JSON.parse(JSON.stringify(board));
 }
 
-// Get game ID from URL
-function getGameIdFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  return parseInt(params.get('id'), 10);
+// Apply a move to a board state (mutates the board)
+function applyMoveToBoard(board, fromRow, fromCol, toRow, toCol) {
+  board[toRow][toCol] = board[fromRow][fromCol];
+  board[fromRow][fromCol] = null;
+}
+
+// Replay all moves from move history onto a fresh board
+function replayMoves(moveHistory) {
+  const board = cloneBoard(initialBoardState);
+  for (const move of moveHistory) {
+    applyMoveToBoard(board, move.fromRow, move.fromCol, move.toRow, move.toCol);
+  }
+  return board;
 }
 
 // Format date for display
@@ -134,15 +154,245 @@ function formatDate(dateString) {
   });
 }
 
-// Update the UI to reflect current move state
+// --- URL Parsing ---
+
+// Parse URL to determine if this is a shared link or local link
+function parseUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+
+  // Shared link has 'g' param
+  if (params.has('g')) {
+    return {
+      type: 'shared',
+      gameUUID: params.get('g'),
+      turn: parseInt(params.get('t'), 10),
+      move: params.get('m'), // "fromRow,fromCol,toRow,toCol" e.g. "6,4,4,4"
+      alias: params.get('a'),
+      taunt: params.get('ta') || null,
+      creatorColor: params.get('c') || null, // 'w' or 'b', only on first share
+      title: params.get('ti') || null // only on first share
+    };
+  }
+
+  // Local link has 'id' param
+  if (params.has('id')) {
+    return {
+      type: 'local',
+      gameId: params.get('id')
+    };
+  }
+
+  return null;
+}
+
+// Parse move string "fromRow,fromCol,toRow,toCol" into object
+function parseMove(moveStr) {
+  const parts = moveStr.split(',').map(Number);
+  return { fromRow: parts[0], fromCol: parts[1], toRow: parts[2], toCol: parts[3] };
+}
+
+// Encode move object to string
+function encodeMove(move) {
+  return `${move.fromRow},${move.fromCol},${move.toRow},${move.toCol}`;
+}
+
+// --- Shared URL Handling ---
+
+// Receive a shared move: create or update game from URL params
+async function receiveSharedMove(params) {
+  let game = await getGame(params.gameUUID);
+
+  if (!game) {
+    // New game — create it silently
+    const creatorColor = params.creatorColor === 'b' ? 'black' : 'white';
+    const myColor = creatorColor === 'white' ? 'black' : 'white';
+    const myAlias = generateRandomAlias(myColor);
+
+    const now = new Date().toISOString();
+    game = {
+      id: params.gameUUID,
+      title: params.title || formatDate(now),
+      createdAt: now,
+      updatedAt: now,
+      turnCount: 0,
+      playerColor: myColor,
+      playerWhiteAlias: creatorColor === 'white' ? params.alias : myAlias,
+      playerBlackAlias: creatorColor === 'black' ? params.alias : myAlias,
+      currentTaunt: params.taunt || '',
+      boardState: null,
+      currentTurn: 'white',
+      moveHistory: []
+    };
+
+    // Apply the received move if present
+    if (params.move) {
+      const move = parseMove(params.move);
+      game.moveHistory.push(move);
+      game.turnCount = params.turn;
+      game.currentTurn = game.turnCount % 2 === 0 ? 'white' : 'black';
+    }
+
+    if (params.taunt) {
+      game.currentTaunt = params.taunt;
+    }
+
+    // Rebuild board from move history
+    game.boardState = replayMoves(game.moveHistory);
+
+    await saveGame(game);
+  } else {
+    // Existing game — apply the move
+    if (params.move) {
+      const move = parseMove(params.move);
+      game.moveHistory.push(move);
+      game.turnCount = params.turn;
+      game.currentTurn = game.turnCount % 2 === 0 ? 'white' : 'black';
+    }
+
+    // Update opponent alias if provided
+    const opponentColor = game.playerColor === 'white' ? 'black' : 'white';
+    if (params.alias) {
+      if (opponentColor === 'white') {
+        game.playerWhiteAlias = params.alias;
+      } else {
+        game.playerBlackAlias = params.alias;
+      }
+    }
+
+    if (params.taunt) {
+      game.currentTaunt = params.taunt;
+    }
+
+    game.updatedAt = new Date().toISOString();
+    game.boardState = replayMoves(game.moveHistory);
+
+    await updateGame(game);
+  }
+
+  // Redirect to clean local URL
+  window.location.replace(`/chessle/game?id=${params.gameUUID}`);
+}
+
+// --- Share Move ---
+
+function buildShareUrl() {
+  const params = new URLSearchParams();
+  params.set('g', currentGame.id);
+  params.set('t', currentGame.turnCount + 1);
+  params.set('m', encodeMove(playerMove));
+
+  // Sender's alias
+  const myAlias = playerColor === 'white'
+    ? currentGame.playerWhiteAlias
+    : currentGame.playerBlackAlias;
+  params.set('a', myAlias);
+
+  // Taunt (always send current taunt)
+  if (currentGame.currentTaunt) {
+    params.set('ta', currentGame.currentTaunt);
+  }
+
+  // First share — include creator color and title
+  if (currentGame.turnCount === 0) {
+    params.set('c', currentGame.playerColor === 'white' ? 'w' : 'b');
+    params.set('ti', currentGame.title);
+  }
+
+  const baseUrl = `${window.location.origin}/chessle/game`;
+  return `${baseUrl}?${params.toString()}`;
+}
+
+async function shareMoveAction() {
+  if (!playerMove) return;
+
+  const shareUrl = buildShareUrl();
+
+  // Persist the move to DB
+  currentGame.moveHistory.push(playerMove);
+  currentGame.turnCount += 1;
+  currentGame.currentTurn = currentGame.turnCount % 2 === 0 ? 'white' : 'black';
+  currentGame.boardState = cloneBoard(boardState);
+  currentGame.updatedAt = new Date().toISOString();
+  await updateGame(currentGame);
+
+  // Reset move state
+  preMoveBoard = null;
+  playerMove = null;
+  moveState = 'idle';
+  updateMoveStateUI();
+
+  // Share or copy
+  if (navigator.share) {
+    try {
+      await navigator.share({ url: shareUrl });
+    } catch (err) {
+      // User cancelled share — fall back to clipboard
+      if (err.name !== 'AbortError') {
+        await copyToClipboard(shareUrl);
+      }
+    }
+  } else {
+    await copyToClipboard(shareUrl);
+  }
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Link copied!');
+  } catch {
+    // Fallback for older browsers
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    showToast('Link copied!');
+  }
+}
+
+function showToast(message) {
+  // Simple toast notification
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: var(--primary-bg);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: "Cinzel", serif;
+    font-size: 0.9rem;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s;
+  `;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => { toast.style.opacity = '1'; });
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 2000);
+}
+
+// --- UI State ---
+
 function updateMoveStateUI() {
   if (moveState === 'idle') {
-    // Show player info, hide actions
     playerInfoArea.style.display = '';
     playerActions.style.display = 'none';
     shareBtn.style.display = '';
 
-    // Opponent section shows their taunt or awaiting status
     opponentSection.classList.remove('planning');
     chessBoard.classList.remove('planning-mode');
     if (currentGame) {
@@ -154,39 +404,41 @@ function updateMoveStateUI() {
       }
     }
   } else if (moveState === 'moved') {
-    // Hide player info, show both buttons
     playerInfoArea.style.display = 'none';
     playerActions.style.display = '';
     shareBtn.style.display = '';
 
-    // Normal board, normal opponent section
     opponentSection.classList.remove('planning');
     chessBoard.classList.remove('planning-mode');
     if (currentGame) {
       opponentStatus.textContent = currentGame.currentTaunt || '';
     }
   } else if (moveState === 'planning') {
-    // Hide player info, show only reset
     playerInfoArea.style.display = 'none';
     playerActions.style.display = '';
     shareBtn.style.display = 'none';
 
-    // Red board, planning mode text
     opponentSection.classList.add('planning');
     chessBoard.classList.add('planning-mode');
     opponentStatus.textContent = 'Planning Mode';
   }
 }
 
-// Render the chess board
+// --- Board Rendering ---
+
 function renderBoard() {
   chessBoard.innerHTML = '';
 
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) {
+  for (let visualRow = 0; visualRow < 8; visualRow++) {
+    for (let visualCol = 0; visualCol < 8; visualCol++) {
+      // Map visual position to board array position
+      const row = boardFlipped ? (7 - visualRow) : visualRow;
+      const col = boardFlipped ? (7 - visualCol) : visualCol;
+
       const square = document.createElement('div');
       square.className = 'chess-square';
 
+      // Light/dark based on actual board position (not visual)
       const isLight = (row + col) % 2 === 0;
       square.classList.add(isLight ? 'light' : 'dark');
 
@@ -211,7 +463,8 @@ function renderBoard() {
   }
 }
 
-// Handle square click
+// --- Move Handling ---
+
 function handleSquareClick(row, col) {
   const clickedPiece = boardState[row][col];
 
@@ -242,38 +495,32 @@ function handleSquareClick(row, col) {
   }
 }
 
-// Perform a move and update state
 function performMove(fromRow, fromCol, toRow, toCol, piece) {
   // Snapshot the board before the first move
   if (moveState === 'idle') {
     preMoveBoard = cloneBoard(boardState);
   }
 
-  // Determine if this is a valid player move or triggers planning
   if (moveState === 'idle') {
     if (piece.color === playerColor) {
       // First move of player's own piece — valid move
-      boardState[toRow][toCol] = boardState[fromRow][fromCol];
-      boardState[fromRow][fromCol] = null;
+      applyMoveToBoard(boardState, fromRow, fromCol, toRow, toCol);
       playerMove = { fromRow, fromCol, toRow, toCol };
       moveState = 'moved';
     } else {
       // Moving opponent's piece immediately — planning mode
-      boardState[toRow][toCol] = boardState[fromRow][fromCol];
-      boardState[fromRow][fromCol] = null;
+      applyMoveToBoard(boardState, fromRow, fromCol, toRow, toCol);
       playerMove = null;
       moveState = 'planning';
     }
   } else if (moveState === 'moved') {
     // Second move of any kind — enter planning mode
-    boardState[toRow][toCol] = boardState[fromRow][fromCol];
-    boardState[fromRow][fromCol] = null;
+    applyMoveToBoard(boardState, fromRow, fromCol, toRow, toCol);
     playerMove = null;
     moveState = 'planning';
   } else {
     // Already in planning mode — free movement
-    boardState[toRow][toCol] = boardState[fromRow][fromCol];
-    boardState[fromRow][fromCol] = null;
+    applyMoveToBoard(boardState, fromRow, fromCol, toRow, toCol);
   }
 
   selectedSquare = null;
@@ -281,7 +528,6 @@ function performMove(fromRow, fromCol, toRow, toCol, piece) {
   updateMoveStateUI();
 }
 
-// Reset board to pre-move state
 function resetBoard() {
   if (preMoveBoard) {
     boardState = cloneBoard(preMoveBoard);
@@ -294,21 +540,25 @@ function resetBoard() {
   updateMoveStateUI();
 }
 
-// Share move (placeholder for now — will generate URL later)
-function shareMoveAction() {
-  // TODO: encode board state into URL and share
-  alert('Share functionality coming soon!');
-}
+// --- Game Loading ---
 
-// Load game data
 async function loadGame() {
-  gameId = getGameIdFromUrl();
+  const urlInfo = parseUrlParams();
 
-  if (!gameId) {
+  if (!urlInfo) {
     alert('No game ID provided');
     window.location.href = '/chessle';
     return;
   }
+
+  // Handle shared URL — process and redirect to local URL
+  if (urlInfo.type === 'shared') {
+    await receiveSharedMove(urlInfo);
+    return; // receiveSharedMove will redirect
+  }
+
+  // Local URL — load from DB
+  const gameId = urlInfo.gameId;
 
   try {
     currentGame = await getGame(gameId);
@@ -319,26 +569,37 @@ async function loadGame() {
       return;
     }
 
+    // Set player color from game data
+    playerColor = currentGame.playerColor || 'white';
+    boardFlipped = playerColor === 'black';
+
+    // Rebuild board from move history
+    if (currentGame.moveHistory && currentGame.moveHistory.length > 0) {
+      boardState = replayMoves(currentGame.moveHistory);
+    } else {
+      boardState = cloneBoard(initialBoardState);
+    }
+
     // Update header
     gameTitle.textContent = currentGame.title;
 
-    // For now, player is always white and opponent is always black
-    playerColor = 'white';
-    const opponentAlias = currentGame.playerBlackAlias;
-    const playerAlias = currentGame.playerWhiteAlias;
+    // Set player/opponent names based on color
+    const myAlias = playerColor === 'white'
+      ? currentGame.playerWhiteAlias
+      : currentGame.playerBlackAlias;
+    const opponentAlias = playerColor === 'white'
+      ? currentGame.playerBlackAlias
+      : currentGame.playerWhiteAlias;
 
-    // Opponent section
     opponentName.textContent = opponentAlias;
+    playerNameDisplay.textContent = myAlias;
 
-    // Player section
-    playerNameDisplay.textContent = playerAlias;
     if (currentGame.currentTaunt) {
       playerTaunt.textContent = currentGame.currentTaunt;
     } else {
       playerTaunt.style.display = 'none';
     }
 
-    // Set initial move state UI
     updateMoveStateUI();
 
   } catch (error) {
@@ -348,7 +609,8 @@ async function loadGame() {
   }
 }
 
-// Button handlers
+// --- Event Listeners ---
+
 resetBtn.addEventListener('click', resetBoard);
 shareBtn.addEventListener('click', shareMoveAction);
 
@@ -405,7 +667,7 @@ deleteGameMenuBtn.addEventListener('click', () => {
 
 confirmDeleteBtn.addEventListener('click', async () => {
   try {
-    await deleteGame(gameId);
+    await deleteGame(currentGame.id);
     window.location.href = '/chessle';
   } catch (error) {
     console.error('Failed to delete game:', error);
