@@ -443,6 +443,26 @@ body {
   color: var(--text);
 }
 
+/* Game page: lock to viewport, let board shrink to fit */
+body.game-page {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.game-page .game-header-container,
+body.game-page .opponent-section,
+body.game-page .player-section {
+  flex-shrink: 0;
+}
+
+body.game-page .chess-board {
+  flex-shrink: 1;
+  min-height: 0;
+  align-self: center;
+}
+
 /* Game Page Styles */
 .game-header-container {
   position: relative;
