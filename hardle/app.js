@@ -178,6 +178,11 @@ function setupEventListeners() {
     tile.addEventListener('click', handleTileClick);
   });
 
+  // Score box clicks (to show explanation modal)
+  document.querySelectorAll('.score-box').forEach(scoreBox => {
+    scoreBox.addEventListener('click', handleScoreBoxClick);
+  });
+
   // Info button
   const infoBtn = document.getElementById('info-btn');
   if (infoBtn) {
@@ -413,6 +418,22 @@ function handleTileClick(e) {
 }
 
 /**
+ * Handle score box click (show explanation modal)
+ */
+function handleScoreBoxClick(e) {
+  const row = parseInt(e.target.dataset.row);
+
+  // Only show modal if there's a score in this row
+  if (row >= game.currentRow) return;
+
+  const guessObj = game.guesses[row];
+  if (!guessObj) return;
+
+  // Show the score explanation modal
+  UI.showModal('score-modal');
+}
+
+/**
  * Handle mode selection from info modal
  */
 function handleModeSelection(mode) {
@@ -523,8 +544,8 @@ function updateModeSelectionUI() {
       if (exampleTiles[2]) exampleTiles[2].classList.add('example-green-mark');
       if (exampleTiles[3]) exampleTiles[3].classList.add('example-red-mark');
     } else {
-      marksDescription.textContent = 'The game automatically adds colored dots to show which letters are correct or incorrect.';
-      // Show dots
+      marksDescription.textContent = 'The game automatically adds colored borders to show which letters are correct or incorrect.';
+      // Show borders (same style as hard mode, but automatic)
       exampleTiles.forEach(tile => {
         tile.classList.remove('example-red-mark', 'example-green-mark');
       });

@@ -175,7 +175,7 @@
             <span class="mode-label">Hard Mode</span>
           </button>
           <button id="select-easy-mode" class="mode-btn" data-mode="easy">
-            <span class="mode-label">Easy Mode</span>
+            <span class="mode-label">Easy Mode (Beta)</span>
           </button>
         </div>
 
@@ -216,7 +216,7 @@
               <div class="example-tile">E</div>
               <div class="example-score example-score-partial">2</div>
             </div>
-            <p class="example-description" id="marks-description">Tap tiles to mark them with colored borders to track your thinking.</p>
+            <p class="example-description" id="marks-description">Colored borders show which letters are correct or incorrect.</p>
           </div>
 
           <!-- Example 4: Green - Win! -->
@@ -252,6 +252,57 @@
         <p>The word was: <strong id="answer-word"></strong></p>
         <button id="share-btn" class="btn">Share Results</button>
         <button id="play-again-btn" class="btn" style="display: inline-block; margin-top: 12px;">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Score Explanation Modal -->
+  <div id="score-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>How Scoring Works</h2>
+        <button class="modal-close" data-modal="score-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 16px;">The score shows how many letters from your guess appear in the target word.</p>
+
+        <div class="rules-section">
+          <!-- Example 1: Partial match -->
+          <div class="example">
+            <div class="example-row">
+              <div class="example-tile">W</div>
+              <div class="example-tile">O</div>
+              <div class="example-tile">R</div>
+              <div class="example-tile">D</div>
+              <div class="example-score example-score-partial">2</div>
+            </div>
+            <p class="example-description">A score of 2 means two letters from your guess are in the target word.</p>
+          </div>
+
+          <!-- Example 2: Red - No match -->
+          <div class="example">
+            <div class="example-row">
+              <div class="example-tile example-red">W</div>
+              <div class="example-tile example-red">O</div>
+              <div class="example-tile example-red">L</div>
+              <div class="example-tile example-red">F</div>
+              <div class="example-score example-score-zero">0</div>
+            </div>
+            <p class="example-description">Red tiles and 0 score mean none of these letters are in the target word.</p>
+          </div>
+
+          <!-- Example 3: Green - Win! -->
+          <div class="example">
+            <div class="example-row">
+              <div class="example-tile example-green">D</div>
+              <div class="example-tile example-green">R</div>
+              <div class="example-tile example-green">I</div>
+              <div class="example-tile example-green">P</div>
+              <div class="example-score example-score-win">4</div>
+            </div>
+            <p class="example-description">Green tiles and a score of 4 mean you win!</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>

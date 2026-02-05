@@ -264,24 +264,13 @@ body {
   border: 3px solid var(--score-green);
 }
 
-/* Tile dots (Easy Mode - top-right dots) */
-.tile.dot-incorrect::after,
-.tile.dot-correct::after {
-  content: '';
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+/* Tile dots (Easy Mode - now uses borders like Hard Mode) */
+.tile.dot-incorrect {
+  border: 3px solid var(--score-red);
 }
 
-.tile.dot-incorrect::after {
-  background: var(--score-red);
-}
-
-.tile.dot-correct::after {
-  background: var(--score-green);
+.tile.dot-correct {
+  border: 3px solid var(--score-green);
 }
 
 /* Tile background colors for submitted guesses */
@@ -318,6 +307,16 @@ body {
   justify-content: center;
   font-size: calc(var(--tile-size) * 0.45); /* Scale font with tile size */
   font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.2s;
+}
+
+.score-box:hover {
+  opacity: 0.8;
+}
+
+.score-box:active {
+  transform: scale(0.95);
 }
 
 .score-box.score-filled,
@@ -877,24 +876,13 @@ body {
   border: 3px solid var(--score-green) !important;
 }
 
-/* Example dots for easy mode */
-.example-tile.example-red-dot::after,
-.example-tile.example-green-dot::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+/* Example borders for easy mode (now uses same style as hard mode) */
+.example-tile.example-red-dot {
+  border: 3px solid var(--score-red) !important;
 }
 
-.example-tile.example-red-dot::after {
-  background: var(--score-red);
-}
-
-.example-tile.example-green-dot::after {
-  background: var(--score-green);
+.example-tile.example-green-dot {
+  border: 3px solid var(--score-green) !important;
 }
 
 .example-tile {
