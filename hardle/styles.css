@@ -307,6 +307,16 @@ body {
   justify-content: center;
   font-size: calc(var(--tile-size) * 0.45); /* Scale font with tile size */
   font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.2s;
+}
+
+.score-box:hover {
+  opacity: 0.8;
+}
+
+.score-box:active {
+  transform: scale(0.95);
 }
 
 .score-box.score-filled,

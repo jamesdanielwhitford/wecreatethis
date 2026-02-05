@@ -178,6 +178,11 @@ function setupEventListeners() {
     tile.addEventListener('click', handleTileClick);
   });
 
+  // Score box clicks (to show explanation modal)
+  document.querySelectorAll('.score-box').forEach(scoreBox => {
+    scoreBox.addEventListener('click', handleScoreBoxClick);
+  });
+
   // Info button
   const infoBtn = document.getElementById('info-btn');
   if (infoBtn) {
@@ -410,6 +415,22 @@ function handleTileClick(e) {
 
   // Save state
   game.saveState();
+}
+
+/**
+ * Handle score box click (show explanation modal)
+ */
+function handleScoreBoxClick(e) {
+  const row = parseInt(e.target.dataset.row);
+
+  // Only show modal if there's a score in this row
+  if (row >= game.currentRow) return;
+
+  const guessObj = game.guesses[row];
+  if (!guessObj) return;
+
+  // Show the score explanation modal
+  UI.showModal('score-modal');
 }
 
 /**
