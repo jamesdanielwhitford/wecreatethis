@@ -523,8 +523,8 @@ function updateModeSelectionUI() {
       if (exampleTiles[2]) exampleTiles[2].classList.add('example-green-mark');
       if (exampleTiles[3]) exampleTiles[3].classList.add('example-red-mark');
     } else {
-      marksDescription.textContent = 'The game automatically adds colored dots to show which letters are correct or incorrect.';
-      // Show dots
+      marksDescription.textContent = 'The game automatically adds colored borders to show which letters are correct or incorrect.';
+      // Show borders (same style as hard mode, but automatic)
       exampleTiles.forEach(tile => {
         tile.classList.remove('example-red-mark', 'example-green-mark');
       });
