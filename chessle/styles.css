@@ -198,6 +198,45 @@ body {
   background: rgba(220, 38, 38, 0.1);
 }
 
+/* Game List Dropdown (homepage three-dot menu) */
+.game-list-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--primary-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.game-list-dropdown .dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text);
+  font-family: "Cinzel", serif;
+}
+
+.game-list-dropdown .dropdown-item:hover {
+  background: var(--secondary-bg);
+}
+
+.game-list-dropdown .danger-text {
+  color: #dc2626;
+}
+
+.game-list-dropdown .danger-text:hover {
+  background: rgba(220, 38, 38, 0.1);
+}
+
 /* FAB (Floating Action Button) */
 .fab-container {
   position: fixed;
@@ -483,16 +522,24 @@ body.game-page {
   overflow: hidden;
 }
 
-body.game-page .game-header-container,
-body.game-page .opponent-section,
-body.game-page .player-section {
+body.game-page .game-header-container {
   flex-shrink: 0;
 }
 
-body.game-page .chess-board {
-  flex-shrink: 1;
+body.game-page .opponent-section,
+body.game-page .player-section {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   min-height: 0;
-  align-self: center;
+}
+
+body.game-page .board-wrapper {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Game Page Styles */
@@ -587,9 +634,8 @@ body.game-page .chess-board {
 
 /* Opponent Section (above board) */
 .opponent-section {
-  margin-top: 24px;
   text-align: center;
-  padding: 16px;
+  padding: 8px 16px;
   transition: color 0.3s ease;
 }
 
@@ -619,9 +665,8 @@ body.game-page .chess-board {
 
 /* Player Section (below board) */
 .player-section {
-  margin-top: 16px;
   text-align: center;
-  padding: 16px;
+  padding: 8px 16px;
 }
 
 .player-info-area {
@@ -692,13 +737,12 @@ body.game-page .chess-board {
 
 /* Chess Board */
 .chess-board {
-  margin-top: 16px;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
+  width: min(100%, 500px);
+  max-height: 100%;
   aspect-ratio: 1 / 1;
-  width: 100%;
-  max-width: 400px;
   border: 3px solid var(--accent);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   transition: border-color 0.3s ease;

@@ -166,6 +166,98 @@ createGameBtn.addEventListener('click', async () => {
   createGameModal.style.display = 'none';
 });
 
+// --- Game list menu (three dots) ---
+
+const renameInput = document.getElementById('rename-input');
+const saveRenameBtn = document.getElementById('save-rename-btn');
+const cancelRenameBtn = document.getElementById('cancel-rename-btn');
+const deleteGameTitleSpan = document.getElementById('delete-game-title');
+const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+
+// Track which game the menu is acting on
+let menuGameId = null;
+
+// Delegate click on three-dot menu buttons
+gamesList.addEventListener('click', (e) => {
+  const menuBtn = e.target.closest('.game-menu-btn');
+  if (!menuBtn) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  menuGameId = menuBtn.dataset.id;
+  const game = games.find(g => g.id === menuGameId);
+  if (!game) return;
+
+  // Show a simple action sheet: rename or delete
+  // Re-use the rename modal with a choice step, or just show both options inline
+  // For simplicity, show a small dropdown next to the button
+  closeMenuDropdown();
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'game-list-dropdown';
+  dropdown.innerHTML = `
+    <button class="dropdown-item rename-item">Rename</button>
+    <button class="dropdown-item delete-item danger-text">Delete</button>
+  `;
+  menuBtn.parentElement.appendChild(dropdown);
+
+  dropdown.querySelector('.rename-item').addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    closeMenuDropdown();
+    renameInput.value = game.title;
+    renameModal.style.display = 'flex';
+  });
+
+  dropdown.querySelector('.delete-item').addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    closeMenuDropdown();
+    deleteGameTitleSpan.textContent = game.title;
+    deleteModal.style.display = 'flex';
+  });
+});
+
+function closeMenuDropdown() {
+  document.querySelectorAll('.game-list-dropdown').forEach(d => d.remove());
+}
+
+// Close dropdown when clicking anywhere else
+document.addEventListener('click', () => {
+  closeMenuDropdown();
+});
+
+// Rename save
+saveRenameBtn.addEventListener('click', async () => {
+  const newTitle = renameInput.value.trim();
+  if (!newTitle || !menuGameId) return;
+
+  const game = games.find(g => g.id === menuGameId);
+  if (!game) return;
+
+  game.title = newTitle;
+  game.updatedAt = new Date().toISOString();
+  await updateGame(game);
+  renderGamesList();
+  renameModal.style.display = 'none';
+});
+
+cancelRenameBtn.addEventListener('click', () => {
+  renameModal.style.display = 'none';
+});
+
+// Delete confirm
+confirmDeleteBtn.addEventListener('click', async () => {
+  if (!menuGameId) return;
+  await deleteGame(menuGameId);
+  games = games.filter(g => g.id !== menuGameId);
+  renderGamesList();
+  deleteModal.style.display = 'none';
+});
+
+cancelDeleteBtn.addEventListener('click', () => {
+  deleteModal.style.display = 'none';
+});
+
 // Close modals on backdrop click
 createGameModal.addEventListener('click', (e) => {
   if (e.target === createGameModal) {

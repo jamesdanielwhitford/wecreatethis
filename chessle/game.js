@@ -32,6 +32,12 @@ const deleteModal = document.getElementById('delete-modal');
 const deleteGameTitleSpan = document.getElementById('delete-game-title');
 const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
 const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+const resendBtn = document.getElementById('resend-btn');
+const resendActions = document.getElementById('resend-actions');
+const shareModal = document.getElementById('share-modal');
+const shareTauntInput = document.getElementById('share-taunt-input');
+const sendMoveBtn = document.getElementById('send-move-btn');
+const copyLinkBtn = document.getElementById('copy-link-btn');
 
 // Current game data
 let currentGame = null;
@@ -120,6 +126,9 @@ let playerMove = null;
 
 // In planning mode, whose turn it is to move next
 let planningTurn = null;
+
+// Last shared URL (for resharing)
+let lastShareUrl = null;
 
 // Which color this player controls
 let playerColor = 'white';
@@ -266,6 +275,7 @@ async function receiveSharedMove(params) {
       game.currentTaunt = params.taunt;
     }
 
+    game.lastShareUrl = null;
     game.updatedAt = new Date().toISOString();
     game.boardState = replayMoves(game.moveHistory);
 
@@ -305,8 +315,17 @@ function buildShareUrl() {
   return `${baseUrl}?${params.toString()}`;
 }
 
-async function shareMoveAction() {
+function openShareModal() {
   if (!playerMove) return;
+  shareTauntInput.value = currentGame.currentTaunt || '';
+  shareTauntInput.placeholder = 'Your move';
+  shareModal.style.display = 'flex';
+}
+
+async function persistAndResetMove() {
+  // Update taunt from modal input
+  const taunt = shareTauntInput.value.trim() || '';
+  currentGame.currentTaunt = taunt;
 
   const shareUrl = buildShareUrl();
 
@@ -315,21 +334,44 @@ async function shareMoveAction() {
   currentGame.turnCount += 1;
   currentGame.currentTurn = currentGame.turnCount % 2 === 0 ? 'white' : 'black';
   currentGame.boardState = cloneBoard(boardState);
+  currentGame.lastShareUrl = shareUrl;
   currentGame.updatedAt = new Date().toISOString();
   await updateGame(currentGame);
 
   // Reset move state
   preMoveBoard = null;
   playerMove = null;
+  planningTurn = null;
   moveState = 'idle';
+  lastShareUrl = shareUrl;
   updateMoveStateUI();
 
-  // Share or copy
+  // Update player taunt display
+  if (taunt) {
+    playerTaunt.textContent = taunt;
+    playerTaunt.style.display = '';
+  }
+
+  shareModal.style.display = 'none';
+  return shareUrl;
+}
+
+async function getShareUrl() {
+  if (shareModal.dataset.resend === 'true') {
+    shareModal.dataset.resend = '';
+    shareModal.style.display = 'none';
+    return lastShareUrl;
+  }
+  return await persistAndResetMove();
+}
+
+async function sendMoveAction() {
+  const shareUrl = await getShareUrl();
+
   if (navigator.share) {
     try {
       await navigator.share({ url: shareUrl });
     } catch (err) {
-      // User cancelled share — fall back to clipboard
       if (err.name !== 'AbortError') {
         await copyToClipboard(shareUrl);
       }
@@ -337,6 +379,11 @@ async function shareMoveAction() {
   } else {
     await copyToClipboard(shareUrl);
   }
+}
+
+async function copyLinkAction() {
+  const shareUrl = await getShareUrl();
+  await copyToClipboard(shareUrl);
 }
 
 async function copyToClipboard(text) {
@@ -391,9 +438,12 @@ function showToast(message) {
 // --- UI State ---
 
 function updateMoveStateUI() {
+  // Hide all player sections by default
+  playerInfoArea.style.display = 'none';
+  playerActions.style.display = 'none';
+  resendActions.style.display = 'none';
+
   if (moveState === 'idle') {
-    playerInfoArea.style.display = '';
-    playerActions.style.display = 'none';
     shareBtn.style.display = '';
 
     opponentSection.classList.remove('planning');
@@ -402,12 +452,19 @@ function updateMoveStateUI() {
       const isPlayerTurn = currentGame.currentTurn === playerColor;
       if (isPlayerTurn) {
         opponentStatus.textContent = currentGame.currentTaunt || '';
+        playerInfoArea.style.display = '';
       } else {
         opponentStatus.textContent = "Awaiting opponent's turn";
+        if (lastShareUrl) {
+          resendActions.style.display = '';
+        } else {
+          playerInfoArea.style.display = '';
+        }
       }
+    } else {
+      playerInfoArea.style.display = '';
     }
   } else if (moveState === 'moved') {
-    playerInfoArea.style.display = 'none';
     playerActions.style.display = '';
     shareBtn.style.display = '';
 
@@ -417,7 +474,6 @@ function updateMoveStateUI() {
       opponentStatus.textContent = currentGame.currentTaunt || '';
     }
   } else if (moveState === 'planning') {
-    playerInfoArea.style.display = 'none';
     playerActions.style.display = '';
     shareBtn.style.display = 'none';
 
@@ -638,6 +694,11 @@ async function loadGame() {
       playerTaunt.style.display = 'none';
     }
 
+    // Restore last share URL if awaiting opponent
+    if (currentGame.lastShareUrl && currentGame.currentTurn !== playerColor) {
+      lastShareUrl = currentGame.lastShareUrl;
+    }
+
     updateMoveStateUI();
 
   } catch (error) {
@@ -650,7 +711,22 @@ async function loadGame() {
 // --- Event Listeners ---
 
 resetBtn.addEventListener('click', resetBoard);
-shareBtn.addEventListener('click', shareMoveAction);
+shareBtn.addEventListener('click', openShareModal);
+sendMoveBtn.addEventListener('click', sendMoveAction);
+copyLinkBtn.addEventListener('click', copyLinkAction);
+resendBtn.addEventListener('click', () => {
+  if (!lastShareUrl) return;
+  shareTauntInput.value = currentGame.currentTaunt || '';
+  shareTauntInput.placeholder = 'Your move';
+  shareModal.dataset.resend = 'true';
+  shareModal.style.display = 'flex';
+});
+
+shareModal.addEventListener('click', (e) => {
+  if (e.target === shareModal) {
+    shareModal.style.display = 'none';
+  }
+});
 
 // Toggle game menu dropdown
 gameMenuBtn.addEventListener('click', (e) => {
