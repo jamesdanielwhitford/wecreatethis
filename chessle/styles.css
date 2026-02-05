@@ -533,67 +533,114 @@ body {
   background: rgba(220, 38, 38, 0.1);
 }
 
-.game-info-section {
+/* Opponent Section (above board) */
+.opponent-section {
   margin-top: 24px;
-}
-
-.player-info {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.player {
-  flex: 1;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  text-align: center;
   padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  transition: color 0.3s ease;
 }
 
-.player-label {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.player-name {
-  font-size: 1.1rem;
+.opponent-name {
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--text);
 }
 
-.taunt-box {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-.taunt-label {
-  font-size: 0.85rem;
+.opponent-status {
+  font-size: 0.95rem;
   color: var(--text-muted);
-  display: block;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-style: italic;
+  margin-top: 4px;
+  min-height: 1.4em;
 }
 
-.taunt-text {
-  font-size: 1rem;
+.opponent-section.planning .opponent-name {
+  color: #dc2626;
+}
+
+.opponent-section.planning .opponent-status {
+  color: #dc2626;
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* Player Section (below board) */
+.player-section {
+  margin-top: 16px;
+  text-align: center;
+  padding: 16px;
+}
+
+.player-info-area {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player-name-display {
+  font-size: 1.2rem;
+  font-weight: 600;
   color: var(--text);
+}
+
+.player-taunt {
+  font-size: 0.95rem;
+  color: var(--text-muted);
   font-style: italic;
+}
+
+/* Action Buttons */
+.player-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.action-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: "Cinzel", serif;
+  transition: all 0.2s;
+  flex: 1;
+  max-width: 180px;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn:active {
+  transform: translateY(0);
+}
+
+.action-btn.reset-btn {
+  background: var(--secondary-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.action-btn.reset-btn:hover {
+  background: var(--card-bg);
+}
+
+.action-btn.share-btn {
+  background: var(--accent);
+  color: var(--primary-bg);
+}
+
+.action-btn.share-btn:hover {
+  background: var(--accent-hover);
 }
 
 /* Chess Board */
 .chess-board {
-  margin-top: 32px;
+  margin-top: 16px;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
@@ -602,6 +649,20 @@ body {
   max-width: 400px;
   border: 3px solid var(--accent);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.3s ease;
+}
+
+/* Planning mode - red tinted board */
+.chess-board.planning-mode {
+  border-color: #dc2626;
+}
+
+.chess-board.planning-mode .chess-square.light {
+  background-color: #f0b5b5;
+}
+
+.chess-board.planning-mode .chess-square.dark {
+  background-color: #b56363;
 }
 
 .chess-square {

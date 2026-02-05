@@ -85,10 +85,15 @@ function renderGamesList() {
 
 // New game FAB click
 newGameFab.addEventListener('click', () => {
-  // Reset form
   gameTitleInput.value = '';
   playerAliasInput.value = '';
   tauntInput.value = '';
+
+  // Show the actual defaults as grey placeholder text
+  gameTitleInput.placeholder = formatDate(new Date().toISOString());
+  playerAliasInput.placeholder = generateRandomAlias();
+  tauntInput.placeholder = 'Your move';
+
   createGameModal.style.display = 'flex';
 });
 
@@ -100,9 +105,9 @@ cancelCreateBtn.addEventListener('click', () => {
 // Create game button
 createGameBtn.addEventListener('click', async () => {
   // Get values or use defaults
-  const playerAlias = playerAliasInput.value.trim() || generateRandomAlias();
-  const title = gameTitleInput.value.trim() || formatDate(new Date().toISOString());
-  const taunt = tauntInput.value.trim() || 'Your move';
+  const playerAlias = playerAliasInput.value.trim() || playerAliasInput.placeholder;
+  const title = gameTitleInput.value.trim() || gameTitleInput.placeholder;
+  const taunt = tauntInput.value.trim() || tauntInput.placeholder;
 
   // Create game object
   const now = new Date().toISOString();
