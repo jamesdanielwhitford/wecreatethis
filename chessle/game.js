@@ -118,6 +118,9 @@ let moveState = 'idle';
 // Track the player's single valid move (from/to)
 let playerMove = null;
 
+// In planning mode, whose turn it is to move next
+let planningTurn = null;
+
 // Which color this player controls
 let playerColor = 'white';
 
@@ -467,12 +470,21 @@ function renderBoard() {
 
 function handleSquareClick(row, col) {
   const clickedPiece = boardState[row][col];
+  const isMyTurn = currentGame && currentGame.currentTurn === playerColor;
+
+  // Determine which color is allowed to move right now
+  const allowedColor = getAllowedColor(isMyTurn);
 
   if (!selectedSquare) {
-    if (clickedPiece) {
-      selectedSquare = { row, col };
-      renderBoard();
+    if (!clickedPiece) return;
+
+    // Can only select pieces of the allowed color
+    if (allowedColor && clickedPiece.color !== allowedColor) {
+      return;
     }
+
+    selectedSquare = { row, col };
+    renderBoard();
   } else {
     const selectedPiece = boardState[selectedSquare.row][selectedSquare.col];
 
@@ -483,7 +495,7 @@ function handleSquareClick(row, col) {
       return;
     }
 
-    // Clicking another piece of the same color re-selects
+    // Clicking another piece of the allowed color re-selects
     if (clickedPiece && clickedPiece.color === selectedPiece.color) {
       selectedSquare = { row, col };
       renderBoard();
@@ -495,32 +507,57 @@ function handleSquareClick(row, col) {
   }
 }
 
+// Determine which color is allowed to move based on current state
+function getAllowedColor(isMyTurn) {
+  if (moveState === 'idle') {
+    // My turn: must move my pieces. Not my turn: must move opponent's (which enters planning)
+    return isMyTurn ? playerColor : opponentColor();
+  }
+  if (moveState === 'moved') {
+    // Just made my real move, next must be opponent's piece to enter planning
+    return opponentColor();
+  }
+  // Planning mode — enforce alternating turns
+  return planningTurn;
+}
+
+function opponentColor() {
+  return playerColor === 'white' ? 'black' : 'white';
+}
+
 function performMove(fromRow, fromCol, toRow, toCol, piece) {
+  const isMyTurn = currentGame && currentGame.currentTurn === playerColor;
+
   // Snapshot the board before the first move
   if (moveState === 'idle') {
     preMoveBoard = cloneBoard(boardState);
   }
 
   if (moveState === 'idle') {
-    if (piece.color === playerColor) {
-      // First move of player's own piece — valid move
+    if (isMyTurn && piece.color === playerColor) {
+      // My turn, moving my own piece — valid shareable move
       applyMoveToBoard(boardState, fromRow, fromCol, toRow, toCol);
       playerMove = { fromRow, fromCol, toRow, toCol };
       moveState = 'moved';
     } else {
-      // Moving opponent's piece immediately — planning mode
+      // Not my turn — move goes straight to planning
       applyMoveToBoard(boardState, fromRow, fromCol, toRow, toCol);
       playerMove = null;
       moveState = 'planning';
+      // After moving this color, the other color goes next
+      planningTurn = piece.color === 'white' ? 'black' : 'white';
     }
   } else if (moveState === 'moved') {
-    // Second move of any kind — enter planning mode
+    // Already made my real move, entering planning with opponent's piece
     applyMoveToBoard(boardState, fromRow, fromCol, toRow, toCol);
     playerMove = null;
     moveState = 'planning';
+    // After opponent's piece moved, it's my color's turn in planning
+    planningTurn = playerColor;
   } else {
-    // Already in planning mode — free movement
+    // Planning mode — move and alternate
     applyMoveToBoard(boardState, fromRow, fromCol, toRow, toCol);
+    planningTurn = piece.color === 'white' ? 'black' : 'white';
   }
 
   selectedSquare = null;
@@ -535,6 +572,7 @@ function resetBoard() {
   }
   selectedSquare = null;
   playerMove = null;
+  planningTurn = null;
   moveState = 'idle';
   renderBoard();
   updateMoveStateUI();
