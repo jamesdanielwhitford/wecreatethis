@@ -591,23 +591,93 @@ body {
   font-style: italic;
 }
 
-.board-placeholder {
+/* Chess Board */
+.chess-board {
   margin-top: 32px;
-  padding: 80px 20px;
-  text-align: center;
-  background: var(--card-bg);
-  border: 2px dashed var(--border);
-  border-radius: 12px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  max-width: 400px;
+  border: 3px solid var(--accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.board-placeholder p {
-  color: var(--text-muted);
-  font-size: 1rem;
-  margin-bottom: 8px;
+.chess-square {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease;
 }
 
-.board-placeholder .hint {
-  font-size: 0.85rem;
+/* Light squares */
+.chess-square.light {
+  background-color: #f0d9b5;
+}
+
+/* Dark squares */
+.chess-square.dark {
+  background-color: #b58863;
+}
+
+/* Hover effect */
+.chess-square:hover {
+  filter: brightness(0.9);
+}
+
+/* Selected square */
+.chess-square.selected {
+  box-shadow: inset 0 0 0 3px rgba(76, 175, 80, 0.6);
+  position: relative;
+}
+
+.chess-square.selected::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(76, 175, 80, 0.2);
+  pointer-events: none;
+}
+
+/* Chess pieces (Unicode symbols) */
+.chess-piece {
+  font-size: 2.5rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* White pieces - white color with black outline */
+.chess-piece.white {
+  color: #ffffff;
+  text-shadow:
+    -1px -1px 0 #000,
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000;
+}
+
+/* Black pieces - solid black */
+.chess-piece.black {
+  color: #000000;
+}
+
+/* Responsive sizing for smaller screens */
+@media (max-width: 360px) {
+  .chess-square {
+    font-size: 2rem;
+  }
+
+  .chess-piece {
+    font-size: 2rem;
+  }
 }
 
 /* Mobile optimizations for very small screens */
