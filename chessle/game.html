@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Chessle">
-  <title>Chessle</title>
+  <title>Game - Chessle</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,47 +18,43 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 </head>
 <body>
-  <div class="page-header">
-    <a href="/" class="home-btn"></a>
-    <h1>Chessle</h1>
-    <button id="stats-btn" class="stats-btn" title="Statistics">♔</button>
+  <div class="game-header-container">
+    <div class="page-header">
+      <a href="/chessle" class="back-btn">←</a>
+      <h1 id="game-title">Loading...</h1>
+      <button id="game-menu-btn" class="menu-btn">⋮</button>
+    </div>
+
+    <!-- Game menu dropdown -->
+    <div id="game-menu-dropdown" class="game-menu-dropdown" style="display: none;">
+      <button id="rename-game-menu-btn">Rename Game</button>
+      <button id="delete-game-menu-btn" class="danger">Delete Game</button>
+    </div>
   </div>
 
-  <ul id="games-list" class="games-list"></ul>
-
-  <!-- Floating Action Button -->
-  <div class="fab-container">
-    <button id="new-game-fab" class="fab"></button>
-  </div>
-
-  <!-- Create Game Modal -->
-  <div id="create-game-modal" class="modal" style="display: none;">
-    <div class="modal-content">
-      <h3>New Game</h3>
-
-      <div class="form-group">
-        <label for="game-title-input">Game Title (optional)</label>
-        <input type="text" id="game-title-input" class="form-input" placeholder="Defaults to today's date">
-        <p class="hint">Leave blank to use today's date</p>
+  <!-- Game info section -->
+  <div class="game-info-section">
+    <div class="player-info">
+      <div class="player">
+        <span class="player-label">White</span>
+        <span class="player-name" id="white-player">Loading...</span>
       </div>
-
-      <div class="form-group">
-        <label for="player-alias-input">Your Alias (optional)</label>
-        <input type="text" id="player-alias-input" class="form-input" placeholder="e.g., White Knight">
-        <p class="hint">Leave blank for a random chess piece name</p>
-      </div>
-
-      <div class="form-group">
-        <label for="taunt-input">Opening Taunt (optional)</label>
-        <input type="text" id="taunt-input" class="form-input" placeholder="Defaults to 'Your move'">
-        <p class="hint">A short phrase to send with your move</p>
-      </div>
-
-      <div class="modal-actions">
-        <button id="create-game-btn" class="modal-btn primary">Create Game</button>
-        <button id="cancel-create-btn" class="modal-btn cancel">Cancel</button>
+      <div class="player">
+        <span class="player-label">Black</span>
+        <span class="player-name" id="black-player">Loading...</span>
       </div>
     </div>
+
+    <div class="taunt-box" id="taunt-box" style="display: none;">
+      <span class="taunt-label">Taunt:</span>
+      <span class="taunt-text" id="taunt-text"></span>
+    </div>
+  </div>
+
+  <!-- Placeholder for game board -->
+  <div class="board-placeholder">
+    <p>Chess board will appear here</p>
+    <p class="hint">Game board implementation coming soon</p>
   </div>
 
   <!-- Rename Game Modal -->
@@ -94,6 +90,6 @@
   </div>
 
   <script src="db.js"></script>
-  <script src="app.js"></script>
+  <script src="game.js"></script>
 </body>
 </html>
