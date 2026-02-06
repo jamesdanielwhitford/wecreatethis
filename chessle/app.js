@@ -144,8 +144,8 @@ createGameBtn.addEventListener('click', async () => {
     updatedAt: now,
     turnCount: 0,
     playerColor: selectedColor,
-    playerWhiteAlias: selectedColor === 'white' ? playerAlias : 'Waiting for opponent...',
-    playerBlackAlias: selectedColor === 'black' ? playerAlias : 'Waiting for opponent...',
+    playerWhiteAlias: selectedColor === 'white' ? playerAlias : 'Waiting for opponent to join',
+    playerBlackAlias: selectedColor === 'black' ? playerAlias : 'Waiting for opponent to join',
     currentTaunt: taunt,
     boardState: null, // Will be set by game.js on load
     currentTurn: 'white',

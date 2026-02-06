@@ -315,10 +315,57 @@ function buildShareUrl() {
   return `${baseUrl}?${params.toString()}`;
 }
 
+function isInviteNeeded() {
+  return currentGame && currentGame.turnCount === 0 && playerColor === 'black' && !lastShareUrl;
+}
+
+function buildInviteUrl() {
+  const params = new URLSearchParams();
+  params.set('g', currentGame.id);
+  params.set('t', 0);
+
+  const myAlias = playerColor === 'white'
+    ? currentGame.playerWhiteAlias
+    : currentGame.playerBlackAlias;
+  params.set('a', myAlias);
+
+  params.set('c', currentGame.playerColor === 'white' ? 'w' : 'b');
+  params.set('ti', currentGame.title);
+
+  if (currentGame.currentTaunt) {
+    params.set('ta', currentGame.currentTaunt);
+  }
+
+  const baseUrl = `${window.location.origin}/chessle/game`;
+  return `${baseUrl}?${params.toString()}`;
+}
+
+async function persistInvite() {
+  const taunt = shareTauntInput.value.trim() || '';
+  currentGame.currentTaunt = taunt;
+
+  const shareUrl = buildInviteUrl();
+
+  currentGame.lastShareUrl = shareUrl;
+  currentGame.updatedAt = new Date().toISOString();
+  await updateGame(currentGame);
+
+  lastShareUrl = shareUrl;
+  updateMoveStateUI();
+
+  if (taunt) {
+    playerTaunt.textContent = taunt;
+    playerTaunt.style.display = '';
+  }
+
+  shareModal.style.display = 'none';
+  return shareUrl;
+}
+
 function openShareModal() {
-  if (!playerMove) return;
+  if (!playerMove && !isInviteNeeded()) return;
   shareTauntInput.value = currentGame.currentTaunt || '';
-  shareTauntInput.placeholder = 'Your move';
+  shareTauntInput.placeholder = isInviteNeeded() ? 'Good luck!' : 'Your move';
   shareModal.style.display = 'flex';
 }
 
@@ -361,6 +408,9 @@ async function getShareUrl() {
     shareModal.dataset.resend = '';
     shareModal.style.display = 'none';
     return lastShareUrl;
+  }
+  if (!playerMove) {
+    return await persistInvite();
   }
   return await persistAndResetMove();
 }
@@ -443,8 +493,11 @@ function updateMoveStateUI() {
   playerActions.style.display = 'none';
   resendActions.style.display = 'none';
 
+  resetBtn.style.display = '';
+
   if (moveState === 'idle') {
     shareBtn.style.display = '';
+    shareBtn.textContent = 'Share Move';
 
     opponentSection.classList.remove('planning');
     chessBoard.classList.remove('planning-mode');
@@ -453,10 +506,26 @@ function updateMoveStateUI() {
       if (isPlayerTurn) {
         opponentStatus.textContent = currentGame.currentTaunt || '';
         playerInfoArea.style.display = '';
+        playerNameDisplay.textContent = 'Your move';
+        playerTaunt.style.display = 'none';
       } else {
         opponentStatus.textContent = "Awaiting opponent's turn";
+        // Restore player name/taunt from game data
+        const myAlias = playerColor === 'white'
+          ? currentGame.playerWhiteAlias
+          : currentGame.playerBlackAlias;
+        playerNameDisplay.textContent = myAlias;
+        if (currentGame.currentTaunt) {
+          playerTaunt.textContent = currentGame.currentTaunt;
+          playerTaunt.style.display = '';
+        }
         if (lastShareUrl) {
           resendActions.style.display = '';
+        } else if (isInviteNeeded()) {
+          opponentStatus.textContent = '';
+          playerActions.style.display = '';
+          shareBtn.textContent = 'Share Game to Start';
+          resetBtn.style.display = 'none';
         } else {
           playerInfoArea.style.display = '';
         }

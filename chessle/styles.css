@@ -729,6 +729,7 @@ body.game-page .board-wrapper {
 .action-btn.share-btn {
   background: var(--accent);
   color: var(--primary-bg);
+  white-space: nowrap;
 }
 
 .action-btn.share-btn:hover {
