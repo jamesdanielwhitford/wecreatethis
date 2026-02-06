@@ -35,6 +35,7 @@ const App = {
     if (page === 'bingo-games') this.initBingoGames();
     if (page === 'new-bingo') this.initNewBingo();
     if (page === 'bingo') this.initBingo();
+    if (page === 'map') this.initMap();
   },
 
   // One-time migration to clean up removed features (Region Games, Lifer Challenge)
@@ -170,6 +171,7 @@ const App = {
     if (path.includes('search')) return 'search';
     if (path.includes('bingo')) return 'bingo';
     if (path.includes('life')) return 'life';
+    if (path.match(/\/map(\.html)?$/) || fullUrl.includes('map?')) return 'map';
     // Check for 'bird.html', 'bird?', or '/bird' to avoid matching 'birdle'
     if (path.match(/\/bird(\.html)?$/) || fullUrl.includes('bird?')) return 'bird';
     return 'home';
@@ -1246,6 +1248,329 @@ const App = {
   },
 
   // ===== BIRD DETAIL PAGE =====
+  // ===== MAP PAGE =====
+  async initMap() {
+    const params = new URLSearchParams(window.location.search);
+    const speciesCode = params.get('species');
+
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn && speciesCode) {
+      backBtn.href = `bird?code=${speciesCode}`;
+    }
+
+    if (speciesCode) {
+      const bird = await BirdDB.getBird(speciesCode);
+      if (bird) {
+        document.getElementById('map-title').textContent = bird.comName;
+        document.getElementById('map-species').textContent = bird.sciName || '';
+      }
+    }
+
+    const locateBtn = document.getElementById('locate-btn');
+    if (locateBtn) {
+      locateBtn.addEventListener('click', () => this.requestLocationAndLoadMap(speciesCode));
+    }
+
+    // Init the location modal for this map page
+    this.initMapLocationModal(speciesCode);
+
+    // Auto-load map if we already have a cached location
+    const cached = LocationService.getCached();
+    if (cached && LocationService.hasValidCoordinates(cached)) {
+      this.requestLocationAndLoadMap(speciesCode);
+    }
+  },
+
+  async requestLocationAndLoadMap(speciesCode) {
+    const statusEl = document.getElementById('map-status');
+
+    // Use cached location if available with valid coordinates
+    const cached = LocationService.getCached();
+    if (cached && LocationService.hasValidCoordinates(cached)) {
+      statusEl.innerHTML = '<div class="status-icon">&#x1F50D;</div><p>Searching for nearby sightings...</p>';
+      await this.loadMapWithSightings(speciesCode, cached.lat, cached.lng);
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      statusEl.innerHTML = '<p>Geolocation is not supported by your browser.</p>';
+      return;
+    }
+
+    statusEl.innerHTML = '<div class="status-icon">&#x1F50D;</div><p>Getting your location...</p>';
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        statusEl.innerHTML = '<div class="status-icon">&#x1F50D;</div><p>Searching for nearby sightings...</p>';
+        await this.loadMapWithSightings(speciesCode, latitude, longitude);
+      },
+      (error) => {
+        let msg = 'Could not get your location.';
+        if (error.code === error.PERMISSION_DENIED) {
+          msg = 'Location permission was denied. Please allow location access in your browser settings and try again.';
+        }
+        statusEl.innerHTML = `<div class="status-icon">&#x26A0;</div><p>${msg}</p>
+          <button class="btn map-btn" onclick="location.reload()">Try again</button>`;
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  },
+
+  _mapInstance: null,
+
+  async reloadMapAtLocation(speciesCode, lat, lng) {
+    const statusEl = document.getElementById('map-status');
+    const mapViewEl = document.getElementById('map-view');
+    const controls = document.getElementById('map-controls');
+    const updateContainer = document.getElementById('update-location-container');
+
+    if (this._mapInstance) {
+      this._mapInstance.remove();
+      this._mapInstance = null;
+    }
+
+    mapViewEl.style.display = 'none';
+    controls.style.display = 'none';
+    if (updateContainer) updateContainer.style.display = 'none';
+    statusEl.style.display = '';
+    statusEl.innerHTML = '<div class="status-icon">&#x1F50D;</div><p>Searching for nearby sightings...</p>';
+    document.getElementById('sighting-count').textContent = '';
+
+    await this.loadMapWithSightings(speciesCode, lat, lng);
+  },
+
+  _pickerMap: null,
+  _pickerMarker: null,
+  _pickerLocation: null,
+
+  initMapLocationModal(speciesCode) {
+    const modal = document.getElementById('map-location-modal');
+    if (!modal) return;
+
+    const optionsView = document.getElementById('modal-options-view');
+    const pickerView = document.getElementById('modal-picker-view');
+    const gpsStatus = document.getElementById('modal-gps-status');
+    const pickerConfirmBtn = document.getElementById('picker-confirm-btn');
+
+    const closeModal = () => {
+      modal.style.display = 'none';
+      optionsView.style.display = 'block';
+      pickerView.style.display = 'none';
+      gpsStatus.style.display = 'none';
+      if (this._pickerMap) {
+        this._pickerMap.remove();
+        this._pickerMap = null;
+        this._pickerMarker = null;
+        this._pickerLocation = null;
+      }
+      pickerConfirmBtn.disabled = true;
+    };
+
+    // Close modal
+    document.getElementById('modal-cancel-btn').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // Option 1: Use precise GPS (no cache write)
+    document.getElementById('modal-use-gps-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('modal-use-gps-btn');
+      btn.disabled = true;
+      gpsStatus.style.display = 'block';
+      gpsStatus.textContent = 'Getting your location...';
+
+      try {
+        const coords = await LocationService.requestGPS();
+        closeModal();
+        await this.reloadMapAtLocation(speciesCode, coords.lat, coords.lng);
+      } catch (error) {
+        gpsStatus.textContent = error.message;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // Option 2: Open map picker
+    document.getElementById('modal-pick-map-btn').addEventListener('click', () => {
+      optionsView.style.display = 'none';
+      pickerView.style.display = 'block';
+
+      if (!this._pickerMap) {
+        let startLat = 40, startLng = -95, startZoom = 4;
+        if (this._mapInstance) {
+          const center = this._mapInstance.getCenter();
+          startLat = center.lat;
+          startLng = center.lng;
+          startZoom = this._mapInstance.getZoom();
+        } else {
+          const cached = LocationService.getCached();
+          if (cached && LocationService.hasValidCoordinates(cached)) {
+            startLat = cached.lat;
+            startLng = cached.lng;
+            startZoom = 9;
+          }
+        }
+
+        this._pickerMap = L.map('picker-map').setView([startLat, startLng], startZoom);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OSM',
+          maxZoom: 18
+        }).addTo(this._pickerMap);
+
+        this._pickerMap.on('click', (e) => {
+          this._pickerLocation = { lat: e.latlng.lat, lng: e.latlng.lng };
+          if (this._pickerMarker) {
+            this._pickerMarker.setLatLng(e.latlng);
+          } else {
+            this._pickerMarker = L.marker(e.latlng).addTo(this._pickerMap);
+          }
+          pickerConfirmBtn.disabled = false;
+        });
+
+        setTimeout(() => this._pickerMap.invalidateSize(), 100);
+      }
+    });
+
+    // Back to options
+    document.getElementById('picker-back-btn').addEventListener('click', () => {
+      pickerView.style.display = 'none';
+      optionsView.style.display = 'block';
+      if (this._pickerMap) {
+        this._pickerMap.remove();
+        this._pickerMap = null;
+        this._pickerMarker = null;
+        this._pickerLocation = null;
+      }
+      pickerConfirmBtn.disabled = true;
+    });
+
+    // Confirm picked location (no cache write)
+    pickerConfirmBtn.addEventListener('click', async () => {
+      if (!this._pickerLocation) return;
+      const { lat, lng } = this._pickerLocation;
+      closeModal();
+      await this.reloadMapAtLocation(speciesCode, lat, lng);
+    });
+  },
+
+  async forceRefreshLocationAndReloadMap(speciesCode) {
+    const statusEl = document.getElementById('map-status');
+    const mapViewEl = document.getElementById('map-view');
+    const controls = document.getElementById('map-controls');
+    const updateContainer = document.getElementById('update-location-container');
+
+    // Destroy existing Leaflet map instance
+    if (this._mapInstance) {
+      this._mapInstance.remove();
+      this._mapInstance = null;
+    }
+
+    // Reset UI to loading state
+    mapViewEl.style.display = 'none';
+    controls.style.display = 'none';
+    if (updateContainer) updateContainer.style.display = 'none';
+    statusEl.style.display = '';
+    statusEl.innerHTML = '<div class="status-icon">&#x1F50D;</div><p>Updating your location...</p>';
+    document.getElementById('sighting-count').textContent = '';
+
+    try {
+      const coords = await LocationService.requestGPS();
+      LocationService.saveToCache({ ...LocationService.getCached(), lat: coords.lat, lng: coords.lng, cachedAt: new Date().toISOString() });
+      statusEl.innerHTML = '<div class="status-icon">&#x1F50D;</div><p>Searching for nearby sightings...</p>';
+      await this.loadMapWithSightings(speciesCode, coords.lat, coords.lng);
+    } catch (error) {
+      statusEl.innerHTML = `<div class="status-icon">&#x26A0;</div><p>${error.message}</p>
+        <button class="btn map-btn" onclick="location.reload()">Try again</button>`;
+    }
+  },
+
+  async loadMapWithSightings(speciesCode, lat, lng) {
+    const observations = await EBird.getNearbySpeciesObservations(speciesCode, lat, lng, 50);
+
+    const statusEl = document.getElementById('map-status');
+    const countEl = document.getElementById('sighting-count');
+
+    if (observations.length === 0) {
+      statusEl.innerHTML = '<div class="status-icon">&#x1F6AB;</div><p><strong>No recent sightings found</strong></p><p>No one has reported this bird within 50 km in the last 30 days.</p>';
+      return;
+    }
+
+    // Destroy existing map if any
+    if (this._mapInstance) {
+      this._mapInstance.remove();
+      this._mapInstance = null;
+    }
+
+    statusEl.style.display = 'none';
+    const mapViewEl = document.getElementById('map-view');
+    mapViewEl.style.display = 'block';
+
+    const map = L.map('map-view', { zoomControl: false }).setView([lat, lng], 9);
+    this._mapInstance = map;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 18,
+    }).addTo(map);
+
+    // User location marker (blue)
+    L.circleMarker([lat, lng], {
+      radius: 8, fillColor: '#4285f4', color: '#fff', weight: 2, fillOpacity: 1,
+    }).addTo(map).bindPopup('You are here');
+
+    // 50km radius circle
+    L.circle([lat, lng], {
+      radius: 50000, color: '#4285f4', fillColor: '#4285f4', fillOpacity: 0.05, weight: 1,
+    }).addTo(map);
+
+    // Map controls below the map
+    const controls = document.getElementById('map-controls');
+    controls.style.display = 'flex';
+
+    // Replace buttons to avoid stacking event listeners
+    const zoomIn = document.getElementById('map-zoom-in');
+    const zoomOut = document.getElementById('map-zoom-out');
+    const centerBtn = document.getElementById('map-center');
+    zoomIn.replaceWith(zoomIn.cloneNode(true));
+    zoomOut.replaceWith(zoomOut.cloneNode(true));
+    centerBtn.replaceWith(centerBtn.cloneNode(true));
+    document.getElementById('map-zoom-in').addEventListener('click', () => map.zoomIn());
+    document.getElementById('map-zoom-out').addEventListener('click', () => map.zoomOut());
+    document.getElementById('map-center').addEventListener('click', () => map.setView([lat, lng], 13));
+
+    // Update location button
+    const updateContainer = document.getElementById('update-location-container');
+    if (updateContainer) {
+      updateContainer.style.display = 'flex';
+      const updateBtn = document.getElementById('update-location-btn');
+      updateBtn.replaceWith(updateBtn.cloneNode(true));
+      document.getElementById('update-location-btn').addEventListener('click', () => {
+        document.getElementById('map-location-modal').style.display = 'flex';
+      });
+    }
+
+    countEl.textContent = `${observations.length} sighting${observations.length !== 1 ? 's' : ''} within 50 km (last 30 days)`;
+
+    // Plot sighting markers (green)
+    const bounds = L.latLngBounds([[lat, lng]]);
+
+    observations.forEach(obs => {
+      if (!obs.lat || !obs.lng) return;
+      bounds.extend([obs.lat, obs.lng]);
+
+      const date = obs.obsDt || 'Unknown date';
+      const count = obs.howMany ? `${obs.howMany} seen` : 'Presence noted';
+      const loc = obs.locName || 'Unknown location';
+
+      L.circleMarker([obs.lat, obs.lng], {
+        radius: 7, fillColor: '#34a853', color: '#fff', weight: 2, fillOpacity: 0.9,
+      }).addTo(map).bindPopup(`<strong>${loc}</strong><br>${count}<br>${date}`);
+    });
+
+    // Map stays centered on user at zoom 15, user can pan/zoom to explore
+  },
+
   async initBirdDetail() {
     // Set up back button based on referrer or URL params
     const backBtn = document.getElementById('back-btn');
@@ -1320,6 +1645,16 @@ const App = {
     const ebirdLink = document.getElementById('ebird-link');
     if (ebirdLink) {
       ebirdLink.href = `https://ebird.org/species/${bird.speciesCode}`;
+    }
+
+    // Set up map link (only when online)
+    const mapLink = document.getElementById('map-link');
+    if (mapLink) {
+      if (navigator.onLine) {
+        mapLink.href = `map?species=${bird.speciesCode}`;
+      } else {
+        mapLink.style.display = 'none';
+      }
     }
 
     // Fetch and display bird image from Wikipedia

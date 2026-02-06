@@ -18,6 +18,13 @@ const EBird = {
     return this.fetch(url);
   },
 
+  // Fetch recent nearby observations of a specific species (max 50km radius, last 30 days)
+  async getNearbySpeciesObservations(speciesCode, lat, lng, dist = 50) {
+    const maxDist = Math.min(dist, 50);
+    const url = `${this.BASE_URL}/data/obs/geo/recent/${speciesCode}?lat=${lat}&lng=${lng}&dist=${maxDist}&back=30`;
+    return this.fetch(url);
+  },
+
   // Fetch all species ever recorded in a region
   async getSpeciesList(regionCode) {
     const url = `${this.BASE_URL}/product/spplist/${regionCode}`;

@@ -1495,6 +1495,13 @@ input[type="date"].form-input {
   margin-top: 12px;
 }
 
+.btn.map-btn {
+  background: #34a853;
+  color: #fff;
+  border-color: #34a853;
+  margin-top: 8px;
+}
+
 .modal-btn.google {
   background: #4285f4;
   color: white;

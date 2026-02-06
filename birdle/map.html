@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Map - Birdle</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    #map-container {
+      width: 100%;
+      height: 60vh;
+      border-radius: 12px;
+      margin-top: 16px;
+      overflow: hidden;
+      position: relative;
+    }
+    #map-status {
+      text-align: center;
+      padding: 24px 16px;
+      color: #666;
+    }
+    #map-status .status-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+    #map-status p {
+      margin: 8px 0;
+    }
+    #map-status .btn {
+      margin-top: 16px;
+    }
+    #sighting-count {
+      margin-top: 12px;
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <a href="#" id="back-btn" class="back-btn">&larr; Back</a>
+
+  <div id="map-page">
+    <h1 id="map-title">Map</h1>
+    <p id="map-species" class="scientific-name"></p>
+    <p id="sighting-count"></p>
+    <div id="map-container">
+      <div id="map-status">
+        <div class="status-icon">&#x1F4CD;</div>
+        <p>This feature needs your precise location to find nearby sightings.</p>
+        <button id="locate-btn" class="btn map-btn">Share my location</button>
+      </div>
+      <div id="map-view" style="width:100%; height:100%; display:none;"></div>
+    </div>
+    <div id="map-controls" style="display:none; justify-content:center; gap:12px; margin-top:12px;">
+      <button id="map-zoom-out" class="btn" style="padding:12px 20px; font-size:18px; font-weight:bold;">-</button>
+      <button id="map-center" class="btn" style="padding:12px 20px; font-size:14px;">My Location</button>
+      <button id="map-zoom-in" class="btn" style="padding:12px 20px; font-size:18px; font-weight:bold;">+</button>
+    </div>
+    <div id="update-location-container" style="display:none; justify-content:center; margin-top:12px;">
+      <button id="update-location-btn" class="btn" style="padding:10px 20px; font-size:13px; color:#888;">Update Location</button>
+    </div>
+  </div>
+
+  <!-- Location Selection Modal -->
+  <div id="map-location-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div id="modal-options-view">
+        <div class="location-option">
+          <h3>Use Precise Location</h3>
+          <p class="hint">Get a fresh GPS fix for your current position</p>
+          <button id="modal-use-gps-btn" class="btn btn-primary">Use My Location</button>
+          <p id="modal-gps-status" class="hint" style="display:none; margin-top:8px;"></p>
+        </div>
+        <div class="location-option" style="border-bottom:none;">
+          <h3>Choose on Map</h3>
+          <p class="hint">Tap a location on the map to search there</p>
+          <button id="modal-pick-map-btn" class="btn btn-primary">Pick Location on Map</button>
+        </div>
+        <button id="modal-cancel-btn" class="btn btn-secondary" style="width:100%; margin-top:8px;">Cancel</button>
+      </div>
+      <div id="modal-picker-view" style="display:none;">
+        <h3 style="margin-bottom:12px;">Tap to Choose Location</h3>
+        <div id="picker-map" style="height:300px; border-radius:8px; border:1px solid #ddd; margin-bottom:12px;"></div>
+        <div style="display:flex; gap:8px;">
+          <button id="picker-back-btn" class="btn btn-secondary" style="flex:1; margin-top:0;">Back</button>
+          <button id="picker-confirm-btn" class="btn btn-primary" style="flex:1;" disabled>Confirm Location</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="location.js"></script>
+  <script src="db.js"></script>
+  <script src="ebird.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
