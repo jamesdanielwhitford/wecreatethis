@@ -2083,12 +2083,14 @@ input[type="date"].form-input {
 
 /* Bird Description Button */
 .btn.description-btn {
+  display: none;
   background: #38592D;
   color: #fff;
   border-color: #38592D;
   margin-top: 12px;
   font: inherit;
   width: 100%;
+  text-align: center;
 }
 
 .btn.description-btn.active {

@@ -1651,7 +1651,13 @@ const App = {
     const mapLink = document.getElementById('map-link');
     if (mapLink) {
       if (navigator.onLine) {
-        mapLink.href = `map?species=${bird.speciesCode}`;
+        const mapUrl = `map?species=${bird.speciesCode}`;
+        mapLink.href = mapUrl;
+        // Explicit click handler for Safari iOS PWA compatibility
+        mapLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          window.location.href = mapUrl;
+        });
       } else {
         mapLink.style.display = 'none';
       }
@@ -1814,7 +1820,7 @@ const App = {
     // Check if description is already cached
     let desc = this.getWikipediaDescription(bird.comName, bird.sciName);
     if (desc) {
-      btn.style.display = 'flex';
+      btn.style.display = 'block';
       return;
     }
 
@@ -1830,7 +1836,7 @@ const App = {
         const page = Object.values(pages)[0];
         if (page.extract) {
           localStorage.setItem(`wiki_desc_${searchTerm}`, page.extract);
-          btn.style.display = 'flex';
+          btn.style.display = 'block';
           return;
         }
       }
@@ -1845,7 +1851,7 @@ const App = {
           const sciPage = Object.values(sciPages)[0];
           if (sciPage.extract) {
             localStorage.setItem(`wiki_desc_${bird.sciName}`, sciPage.extract);
-            btn.style.display = 'flex';
+            btn.style.display = 'block';
           }
         }
       }
