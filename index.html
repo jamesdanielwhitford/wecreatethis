@@ -30,6 +30,11 @@
     </div>
 
     <div class="app-item">
+      <a href="/pomodoro/" class="app-btn" style="background-image: url('/pomodoro/icon-192.png');"></a>
+      <span class="app-name">Pomodoro</span>
+    </div>
+
+    <div class="app-item">
       <a href="/tarot/" class="app-btn" style="background-image: url('/tarot/icon-192.png');"></a>
       <span class="app-name">Tarot</span>
     </div>
@@ -49,7 +54,7 @@
     if ('serviceWorker' in navigator) {
       // Clean up old/orphaned service workers from deleted projects
       navigator.serviceWorker.getRegistrations().then(registrations => {
-        const validScopes = ['/', '/birdle/', '/tarot/', '/beautiful-mind/', '/hardle/'];
+        const validScopes = ['/', '/birdle/', '/tarot/', '/beautiful-mind/', '/hardle/', '/pomodoro/'];
         registrations.forEach(registration => {
           const scope = new URL(registration.scope).pathname;
           if (!validScopes.includes(scope)) {
