@@ -1,5 +1,7 @@
 // Birdle - Bird Bingo App
 
+const APP_VERSION = 115; // Match service worker version
+
 const App = {
   birds: [],
   seenBirds: JSON.parse(localStorage.getItem('seenBirds') || '[]'),
@@ -20,6 +22,9 @@ const App = {
   },
 
   async init() {
+    // Check for stale JS and reload once if needed
+    this.checkVersionAndReload();
+
     // Initialize IndexedDB
     if (typeof BirdDB !== 'undefined') {
       await BirdDB.init();
@@ -3247,6 +3252,29 @@ const App = {
       console.error('Error deleting game:', error);
       alert('Failed to delete game');
     }
+  },
+
+  // Check if JS version matches SW version, reload once if stale
+  checkVersionAndReload() {
+    const reloadKey = 'birdle_last_reload_version';
+    const lastReloadVersion = parseInt(localStorage.getItem(reloadKey) || '0');
+
+    // If this JS version is newer than the last reload, we're fresh
+    if (APP_VERSION > lastReloadVersion) {
+      console.log(`App updated to v${APP_VERSION}, marking as current`);
+      localStorage.setItem(reloadKey, APP_VERSION.toString());
+      return;
+    }
+
+    // If versions match, we're good
+    if (APP_VERSION === lastReloadVersion) {
+      return;
+    }
+
+    // If we get here, APP_VERSION < lastReloadVersion (shouldn't happen, but reload anyway)
+    console.warn(`Version mismatch detected (JS: ${APP_VERSION}, last: ${lastReloadVersion}), reloading...`);
+    localStorage.setItem(reloadKey, APP_VERSION.toString());
+    window.location.reload();
   }
 };
 
