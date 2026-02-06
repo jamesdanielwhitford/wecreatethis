@@ -7,6 +7,8 @@ This repository contains multiple offline-first web applications, each living in
 - **birdle/** - Bird spotting game using eBird API (Bird Bingo). See [birdle/CLAUDE.md](birdle/CLAUDE.md) for details.
 - **beautiful-mind/** - Offline notes app with text, image, video, and audio support. E-reader themed with dual storage (File System API/IndexedDB). See [beautiful-mind/CLAUDE.md](beautiful-mind/CLAUDE.md) for details.
 - **tarot/** - Tarot card reading app. See [tarot/CLAUDE.md](tarot/CLAUDE.md) for details.
+- **hardle/** - ⚠️ **IN TESTING** - Word guessing game (Hardle: daily word, Randle: random word). Vanilla JS rebuild of React version. See [hardle/CLAUDE.md](hardle/CLAUDE.md) for details and known issues.
+- **pomodoro/** - Productivity timer with work and break sessions. Customizable durations, audio notifications, and session tracking. See [pomodoro/CLAUDE.md](pomodoro/CLAUDE.md) for details.
 
 ## Adding New Apps to the Homepage
 
@@ -101,6 +103,7 @@ function normalizeUrl(url) {
 - **Birdle**: v110
 - **Tarot**: v31
 - **Beautiful Mind**: v10
+- **Pomodoro**: v1
 - **Homepage**: v12
 
 ### Version Management

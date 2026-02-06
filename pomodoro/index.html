@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Pomodoro">
+  <title>Pomodoro Timer</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="game-navbar">
+    <a href="/" class="home-btn"></a>
+    <span class="nav-title">Pomodoro</span>
+    <div class="nav-actions">
+      <button id="settings-btn" class="text-icon-btn" aria-label="Settings">
+        <span class="text-icon">⚙️</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Timer Container -->
+  <div class="timer-container">
+    <!-- Timer Mode Selector -->
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="work">Work</button>
+      <button class="mode-btn" data-mode="shortBreak">Short Break</button>
+      <button class="mode-btn" data-mode="longBreak">Long Break</button>
+    </div>
+
+    <!-- Timer Display with Progress Ring -->
+    <div class="timer-display">
+      <svg class="progress-ring" viewBox="0 0 200 200">
+        <circle class="progress-ring-bg" cx="100" cy="100" r="90" />
+        <circle class="progress-ring-circle" cx="100" cy="100" r="90" />
+      </svg>
+      <div class="timer-text" id="timer-text">25:00</div>
+    </div>
+
+    <!-- Session Counter -->
+    <div class="session-counter">
+      <span id="session-text">Session 1 of 4</span>
+    </div>
+
+    <!-- Control Buttons -->
+    <div class="controls">
+      <button id="start-btn" class="control-btn primary">Start</button>
+      <button id="pause-btn" class="control-btn" style="display: none;">Pause</button>
+      <button id="reset-btn" class="control-btn secondary">Reset</button>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button id="close-settings" class="close-btn">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Work Duration -->
+        <div class="setting-group">
+          <label for="work-duration">Work Duration (minutes)</label>
+          <input type="range" id="work-duration" min="15" max="60" value="25">
+          <span id="work-duration-value">25</span>
+        </div>
+
+        <!-- Short Break Duration -->
+        <div class="setting-group">
+          <label for="short-break-duration">Short Break (minutes)</label>
+          <input type="range" id="short-break-duration" min="1" max="15" value="5">
+          <span id="short-break-duration-value">5</span>
+        </div>
+
+        <!-- Long Break Duration -->
+        <div class="setting-group">
+          <label for="long-break-duration">Long Break (minutes)</label>
+          <input type="range" id="long-break-duration" min="5" max="30" value="15">
+          <span id="long-break-duration-value">15</span>
+        </div>
+
+        <!-- Sessions Before Long Break -->
+        <div class="setting-group">
+          <label for="sessions-count">Sessions Before Long Break</label>
+          <input type="range" id="sessions-count" min="2" max="8" value="4">
+          <span id="sessions-count-value">4</span>
+        </div>
+
+        <!-- Sound Toggle -->
+        <div class="setting-group toggle">
+          <label for="sound-enabled">Sound Notifications</label>
+          <label class="switch">
+            <input type="checkbox" id="sound-enabled" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Test Sound Button -->
+        <button id="test-sound" class="test-sound-btn">Test Sound</button>
+
+        <!-- Auto Start Toggle -->
+        <div class="setting-group toggle">
+          <label for="auto-start">Auto-Start Next Timer</label>
+          <label class="switch">
+            <input type="checkbox" id="auto-start">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="save-settings" class="modal-btn primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/pomodoro/sw.js', {
+        scope: '/pomodoro/',
+        updateViaCache: 'none'
+      }).then(registration => {
+        console.log('Service worker registered');
+        registration.update();
+      }).catch(error => {
+        console.log('Service worker registration failed:', error);
+      });
+    }
+  </script>
+</body>
+</html>
