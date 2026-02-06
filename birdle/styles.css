@@ -2080,3 +2080,40 @@ input[type="date"].form-input {
 .scroll-to-top-nav:active {
   transform: translateY(0);
 }
+
+/* Bird Description Button */
+.btn.description-btn {
+  background: #38592D;
+  color: #fff;
+  border-color: #38592D;
+  margin-top: 12px;
+  font: inherit;
+  width: 100%;
+}
+
+.btn.description-btn.active {
+  background: transparent;
+  color: #333;
+}
+
+/* Bird Description Content */
+.description-content {
+  margin-top: 12px;
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.desc-body {
+  line-height: 1.6;
+  font-size: 14px;
+  color: #444;
+}
+
+.desc-body p {
+  margin-bottom: 12px;
+}
+
+.desc-body p:last-child {
+  margin-bottom: 0;
+}

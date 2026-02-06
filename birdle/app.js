@@ -1659,6 +1659,9 @@ const App = {
 
     // Fetch and display bird image from Wikipedia
     this.loadBirdImage(bird);
+
+    // Set up description button and modal
+    this.setupBirdDescription(bird);
   },
 
   async loadBirdImage(bird) {
@@ -1743,7 +1746,8 @@ const App = {
 
     try {
       const title = encodeURIComponent(searchTerm.replace(/ /g, '_'));
-      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages&pithumbsize=400&format=json&origin=*&redirects=1`;
+      // Fetch image AND extract in a single API call
+      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages|extracts&pithumbsize=400&exintro=1&format=json&origin=*&redirects=1`;
       console.log('[WikiAPI] Fetching:', searchTerm);
 
       const response = await fetch(url);
@@ -1752,6 +1756,14 @@ const App = {
       const pages = data.query?.pages;
       if (pages) {
         const page = Object.values(pages)[0];
+
+        // Cache description if available
+        if (page.extract) {
+          const descKey = `wiki_desc_${searchTerm}`;
+          localStorage.setItem(descKey, page.extract);
+          console.log('[WikiAPI] ✓ Cached description for:', searchTerm);
+        }
+
         if (page.thumbnail?.source) {
           const imageUrl = page.thumbnail.source;
           console.log('[WikiAPI] ✓ Found image for:', searchTerm);
@@ -1771,6 +1783,84 @@ const App = {
       localStorage.setItem(cacheKey, 'null');
     }
     return null;
+  },
+
+  async setupBirdDescription(bird) {
+    const btn = document.getElementById('description-btn');
+    const content = document.getElementById('description-content');
+    if (!btn || !content) return;
+
+    let loaded = false;
+
+    btn.addEventListener('click', () => {
+      const isVisible = content.style.display !== 'none';
+      if (isVisible) {
+        content.style.display = 'none';
+        btn.classList.remove('active');
+        return;
+      }
+      // Load content on first open
+      if (!loaded) {
+        const desc = this.getWikipediaDescription(bird.comName, bird.sciName);
+        if (desc) {
+          document.getElementById('desc-body').innerHTML = desc;
+          loaded = true;
+        }
+      }
+      content.style.display = 'block';
+      btn.classList.add('active');
+    });
+
+    // Check if description is already cached
+    let desc = this.getWikipediaDescription(bird.comName, bird.sciName);
+    if (desc) {
+      btn.style.display = 'flex';
+      return;
+    }
+
+    // Description not cached yet - fetch it directly
+    try {
+      const searchTerm = bird.comName;
+      const title = encodeURIComponent(searchTerm.replace(/ /g, '_'));
+      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=extracts&exintro=1&format=json&origin=*&redirects=1`;
+      const response = await fetch(url);
+      const data = await response.json();
+      const pages = data.query?.pages;
+      if (pages) {
+        const page = Object.values(pages)[0];
+        if (page.extract) {
+          localStorage.setItem(`wiki_desc_${searchTerm}`, page.extract);
+          btn.style.display = 'flex';
+          return;
+        }
+      }
+      // Try scientific name if common name didn't work
+      if (bird.sciName) {
+        const sciTitle = encodeURIComponent(bird.sciName.replace(/ /g, '_'));
+        const sciUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${sciTitle}&prop=extracts&exintro=1&format=json&origin=*&redirects=1`;
+        const sciResponse = await fetch(sciUrl);
+        const sciData = await sciResponse.json();
+        const sciPages = sciData.query?.pages;
+        if (sciPages) {
+          const sciPage = Object.values(sciPages)[0];
+          if (sciPage.extract) {
+            localStorage.setItem(`wiki_desc_${bird.sciName}`, sciPage.extract);
+            btn.style.display = 'flex';
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('[WikiAPI] Failed to fetch description:', error);
+    }
+  },
+
+  // Get cached Wikipedia description for a bird (tries common name then scientific name)
+  getWikipediaDescription(comName, sciName) {
+    let desc = localStorage.getItem(`wiki_desc_${comName}`);
+    if (!desc && sciName) {
+      desc = localStorage.getItem(`wiki_desc_${sciName}`);
+    }
+    return desc;
   },
 
   async loadBirdSightings(bird) {

@@ -323,7 +323,8 @@ const LifeList = {
 
     try {
       const title = encodeURIComponent(searchTerm.replace(/ /g, '_'));
-      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages&pithumbsize=400&format=json&origin=*&redirects=1`;
+      // Fetch image AND extract in a single API call
+      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages|extracts&pithumbsize=400&exintro=1&format=json&origin=*&redirects=1`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -331,6 +332,12 @@ const LifeList = {
       const pages = data.query?.pages;
       if (pages) {
         const page = Object.values(pages)[0];
+
+        // Cache description if available
+        if (page.extract) {
+          localStorage.setItem(`wiki_desc_${searchTerm}`, page.extract);
+        }
+
         if (page.thumbnail?.source) {
           const imageUrl = page.thumbnail.source;
           // Cache the successful result
