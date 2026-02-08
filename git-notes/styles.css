@@ -1,0 +1,201 @@
+/* Minimal Mobile-First Styling for Git Notes */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  background: #fff;
+  color: #000;
+}
+
+/* Header */
+header {
+  padding: 16px;
+  border-bottom: 1px solid #ccc;
+}
+
+header h1 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+header .back-btn {
+  display: inline-block;
+  margin-right: 8px;
+  text-decoration: none;
+  color: #000;
+  font-size: 18px;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+  padding: 8px 16px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #ccc;
+  font-size: 14px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Main content */
+main {
+  padding: 16px;
+}
+
+/* Buttons */
+button, .btn {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: #000;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+button:active, .btn:active {
+  background: #f5f5f5;
+}
+
+.btn-primary {
+  background: #06c;
+  color: #fff;
+  border-color: #06c;
+}
+
+.btn-primary:active {
+  background: #0056b3;
+}
+
+.btn-danger {
+  background: #c00;
+  color: #fff;
+  border-color: #c00;
+}
+
+.btn-danger:active {
+  background: #a00;
+}
+
+/* List items */
+.item {
+  display: block;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border: 1px solid #ccc;
+  text-decoration: none;
+  color: #000;
+  background: #fff;
+}
+
+.item:active {
+  background: #f5f5f5;
+}
+
+.item-title {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.item-meta {
+  font-size: 14px;
+  color: #666;
+}
+
+/* Icons */
+.icon {
+  margin-right: 8px;
+}
+
+/* Editor */
+.editor {
+  width: 100%;
+  min-height: calc(100vh - 120px);
+  padding: 16px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  font-family: monospace;
+  resize: vertical;
+}
+
+/* Fixed bottom button */
+.fixed-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: #fff;
+  border-top: 2px solid #000;
+}
+
+.fixed-bottom button {
+  margin-bottom: 0;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 16px;
+  border: 1px solid #000;
+  max-width: 400px;
+  width: 100%;
+}
+
+.modal h2 {
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.modal input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-buttons button {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* Empty state */
+.empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: #666;
+}
+
+/* Hide element */
+.hidden {
+  display: none;
+}

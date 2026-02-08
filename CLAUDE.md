@@ -9,6 +9,7 @@ This repository contains multiple offline-first web applications, each living in
 - **tarot/** - Tarot card reading app. See [tarot/CLAUDE.md](tarot/CLAUDE.md) for details.
 - **hardle/** - ⚠️ **IN TESTING** - Word guessing game (Hardle: daily word, Randle: random word). Vanilla JS rebuild of React version. See [hardle/CLAUDE.md](hardle/CLAUDE.md) for details and known issues.
 - **pomodoro/** - Productivity timer with work and break sessions. Customizable durations, audio notifications, and session tracking. See [pomodoro/CLAUDE.md](pomodoro/CLAUDE.md) for details.
+- **git-notes/** - Note-taking app with GitHub-inspired dark theme. Auto-save, grid layout, and offline-first design. See [git-notes/CLAUDE.md](git-notes/CLAUDE.md) for details.
 
 ## Adding New Apps to the Homepage
 
