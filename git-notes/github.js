@@ -115,12 +115,18 @@ async function getGitHubFile(owner, repo, branch, path, token) {
   }
 }
 
+// UTF-8 safe base64 encoding
+function utf8ToBase64(str) {
+  // Convert string to UTF-8 bytes, then to base64
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
 // Create or update file on GitHub
 async function updateGitHubFile(owner, repo, branch, path, content, message, token, sha = null) {
   try {
     const body = {
       message: message,
-      content: btoa(content), // Base64 encode
+      content: utf8ToBase64(content), // UTF-8 safe base64 encode
       branch: branch
     };
 

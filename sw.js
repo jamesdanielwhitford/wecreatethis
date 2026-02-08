@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wecreatethis-v15';
+const CACHE_NAME = 'wecreatethis-v16';
 const ASSETS = [
   '/',
   '/index',
@@ -14,8 +14,8 @@ const ASSETS = [
 ];
 
 // Normalize URL to canonical extensionless format
-function normalizeUrl(url) {
-  const urlObj = new URL(url);
+function normalizeUrl(url, base = self.location.origin) {
+  const urlObj = new URL(url, base);
   let path = urlObj.pathname;
 
   // Remove .html extension
