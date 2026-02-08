@@ -146,6 +146,17 @@ function getFoldersByRepo(repoId) {
   });
 }
 
+function getFolder(id) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(['folders'], 'readonly');
+    const store = transaction.objectStore('folders');
+    const request = store.get(id);
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
 function getFoldersByParent(repoId, parentId) {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(['folders'], 'readonly');

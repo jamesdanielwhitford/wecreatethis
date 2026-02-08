@@ -243,13 +243,57 @@ async function deleteItemConfirm(type, id) {
 
   modal.querySelector('#confirmDelete').addEventListener('click', async () => {
     if (type === 'folder') {
+      // Get all files in this folder and subfolders recursively
+      const allFolders = await getFoldersByRepo(repoId);
+      const allFiles = await getFilesByRepo(repoId);
+
+      const folderToDelete = folders.find(f => f.id === id);
+
+      // Find all descendant folders
+      const descendantFolders = [folderToDelete];
+      let i = 0;
+      while (i < descendantFolders.length) {
+        const currentFolder = descendantFolders[i];
+        const children = allFolders.filter(f => f.parentId === currentFolder.id);
+        descendantFolders.push(...children);
+        i++;
+      }
+
+      // Find all files in these folders
+      const descendantFiles = allFiles.filter(f =>
+        descendantFolders.some(folder => folder.id === f.folderId)
+      );
+
+      // Track deletions for GitHub if connected
+      if (currentRepo.github?.connected) {
+        const deletions = JSON.parse(localStorage.getItem(`pending_deletions_${repoId}`) || '[]');
+        descendantFiles.forEach(file => {
+          if (!deletions.includes(file.path)) {
+            deletions.push(file.path);
+          }
+        });
+        localStorage.setItem(`pending_deletions_${repoId}`, JSON.stringify(deletions));
+      }
+
       await deleteFolder(id);
     } else {
+      const file = files.find(f => f.id === id);
+
+      // Track deletion for GitHub if connected
+      if (currentRepo.github?.connected && file) {
+        const deletions = JSON.parse(localStorage.getItem(`pending_deletions_${repoId}`) || '[]');
+        if (!deletions.includes(file.path)) {
+          deletions.push(file.path);
+        }
+        localStorage.setItem(`pending_deletions_${repoId}`, JSON.stringify(deletions));
+      }
+
       await deleteFile(id);
     }
 
     await loadItems();
     renderItems();
+    await checkCommitButton();
     modal.remove();
   });
 
@@ -320,7 +364,10 @@ async function checkCommitButton() {
   const allFiles = await getFilesByRepo(repoId);
   const unsyncedFiles = allFiles.filter(f => !f.synced);
 
-  if (unsyncedFiles.length > 0) {
+  // Check if there are pending deletions
+  const deletions = JSON.parse(localStorage.getItem(`pending_deletions_${repoId}`) || '[]');
+
+  if (unsyncedFiles.length > 0 || deletions.length > 0) {
     commitButton.classList.remove('hidden');
   } else {
     commitButton.classList.add('hidden');

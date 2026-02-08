@@ -378,7 +378,10 @@ async function syncRepoToGitHub(repoId) {
   const files = await getFilesByRepo(repoId);
   const unsyncedFiles = files.filter(f => !f.synced);
 
-  if (unsyncedFiles.length === 0) {
+  // Get pending deletions
+  const deletions = JSON.parse(localStorage.getItem(`pending_deletions_${repoId}`) || '[]');
+
+  if (unsyncedFiles.length === 0 && deletions.length === 0) {
     return {
       success: true,
       message: 'No changes to sync'
@@ -396,6 +399,43 @@ async function syncRepoToGitHub(repoId) {
   let successCount = 0;
   let errorCount = 0;
 
+  // Handle deletions first
+  for (const filePath of deletions) {
+    const gitHubPath = `GitNotes/${filePath}`;
+    const message = `Delete from Git Notes - ${timestamp}`;
+
+    // Get existing file SHA (required for deletion)
+    const existing = await getGitHubFile(owner, repoName, branch, gitHubPath, token);
+
+    if (existing) {
+      const result = await deleteGitHubFile(
+        owner,
+        repoName,
+        branch,
+        gitHubPath,
+        message,
+        token,
+        existing.sha
+      );
+
+      if (result.success) {
+        successCount++;
+      } else {
+        errorCount++;
+        console.error(`Failed to delete ${filePath}:`, result.error);
+      }
+    } else {
+      // File doesn't exist on GitHub, just remove from pending deletions
+      successCount++;
+    }
+  }
+
+  // Clear pending deletions after processing
+  if (deletions.length > 0) {
+    localStorage.removeItem(`pending_deletions_${repoId}`);
+  }
+
+  // Handle file updates/creates
   for (const file of unsyncedFiles) {
     const gitHubPath = `GitNotes/${file.path}`;
     const message = `Update from Git Notes - ${timestamp}`;
@@ -434,6 +474,6 @@ async function syncRepoToGitHub(repoId) {
     success: errorCount === 0,
     successCount,
     errorCount,
-    total: unsyncedFiles.length
+    total: unsyncedFiles.length + deletions.length
   };
 }
