@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wecreatethis-v14';
+const CACHE_NAME = 'wecreatethis-v15';
 const ASSETS = [
   '/',
   '/index',
