@@ -102,8 +102,8 @@ async function getGitHubFile(owner, repo, branch, path, token) {
 
     const data = await response.json();
 
-    // Decode base64 content
-    const content = atob(data.content);
+    // Decode base64 content (UTF-8 safe)
+    const content = decodeURIComponent(escape(atob(data.content)));
 
     return {
       content: content,
@@ -237,7 +237,7 @@ async function syncRepoToGitHub(repoId) {
   let errorCount = 0;
 
   for (const file of unsyncedFiles) {
-    const gitHubPath = `GitNotes/${file.path}`;
+    const gitHubPath = `git-notes/${file.path}`;
     const message = `Update from Git Notes - ${timestamp}`;
 
     // Get existing file SHA if it exists (needed for GitHub API)
