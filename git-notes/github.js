@@ -201,6 +201,166 @@ async function deleteGitHubFile(owner, repo, branch, path, message, token, sha) 
   }
 }
 
+// Get directory tree from GitHub recursively
+async function getGitHubTree(owner, repo, branch, path, token) {
+  try {
+    const response = await fetch(
+      `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${path}?ref=${branch}`,
+      {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null; // Path doesn't exist
+      }
+      throw new Error('Failed to fetch directory');
+    }
+
+    const items = await response.json();
+
+    // If it's a single file (not an array), return null
+    if (!Array.isArray(items)) {
+      return null;
+    }
+
+    return items;
+  } catch (error) {
+    console.error('Error getting GitHub tree:', error);
+    return null;
+  }
+}
+
+// Pull all files from GitHub GitNotes/ folder into local repo
+async function pullFromGitHub(repoId) {
+  const repo = await getRepo(repoId);
+
+  if (!repo.github?.connected) {
+    return {
+      success: false,
+      error: 'Repo not connected to GitHub'
+    };
+  }
+
+  const { owner, repo: repoName, branch, token } = repo.github;
+
+  // Check if GitNotes/ folder exists
+  const rootItems = await getGitHubTree(owner, repoName, branch, 'GitNotes', token);
+
+  if (!rootItems) {
+    return {
+      success: true,
+      message: 'No GitNotes folder on GitHub',
+      fileCount: 0,
+      folderCount: 0
+    };
+  }
+
+  // Get existing files and folders to check for duplicates
+  const existingFiles = await getFilesByRepo(repoId);
+  const existingFolders = await getFoldersByRepo(repoId);
+
+  const existingFilePaths = new Set(existingFiles.map(f => f.path));
+  const existingFolderPaths = new Set(existingFolders.map(f => f.path));
+
+  let fileCount = 0;
+  let folderCount = 0;
+
+  // Recursively process directories
+  async function processDirectory(items, parentPath = '', parentFolderId = null) {
+    for (const item of items) {
+      if (item.type === 'dir') {
+        const folderPath = parentPath ? `${parentPath}/${item.name}` : item.name;
+
+        // Skip if folder already exists
+        if (existingFolderPaths.has(folderPath)) {
+          // Find existing folder ID for processing children
+          const existingFolder = existingFolders.find(f => f.path === folderPath);
+          if (existingFolder) {
+            // Still process children, but use existing folder ID
+            const subItems = await getGitHubTree(owner, repoName, branch, `GitNotes/${folderPath}`, token);
+            if (subItems) {
+              await processDirectory(subItems, folderPath, existingFolder.id);
+            }
+          }
+          continue;
+        }
+
+        // Create new folder in IndexedDB
+        const folder = {
+          repoId: repoId,
+          parentId: parentFolderId,
+          name: item.name,
+          path: folderPath,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        const request = await saveFolder(folder);
+
+        // Get the saved folder with its ID
+        const savedFolder = await new Promise((resolve) => {
+          const transaction = db.transaction(['folders'], 'readonly');
+          const store = transaction.objectStore('folders');
+          const getRequest = store.get(request);
+          getRequest.onsuccess = () => resolve(getRequest.result);
+        });
+
+        folderCount++;
+
+        // Get contents of this directory
+        const subItems = await getGitHubTree(owner, repoName, branch, `git-notes/${folderPath}`, token);
+        if (subItems) {
+          await processDirectory(subItems, folderPath, savedFolder.id);
+        }
+
+      } else if (item.type === 'file') {
+        const filePath = parentPath ? `${parentPath}/${item.name}` : item.name;
+
+        // Skip if file already exists (don't overwrite local changes)
+        if (existingFilePaths.has(filePath)) {
+          continue;
+        }
+
+        // Download file content
+        const fileData = await getGitHubFile(owner, repoName, branch, `GitNotes/${filePath}`, token);
+
+        if (fileData) {
+          const file = {
+            repoId: repoId,
+            folderId: parentFolderId,
+            name: item.name,
+            path: filePath,
+            content: fileData.content,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            synced: true // Mark as synced since it came from GitHub
+          };
+
+          await saveFile(file);
+          fileCount++;
+        }
+      }
+    }
+  }
+
+  await processDirectory(rootItems);
+
+  // Update repo's lastSync
+  repo.github.lastSync = new Date().toISOString();
+  await saveRepo(repo);
+
+  return {
+    success: true,
+    fileCount,
+    folderCount
+  };
+}
+
 // Sync all files in a repo to GitHub
 async function syncRepoToGitHub(repoId) {
   const repo = await getRepo(repoId);
@@ -237,7 +397,7 @@ async function syncRepoToGitHub(repoId) {
   let errorCount = 0;
 
   for (const file of unsyncedFiles) {
-    const gitHubPath = `git-notes/${file.path}`;
+    const gitHubPath = `GitNotes/${file.path}`;
     const message = `Update from Git Notes - ${timestamp}`;
 
     // Get existing file SHA if it exists (needed for GitHub API)

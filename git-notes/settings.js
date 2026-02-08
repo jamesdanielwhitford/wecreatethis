@@ -45,6 +45,7 @@ async function init() {
   document.getElementById('clearTokenBtn').addEventListener('click', clearCachedToken);
   document.getElementById('connectBtn').addEventListener('click', connectToGitHub);
   document.getElementById('disconnectBtn').addEventListener('click', disconnectFromGitHub);
+  document.getElementById('pullBtn')?.addEventListener('click', manualPullFromGitHub);
   document.getElementById('repoSelect').addEventListener('change', loadBranches);
   document.getElementById('repoSearch').addEventListener('input', filterRepos);
   document.getElementById('branchSearch').addEventListener('input', filterBranches);
@@ -100,17 +101,26 @@ function showConnected() {
 
 async function verifyToken() {
   const token = document.getElementById('tokenInput').value.trim();
+  const testBtn = document.getElementById('testTokenBtn');
 
   if (!token) {
     alert('Please enter a GitHub token');
     return;
   }
 
+  // Disable button during verification
+  testBtn.disabled = true;
+  testBtn.textContent = 'Verifying...';
+
   const statusDiv = document.getElementById('tokenStatus');
   statusDiv.textContent = 'Verifying token...';
   statusDiv.classList.remove('hidden');
 
   const result = await testGitHubToken(token);
+
+  // Re-enable button
+  testBtn.disabled = false;
+  testBtn.textContent = 'Verify Token';
 
   if (result.success) {
     currentToken = token;
@@ -120,6 +130,7 @@ async function verifyToken() {
     localStorage.setItem('github_token', token);
 
     // Load repositories
+    statusDiv.textContent = `✓ Verified as ${result.username} - Loading repositories...`;
     await loadRepositories();
   } else {
     statusDiv.textContent = `✗ ${result.error}`;
@@ -261,6 +272,8 @@ function filterBranches() {
 async function connectToGitHub() {
   const repoSelect = document.getElementById('repoSelect');
   const branchSelect = document.getElementById('branchSelect');
+  const connectBtn = document.getElementById('connectBtn');
+  const statusDiv = document.getElementById('tokenStatus');
 
   const selectedRepo = repoSelect.value;
   const selectedBranch = branchSelect.value;
@@ -269,6 +282,12 @@ async function connectToGitHub() {
     alert('Please select a repository and branch');
     return;
   }
+
+  // Disable button and show loading
+  connectBtn.disabled = true;
+  connectBtn.textContent = 'Connecting...';
+  statusDiv.textContent = 'Connecting to GitHub...';
+  statusDiv.classList.remove('hidden');
 
   const { owner, name } = JSON.parse(selectedRepo);
 
@@ -284,8 +303,67 @@ async function connectToGitHub() {
 
   await saveRepo(currentRepo);
 
-  alert('Connected to GitHub!');
-  showConnected();
+  // Check if GitNotes/ folder exists and pull files
+  statusDiv.textContent = 'Checking for existing files on GitHub...';
+
+  const pullResult = await pullFromGitHub(repoId);
+
+  if (pullResult.success && (pullResult.fileCount > 0 || pullResult.folderCount > 0)) {
+    statusDiv.textContent = `✓ Synced ${pullResult.fileCount} file(s) and ${pullResult.folderCount} folder(s) from GitHub`;
+    setTimeout(() => {
+      alert(`Connected to GitHub!\n\nImported from GitHub:\n- ${pullResult.fileCount} file(s)\n- ${pullResult.folderCount} folder(s)`);
+      showConnected();
+      connectBtn.disabled = false;
+      connectBtn.textContent = 'Connect';
+    }, 500);
+  } else {
+    statusDiv.textContent = '✓ Connected (no existing files found)';
+    setTimeout(() => {
+      alert('Connected to GitHub!');
+      showConnected();
+      connectBtn.disabled = false;
+      connectBtn.textContent = 'Connect';
+    }, 500);
+  }
+}
+
+async function manualPullFromGitHub() {
+  if (!confirm('Pull files from GitHub?\n\nThis will download all files from the GitNotes/ folder on GitHub and add them to your local repo.\n\nExisting files with the same path will NOT be overwritten.')) {
+    return;
+  }
+
+  const pullBtn = document.getElementById('pullBtn');
+  const statusDiv = document.getElementById('pullStatus');
+
+  // Disable button and show loading
+  pullBtn.disabled = true;
+  pullBtn.textContent = 'Pulling...';
+  statusDiv.textContent = 'Pulling from GitHub...';
+  statusDiv.classList.remove('hidden');
+
+  const result = await pullFromGitHub(repoId);
+
+  // Re-enable button
+  pullBtn.disabled = false;
+  pullBtn.textContent = 'Pull from GitHub';
+
+  if (result.success) {
+    if (result.fileCount > 0 || result.folderCount > 0) {
+      statusDiv.textContent = `✓ Imported ${result.fileCount} file(s) and ${result.folderCount} folder(s)`;
+
+      // Update lastSync display
+      currentRepo = await getRepo(repoId);
+      showConnected();
+    } else {
+      statusDiv.textContent = 'No new files found on GitHub';
+    }
+
+    setTimeout(() => {
+      statusDiv.classList.add('hidden');
+    }, 5000);
+  } else {
+    statusDiv.textContent = `✗ Error: ${result.error}`;
+  }
 }
 
 async function disconnectFromGitHub() {
