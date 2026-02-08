@@ -21,7 +21,6 @@
   <div class="page-header">
     <a href="/" class="home-btn"></a>
     <h1>Chessle</h1>
-    <button id="stats-btn" class="stats-btn" title="Statistics">♔</button>
   </div>
 
   <ul id="games-list" class="games-list"></ul>
@@ -37,11 +36,6 @@
       <h3>New Game</h3>
 
       <div class="form-group">
-        <label for="game-title-input">Game Title</label>
-        <input type="text" id="game-title-input" class="form-input">
-      </div>
-
-      <div class="form-group">
         <label>Play As</label>
         <div class="color-toggle" id="color-toggle">
           <button type="button" class="color-option selected" data-color="white">&#9812; White</button>
@@ -50,13 +44,17 @@
       </div>
 
       <div class="form-group">
-        <label for="player-alias-input">Your Alias</label>
-        <input type="text" id="player-alias-input" class="form-input">
+        <label for="player-name-input">Your Name <span class="required">*</span></label>
+        <input type="text" id="player-name-input" class="form-input" placeholder="Enter your name" required>
+        <div class="checkbox-wrapper">
+          <input type="checkbox" id="save-name-default" class="form-checkbox">
+          <label for="save-name-default" class="checkbox-label">Remember my name for future games</label>
+        </div>
       </div>
 
       <div class="form-group">
-        <label for="taunt-input">Opening Taunt</label>
-        <input type="text" id="taunt-input" class="form-input">
+        <label for="opponent-name-input">Opponent's Name</label>
+        <input type="text" id="opponent-name-input" class="form-input" placeholder="Opponent">
       </div>
 
       <div class="modal-actions">

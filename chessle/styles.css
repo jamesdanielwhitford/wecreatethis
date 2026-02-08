@@ -383,6 +383,11 @@ body {
   font-size: 0.95rem;
 }
 
+.form-group label .required {
+  color: #e74c3c;
+  margin-left: 2px;
+}
+
 .form-input {
   width: 100%;
   padding: 12px;
@@ -398,6 +403,35 @@ body {
 .form-input:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+/* Checkbox wrapper */
+.checkbox-wrapper {
+  margin-top: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.form-checkbox {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.checkbox-label {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  font-weight: normal;
+  cursor: pointer;
+  user-select: none;
+  flex: 1;
 }
 
 /* Color Toggle (White/Black picker) */
@@ -571,11 +605,11 @@ body.game-page .board-wrapper {
   transform: scale(0.95);
 }
 
-.menu-btn {
+.captured-pieces-btn {
   background: transparent;
   border: none;
   color: var(--text);
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   cursor: pointer;
   padding: 8px;
   min-width: 44px;
@@ -584,13 +618,14 @@ body.game-page .board-wrapper {
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  margin: 0 auto;
 }
 
-.menu-btn:hover {
+.captured-pieces-btn:hover {
   transform: scale(1.1);
 }
 
-.menu-btn:active {
+.captured-pieces-btn:active {
   transform: scale(0.95);
 }
 
@@ -749,17 +784,17 @@ body.game-page .board-wrapper {
   transition: border-color 0.3s ease;
 }
 
-/* Planning mode - red tinted board */
+/* Planning mode - green tinted board */
 .chess-board.planning-mode {
-  border-color: #dc2626;
+  border-color: #16a34a;
 }
 
 .chess-board.planning-mode .chess-square.light {
-  background-color: #f0b5b5;
+  background-color: #d1f0d1;
 }
 
 .chess-board.planning-mode .chess-square.dark {
-  background-color: #b56363;
+  background-color: #7fb57f;
 }
 
 .chess-square {
@@ -803,6 +838,28 @@ body.game-page .board-wrapper {
   bottom: 0;
   background: rgba(76, 175, 80, 0.2);
   pointer-events: none;
+}
+
+/* Highlighted square (last move) */
+.chess-square.highlighted {
+  position: relative;
+}
+
+.chess-square.highlighted::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(76, 175, 80, 0.4);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chess-square.highlighted .chess-piece {
+  position: relative;
+  z-index: 2;
 }
 
 /* Chess pieces (Unicode symbols) */
@@ -852,4 +909,65 @@ body.game-page .board-wrapper {
     flex-direction: column;
     gap: 12px;
   }
+}
+
+/* Captured Pieces Modal */
+.captured-section {
+  margin-bottom: 20px;
+}
+
+.captured-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.captured-pieces-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 50px;
+}
+
+.captured-piece-btn {
+  background: var(--secondary-bg);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 2rem;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.captured-piece-btn:hover {
+  transform: scale(1.1);
+  border-color: var(--accent);
+}
+
+.captured-piece-btn:active {
+  transform: scale(0.95);
+}
+
+.captured-piece-btn.white {
+  color: #ffffff;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+.captured-piece-btn.black {
+  color: #000000;
+  text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+}
+
+.no-pieces {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.9rem;
+  margin: 0;
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chessle-v5';
+const CACHE_NAME = 'chessle-v20';
 const ASSETS = [
   '/chessle/',
   '/chessle/index',

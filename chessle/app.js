@@ -14,10 +14,9 @@ const newGameFab = document.getElementById('new-game-fab');
 const createGameModal = document.getElementById('create-game-modal');
 const cancelCreateBtn = document.getElementById('cancel-create-btn');
 const createGameBtn = document.getElementById('create-game-btn');
-const gameTitleInput = document.getElementById('game-title-input');
-const playerAliasInput = document.getElementById('player-alias-input');
-const tauntInput = document.getElementById('taunt-input');
 const colorToggle = document.getElementById('color-toggle');
+const playerNameInput = document.getElementById('player-name-input');
+const opponentNameInput = document.getElementById('opponent-name-input');
 const renameModal = document.getElementById('rename-modal');
 const deleteModal = document.getElementById('delete-modal');
 
@@ -27,16 +26,6 @@ let games = [];
 // Selected color for new game
 let selectedColor = 'white';
 
-// Chess pieces for random alias generation
-const chessPieces = ['Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'];
-
-// Generate random alias based on chosen color
-function generateRandomAlias(color) {
-  const piece = chessPieces[Math.floor(Math.random() * chessPieces.length)];
-  const colorName = color === 'white' ? 'White' : 'Black';
-  return `${colorName} ${piece}`;
-}
-
 // Color toggle handling
 colorToggle.addEventListener('click', (e) => {
   const btn = e.target.closest('.color-option');
@@ -45,9 +34,6 @@ colorToggle.addEventListener('click', (e) => {
   selectedColor = btn.dataset.color;
   colorToggle.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-
-  // Update alias placeholder to match chosen color
-  playerAliasInput.placeholder = generateRandomAlias(selectedColor);
 });
 
 // App initialization
@@ -86,14 +72,19 @@ function renderGamesList() {
   }
 
   gamesList.innerHTML = games.map(game => {
-    const turnInfo = game.turnCount === 0 ? 'New game' : `Turn ${game.turnCount}`;
+    const sharedCount = game.sharedMoveCount || 0;
+    const positionInfo = sharedCount === 0
+      ? 'New game'
+      : sharedCount === 1
+        ? '1 position shared'
+        : `${sharedCount} positions shared`;
     const dateInfo = formatDate(game.updatedAt);
 
     return `
       <li class="game-item">
         <a href="/chessle/game?id=${game.id}" class="game-link">
           <span class="game-title">${game.title}</span>
-          <span class="game-info">${turnInfo} • ${dateInfo}</span>
+          <span class="game-info">${positionInfo} • ${dateInfo}</span>
         </a>
         <button class="game-menu-btn" data-id="${game.id}">⋮</button>
       </li>
@@ -103,21 +94,25 @@ function renderGamesList() {
 
 // New game FAB click
 newGameFab.addEventListener('click', () => {
-  gameTitleInput.value = '';
-  playerAliasInput.value = '';
-  tauntInput.value = '';
+  // Load default player name if saved
+  const savedPlayerName = localStorage.getItem('chessle_default_player_name');
+  playerNameInput.value = savedPlayerName || '';
+  opponentNameInput.value = '';
+
+  // Check the "remember name" checkbox if a name is saved
+  const saveNameCheckbox = document.getElementById('save-name-default');
+  saveNameCheckbox.checked = !!savedPlayerName;
 
   // Reset color toggle to white
   selectedColor = 'white';
   colorToggle.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
   colorToggle.querySelector('[data-color="white"]').classList.add('selected');
 
-  // Show the actual defaults as grey placeholder text
-  gameTitleInput.placeholder = formatDate(new Date().toISOString());
-  playerAliasInput.placeholder = generateRandomAlias(selectedColor);
-  tauntInput.placeholder = 'Your move';
-
   createGameModal.style.display = 'flex';
+  // Focus the player name input if empty
+  if (!playerNameInput.value) {
+    setTimeout(() => playerNameInput.focus(), 100);
+  }
 });
 
 // Cancel game creation
@@ -127,10 +122,23 @@ cancelCreateBtn.addEventListener('click', () => {
 
 // Create game button
 createGameBtn.addEventListener('click', async () => {
-  // Get values or use defaults
-  const playerAlias = playerAliasInput.value.trim() || playerAliasInput.placeholder;
-  const title = gameTitleInput.value.trim() || gameTitleInput.placeholder;
-  const taunt = tauntInput.value.trim() || tauntInput.placeholder;
+  // Validate player name is not empty
+  const playerName = playerNameInput.value.trim();
+  if (!playerName) {
+    alert('Please enter your name to create a game.');
+    playerNameInput.focus();
+    return;
+  }
+
+  const opponentName = opponentNameInput.value.trim() || 'Opponent';
+
+  // Save player name as default if checkbox is checked
+  const saveNameCheckbox = document.getElementById('save-name-default');
+  if (saveNameCheckbox.checked) {
+    localStorage.setItem('chessle_default_player_name', playerName);
+  } else {
+    localStorage.removeItem('chessle_default_player_name');
+  }
 
   // Generate UUID for game ID
   const gameUUID = generateUUID();
@@ -139,17 +147,18 @@ createGameBtn.addEventListener('click', async () => {
   const now = new Date().toISOString();
   const game = {
     id: gameUUID,
-    title: title,
+    title: opponentName, // Use opponent name as title for games list
+    playerName: playerName,
+    opponentName: opponentName,
+    playerColor: selectedColor, // Store chosen color
     createdAt: now,
     updatedAt: now,
-    turnCount: 0,
-    playerColor: selectedColor,
-    playerWhiteAlias: selectedColor === 'white' ? playerAlias : 'Waiting for opponent to join',
-    playerBlackAlias: selectedColor === 'black' ? playerAlias : 'Waiting for opponent to join',
-    currentTaunt: taunt,
+    sharedMoveCount: 0,
+    currentTaunt: '',
     boardState: null, // Will be set by game.js on load
-    currentTurn: 'white',
-    moveHistory: []
+    moveHistory: [],
+    lastSharedBoardState: null,
+    opponentHasResponded: false // Track if opponent has made their first move back
   };
 
   try {

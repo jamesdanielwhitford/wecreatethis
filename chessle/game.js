@@ -8,30 +8,25 @@ if ('serviceWorker' in navigator) {
 }
 
 // DOM Elements
-const gameTitle = document.getElementById('game-title');
 const opponentSection = document.getElementById('opponent-section');
 const opponentName = document.getElementById('opponent-name');
 const opponentStatus = document.getElementById('opponent-status');
 const chessBoard = document.getElementById('chess-board');
 const playerSection = document.getElementById('player-section');
 const playerInfoArea = document.getElementById('player-info-area');
-const playerNameDisplay = document.getElementById('player-name');
 const playerTaunt = document.getElementById('player-taunt');
 const playerActions = document.getElementById('player-actions');
 const resetBtn = document.getElementById('reset-btn');
 const shareBtn = document.getElementById('share-btn');
-const gameMenuBtn = document.getElementById('game-menu-btn');
-const gameMenuDropdown = document.getElementById('game-menu-dropdown');
-const renameGameMenuBtn = document.getElementById('rename-game-menu-btn');
-const deleteGameMenuBtn = document.getElementById('delete-game-menu-btn');
-const renameModal = document.getElementById('rename-modal');
-const renameInput = document.getElementById('rename-input');
-const saveRenameBtn = document.getElementById('save-rename-btn');
-const cancelRenameBtn = document.getElementById('cancel-rename-btn');
-const deleteModal = document.getElementById('delete-modal');
-const deleteGameTitleSpan = document.getElementById('delete-game-title');
-const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+const capturedPiecesBtn = document.getElementById('captured-pieces-btn');
+const capturedPiecesModal = document.getElementById('captured-pieces-modal');
+const capturedWhiteList = document.getElementById('captured-white');
+const capturedBlackList = document.getElementById('captured-black');
+const closeCapturedBtn = document.getElementById('close-captured-btn');
+const enterNameModal = document.getElementById('enter-name-modal');
+const enterNameInput = document.getElementById('enter-name-input');
+const saveEnterNameBtn = document.getElementById('save-enter-name-btn');
+const opponentNameDisplay = document.getElementById('opponent-name-display');
 const resendBtn = document.getElementById('resend-btn');
 const resendActions = document.getElementById('resend-actions');
 const shareModal = document.getElementById('share-modal');
@@ -51,15 +46,6 @@ const PIECES = {
   knight: '♞',
   pawn: '♟'
 };
-
-// Chess pieces for random alias generation
-const chessPieces = ['Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'];
-
-function generateRandomAlias(color) {
-  const piece = chessPieces[Math.floor(Math.random() * chessPieces.length)];
-  const colorName = color === 'white' ? 'White' : 'Black';
-  return `${colorName} ${piece}`;
-}
 
 // Initial board state (8x8 array, row 0 = rank 8, row 7 = rank 1)
 const initialBoardState = [
@@ -112,23 +98,25 @@ const initialBoardState = [
 // Board state
 let boardState = cloneBoard(initialBoardState);
 
-// Snapshot of board before player starts moving (for reset)
-let preMoveBoard = null;
-
 // Selected square
 let selectedSquare = null;
 
-// Move state: 'idle' | 'moved' | 'planning'
+// Selected captured piece for placement
+let selectedCapturedPiece = null;
+
+// Move state: 'idle' | 'modified' | 'waiting' | 'planning'
+// 'idle' - no local changes since last received move (opponent's turn)
+// 'modified' - user has made changes to the board (can share or reset)
+// 'waiting' - user has shared their move, waiting for opponent to respond
+// 'planning' - user is experimenting while waiting (can reset but not share)
 let moveState = 'idle';
-
-// Track the player's single valid move (from/to)
-let playerMove = null;
-
-// In planning mode, whose turn it is to move next
-let planningTurn = null;
 
 // Last shared URL (for resharing)
 let lastShareUrl = null;
+
+// Track highlighted squares (squares that were moved in the last turn)
+// Array of {row, col} objects
+let highlightedSquares = [];
 
 // Which color this player controls
 let playerColor = 'white';
@@ -139,6 +127,49 @@ let boardFlipped = false;
 // Deep copy a board state
 function cloneBoard(board) {
   return JSON.parse(JSON.stringify(board));
+}
+
+// Calculate captured pieces by comparing current board to initial board
+function getCapturedPieces() {
+  const captured = { white: [], black: [] };
+
+  // Count pieces in initial position
+  const initialCounts = { white: {}, black: {} };
+  const currentCounts = { white: {}, black: {} };
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const initialPiece = initialBoardState[row][col];
+      const currentPiece = boardState[row][col];
+
+      if (initialPiece) {
+        const color = initialPiece.color;
+        const type = initialPiece.type;
+        initialCounts[color][type] = (initialCounts[color][type] || 0) + 1;
+      }
+
+      if (currentPiece) {
+        const color = currentPiece.color;
+        const type = currentPiece.type;
+        currentCounts[color][type] = (currentCounts[color][type] || 0) + 1;
+      }
+    }
+  }
+
+  // Find captured pieces
+  ['white', 'black'].forEach(color => {
+    ['king', 'queen', 'rook', 'bishop', 'knight', 'pawn'].forEach(type => {
+      const initial = initialCounts[color][type] || 0;
+      const current = currentCounts[color][type] || 0;
+      const capturedCount = initial - current;
+
+      for (let i = 0; i < capturedCount; i++) {
+        captured[color].push({ color, type });
+      }
+    });
+  });
+
+  return captured;
 }
 
 // Apply a move to a board state (mutates the board)
@@ -153,6 +184,79 @@ function replayMoves(moveHistory) {
   for (const move of moveHistory) {
     applyMoveToBoard(board, move.fromRow, move.fromCol, move.toRow, move.toCol);
   }
+  return board;
+}
+
+// --- Board State Encoding/Decoding ---
+
+// Encode board state as compact diff from starting position
+// Format: colorTypeRowCol (4 chars per piece), comma-separated
+// Example: "wn55,bp44,wq33" = white knight at 5,5 + black pawn at 4,4 + white queen at 3,3
+// Empty squares (captured pieces): "xRowCol" (3 chars)
+function encodeBoardState(boardState) {
+  const diff = [];
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const piece = boardState[row][col];
+      const startPiece = initialBoardState[row][col];
+
+      // If piece differs from starting position, include it
+      if (JSON.stringify(piece) !== JSON.stringify(startPiece)) {
+        if (piece) {
+          // Piece moved to this square
+          const colorCode = piece.color === 'white' ? 'w' : 'b';
+          const typeCode = piece.type[0]; // k, q, r, b, n, p
+          diff.push(`${colorCode}${typeCode}${row}${col}`);
+        } else {
+          // Piece removed from starting position (captured)
+          diff.push(`x${row}${col}`);
+        }
+      }
+    }
+  }
+
+  return diff.join(',');
+}
+
+// Decode board state from compact diff string
+// Rebuilds full board from starting position + changes
+function decodeBoardState(encodedDiff) {
+  const board = cloneBoard(initialBoardState);
+
+  if (!encodedDiff || encodedDiff.trim() === '') {
+    return board; // No changes, return starting position
+  }
+
+  const pieces = encodedDiff.split(',');
+
+  for (const piece of pieces) {
+    if (piece.startsWith('x')) {
+      // Empty square (captured piece)
+      const row = parseInt(piece[1], 10);
+      const col = parseInt(piece[2], 10);
+      board[row][col] = null;
+    } else {
+      // Piece moved to new position
+      const colorCode = piece[0];
+      const typeCode = piece[1];
+      const row = parseInt(piece[2], 10);
+      const col = parseInt(piece[3], 10);
+
+      const color = colorCode === 'w' ? 'white' : 'black';
+      const typeMap = {
+        k: 'king',
+        q: 'queen',
+        r: 'rook',
+        b: 'bishop',
+        n: 'knight',
+        p: 'pawn'
+      };
+
+      board[row][col] = { color, type: typeMap[typeCode] };
+    }
+  }
+
   return board;
 }
 
@@ -172,17 +276,16 @@ function formatDate(dateString) {
 function parseUrlParams() {
   const params = new URLSearchParams(window.location.search);
 
-  // Shared link has 'g' param
+  // Shared link has 'g' param (new format)
   if (params.has('g')) {
     return {
       type: 'shared',
       gameUUID: params.get('g'),
-      turn: parseInt(params.get('t'), 10),
-      move: params.get('m'), // "fromRow,fromCol,toRow,toCol" e.g. "6,4,4,4"
-      alias: params.get('a'),
-      taunt: params.get('ta') || null,
-      creatorColor: params.get('c') || null, // 'w' or 'b', only on first share
-      title: params.get('ti') || null // only on first share
+      sharedMoveCount: parseInt(params.get('n'), 10) || 0,
+      boardDiff: params.get('b') || null, // Encoded board diff
+      senderName: params.get('s') || null, // Sender's name (first share only)
+      creatorColor: params.get('c') || null, // 'w' or 'b' (first share only)
+      taunt: params.get('t') || null // Optional taunt
     };
   }
 
@@ -197,87 +300,83 @@ function parseUrlParams() {
   return null;
 }
 
-// Parse move string "fromRow,fromCol,toRow,toCol" into object
-function parseMove(moveStr) {
-  const parts = moveStr.split(',').map(Number);
-  return { fromRow: parts[0], fromCol: parts[1], toRow: parts[2], toCol: parts[3] };
-}
-
-// Encode move object to string
-function encodeMove(move) {
-  return `${move.fromRow},${move.fromCol},${move.toRow},${move.toCol}`;
-}
-
 // --- Shared URL Handling ---
 
-// Receive a shared move: create or update game from URL params
+// Receive a shared position: create or update game from URL params
 async function receiveSharedMove(params) {
   let game = await getGame(params.gameUUID);
 
+  // Get the previous board state (what we had before receiving this move)
+  const previousBoardState = game ? cloneBoard(game.boardState || initialBoardState) : cloneBoard(initialBoardState);
+
+  // Decode board state from URL
+  const receivedBoardState = params.boardDiff
+    ? decodeBoardState(params.boardDiff)
+    : cloneBoard(initialBoardState);
+
+  // Calculate opponent's highlighted squares (only pieces that changed from previous state)
+  const opponentHighlights = [];
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const receivedPiece = receivedBoardState[row][col];
+      const previousPiece = previousBoardState[row][col];
+
+      // Highlight if piece differs from previous position
+      const piecesAreDifferent = JSON.stringify(receivedPiece) !== JSON.stringify(previousPiece);
+      if (piecesAreDifferent && receivedPiece) {
+        // Piece exists in new position that's different from previous
+        opponentHighlights.push({ row, col });
+      }
+    }
+  }
+
   if (!game) {
-    // New game — create it silently
+    // New game — create it from received share
     const creatorColor = params.creatorColor === 'b' ? 'black' : 'white';
     const myColor = creatorColor === 'white' ? 'black' : 'white';
-    const myAlias = generateRandomAlias(myColor);
 
     const now = new Date().toISOString();
     game = {
       id: params.gameUUID,
-      title: params.title || formatDate(now),
+      title: params.senderName || 'Opponent', // Use sender's name as game title
+      playerName: null, // Will be set when user enters their name
+      opponentName: params.senderName || 'Opponent',
+      playerColor: myColor,
       createdAt: now,
       updatedAt: now,
-      turnCount: 0,
-      playerColor: myColor,
-      playerWhiteAlias: creatorColor === 'white' ? params.alias : myAlias,
-      playerBlackAlias: creatorColor === 'black' ? params.alias : myAlias,
+      sharedMoveCount: params.sharedMoveCount || 0,
       currentTaunt: params.taunt || '',
-      boardState: null,
-      currentTurn: 'white',
-      moveHistory: []
+      boardState: receivedBoardState,
+      lastSharedBoardState: receivedBoardState, // Set as last shared
+      lastOpponentHighlights: opponentHighlights, // Save opponent's highlights
+      moveHistory: [],
+      opponentHasResponded: false // Will be set to true when this player shares back
     };
-
-    // Apply the received move if present
-    if (params.move) {
-      const move = parseMove(params.move);
-      game.moveHistory.push(move);
-      game.turnCount = params.turn;
-      game.currentTurn = game.turnCount % 2 === 0 ? 'white' : 'black';
-    }
-
-    if (params.taunt) {
-      game.currentTaunt = params.taunt;
-    }
-
-    // Rebuild board from move history
-    game.boardState = replayMoves(game.moveHistory);
 
     await saveGame(game);
   } else {
-    // Existing game — apply the move
-    if (params.move) {
-      const move = parseMove(params.move);
-      game.moveHistory.push(move);
-      game.turnCount = params.turn;
-      game.currentTurn = game.turnCount % 2 === 0 ? 'white' : 'black';
-    }
-
-    // Update opponent alias if provided
-    const opponentColor = game.playerColor === 'white' ? 'black' : 'white';
-    if (params.alias) {
-      if (opponentColor === 'white') {
-        game.playerWhiteAlias = params.alias;
-      } else {
-        game.playerBlackAlias = params.alias;
-      }
-    }
+    // Existing game — update with received board state
+    game.boardState = receivedBoardState;
+    game.lastSharedBoardState = receivedBoardState; // Update last shared
+    game.lastOpponentHighlights = opponentHighlights; // Save opponent's highlights
+    game.sharedMoveCount = params.sharedMoveCount || game.sharedMoveCount;
 
     if (params.taunt) {
       game.currentTaunt = params.taunt;
     }
 
-    game.lastShareUrl = null;
+    // Update opponent name if provided (first share)
+    if (params.senderName && !game.opponentName) {
+      game.opponentName = params.senderName;
+      game.title = params.senderName;
+    }
+
+    // Mark that opponent has responded (we received a move from them)
+    game.opponentHasResponded = true;
+
+    game.lastShareUrl = null; // Clear last share URL (no longer waiting)
+    game.lastPlayerHighlights = null; // Clear player's highlights (opponent responded)
     game.updatedAt = new Date().toISOString();
-    game.boardState = replayMoves(game.moveHistory);
 
     await updateGame(game);
   }
@@ -286,117 +385,80 @@ async function receiveSharedMove(params) {
   window.location.replace(`/chessle/game?id=${params.gameUUID}`);
 }
 
-// --- Share Move ---
+// --- Share Position ---
 
 function buildShareUrl() {
   const params = new URLSearchParams();
   params.set('g', currentGame.id);
-  params.set('t', currentGame.turnCount + 1);
-  params.set('m', encodeMove(playerMove));
+  params.set('n', currentGame.sharedMoveCount + 1); // Use sharedMoveCount instead of turnCount
 
-  // Sender's alias
-  const myAlias = playerColor === 'white'
-    ? currentGame.playerWhiteAlias
-    : currentGame.playerBlackAlias;
-  params.set('a', myAlias);
-
-  // Taunt (always send current taunt)
-  if (currentGame.currentTaunt) {
-    params.set('ta', currentGame.currentTaunt);
+  // Encode current board state as diff
+  const boardDiff = encodeBoardState(boardState);
+  if (boardDiff) {
+    params.set('b', boardDiff);
   }
 
-  // First share — include creator color and title
-  if (currentGame.turnCount === 0) {
+  // Include sender's name and color if opponent hasn't responded yet
+  // This allows the first share to be re-shared if it fails or opponent hasn't received it
+  if (!currentGame.opponentHasResponded) {
+    const senderName = currentGame.playerName || 'You';
+    params.set('s', senderName);
     params.set('c', currentGame.playerColor === 'white' ? 'w' : 'b');
-    params.set('ti', currentGame.title);
+    console.log('Including sender name (opponent hasn\'t responded yet):', senderName);
+  } else {
+    console.log('Opponent has responded - not including sender name');
   }
 
-  const baseUrl = `${window.location.origin}/chessle/game`;
-  return `${baseUrl}?${params.toString()}`;
-}
-
-function isInviteNeeded() {
-  return currentGame && currentGame.turnCount === 0 && playerColor === 'black' && !lastShareUrl;
-}
-
-function buildInviteUrl() {
-  const params = new URLSearchParams();
-  params.set('g', currentGame.id);
-  params.set('t', 0);
-
-  const myAlias = playerColor === 'white'
-    ? currentGame.playerWhiteAlias
-    : currentGame.playerBlackAlias;
-  params.set('a', myAlias);
-
-  params.set('c', currentGame.playerColor === 'white' ? 'w' : 'b');
-  params.set('ti', currentGame.title);
-
-  if (currentGame.currentTaunt) {
-    params.set('ta', currentGame.currentTaunt);
-  }
-
-  const baseUrl = `${window.location.origin}/chessle/game`;
-  return `${baseUrl}?${params.toString()}`;
-}
-
-async function persistInvite() {
-  const taunt = shareTauntInput.value.trim() || '';
-  currentGame.currentTaunt = taunt;
-
-  const shareUrl = buildInviteUrl();
-
-  currentGame.lastShareUrl = shareUrl;
-  currentGame.updatedAt = new Date().toISOString();
-  await updateGame(currentGame);
-
-  lastShareUrl = shareUrl;
-  updateMoveStateUI();
-
+  // Taunt (optional)
+  const taunt = shareTauntInput.value.trim();
   if (taunt) {
-    playerTaunt.textContent = taunt;
-    playerTaunt.style.display = '';
+    params.set('t', taunt);
   }
 
-  shareModal.style.display = 'none';
-  return shareUrl;
+  const baseUrl = `${window.location.origin}/chessle/game`;
+  return `${baseUrl}?${params.toString()}`;
 }
 
 function openShareModal() {
-  if (!playerMove && !isInviteNeeded()) return;
-  shareTauntInput.value = currentGame.currentTaunt || '';
-  shareTauntInput.placeholder = isInviteNeeded() ? 'Good luck!' : 'Your move';
+  shareTauntInput.value = ''; // Always start empty (taunt is optional)
+  shareTauntInput.placeholder = 'Add an optional message...';
   shareModal.style.display = 'flex';
 }
 
-async function persistAndResetMove() {
+async function persistAndShare() {
   // Update taunt from modal input
   const taunt = shareTauntInput.value.trim() || '';
   currentGame.currentTaunt = taunt;
 
   const shareUrl = buildShareUrl();
 
-  // Persist the move to DB
-  currentGame.moveHistory.push(playerMove);
-  currentGame.turnCount += 1;
-  currentGame.currentTurn = currentGame.turnCount % 2 === 0 ? 'white' : 'black';
+  // Save the current board state as last shared
+  currentGame.lastSharedBoardState = cloneBoard(boardState);
   currentGame.boardState = cloneBoard(boardState);
+  currentGame.sharedMoveCount += 1;
   currentGame.lastShareUrl = shareUrl;
+
+  // Save player's highlights so they persist after sharing
+  currentGame.lastPlayerHighlights = [...highlightedSquares];
+
   currentGame.updatedAt = new Date().toISOString();
   await updateGame(currentGame);
 
-  // Reset move state
-  preMoveBoard = null;
-  playerMove = null;
-  planningTurn = null;
-  moveState = 'idle';
+  // Keep highlights visible after sharing (shows what player moved last)
+  // Don't clear them - they should remain until opponent responds
+
+  // Set to waiting state (user has shared, waiting for opponent)
+  moveState = 'waiting';
   lastShareUrl = shareUrl;
+  renderBoard(); // Re-render with highlights still visible
   updateMoveStateUI();
 
   // Update player taunt display
   if (taunt) {
     playerTaunt.textContent = taunt;
     playerTaunt.style.display = '';
+  } else {
+    playerTaunt.style.display = 'none';
   }
 
   shareModal.style.display = 'none';
@@ -407,12 +469,12 @@ async function getShareUrl() {
   if (shareModal.dataset.resend === 'true') {
     shareModal.dataset.resend = '';
     shareModal.style.display = 'none';
+    // Stay in waiting state when resending
+    moveState = 'waiting';
+    updateMoveStateUI();
     return lastShareUrl;
   }
-  if (!playerMove) {
-    return await persistInvite();
-  }
-  return await persistAndResetMove();
+  return await persistAndShare();
 }
 
 async function sendMoveAction() {
@@ -488,67 +550,70 @@ function showToast(message) {
 // --- UI State ---
 
 function updateMoveStateUI() {
-  // Hide all player sections by default
+  // Hide all sections by default
   playerInfoArea.style.display = 'none';
   playerActions.style.display = 'none';
   resendActions.style.display = 'none';
 
-  resetBtn.style.display = '';
-
   if (moveState === 'idle') {
+    // No local changes - show current board state
+    resetBtn.style.display = 'none'; // Nothing to reset
+    playerActions.style.display = '';
     shareBtn.style.display = '';
-    shareBtn.textContent = 'Share Move';
+    shareBtn.textContent = 'Make Your Move';
+    shareBtn.disabled = true; // Disable button until user makes a move
+    shareBtn.style.opacity = '0.5';
+    shareBtn.style.cursor = 'not-allowed';
 
-    opponentSection.classList.remove('planning');
-    chessBoard.classList.remove('planning-mode');
+    // Show opponent name and taunt if present
     if (currentGame) {
-      const isPlayerTurn = currentGame.currentTurn === playerColor;
-      if (isPlayerTurn) {
-        opponentStatus.textContent = currentGame.currentTaunt || '';
-        playerInfoArea.style.display = '';
-        playerNameDisplay.textContent = 'Your move';
-        playerTaunt.style.display = 'none';
+      if (currentGame.currentTaunt) {
+        opponentStatus.textContent = currentGame.currentTaunt;
       } else {
-        opponentStatus.textContent = "Awaiting opponent's turn";
-        // Restore player name/taunt from game data
-        const myAlias = playerColor === 'white'
-          ? currentGame.playerWhiteAlias
-          : currentGame.playerBlackAlias;
-        playerNameDisplay.textContent = myAlias;
-        if (currentGame.currentTaunt) {
-          playerTaunt.textContent = currentGame.currentTaunt;
-          playerTaunt.style.display = '';
-        }
-        if (lastShareUrl) {
-          resendActions.style.display = '';
-        } else if (isInviteNeeded()) {
-          opponentStatus.textContent = '';
-          playerActions.style.display = '';
-          shareBtn.textContent = 'Share Game to Start';
-          resetBtn.style.display = 'none';
-        } else {
-          playerInfoArea.style.display = '';
-        }
+        opponentStatus.textContent = '';
       }
-    } else {
+
+      // Show player info area with name
       playerInfoArea.style.display = '';
     }
-  } else if (moveState === 'moved') {
+  } else if (moveState === 'modified') {
+    // User has made local changes
+    resetBtn.style.display = ''; // Show reset button
     playerActions.style.display = '';
     shareBtn.style.display = '';
+    shareBtn.textContent = 'Share Your Move';
+    shareBtn.disabled = false; // Enable button
+    shareBtn.style.opacity = '1';
+    shareBtn.style.cursor = 'pointer';
 
-    opponentSection.classList.remove('planning');
-    chessBoard.classList.remove('planning-mode');
-    if (currentGame) {
-      opponentStatus.textContent = currentGame.currentTaunt || '';
-    }
+    // Show "You have unsaved changes" message
+    opponentStatus.textContent = 'You have unsaved changes';
+
+    // Show player info
+    playerInfoArea.style.display = '';
+  } else if (moveState === 'waiting') {
+    // User has shared their move, waiting for opponent
+    resetBtn.style.display = 'none'; // Hide reset button
+    resendActions.style.display = ''; // Show resend button
+    playerActions.style.display = 'none'; // Hide main action buttons
+
+    // Show "Waiting for opponent" message
+    opponentStatus.textContent = 'Waiting for opponent...';
+
+    // Show player info
+    playerInfoArea.style.display = '';
   } else if (moveState === 'planning') {
-    playerActions.style.display = '';
-    shareBtn.style.display = 'none';
+    // User is experimenting while waiting for opponent
+    playerActions.style.display = ''; // Show player actions container
+    resetBtn.style.display = ''; // Show reset button
+    shareBtn.style.display = 'none'; // Hide share button (can't share in planning mode)
+    resendActions.style.display = 'none'; // Hide resend button
 
-    opponentSection.classList.add('planning');
-    chessBoard.classList.add('planning-mode');
-    opponentStatus.textContent = 'Planning Mode';
+    // Show "Planning mode" message
+    opponentStatus.textContent = 'Planning mode - Click Reset to return to sent position';
+
+    // Show player info
+    playerInfoArea.style.display = '';
   }
 }
 
@@ -556,6 +621,13 @@ function updateMoveStateUI() {
 
 function renderBoard() {
   chessBoard.innerHTML = '';
+
+  // Add or remove planning mode class based on state
+  if (moveState === 'planning') {
+    chessBoard.classList.add('planning-mode');
+  } else {
+    chessBoard.classList.remove('planning-mode');
+  }
 
   for (let visualRow = 0; visualRow < 8; visualRow++) {
     for (let visualCol = 0; visualCol < 8; visualCol++) {
@@ -573,8 +645,15 @@ function renderBoard() {
       square.dataset.row = row;
       square.dataset.col = col;
 
+      // Highlight selected square
       if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) {
         square.classList.add('selected');
+      }
+
+      // Highlight squares from last move
+      const isHighlighted = highlightedSquares.some(h => h.row === row && h.col === col);
+      if (isHighlighted) {
+        square.classList.add('highlighted');
       }
 
       const piece = boardState[row][col];
@@ -595,19 +674,50 @@ function renderBoard() {
 
 function handleSquareClick(row, col) {
   const clickedPiece = boardState[row][col];
-  const isMyTurn = currentGame && currentGame.currentTurn === playerColor;
 
-  // Determine which color is allowed to move right now
-  const allowedColor = getAllowedColor(isMyTurn);
+  // Handle placing a captured piece
+  if (selectedCapturedPiece) {
+    if (clickedPiece) {
+      showToast('Square is occupied. Click an empty square.');
+      return;
+    }
+
+    // Place the captured piece on the board
+    boardState[row][col] = { ...selectedCapturedPiece };
+    selectedCapturedPiece = null;
+
+    // Determine state based on current state
+    if (moveState === 'idle') {
+      // First change after receiving opponent's move
+      highlightedSquares = [];
+      if (!highlightedSquares.some(h => h.row === row && h.col === col)) {
+        highlightedSquares.push({ row, col });
+      }
+      moveState = 'modified';
+    } else if (moveState === 'waiting') {
+      // Entering planning mode
+      moveState = 'planning';
+    } else if (moveState === 'modified') {
+      // Continue building moves
+      if (!highlightedSquares.some(h => h.row === row && h.col === col)) {
+        highlightedSquares.push({ row, col });
+      }
+      moveState = 'modified';
+    } else if (moveState === 'planning') {
+      // Continue planning
+      moveState = 'planning';
+    }
+
+    renderBoard();
+    updateMoveStateUI();
+    showToast('Piece placed on board');
+    return;
+  }
 
   if (!selectedSquare) {
     if (!clickedPiece) return;
 
-    // Can only select pieces of the allowed color
-    if (allowedColor && clickedPiece.color !== allowedColor) {
-      return;
-    }
-
+    // Can select any piece (no color restrictions)
     selectedSquare = { row, col };
     renderBoard();
   } else {
@@ -620,7 +730,7 @@ function handleSquareClick(row, col) {
       return;
     }
 
-    // Clicking another piece of the allowed color re-selects
+    // Clicking another piece of the same color re-selects
     if (clickedPiece && clickedPiece.color === selectedPiece.color) {
       selectedSquare = { row, col };
       renderBoard();
@@ -632,57 +742,35 @@ function handleSquareClick(row, col) {
   }
 }
 
-// Determine which color is allowed to move based on current state
-function getAllowedColor(isMyTurn) {
-  if (moveState === 'idle') {
-    // My turn: must move my pieces. Not my turn: must move opponent's (which enters planning)
-    return isMyTurn ? playerColor : opponentColor();
-  }
-  if (moveState === 'moved') {
-    // Just made my real move, next must be opponent's piece to enter planning
-    return opponentColor();
-  }
-  // Planning mode — enforce alternating turns
-  return planningTurn;
-}
-
-function opponentColor() {
-  return playerColor === 'white' ? 'black' : 'white';
-}
-
 function performMove(fromRow, fromCol, toRow, toCol, piece) {
-  const isMyTurn = currentGame && currentGame.currentTurn === playerColor;
+  // Apply the move to the board
+  applyMoveToBoard(boardState, fromRow, fromCol, toRow, toCol);
 
-  // Snapshot the board before the first move
+  // Determine next state based on current state
   if (moveState === 'idle') {
-    preMoveBoard = cloneBoard(boardState);
-  }
-
-  if (moveState === 'idle') {
-    if (isMyTurn && piece.color === playerColor) {
-      // My turn, moving my own piece — valid shareable move
-      applyMoveToBoard(boardState, fromRow, fromCol, toRow, toCol);
-      playerMove = { fromRow, fromCol, toRow, toCol };
-      moveState = 'moved';
-    } else {
-      // Not my turn — move goes straight to planning
-      applyMoveToBoard(boardState, fromRow, fromCol, toRow, toCol);
-      playerMove = null;
-      moveState = 'planning';
-      // After moving this color, the other color goes next
-      planningTurn = piece.color === 'white' ? 'black' : 'white';
+    // First move after receiving opponent's move
+    highlightedSquares = [];
+    // Remove the 'from' square if it's already highlighted (piece moved away)
+    highlightedSquares = highlightedSquares.filter(h => !(h.row === fromRow && h.col === fromCol));
+    // Add the 'to' square (where piece moved to)
+    if (!highlightedSquares.some(h => h.row === toRow && h.col === toCol)) {
+      highlightedSquares.push({ row: toRow, col: toCol });
     }
-  } else if (moveState === 'moved') {
-    // Already made my real move, entering planning with opponent's piece
-    applyMoveToBoard(boardState, fromRow, fromCol, toRow, toCol);
-    playerMove = null;
+    moveState = 'modified';
+  } else if (moveState === 'waiting') {
+    // User is experimenting while waiting for opponent - enter planning mode
+    // Don't change highlights - they're just planning, not making a real move
     moveState = 'planning';
-    // After opponent's piece moved, it's my color's turn in planning
-    planningTurn = playerColor;
-  } else {
-    // Planning mode — move and alternate
-    applyMoveToBoard(boardState, fromRow, fromCol, toRow, toCol);
-    planningTurn = piece.color === 'white' ? 'black' : 'white';
+  } else if (moveState === 'modified') {
+    // Continue building up moves before sharing
+    highlightedSquares = highlightedSquares.filter(h => !(h.row === fromRow && h.col === fromCol));
+    if (!highlightedSquares.some(h => h.row === toRow && h.col === toCol)) {
+      highlightedSquares.push({ row: toRow, col: toCol });
+    }
+    moveState = 'modified';
+  } else if (moveState === 'planning') {
+    // Continue planning mode
+    moveState = 'planning';
   }
 
   selectedSquare = null;
@@ -691,19 +779,104 @@ function performMove(fromRow, fromCol, toRow, toCol, piece) {
 }
 
 function resetBoard() {
-  if (preMoveBoard) {
-    boardState = cloneBoard(preMoveBoard);
-    preMoveBoard = null;
+  // Revert to last shared board state
+  if (currentGame && currentGame.lastSharedBoardState) {
+    boardState = cloneBoard(currentGame.lastSharedBoardState);
+  } else {
+    // No shares yet, revert to initial position
+    boardState = cloneBoard(initialBoardState);
   }
+
+  // Determine what to reset to based on current state
+  if (moveState === 'planning') {
+    // Planning mode - return to waiting state with player's highlights
+    if (currentGame && currentGame.lastPlayerHighlights) {
+      highlightedSquares = [...currentGame.lastPlayerHighlights];
+    } else {
+      highlightedSquares = [];
+    }
+    moveState = 'waiting';
+  } else {
+    // Modified state - return to idle state with opponent's highlights
+    if (currentGame && currentGame.lastOpponentHighlights) {
+      highlightedSquares = [...currentGame.lastOpponentHighlights];
+    } else {
+      highlightedSquares = [];
+    }
+    moveState = 'idle';
+  }
+
   selectedSquare = null;
-  playerMove = null;
-  planningTurn = null;
-  moveState = 'idle';
   renderBoard();
   updateMoveStateUI();
 }
 
 // --- Game Loading ---
+
+async function continueGameLoad() {
+  // Initialize opponentHasResponded if it doesn't exist (for old games)
+  if (currentGame.opponentHasResponded === undefined) {
+    currentGame.opponentHasResponded = currentGame.sharedMoveCount > 0;
+  }
+
+  // Set player color from game data
+  playerColor = currentGame.playerColor || 'white';
+  boardFlipped = playerColor === 'black';
+
+  // Rebuild board from move history or use saved board state
+  if (currentGame.boardState) {
+    // Use saved board state
+    boardState = cloneBoard(currentGame.boardState);
+  } else if (currentGame.moveHistory && currentGame.moveHistory.length > 0) {
+    // Fallback: rebuild from move history (old games)
+    boardState = replayMoves(currentGame.moveHistory);
+  } else {
+    // New game: start at initial position
+    boardState = cloneBoard(initialBoardState);
+  }
+
+  // Initialize lastSharedBoardState if it doesn't exist
+  if (!currentGame.lastSharedBoardState) {
+    currentGame.lastSharedBoardState = cloneBoard(boardState);
+  }
+
+  // Determine initial move state based on game state
+  // If we have a lastShareUrl, we're waiting for opponent to respond
+  // Otherwise, we're idle (opponent's turn or awaiting our first move)
+  const isWaiting = !!currentGame.lastShareUrl;
+
+  // Load highlights based on state
+  if (isWaiting && currentGame.lastPlayerHighlights) {
+    // Waiting for opponent - show player's highlights (what we moved last)
+    highlightedSquares = [...currentGame.lastPlayerHighlights];
+  } else if (currentGame.lastOpponentHighlights) {
+    // Opponent's turn - show opponent's highlights (what they moved last)
+    highlightedSquares = [...currentGame.lastOpponentHighlights];
+  } else {
+    highlightedSquares = [];
+  }
+
+  // Set opponent name
+  const theirName = currentGame.opponentName || 'Opponent';
+  opponentName.textContent = theirName;
+
+  if (currentGame.currentTaunt) {
+    playerTaunt.textContent = currentGame.currentTaunt;
+  } else {
+    playerTaunt.style.display = 'none';
+  }
+
+  // Restore last share URL if present
+  if (currentGame.lastShareUrl) {
+    lastShareUrl = currentGame.lastShareUrl;
+  }
+
+  // Set move state (already determined above when loading highlights)
+  moveState = isWaiting ? 'waiting' : 'idle';
+
+  renderBoard();
+  updateMoveStateUI();
+}
 
 async function loadGame() {
   const urlInfo = parseUrlParams();
@@ -732,43 +905,17 @@ async function loadGame() {
       return;
     }
 
-    // Set player color from game data
-    playerColor = currentGame.playerColor || 'white';
-    boardFlipped = playerColor === 'black';
-
-    // Rebuild board from move history
-    if (currentGame.moveHistory && currentGame.moveHistory.length > 0) {
-      boardState = replayMoves(currentGame.moveHistory);
-    } else {
-      boardState = cloneBoard(initialBoardState);
+    // Check if player needs to enter their name (received game)
+    if (!currentGame.playerName) {
+      // Show name entry modal
+      opponentNameDisplay.textContent = currentGame.opponentName || 'Opponent';
+      enterNameModal.style.display = 'flex';
+      setTimeout(() => enterNameInput.focus(), 100);
+      return; // Will continue after name is entered
     }
 
-    // Update header
-    gameTitle.textContent = currentGame.title;
-
-    // Set player/opponent names based on color
-    const myAlias = playerColor === 'white'
-      ? currentGame.playerWhiteAlias
-      : currentGame.playerBlackAlias;
-    const opponentAlias = playerColor === 'white'
-      ? currentGame.playerBlackAlias
-      : currentGame.playerWhiteAlias;
-
-    opponentName.textContent = opponentAlias;
-    playerNameDisplay.textContent = myAlias;
-
-    if (currentGame.currentTaunt) {
-      playerTaunt.textContent = currentGame.currentTaunt;
-    } else {
-      playerTaunt.style.display = 'none';
-    }
-
-    // Restore last share URL if awaiting opponent
-    if (currentGame.lastShareUrl && currentGame.currentTurn !== playerColor) {
-      lastShareUrl = currentGame.lastShareUrl;
-    }
-
-    updateMoveStateUI();
+    // Player name exists, continue loading
+    await continueGameLoad();
 
   } catch (error) {
     console.error('Failed to load game:', error);
@@ -786,7 +933,7 @@ copyLinkBtn.addEventListener('click', copyLinkAction);
 resendBtn.addEventListener('click', () => {
   if (!lastShareUrl) return;
   shareTauntInput.value = currentGame.currentTaunt || '';
-  shareTauntInput.placeholder = 'Your move';
+  shareTauntInput.placeholder = 'Add an optional message...';
   shareModal.dataset.resend = 'true';
   shareModal.style.display = 'flex';
 });
@@ -797,87 +944,96 @@ shareModal.addEventListener('click', (e) => {
   }
 });
 
-// Toggle game menu dropdown
-gameMenuBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  const isVisible = gameMenuDropdown.style.display === 'block';
-  gameMenuDropdown.style.display = isVisible ? 'none' : 'block';
-});
+// Enter name for received game
+saveEnterNameBtn.addEventListener('click', async () => {
+  const playerName = enterNameInput.value.trim();
 
-// Close dropdown when clicking outside
-document.addEventListener('click', () => {
-  gameMenuDropdown.style.display = 'none';
-});
-
-// Rename game
-renameGameMenuBtn.addEventListener('click', () => {
-  gameMenuDropdown.style.display = 'none';
-  renameInput.value = currentGame.title;
-  renameModal.style.display = 'flex';
-});
-
-saveRenameBtn.addEventListener('click', async () => {
-  const newTitle = renameInput.value.trim();
-
-  if (!newTitle) {
-    alert('Please enter a title');
+  if (!playerName) {
+    alert('Please enter your name to continue.');
+    enterNameInput.focus();
     return;
   }
 
   try {
-    currentGame.title = newTitle;
+    currentGame.playerName = playerName;
     currentGame.updatedAt = new Date().toISOString();
     await updateGame(currentGame);
 
-    gameTitle.textContent = newTitle;
-    renameModal.style.display = 'none';
+    enterNameModal.style.display = 'none';
+
+    // Continue loading the game
+    await continueGameLoad();
   } catch (error) {
-    console.error('Failed to rename game:', error);
-    alert('Failed to rename game');
+    console.error('Failed to save player name:', error);
+    alert('Failed to save name. Please try again.');
   }
 });
 
-cancelRenameBtn.addEventListener('click', () => {
-  renameModal.style.display = 'none';
+// Captured pieces modal
+capturedPiecesBtn.addEventListener('click', () => {
+  renderCapturedPieces();
+  capturedPiecesModal.style.display = 'flex';
 });
 
-// Delete game
-deleteGameMenuBtn.addEventListener('click', () => {
-  gameMenuDropdown.style.display = 'none';
-  deleteGameTitleSpan.textContent = currentGame.title;
-  deleteModal.style.display = 'flex';
+closeCapturedBtn.addEventListener('click', () => {
+  capturedPiecesModal.style.display = 'none';
+  selectedCapturedPiece = null;
 });
 
-confirmDeleteBtn.addEventListener('click', async () => {
-  try {
-    await deleteGame(currentGame.id);
-    window.location.href = '/chessle';
-  } catch (error) {
-    console.error('Failed to delete game:', error);
-    alert('Failed to delete game');
+capturedPiecesModal.addEventListener('click', (e) => {
+  if (e.target === capturedPiecesModal) {
+    capturedPiecesModal.style.display = 'none';
+    selectedCapturedPiece = null;
   }
 });
 
-cancelDeleteBtn.addEventListener('click', () => {
-  deleteModal.style.display = 'none';
-});
+function renderCapturedPieces() {
+  const captured = getCapturedPieces();
 
-// Close modals on backdrop click
-renameModal.addEventListener('click', (e) => {
-  if (e.target === renameModal) {
-    renameModal.style.display = 'none';
+  // Render white pieces
+  capturedWhiteList.innerHTML = '';
+  if (captured.white.length === 0) {
+    capturedWhiteList.innerHTML = '<p class="no-pieces">No captured pieces</p>';
+  } else {
+    captured.white.forEach((piece, index) => {
+      const pieceBtn = document.createElement('button');
+      pieceBtn.className = 'captured-piece-btn white';
+      pieceBtn.textContent = PIECES[piece.type];
+      pieceBtn.title = `Place ${piece.type} back on board`;
+      pieceBtn.addEventListener('click', () => {
+        selectedCapturedPiece = piece;
+        capturedPiecesModal.style.display = 'none';
+        showToast('Click an empty square to place the piece');
+      });
+      capturedWhiteList.appendChild(pieceBtn);
+    });
   }
-});
 
-deleteModal.addEventListener('click', (e) => {
-  if (e.target === deleteModal) {
-    deleteModal.style.display = 'none';
+  // Render black pieces
+  capturedBlackList.innerHTML = '';
+  if (captured.black.length === 0) {
+    capturedBlackList.innerHTML = '<p class="no-pieces">No captured pieces</p>';
+  } else {
+    captured.black.forEach((piece, index) => {
+      const pieceBtn = document.createElement('button');
+      pieceBtn.className = 'captured-piece-btn black';
+      pieceBtn.textContent = PIECES[piece.type];
+      pieceBtn.title = `Place ${piece.type} back on board`;
+      pieceBtn.addEventListener('click', () => {
+        selectedCapturedPiece = piece;
+        capturedPiecesModal.style.display = 'none';
+        showToast('Click an empty square to place the piece');
+      });
+      capturedBlackList.appendChild(pieceBtn);
+    });
   }
-});
+}
+
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
   await initDB();
   await loadGame();
-  renderBoard();
+  // Note: renderBoard() is called by continueGameLoad() when ready
+  // Don't call it here as it may render before game is fully loaded
 });
