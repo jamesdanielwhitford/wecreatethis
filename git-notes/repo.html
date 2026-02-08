@@ -13,6 +13,7 @@
   <header>
     <a href="index.html" class="back-btn">←</a>
     <span id="repoName">Loading...</span>
+    <button id="settingsBtn" class="settings-btn">⚙</button>
   </header>
 
   <div id="breadcrumb" class="breadcrumb">/</div>
@@ -28,7 +29,12 @@
     </div>
   </main>
 
+  <div id="commitButton" class="fixed-bottom hidden">
+    <button id="commitBtn" class="btn btn-primary">Commit Changes</button>
+  </div>
+
   <script src="db.js"></script>
+  <script src="github.js"></script>
   <script src="repo.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 // Service Worker for Git Notes
-const CACHE_NAME = 'git-notes-v1';
+const CACHE_NAME = 'git-notes-v2';
 
 // Normalize URL function - strips .html and query params
 function normalizeUrl(url) {
@@ -25,11 +25,14 @@ const urlsToCache = [
   '/git-notes/index.html',
   '/git-notes/repo.html',
   '/git-notes/editor.html',
+  '/git-notes/settings.html',
   '/git-notes/styles.css',
   '/git-notes/app.js',
   '/git-notes/repo.js',
   '/git-notes/editor.js',
+  '/git-notes/settings.js',
   '/git-notes/db.js',
+  '/git-notes/github.js',
   '/git-notes/manifest.json',
   '/git-notes/icon-192.png',
   '/git-notes/icon-512.png'

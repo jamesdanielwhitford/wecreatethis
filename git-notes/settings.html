@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ffffff">
+  <title>Settings - Git Notes</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <a href="#" id="backBtn" class="back-btn">←</a>
+    <span id="repoName">Settings</span>
+  </header>
+
+  <main>
+    <div id="notConnected">
+      <h2>Connect to GitHub</h2>
+      <p>Sync your notes to a GitHub repository.</p>
+
+      <details style="margin-bottom: 16px;">
+        <summary style="cursor: pointer; font-weight: 500;">How to get a GitHub token</summary>
+        <ol style="margin: 8px 0 0 20px; font-size: 14px; line-height: 1.6;">
+          <li>Go to GitHub.com → Settings</li>
+          <li>Developer settings → Personal access tokens → Tokens (classic)</li>
+          <li>Generate new token (classic)</li>
+          <li>Name it "Git Notes App"</li>
+          <li>Check the <strong>repo</strong> scope</li>
+          <li>Generate and copy the token</li>
+        </ol>
+      </details>
+
+      <label for="tokenInput">GitHub Personal Access Token:</label>
+      <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxx">
+
+      <button id="testTokenBtn" class="btn btn-primary">Verify Token</button>
+      <button id="clearTokenBtn" class="btn">Clear Cached Token</button>
+
+      <div id="tokenStatus" class="hidden"></div>
+
+      <div id="repoSelection" class="hidden">
+        <h3>Select Repository</h3>
+        <input type="text" id="repoSearch" placeholder="Search repositories...">
+        <select id="repoSelect" size="8">
+          <option value="">-- Select a repository --</option>
+        </select>
+
+        <h3>Select Branch</h3>
+        <input type="text" id="branchSearch" placeholder="Search branches...">
+        <select id="branchSelect" size="6">
+          <option value="">-- Select a branch --</option>
+        </select>
+
+        <button id="connectBtn" class="btn btn-primary">Connect</button>
+      </div>
+    </div>
+
+    <div id="connected" class="hidden">
+      <h2>GitHub Connection</h2>
+
+      <div class="info-box">
+        <div><strong>Repository:</strong> <span id="connectedRepo"></span></div>
+        <div><strong>Branch:</strong> <span id="connectedBranch"></span></div>
+        <div><strong>Last Sync:</strong> <span id="lastSync"></span></div>
+      </div>
+
+      <button id="disconnectBtn" class="btn btn-danger">Disconnect</button>
+    </div>
+  </main>
+
+  <script src="db.js"></script>
+  <script src="github.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>
