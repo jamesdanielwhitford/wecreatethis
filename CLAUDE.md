@@ -11,6 +11,37 @@ This repository contains multiple offline-first web applications, each living in
 - **pomodoro/** - Productivity timer with work and break sessions. Customizable durations, audio notifications, and session tracking. See [pomodoro/CLAUDE.md](pomodoro/CLAUDE.md) for details.
 - **git-notes/** - Note-taking app with GitHub-inspired dark theme. Auto-save, grid layout, and offline-first design. See [git-notes/CLAUDE.md](git-notes/CLAUDE.md) for details.
 
+## GitNotes Folder (Development Notes)
+
+**⚠️ DO NOT CONFUSE WITH git-notes APP**
+
+The **GitNotes/** folder (capital G, capital N) is a separate directory used for storing development notes, prompts, and task instructions. This is NOT the git-notes app.
+
+**Purpose:**
+- Contains user-written notes, feature requests, and development prompts for each project
+- Organized by project subdirectories (e.g., `GitNotes/birdle/`, `GitNotes/Chessle/`)
+- Files are plain text instructions for Claude to reference when working on features
+
+**Usage:**
+- When asked to check notes for a project, look in `GitNotes/[project-name]/`
+- These notes contain feature ideas, bug reports, and implementation instructions
+- Treat these as source material for understanding user requirements and planned work
+
+**Example Structure:**
+```
+GitNotes/
+├── birdle/
+│   └── trips           # Feature request for trips functionality
+├── Chessle/
+│   └── Prompt.md      # Chess game feature notes
+└── test/
+    └── test           # Test notes
+```
+
+**Key Difference:**
+- **GitNotes/** = Development notes and prompts (not part of any app)
+- **git-notes/** = Actual deployed note-taking web app
+
 ## Adding New Apps to the Homepage
 
 The root `index.html` displays all apps as rounded square icon buttons. To add a new app:
