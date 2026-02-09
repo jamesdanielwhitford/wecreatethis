@@ -1,6 +1,6 @@
 // Birdle - Bird Bingo App
 
-const APP_VERSION = 115; // Match service worker version
+const APP_VERSION = 117; // Match service worker version
 
 const App = {
   birds: [],
@@ -1746,12 +1746,13 @@ const App = {
     if (!forceRefetch) {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
-        // Skip null cache entries if we're online and it might have been cached while offline
+        // Bust null cache entries when online and retry with new hyphen-fallback logic
         if (cached === 'null' && navigator.onLine) {
-          console.log('[WikiAPI] Skipping null cache for', searchTerm, '- will fetch fresh');
-          // Don't return null cache, try to fetch fresh
+          console.log('[WikiAPI] Busting null cache for', searchTerm, '- will retry with fallback logic');
+          localStorage.removeItem(cacheKey);
+          // Continue to fetch fresh with hyphen fallback
         } else {
-          // Return cached URL (or null if we cached a failed lookup)
+          // Return cached URL (or null if we cached a failed lookup while offline)
           if (cached !== 'null') {
             console.log('[WikiAPI] ✓ Using cached image for:', searchTerm);
           }
@@ -1760,37 +1761,59 @@ const App = {
       }
     }
 
-    try {
-      const title = encodeURIComponent(searchTerm.replace(/ /g, '_'));
-      // Fetch image AND extract in a single API call
-      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages|extracts&pithumbsize=400&exintro=1&format=json&origin=*&redirects=1`;
-      console.log('[WikiAPI] Fetching:', searchTerm);
+    // Try original search term first, then retry without hyphens if needed
+    const searchVariants = [
+      searchTerm,
+      searchTerm.replace(/-/g, ' ')  // Remove hyphens (e.g., "Cattle-Egret" -> "Cattle Egret")
+    ];
 
-      const response = await fetch(url);
-      const data = await response.json();
-
-      const pages = data.query?.pages;
-      if (pages) {
-        const page = Object.values(pages)[0];
-
-        // Cache description if available
-        if (page.extract) {
-          const descKey = `wiki_desc_${searchTerm}`;
-          localStorage.setItem(descKey, page.extract);
-          console.log('[WikiAPI] ✓ Cached description for:', searchTerm);
-        }
-
-        if (page.thumbnail?.source) {
-          const imageUrl = page.thumbnail.source;
-          console.log('[WikiAPI] ✓ Found image for:', searchTerm);
-          // Cache the successful result
-          localStorage.setItem(cacheKey, imageUrl);
-          return imageUrl;
-        }
+    for (let i = 0; i < searchVariants.length; i++) {
+      const variant = searchVariants[i];
+      if (i > 0 && variant === searchVariants[0]) {
+        // Skip duplicate if removing hyphens didn't change anything
+        continue;
       }
-      console.log('[WikiAPI] ✗ No image found for:', searchTerm);
-    } catch (error) {
-      console.error('[WikiAPI] ✗ Error fetching image for', searchTerm, ':', error);
+
+      try {
+        const title = encodeURIComponent(variant.replace(/ /g, '_'));
+        // Fetch image AND extract in a single API call
+        const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages|extracts&pithumbsize=400&exintro=1&format=json&origin=*&redirects=1`;
+
+        if (i === 0) {
+          console.log('[WikiAPI] Fetching:', variant);
+        } else {
+          console.log('[WikiAPI] Retry without hyphens:', variant);
+        }
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const pages = data.query?.pages;
+        if (pages) {
+          const page = Object.values(pages)[0];
+
+          // Cache description if available
+          if (page.extract) {
+            const descKey = `wiki_desc_${searchTerm}`;
+            localStorage.setItem(descKey, page.extract);
+            console.log('[WikiAPI] ✓ Cached description for:', searchTerm);
+          }
+
+          if (page.thumbnail?.source) {
+            const imageUrl = page.thumbnail.source;
+            console.log('[WikiAPI] ✓ Found image for:', searchTerm);
+            // Cache the successful result under ORIGINAL search term
+            localStorage.setItem(cacheKey, imageUrl);
+            return imageUrl;
+          }
+        }
+
+        if (i === searchVariants.length - 1) {
+          console.log('[WikiAPI] ✗ No image found for:', searchTerm);
+        }
+      } catch (error) {
+        console.error('[WikiAPI] ✗ Error fetching image for', variant, ':', error);
+      }
     }
 
     // Cache the failed lookup to avoid repeated API calls (only if online)
@@ -1836,32 +1859,46 @@ const App = {
 
     // Description not cached yet - fetch it directly
     try {
-      const searchTerm = bird.comName;
-      const title = encodeURIComponent(searchTerm.replace(/ /g, '_'));
-      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=extracts&exintro=1&format=json&origin=*&redirects=1`;
-      const response = await fetch(url);
-      const data = await response.json();
-      const pages = data.query?.pages;
-      if (pages) {
-        const page = Object.values(pages)[0];
-        if (page.extract) {
-          localStorage.setItem(`wiki_desc_${searchTerm}`, page.extract);
-          btn.style.display = 'block';
-          return;
+      // Try common name (with and without hyphens)
+      const searchTerms = [bird.comName, bird.comName.replace(/-/g, ' ')];
+      for (const searchTerm of searchTerms) {
+        if (searchTerm !== bird.comName && searchTerm === bird.comName.replace(/-/g, ' ') && !searchTerm.includes('-')) {
+          continue; // Skip duplicate if no hyphens were removed
+        }
+        const title = encodeURIComponent(searchTerm.replace(/ /g, '_'));
+        const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=extracts&exintro=1&format=json&origin=*&redirects=1`;
+        const response = await fetch(url);
+        const data = await response.json();
+        const pages = data.query?.pages;
+        if (pages) {
+          const page = Object.values(pages)[0];
+          if (page.extract) {
+            localStorage.setItem(`wiki_desc_${bird.comName}`, page.extract);
+            btn.style.display = 'block';
+            return;
+          }
         }
       }
-      // Try scientific name if common name didn't work
+
+      // Try scientific name if common name didn't work (with and without hyphens)
       if (bird.sciName) {
-        const sciTitle = encodeURIComponent(bird.sciName.replace(/ /g, '_'));
-        const sciUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${sciTitle}&prop=extracts&exintro=1&format=json&origin=*&redirects=1`;
-        const sciResponse = await fetch(sciUrl);
-        const sciData = await sciResponse.json();
-        const sciPages = sciData.query?.pages;
-        if (sciPages) {
-          const sciPage = Object.values(sciPages)[0];
-          if (sciPage.extract) {
-            localStorage.setItem(`wiki_desc_${bird.sciName}`, sciPage.extract);
-            btn.style.display = 'block';
+        const sciSearchTerms = [bird.sciName, bird.sciName.replace(/-/g, ' ')];
+        for (const sciSearchTerm of sciSearchTerms) {
+          if (sciSearchTerm !== bird.sciName && !bird.sciName.includes('-')) {
+            continue; // Skip duplicate
+          }
+          const sciTitle = encodeURIComponent(sciSearchTerm.replace(/ /g, '_'));
+          const sciUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${sciTitle}&prop=extracts&exintro=1&format=json&origin=*&redirects=1`;
+          const sciResponse = await fetch(sciUrl);
+          const sciData = await sciResponse.json();
+          const sciPages = sciData.query?.pages;
+          if (sciPages) {
+            const sciPage = Object.values(sciPages)[0];
+            if (sciPage.extract) {
+              localStorage.setItem(`wiki_desc_${bird.sciName}`, sciPage.extract);
+              btn.style.display = 'block';
+              return;
+            }
           }
         }
       }

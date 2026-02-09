@@ -317,36 +317,57 @@ const LifeList = {
     const cacheKey = `wiki_img_${searchTerm}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
-      // Return cached URL (or null if we cached a failed lookup)
-      return cached === 'null' ? null : cached;
+      // Bust null cache entries when online and retry with new hyphen-fallback logic
+      if (cached === 'null' && navigator.onLine) {
+        console.log('[WikiAPI] Busting null cache for', searchTerm, '- will retry with fallback logic');
+        localStorage.removeItem(cacheKey);
+        // Continue to fetch fresh with hyphen fallback
+      } else {
+        // Return cached URL (or null if we cached a failed lookup while offline)
+        return cached === 'null' ? null : cached;
+      }
     }
 
-    try {
-      const title = encodeURIComponent(searchTerm.replace(/ /g, '_'));
-      // Fetch image AND extract in a single API call
-      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages|extracts&pithumbsize=400&exintro=1&format=json&origin=*&redirects=1`;
+    // Try original search term first, then retry without hyphens if needed
+    const searchVariants = [
+      searchTerm,
+      searchTerm.replace(/-/g, ' ')  // Remove hyphens (e.g., "Cattle-Egret" -> "Cattle Egret")
+    ];
 
-      const response = await fetch(url);
-      const data = await response.json();
-
-      const pages = data.query?.pages;
-      if (pages) {
-        const page = Object.values(pages)[0];
-
-        // Cache description if available
-        if (page.extract) {
-          localStorage.setItem(`wiki_desc_${searchTerm}`, page.extract);
-        }
-
-        if (page.thumbnail?.source) {
-          const imageUrl = page.thumbnail.source;
-          // Cache the successful result
-          localStorage.setItem(cacheKey, imageUrl);
-          return imageUrl;
-        }
+    for (let i = 0; i < searchVariants.length; i++) {
+      const variant = searchVariants[i];
+      if (i > 0 && variant === searchVariants[0]) {
+        // Skip duplicate if removing hyphens didn't change anything
+        continue;
       }
-    } catch (error) {
-      // Silently fail
+
+      try {
+        const title = encodeURIComponent(variant.replace(/ /g, '_'));
+        // Fetch image AND extract in a single API call
+        const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages|extracts&pithumbsize=400&exintro=1&format=json&origin=*&redirects=1`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const pages = data.query?.pages;
+        if (pages) {
+          const page = Object.values(pages)[0];
+
+          // Cache description if available
+          if (page.extract) {
+            localStorage.setItem(`wiki_desc_${searchTerm}`, page.extract);
+          }
+
+          if (page.thumbnail?.source) {
+            const imageUrl = page.thumbnail.source;
+            // Cache the successful result under ORIGINAL search term
+            localStorage.setItem(cacheKey, imageUrl);
+            return imageUrl;
+          }
+        }
+      } catch (error) {
+        // Silently fail
+      }
     }
 
     // Cache the failed lookup to avoid repeated API calls
