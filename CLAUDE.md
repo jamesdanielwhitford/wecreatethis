@@ -132,7 +132,7 @@ function normalizeUrl(url) {
 - Consistent behavior across all apps
 
 ### Current Service Worker Versions
-- **Birdle**: v110
+- **Birdle**: v119
 - **Tarot**: v31
 - **Beautiful Mind**: v10
 - **Pomodoro**: v1
@@ -144,11 +144,33 @@ function normalizeUrl(url) {
 - Bump service worker `CACHE_NAME` version when making changes
 - Service worker installation automatically caches all assets fresh
 
+### IMPORTANT: Service Worker Cache Rules
+
+**When adding ANY new HTML page or JS file to ANY project, you MUST also add it to the `ASSETS` array in that project's `sw.js`.** Otherwise the page will not be available offline.
+
+- HTML pages go in as extensionless normalized paths (e.g., `/birdle/trips/new` not `/birdle/trips/new.html`)
+- JS files go in with their extension (e.g., `/birdle/trips/app.js`)
+- Always bump the `CACHE_NAME` version when changing cached assets
+- This applies to all new pages, scripts, and static assets — no exceptions
+
 ### Code Style
 - Simple, readable vanilla JS
 - ES6+ features where appropriate
 - Clear variable names and comments for complex logic
 - Modular design with separate files for concerns (db.js, api.js, etc.)
+
+## "Push to Prod" Workflow
+
+When the user says **"push to prod"**, follow these steps in order:
+
+1. **Update versions** — Bump `CACHE_NAME` in the relevant `sw.js` and `APP_VERSION` in `app.js` (if applicable). Make sure any new pages/assets are in the SW `ASSETS` array.
+2. **Commit on `dev`** — Stage and commit all changes on the `dev` branch.
+3. **Push `dev`** — `git push origin dev`
+4. **Merge into `main`** — `git checkout main && git pull origin main && git merge dev`
+5. **Push `main`** — `git push origin main`
+6. **Switch back to `dev`** — `git checkout dev`
+
+This deploys the latest `dev` changes to production (Cloudflare Pages serves from `main`).
 
 ---
 
