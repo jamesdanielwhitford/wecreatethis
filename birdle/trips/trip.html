@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Trip - Birdle</title>
+  <link rel="manifest" href="../manifest.json">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <!-- Sticky Navbar -->
+  <nav class="game-navbar search-navbar">
+    <a href="index" class="back-btn">&larr; Trips</a>
+    <button id="menu-btn" class="menu-btn">&#8942;</button>
+    <div id="menu-dropdown" class="menu-dropdown" style="display:none;">
+      <button id="menu-edit-trip">Edit Trip</button>
+      <button id="menu-end-trip" style="display:none;">End Trip</button>
+      <button id="menu-resume-trip" style="display:none;">Resume Trip</button>
+      <button id="menu-delete-trip">Delete Trip</button>
+    </div>
+  </nav>
+
+  <!-- Trip Header -->
+  <div class="bingo-header">
+    <h1 id="trip-title">Trip</h1>
+    <p id="trip-date-range" class="bingo-date"></p>
+    <p id="trip-location" class="bingo-location"></p>
+    <p id="trip-sighting-count" class="bingo-location"></p>
+  </div>
+
+  <!-- Loading State -->
+  <div id="trip-loading" class="loading" style="display:none;">
+    <p>Loading trip...</p>
+  </div>
+
+  <!-- Error State -->
+  <div id="trip-error" class="daily-error" style="display:none;">
+    <p id="error-message">Trip not found.</p>
+  </div>
+
+  <!-- Trip Content -->
+  <div id="trip-content" style="display:none;">
+    <!-- Birds List -->
+    <div class="search-content">
+      <ul id="birds-list" class="search-results"></ul>
+      <div id="empty-state" class="daily-error" style="display:none;">
+        <p>No birds sighted during this trip yet.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Trip Modal -->
+  <div id="edit-modal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 500px;">
+      <h3>Edit Trip</h3>
+
+      <div class="form-group">
+        <label for="edit-name">Trip Name</label>
+        <input type="text" id="edit-name" class="form-input" required>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="edit-include-time-checkbox">
+          <span>Include specific times</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label for="edit-start-date">Start Date</label>
+        <input type="date" id="edit-start-date" class="form-input" required>
+        <input type="time" id="edit-start-time" class="form-input" style="display: none; margin-top: 8px;">
+      </div>
+
+      <div class="form-group">
+        <label for="edit-end-date">End Date</label>
+        <input type="date" id="edit-end-date" class="form-input">
+        <input type="time" id="edit-end-time" class="form-input" style="display: none; margin-top: 8px;">
+        <label class="checkbox-label">
+          <input type="checkbox" id="edit-ongoing-checkbox">
+          <span>Trip is ongoing</span>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button id="save-edit-btn" class="modal-btn seen">Save Changes</button>
+        <button id="cancel-edit-btn" class="modal-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3>Delete Trip?</h3>
+      <p style="margin: 16px 0; color: #666;">This action cannot be undone. The trip will be permanently deleted.</p>
+      <div class="modal-actions">
+        <button id="confirm-delete-btn" class="modal-btn delete">Delete Trip</button>
+        <button id="cancel-delete-btn" class="modal-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../db.js"></script>
+  <script src="../app.js"></script>
+  <script src="trip.js"></script>
+</body>
+</html>

@@ -51,8 +51,29 @@
         <label for="sighting-date">Date</label>
         <input type="date" id="sighting-date" class="form-input">
       </div>
+
+      <!-- Location Type Selection -->
       <div class="form-group">
-        <label>Location</label>
+        <label>Location Type</label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="sighting-location-type" value="region" checked>
+            <span>Region (Country/State)</span>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="sighting-location-type" value="precise">
+            <span>Precise Location (GPS)</span>
+          </label>
+          <label class="radio-label" id="sighting-map-label">
+            <input type="radio" name="sighting-location-type" value="map">
+            <span>Choose on Map</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Region Selector (default visible) -->
+      <div id="sighting-region-section" class="form-group">
+        <label>Region</label>
         <select id="sighting-country" class="form-select">
           <option value="">Select Country...</option>
         </select>
@@ -60,6 +81,19 @@
           <option value="">Select State/Province...</option>
         </select>
       </div>
+
+      <!-- Precise Location Section (hidden by default) -->
+      <div id="sighting-precise-section" class="form-group" style="display: none;">
+        <button type="button" id="sighting-use-gps-btn" class="location-btn">📍 Use My Current GPS Location</button>
+        <p id="sighting-gps-info" class="hint" style="text-align: center; margin-top: 8px;"></p>
+      </div>
+
+      <!-- Map Picker Section (hidden by default) -->
+      <div id="sighting-map-section" class="form-group" style="display: none;">
+        <button type="button" id="sighting-open-map-btn" class="location-btn">📍 Choose Location on Map</button>
+        <p id="sighting-map-info" class="hint" style="text-align: center; margin-top: 8px;"></p>
+      </div>
+
       <div class="form-group">
         <label for="sighting-notes">Notes (optional)</label>
         <textarea id="sighting-notes" class="form-textarea" rows="3" placeholder="Add details about this sighting..."></textarea>
@@ -67,6 +101,19 @@
       <div class="modal-actions">
         <button id="sighting-save-btn" class="modal-btn seen">Save Sighting</button>
         <button id="sighting-cancel-btn" class="modal-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sighting Map Picker Modal -->
+  <div id="sighting-map-picker-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px; width: 90%;">
+      <h3>Choose Sighting Location</h3>
+      <p class="hint" style="text-align: center; margin-bottom: 12px;">Tap on the map to mark where you saw the bird</p>
+      <div id="sighting-picker-map" style="height: 400px; margin: 16px 0; border-radius: 8px;"></div>
+      <div class="modal-actions">
+        <button id="sighting-confirm-location-btn" class="modal-btn seen">Confirm Location</button>
+        <button id="sighting-cancel-location-btn" class="modal-btn cancel">Cancel</button>
       </div>
     </div>
   </div>

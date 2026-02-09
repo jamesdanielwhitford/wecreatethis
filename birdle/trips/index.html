@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Trips - Birdle</title>
+  <link rel="manifest" href="../manifest.json">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <a href="../index" class="back-btn">&larr; Home</a>
+  <h1>Trips</h1>
+
+  <!-- Filter and Sort Controls -->
+  <div class="filter-row">
+    <select id="status-filter">
+      <option value="all">All Trips</option>
+      <option value="active">Active Only</option>
+      <option value="ended">Ended Only</option>
+    </select>
+    <select id="sort-type">
+      <option value="newest">Newest First</option>
+      <option value="oldest">Oldest First</option>
+      <option value="most-sightings">Most Sightings</option>
+    </select>
+  </div>
+
+  <ul id="trips-list" class="games-list"></ul>
+
+  <div class="fab-container">
+    <a href="new" class="fab"></a>
+  </div>
+
+  <script src="../db.js"></script>
+  <script src="../app.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // Initialize trips list
+    (async function() {
+      await BirdDB.init();
+      TripsApp.init();
+    })();
+  </script>
+</body>
+</html>

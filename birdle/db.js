@@ -2,7 +2,7 @@
 // Centralized bird caching system
 
 const DB_NAME = 'birdle-db';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 // Generate UUID for sync
 function generateSyncId() {
@@ -69,6 +69,15 @@ const BirdDB = {
           const bingoStore = db.createObjectStore('bingo_games', { keyPath: 'id', autoIncrement: true });
           bingoStore.createIndex('createdAt', 'createdAt');
           bingoStore.createIndex('completedAt', 'completedAt');
+        }
+
+        // Trips store - filtered views of sightings by time/location
+        if (!db.objectStoreNames.contains('trips')) {
+          const tripsStore = db.createObjectStore('trips', { keyPath: 'id', autoIncrement: true });
+          tripsStore.createIndex('startTime', 'startTime');
+          tripsStore.createIndex('endTime', 'endTime');
+          tripsStore.createIndex('status', 'status');
+          tripsStore.createIndex('createdAt', 'createdAt');
         }
       };
     });
@@ -724,6 +733,159 @@ const BirdDB = {
     }
 
     return migrated;
+  },
+
+  // ===== TRIPS =====
+
+  async createTrip(tripData) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const trip = {
+        name: tripData.name,
+        startTime: tripData.startTime, // ISO string timestamp
+        endTime: tripData.endTime || null, // null = ongoing trip
+        area: tripData.area || null, // {type, lat, lng, radius, country, region}
+        createdAt: new Date().toISOString(),
+        status: tripData.endTime ? 'ended' : 'active'
+      };
+
+      const tx = this.db.transaction('trips', 'readwrite');
+      const request = tx.objectStore('trips').add(trip);
+      request.onsuccess = () => {
+        trip.id = request.result;
+        resolve(trip);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async getTrip(tripId) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('trips', 'readonly');
+      const request = tx.objectStore('trips').get(tripId);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async getAllTrips() {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('trips', 'readonly');
+      const request = tx.objectStore('trips').getAll();
+      request.onsuccess = () => {
+        // Sort by createdAt desc (most recent first)
+        const trips = request.result.sort((a, b) =>
+          new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        resolve(trips);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async updateTrip(tripId, updates) {
+    await this.ready();
+    const trip = await this.getTrip(tripId);
+    if (!trip) throw new Error('Trip not found');
+
+    // Merge updates
+    Object.assign(trip, updates);
+
+    // Update status based on endTime
+    if (updates.endTime !== undefined) {
+      trip.status = updates.endTime ? 'ended' : 'active';
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('trips', 'readwrite');
+      const request = tx.objectStore('trips').put(trip);
+      request.onsuccess = () => resolve(trip);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async deleteTrip(tripId) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('trips', 'readwrite');
+      const request = tx.objectStore('trips').delete(tripId);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async endTrip(tripId, endTime) {
+    return this.updateTrip(tripId, {
+      endTime: endTime || new Date().toISOString(),
+      status: 'ended'
+    });
+  },
+
+  // Helper: Calculate distance between two lat/lng points (Haversine formula)
+  // Returns distance in kilometers
+  _calculateDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  },
+
+  // Get all sightings that match a trip's filters
+  async getTripSightings(tripId) {
+    await this.ready();
+    const trip = await this.getTrip(tripId);
+    if (!trip) return [];
+
+    const allSightings = await this.getAllSightings();
+
+    // Filter by time
+    let filtered = allSightings.filter(sighting => {
+      const sightingDate = sighting.date; // ISO string
+      const inRange = sightingDate >= trip.startTime &&
+                      (trip.endTime === null || sightingDate <= trip.endTime);
+      return inRange;
+    });
+
+    // Filter by area if set
+    if (trip.area) {
+      if (trip.area.type === 'region') {
+        // Filter by country/region code
+        filtered = filtered.filter(sighting => {
+          const matchesCountry = sighting.regionCode.startsWith(trip.area.country);
+          if (trip.area.region) {
+            return sighting.regionCode === trip.area.region;
+          }
+          return matchesCountry;
+        });
+      } else if (trip.area.type === 'precise' || trip.area.type === 'map') {
+        // Filter by distance from center point
+        filtered = filtered.filter(sighting => {
+          // Only include sightings with lat/lng data
+          if (!sighting.lat || !sighting.lng) return false;
+
+          const distance = this._calculateDistance(
+            trip.area.lat,
+            trip.area.lng,
+            sighting.lat,
+            sighting.lng
+          );
+
+          return distance <= trip.area.radius;
+        });
+      }
+    }
+
+    // Sort by date desc (most recent first)
+    filtered.sort((a, b) => b.date.localeCompare(a.date));
+
+    return filtered;
   },
 
   // ===== BINGO GAMES =====

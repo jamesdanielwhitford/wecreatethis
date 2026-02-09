@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>New Trip - Birdle</title>
+  <link rel="manifest" href="../manifest.json">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <a href="index" class="back-btn">&larr; Back</a>
+  <h1>New Trip</h1>
+
+  <!-- Trip Name -->
+  <div class="form-group">
+    <label for="trip-name">Trip Name</label>
+    <input type="text" id="trip-name" placeholder="e.g., Weekend Birding" required>
+  </div>
+
+  <!-- Date/Time Toggle -->
+  <div class="form-group">
+    <label class="checkbox-label">
+      <input type="checkbox" id="include-time-checkbox">
+      <span>Include specific times</span>
+    </label>
+  </div>
+
+  <!-- Start Date/Time -->
+  <div class="form-group">
+    <label for="start-date">Start Date</label>
+    <input type="date" id="start-date" required>
+    <input type="time" id="start-time" style="display: none; margin-top: 8px;">
+  </div>
+
+  <!-- End Date/Time -->
+  <div class="form-group">
+    <label for="end-date">End Date</label>
+    <input type="date" id="end-date">
+    <input type="time" id="end-time" style="display: none; margin-top: 8px;">
+    <label class="checkbox-label">
+      <input type="checkbox" id="ongoing-checkbox">
+      <span>Trip is ongoing</span>
+    </label>
+  </div>
+
+  <!-- Location Filter -->
+  <div class="form-group">
+    <label>Location Filter (Optional)</label>
+
+    <div class="radio-group">
+      <label class="radio-label">
+        <input type="radio" name="location-type" value="none" checked>
+        <span>None (all locations)</span>
+      </label>
+
+      <label class="radio-label">
+        <input type="radio" name="location-type" value="region">
+        <span>Region</span>
+      </label>
+
+      <label class="radio-label" id="map-label">
+        <input type="radio" name="location-type" value="map">
+        <span>Custom Area (Map)</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Region Selector (hidden by default) -->
+  <div id="region-selector" class="form-group" style="display: none;">
+    <label>Choose Region</label>
+    <div class="region-selects">
+      <select id="country-select">
+        <option value="">Select Country...</option>
+      </select>
+      <select id="state-select" disabled>
+        <option value="">Select State/Province...</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Map Picker (hidden by default, online only) -->
+  <div id="map-picker-section" class="form-group" style="display: none;">
+    <label>Custom Area</label>
+    <button type="button" id="open-map-picker-btn" class="location-btn">📍 Choose Area on Map</button>
+    <p id="map-area-info" class="hint" style="text-align: center; margin-top: 8px;"></p>
+  </div>
+
+  <!-- Create Button -->
+  <button id="create-trip-btn" class="btn create-btn">Create Trip</button>
+
+  <!-- Loading indicator -->
+  <div id="creating-spinner" class="loading" style="display:none;">
+    <p>Creating trip...</p>
+  </div>
+
+  <!-- Map Picker Modal -->
+  <div id="map-picker-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px; width: 90%;">
+      <h3>Choose Trip Area</h3>
+      <div id="picker-map" style="height: 400px; margin: 16px 0; border-radius: 8px;"></div>
+
+      <div class="form-group" style="margin: 16px 0;">
+        <label for="radius-slider">Radius: <span id="radius-value">10</span> km</label>
+        <input type="range" id="radius-slider" min="0.1" max="100" value="10" step="0.1" style="width: 100%;">
+      </div>
+
+      <div class="modal-actions">
+        <button id="confirm-area-btn" class="modal-btn seen">Confirm Area</button>
+        <button id="cancel-area-btn" class="modal-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../location.js"></script>
+  <script src="../ebird.js"></script>
+  <script src="../db.js"></script>
+  <script src="../app.js"></script>
+  <script src="new.js"></script>
+</body>
+</html>

@@ -1583,15 +1583,20 @@ const App = {
       const params = new URLSearchParams(window.location.search);
       const fromContext = params.get('from');
       const gameId = params.get('gameId');
+      const tripId = params.get('tripId');
 
       if (fromContext === 'bingo' && gameId) {
         backBtn.href = `bingo?id=${gameId}`;
+      } else if (fromContext === 'trip' && tripId) {
+        backBtn.href = `trips/trip?id=${tripId}`;
       } else {
         const referrer = document.referrer;
         if (referrer.includes('/life')) {
           backBtn.href = 'life';
         } else if (referrer.includes('/bingo')) {
           backBtn.href = 'bingo-games';
+        } else if (referrer.includes('/trips/trip')) {
+          backBtn.href = 'trips';
         } else {
           backBtn.href = 'search';
         }
@@ -1938,12 +1943,194 @@ const App = {
         document.getElementById('sighting-modal').style.display = 'none';
       }
     });
+
+    // Location type radio handlers
+    const locationTypeRadios = document.querySelectorAll('input[name="sighting-location-type"]');
+    locationTypeRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        this.handleSightingLocationTypeChange(radio.value);
+      });
+    });
+
+    // GPS button
+    document.getElementById('sighting-use-gps-btn')?.addEventListener('click', async () => {
+      await this.getSightingGPSLocation();
+    });
+
+    // Map picker button
+    document.getElementById('sighting-open-map-btn')?.addEventListener('click', async () => {
+      await this.openSightingMapPicker();
+    });
+
+    // Map picker modal buttons
+    document.getElementById('sighting-confirm-location-btn')?.addEventListener('click', () => {
+      this.confirmSightingMapLocation();
+    });
+
+    document.getElementById('sighting-cancel-location-btn')?.addEventListener('click', () => {
+      document.getElementById('sighting-map-picker-modal').style.display = 'none';
+    });
+  },
+
+  handleSightingLocationTypeChange(type) {
+    const regionSection = document.getElementById('sighting-region-section');
+    const preciseSection = document.getElementById('sighting-precise-section');
+    const mapSection = document.getElementById('sighting-map-section');
+
+    // Hide all sections
+    regionSection.style.display = 'none';
+    preciseSection.style.display = 'none';
+    mapSection.style.display = 'none';
+
+    // Show selected section
+    if (type === 'region') {
+      regionSection.style.display = 'block';
+    } else if (type === 'precise') {
+      preciseSection.style.display = 'block';
+    } else if (type === 'map') {
+      mapSection.style.display = 'block';
+    }
+  },
+
+  sightingLocation: null, // Store GPS/map coordinates
+
+  async getSightingGPSLocation() {
+    const btn = document.getElementById('sighting-use-gps-btn');
+    const info = document.getElementById('sighting-gps-info');
+
+    btn.textContent = 'Getting location...';
+    btn.disabled = true;
+
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000
+        });
+      });
+
+      this.sightingLocation = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      };
+
+      info.textContent = `Location set: ${this.sightingLocation.lat.toFixed(4)}, ${this.sightingLocation.lng.toFixed(4)}`;
+      btn.textContent = '✓ GPS Location Captured';
+    } catch (error) {
+      alert('Could not get GPS location. Please try again or use a different method.');
+      btn.textContent = '📍 Use My Current GPS Location';
+      btn.disabled = false;
+    }
+  },
+
+  sightingMapInstance: null,
+  sightingMapMarker: null,
+
+  async openSightingMapPicker() {
+    const modal = document.getElementById('sighting-map-picker-modal');
+    modal.style.display = 'flex';
+
+    // Initialize map if not already done
+    if (!this.sightingMapInstance) {
+      // Load Leaflet if needed
+      if (typeof L === 'undefined') {
+        await this.loadLeaflet();
+      }
+
+      // Get default center
+      let lat = 0, lng = 0;
+      const cached = LocationService.getCached();
+      if (cached && cached.lat && cached.lng) {
+        lat = cached.lat;
+        lng = cached.lng;
+      }
+
+      // Create map
+      this.sightingMapInstance = L.map('sighting-picker-map').setView([lat, lng], 12);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(this.sightingMapInstance);
+
+      // Add click handler
+      this.sightingMapInstance.on('click', (e) => {
+        if (this.sightingMapMarker) {
+          this.sightingMapInstance.removeLayer(this.sightingMapMarker);
+        }
+        this.sightingMapMarker = L.marker(e.latlng).addTo(this.sightingMapInstance);
+      });
+    }
+  },
+
+  confirmSightingMapLocation() {
+    if (!this.sightingMapMarker) {
+      alert('Please tap on the map to select a location');
+      return;
+    }
+
+    const latlng = this.sightingMapMarker.getLatLng();
+    this.sightingLocation = {
+      lat: latlng.lat,
+      lng: latlng.lng
+    };
+
+    const info = document.getElementById('sighting-map-info');
+    info.textContent = `Location set: ${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
+
+    document.getElementById('sighting-map-picker-modal').style.display = 'none';
+  },
+
+  async loadLeaflet() {
+    // Load Leaflet CSS if not already loaded
+    if (!document.querySelector('link[href*="leaflet"]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+
+    // Load Leaflet JS if not already loaded
+    if (typeof L === 'undefined') {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
   },
 
   async openSightingModal(bird) {
     // Set today as default date
     document.getElementById('sighting-date').value = new Date().toISOString().split('T')[0];
     document.getElementById('sighting-notes').value = '';
+
+    // Reset location data
+    this.sightingLocation = null;
+    document.getElementById('sighting-gps-info').textContent = '';
+    document.getElementById('sighting-map-info').textContent = '';
+    const gpsBtn = document.getElementById('sighting-use-gps-btn');
+    gpsBtn.textContent = '📍 Use My Current GPS Location';
+    gpsBtn.disabled = false;
+
+    // Reset location type to region
+    const regionRadio = document.querySelector('input[name="sighting-location-type"][value="region"]');
+    if (regionRadio) regionRadio.checked = true;
+    this.handleSightingLocationTypeChange('region');
+
+    // Disable map option if offline
+    const mapLabel = document.getElementById('sighting-map-label');
+    const mapRadio = document.querySelector('input[name="sighting-location-type"][value="map"]');
+    if (!navigator.onLine) {
+      mapLabel.style.opacity = '0.5';
+      mapRadio.disabled = true;
+      mapLabel.querySelector('span').textContent = 'Choose on Map (Requires internet)';
+    } else {
+      mapLabel.style.opacity = '1';
+      mapRadio.disabled = false;
+      mapLabel.querySelector('span').textContent = 'Choose on Map';
+    }
 
     // Load countries
     const countrySelect = document.getElementById('sighting-country');
@@ -2049,19 +2236,54 @@ const App = {
 
   async saveSighting(bird) {
     const date = document.getElementById('sighting-date').value;
-    const countrySelect = document.getElementById('sighting-country');
-    const stateSelect = document.getElementById('sighting-state');
     const notes = document.getElementById('sighting-notes').value;
 
-    if (!date || !countrySelect.value) {
-      alert('Please select a date and country');
+    if (!date) {
+      alert('Please select a date');
       return;
     }
 
-    const regionCode = stateSelect.value || countrySelect.value;
-    const regionName = stateSelect.value
-      ? stateSelect.options[stateSelect.selectedIndex].text
-      : countrySelect.options[countrySelect.selectedIndex].text;
+    // Get location type
+    const locationType = document.querySelector('input[name="sighting-location-type"]:checked').value;
+
+    let regionCode, regionName, lat = null, lng = null;
+
+    if (locationType === 'region') {
+      // Region-based location
+      const countrySelect = document.getElementById('sighting-country');
+      const stateSelect = document.getElementById('sighting-state');
+
+      if (!countrySelect.value) {
+        alert('Please select a country');
+        return;
+      }
+
+      regionCode = stateSelect.value || countrySelect.value;
+      regionName = stateSelect.value
+        ? stateSelect.options[stateSelect.selectedIndex].text
+        : countrySelect.options[countrySelect.selectedIndex].text;
+
+    } else if (locationType === 'precise' || locationType === 'map') {
+      // GPS or map-based location
+      if (!this.sightingLocation) {
+        alert('Please capture a location first');
+        return;
+      }
+
+      lat = this.sightingLocation.lat;
+      lng = this.sightingLocation.lng;
+
+      // Get region from cached location or prompt user
+      const cached = LocationService.getCached();
+      if (cached && cached.countryCode) {
+        regionCode = cached.stateCode || cached.countryCode;
+        regionName = cached.stateName || cached.countryName || regionCode;
+      } else {
+        // Fallback - could enhance this to reverse geocode
+        alert('Please set a region in the app settings first (Location & Cache page)');
+        return;
+      }
+    }
 
     // Save sighting to IndexedDB
     if (typeof BirdDB !== 'undefined') {
@@ -2072,6 +2294,8 @@ const App = {
         date: date,
         regionCode: regionCode,
         regionName: regionName,
+        lat: lat,
+        lng: lng,
         notes: notes
       });
     }
