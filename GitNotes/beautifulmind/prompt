@@ -1,0 +1,16 @@
+Beautiful mind main page should be only folders, any notes created that were not created in a folder should be added to a folder called stray notes 
+
+Now there are 2 folder types, a folder and a book 
+
+Inside a book the first page a user should see is the table of contents clicking a heading or subheading in the table of contents will navigate to that note
+
+But within a book now navigation is a little different. A book is made up of many notes, but the notes are kind of indistinguishable. They flow like the content of a book, say the user made a text not then added an image, these in the backend are two different notes but when rendered in the book view the image with just appear below the note.
+
+Books will be read like pages and navigated with a kindle like UI. Only enough content will appear on a page as can fit within the page height. To go the next page the user taps the right side of the screen and the left to go back etc.
+
+When adding some text, if. # is used this creates a new text note, with what comes after the # as a heading for the note that will appear in the table of contents that text note will continue until the user adds maybe another # heading or an image or voice note etc those are treated as new notes 
+
+But remember a ## or ### doesn’t start a new note after a # but it would start a new note after an image for example 
+
+
+That was a book type. A folder will remain the way it works currently in beautifulmind for now 
