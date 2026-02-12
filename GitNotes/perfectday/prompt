@@ -1,0 +1,4 @@
+“Generate a design and implementation plan for a hiking web app that displays an interactive map and caches map tiles only for the areas and zoom levels the user actually navigates. The app should use free worldwide vector tile sources (like OpenStreetMap US or similar) and a PWA stack with MapLibre GL JS for rendering. Focus on lazy loading tiles as the user moves and zooms, storing them offline in the browser (IndexedDB or Cache Storage). Include a side panel or pop-up section that shows offline-capable information about the user’s current location, such as elevation, heading/compass, and other hardware-sensor data available in the browser (GPS, accelerometer, gyroscope). The response should explain the implementation architecture, data flow, caching strategy, and integration with the hardware sensors.”
+
+---
+
