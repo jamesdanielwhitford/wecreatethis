@@ -120,8 +120,8 @@ const TileCache = {
     maplibregl.addProtocol('cached', async (params, abortController) => {
       const url = params.url.replace('cached://', 'https://');
 
-      // Extract z/x/y from tile URL
-      const match = url.match(/\/(\d+)\/(\d+)\/(\d+)\.(pbf|mvt)/);
+      // Extract z/x/y from tile URL (vector .pbf/.mvt and raster .png)
+      const match = url.match(/\/(\d+)\/(\d+)\/(\d+)\.(pbf|mvt|png)/);
       if (!match) {
         // Non-tile request (sprites, glyphs, source JSON) — network with cache fallback
         try {
