@@ -91,7 +91,6 @@ const TileCache = {
     });
   },
 
-  // Cache non-tile resources (style JSON, sprites, glyphs) in IndexedDB too
   async getResource(key) {
     const db = await this.ready();
     return new Promise((resolve, reject) => {
@@ -124,15 +123,13 @@ const TileCache = {
       // Extract z/x/y from tile URL
       const match = url.match(/\/(\d+)\/(\d+)\/(\d+)\.(pbf|mvt)/);
       if (!match) {
-        // Non-tile request (style, sprite, glyphs) — try network, fall back to cache
+        // Non-tile request (sprites, glyphs, source JSON) — network with cache fallback
         try {
           const response = await fetch(url, { signal: abortController.signal });
           const data = await response.arrayBuffer();
-          // Cache for offline use
           this.saveResource(url, data).catch(() => {});
           return { data };
         } catch (e) {
-          // Offline — try cached version
           const cached = await this.getResource(url);
           if (cached) return { data: cached };
           throw e;
@@ -151,18 +148,15 @@ const TileCache = {
         // Cache read failed, fall through to network
       }
 
-      // Fetch from network
+      // Fetch from network, cache on success
       try {
         const response = await fetch(url, { signal: abortController.signal });
         const data = await response.arrayBuffer();
-
-        // Cache the tile (don't await — fire and forget)
         this.saveTile(tileKey, data).catch(() => {});
-
         return { data };
       } catch (e) {
-        // Offline and tile not cached — return empty tile instead of crashing
-        return { data: new ArrayBuffer(0) };
+        // Offline + not cached — throw so MapLibre shows blank tile, not crash
+        throw e;
       }
     });
   }
