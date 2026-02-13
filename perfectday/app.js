@@ -124,7 +124,7 @@ const App = {
       // Smooth heading for needle rotation to prevent jitter
       const smoothed = Sensors.smoothHeading(rawHeading);
       const needle = document.querySelector('.compass-needle');
-      needle.style.transform = `rotate(${smoothed}deg)`;
+      needle.style.transform = `rotate(${-smoothed}deg)`;
       document.getElementById('compassLetter').textContent = cardinal;
     } else {
       document.getElementById('summaryHeading').textContent = '--';
