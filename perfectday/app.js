@@ -11,7 +11,7 @@ const App = {
   async init() {
     await TileCache.init();
     TileCache.registerProtocol();
-    this.initMap();
+    await this.initMap();
     this.initBottomSheet();
     this.initSensors();
     this.updateStorage();
@@ -19,19 +19,37 @@ const App = {
 
   // ── Map ──
 
-  initMap() {
-    // Rewrite the OpenFreeMap style URL through our caching protocol
+  async initMap() {
     const styleUrl = 'https://tiles.openfreemap.org/styles/liberty';
+
+    // Fetch style JSON ourselves so we can cache it for offline use
+    let style;
+    try {
+      const response = await fetch(styleUrl);
+      const styleJson = await response.text();
+      // Cache the style for offline
+      TileCache.saveResource(styleUrl, new TextEncoder().encode(styleJson).buffer).catch(() => {});
+      style = JSON.parse(styleJson);
+    } catch (e) {
+      // Offline — try cached style
+      const cached = await TileCache.getResource(styleUrl);
+      if (cached) {
+        style = JSON.parse(new TextDecoder().decode(cached));
+      } else {
+        console.error('No cached map style available offline');
+        return;
+      }
+    }
 
     this.map = new maplibregl.Map({
       container: 'map',
-      style: styleUrl,
+      style: style,
       center: [0, 20],
       zoom: 2,
       attributionControl: true,
       transformRequest: (url, resourceType) => {
-        // Route all tile server requests through our caching protocol for offline support
-        if (url.startsWith('https://') && resourceType !== 'Unknown') {
+        // Route tile server requests through our caching protocol for offline support
+        if (url.startsWith('https://tiles.openfreemap.org')) {
           return { url: url.replace('https://', 'cached://') };
         }
         return { url };
