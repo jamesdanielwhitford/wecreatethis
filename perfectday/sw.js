@@ -1,38 +1,31 @@
-const CACHE_NAME = 'wecreatethis-v17';
+const CACHE_NAME = 'perfectday-v1';
 const ASSETS = [
-  '/',
-  '/index',
-  '/styles.css',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/migrate.html',
-  '/beautiful-mind/icon-192.png',
-  '/birdle/icon-192.png',
-  '/hardle/icon-192.png',
-  '/tarot/icon-192.png',
-  '/perfectday/icon-192.png'
+  '/perfectday/',
+  '/perfectday/index',
+  '/perfectday/styles.css',
+  '/perfectday/app.js',
+  '/perfectday/tile-cache.js',
+  '/perfectday/sensors.js',
+  '/perfectday/manifest.json',
+  '/perfectday/icon-192.png',
+  '/perfectday/icon-512.png'
 ];
 
-// Normalize URL to canonical extensionless format
 function normalizeUrl(url, base = self.location.origin) {
   const urlObj = new URL(url, base);
   let path = urlObj.pathname;
 
-  // Remove .html extension
   if (path.endsWith('.html')) {
     path = path.slice(0, -5);
   }
 
-  // Normalize /index -> /
-  if (path === '/index') {
-    path = '/';
+  if (path.endsWith('/index')) {
+    path = path.slice(0, -5);
   }
 
   return urlObj.origin + path;
 }
 
-// Install - cache all assets
 self.addEventListener('install', (event) => {
   console.log('Service worker installing:', CACHE_NAME);
   event.waitUntil(
@@ -41,7 +34,6 @@ self.addEventListener('install', (event) => {
         try {
           const response = await fetch(url);
           if (response.ok) {
-            // Cache under normalized URL
             const normalized = normalizeUrl(url);
             await cache.put(normalized, response.clone());
           }
@@ -55,33 +47,34 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate - clean old caches
 self.addEventListener('activate', (event) => {
   console.log('Service worker activating:', CACHE_NAME);
   event.waitUntil(
     caches.keys().then((keys) => {
-      console.log('Deleting old caches:', keys.filter(k => k !== CACHE_NAME));
       return Promise.all(
         keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
       );
     })
   );
-  // Force immediate control of all pages
   self.clients.claim();
 });
 
-// Match cache using normalized URL (ignores query params)
 async function matchCache(request) {
   const normalized = normalizeUrl(request.url);
   const cache = await caches.open(CACHE_NAME);
   return cache.match(normalized);
 }
 
-// Fetch - cache first with background update
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // Don't intercept CDN or tile server requests - let the app handle those
+  if (url.hostname !== self.location.hostname) {
+    return;
+  }
+
   event.respondWith(
     matchCache(event.request).then(async (cached) => {
-      // Start background network request for updates
       const networkPromise = fetch(event.request).then(async (response) => {
         if (response.ok && event.request.method === 'GET') {
           const cache = await caches.open(CACHE_NAME);
@@ -91,21 +84,18 @@ self.addEventListener('fetch', (event) => {
         return response;
       }).catch(() => null);
 
-      // Return cached response immediately if available
       if (cached) {
-        networkPromise; // Update in background
+        networkPromise;
         return cached;
       }
 
-      // No cache, wait for network
       const networkResponse = await networkPromise;
       if (networkResponse) {
         return networkResponse;
       }
 
-      // Network failed and no cache, return offline page
       if (event.request.mode === 'navigate') {
-        const fallback = await matchCache(new Request('/'));
+        const fallback = await matchCache(new Request('/perfectday/'));
         if (fallback) return fallback;
       }
 

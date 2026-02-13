@@ -45,6 +45,11 @@
     </div>
 
     <!-- <div class="app-item">
+      <a href="/perfectday/" class="app-btn" style="background-image: url('/perfectday/icon-192.png');"></a>
+      <span class="app-name">Perfect Day</span>
+    </div> -->
+
+    <!-- <div class="app-item">
       <a href="/chessle/" class="app-btn" style="background-image: url('/chessle/icon-192.png');"></a>
       <span class="app-name">Chessle</span>
     </div> -->
@@ -54,7 +59,7 @@
     if ('serviceWorker' in navigator) {
       // Clean up old/orphaned service workers from deleted projects
       navigator.serviceWorker.getRegistrations().then(registrations => {
-        const validScopes = ['/', '/birdle/', '/tarot/', '/beautiful-mind/', '/hardle/', '/pomodoro/', '/git-notes/'];
+        const validScopes = ['/', '/birdle/', '/tarot/', '/beautiful-mind/', '/hardle/', '/pomodoro/', '/git-notes/', '/perfectday/'];
         registrations.forEach(registration => {
           const scope = new URL(registration.scope).pathname;
           if (!validScopes.includes(scope)) {

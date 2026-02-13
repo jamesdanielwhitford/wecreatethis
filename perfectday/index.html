@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2d5016">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Perfect Day">
+  <title>Perfect Day</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Home button overlay -->
+  <a href="/" class="home-btn" aria-label="Home"></a>
+
+  <!-- Map container -->
+  <div id="map"></div>
+
+  <!-- Bottom sheet -->
+  <div class="bottom-sheet" id="bottomSheet">
+    <div class="sheet-handle" id="sheetHandle">
+      <div class="handle-bar"></div>
+    </div>
+
+    <!-- Collapsed view -->
+    <div class="sheet-summary">
+      <div class="summary-left">
+        <div class="summary-row">
+          <span class="label">GPS</span>
+          <span class="value" id="summaryCoords">Waiting for GPS...</span>
+        </div>
+        <div class="summary-row">
+          <span class="label">Elev</span>
+          <span class="value" id="summaryElevation">--</span>
+        </div>
+        <div class="summary-row">
+          <span class="label">Heading</span>
+          <span class="value" id="summaryHeading">--</span>
+        </div>
+      </div>
+      <div class="compass-rose" id="compassRose">
+        <div class="compass-needle"></div>
+        <span class="compass-letter" id="compassLetter">N</span>
+      </div>
+    </div>
+
+    <!-- Expanded view -->
+    <div class="sheet-details" id="sheetDetails">
+      <div class="detail-section">
+        <h3>Location</h3>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Latitude</span>
+            <span class="detail-value" id="detailLat">--</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Longitude</span>
+            <span class="detail-value" id="detailLng">--</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Altitude</span>
+            <span class="detail-value" id="detailAltitude">--</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Speed</span>
+            <span class="detail-value" id="detailSpeed">--</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Accuracy</span>
+            <span class="detail-value" id="detailAccuracy">--</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">GPS Heading</span>
+            <span class="detail-value" id="detailGpsHeading">--</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3>Compass & Motion</h3>
+        <div id="sensorPermissionArea">
+          <button class="sensor-btn" id="enableSensorsBtn">Enable Sensors</button>
+        </div>
+        <div class="detail-grid" id="sensorGrid" style="display: none;">
+          <div class="detail-item">
+            <span class="detail-label">Compass</span>
+            <span class="detail-value" id="detailCompass">--</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Tilt (F/B)</span>
+            <span class="detail-value" id="detailTilt">--</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Roll (L/R)</span>
+            <span class="detail-value" id="detailRoll">--</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Accel X</span>
+            <span class="detail-value" id="detailAccelX">--</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Accel Y</span>
+            <span class="detail-value" id="detailAccelY">--</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Accel Z</span>
+            <span class="detail-value" id="detailAccelZ">--</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3>Cached Tiles</h3>
+        <div class="storage-info">
+          <div class="storage-row">
+            <span>Tiles cached</span>
+            <span id="tileCount">0</span>
+          </div>
+          <div class="storage-row">
+            <span>Storage used</span>
+            <span id="storageUsed">0 MB</span>
+          </div>
+          <div class="storage-bar">
+            <div class="storage-fill" id="storageFill"></div>
+          </div>
+          <div class="storage-actions">
+            <button class="storage-btn" id="clearCacheBtn">Clear Tile Cache</button>
+            <button class="storage-btn" id="persistBtn">Keep Offline</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.js"></script>
+  <script src="tile-cache.js"></script>
+  <script src="sensors.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/perfectday/sw.js', {
+        scope: '/perfectday/',
+        updateViaCache: 'none'
+      });
+    }
+  </script>
+</body>
+</html>

@@ -10,6 +10,7 @@ This repository contains multiple offline-first web applications, each living in
 - **hardle/** - ⚠️ **IN TESTING** - Word guessing game (Hardle: daily word, Randle: random word). Vanilla JS rebuild of React version. See [hardle/CLAUDE.md](hardle/CLAUDE.md) for details and known issues.
 - **pomodoro/** - Productivity timer with work and break sessions. Customizable durations, audio notifications, and session tracking. See [pomodoro/CLAUDE.md](pomodoro/CLAUDE.md) for details.
 - **git-notes/** - Note-taking app with GitHub-inspired dark theme. Auto-save, grid layout, and offline-first design. See [git-notes/CLAUDE.md](git-notes/CLAUDE.md) for details.
+- **perfectday/** - Offline-first hiking map with lazy tile caching, GPS, compass, and sensor data. Uses MapLibre GL JS + OpenFreeMap. See [perfectday/CLAUDE.md](perfectday/CLAUDE.md) for details.
 
 ## GitNotes Folder (Development Notes)
 
@@ -136,7 +137,8 @@ function normalizeUrl(url) {
 - **Tarot**: v31
 - **Beautiful Mind**: v10
 - **Pomodoro**: v1
-- **Homepage**: v12
+- **Perfect Day**: v1
+- **Homepage**: v17
 
 ### Version Management
 - Service worker cache format: `projectname-vN`

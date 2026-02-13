@@ -1,0 +1,346 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  overflow: hidden;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ── Map ── */
+
+#map {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Home button ── */
+
+.home-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1000;
+  width: 36px;
+  height: 36px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3Cpolyline points='9 22 9 12 15 12 15 22'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 18px;
+}
+
+.home-btn:active {
+  background-color: #e8e8e8;
+}
+
+/* ── Bottom sheet ── */
+
+.bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #1a1a2e;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.4);
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 110px;
+  overflow: hidden;
+  will-change: height;
+}
+
+.bottom-sheet.expanded {
+  height: 420px;
+  overflow-y: auto;
+}
+
+.bottom-sheet.dragging {
+  transition: none;
+}
+
+/* Handle */
+
+.sheet-handle {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 6px;
+  cursor: grab;
+}
+
+.handle-bar {
+  width: 40px;
+  height: 4px;
+  background: #444;
+  border-radius: 2px;
+}
+
+/* Summary (collapsed view) */
+
+.sheet-summary {
+  display: flex;
+  align-items: center;
+  padding: 0 16px 12px;
+  gap: 12px;
+}
+
+.summary-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.summary-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  line-height: 1.6;
+}
+
+.summary-row .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  min-width: 52px;
+}
+
+.summary-row .value {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: #e0e0e0;
+}
+
+/* Compass rose */
+
+.compass-rose {
+  width: 52px;
+  height: 52px;
+  border: 2px solid #555;
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.05);
+}
+
+.compass-needle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 40px;
+  margin-left: -2px;
+  margin-top: -20px;
+  transition: transform 0.15s ease-out;
+  transform-origin: center center;
+}
+
+.compass-needle::before,
+.compass-needle::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+
+/* North (red) */
+.compass-needle::before {
+  top: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 18px solid #e74c3c;
+  left: -3px;
+}
+
+/* South (white) */
+.compass-needle::after {
+  bottom: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 18px solid rgba(255,255,255,0.4);
+  left: -3px;
+}
+
+.compass-letter {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  color: #e74c3c;
+}
+
+/* Expanded details */
+
+.sheet-details {
+  padding: 8px 16px 24px;
+}
+
+.detail-section {
+  margin-bottom: 20px;
+}
+
+.detail-section h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #666;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #2a2a3e;
+  padding-bottom: 4px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: #888;
+}
+
+.detail-value {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: #e0e0e0;
+  font-weight: 500;
+}
+
+/* Sensor permission button */
+
+.sensor-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background: #2d5016;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.sensor-btn:active {
+  background: #3d6b1e;
+}
+
+/* Storage */
+
+.storage-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.storage-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.storage-row span:first-child {
+  color: #888;
+}
+
+.storage-bar {
+  height: 6px;
+  background: #2a2a3e;
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 4px 0;
+}
+
+.storage-fill {
+  height: 100%;
+  background: #2d5016;
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.3s;
+}
+
+.storage-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.storage-btn {
+  flex: 1;
+  padding: 8px;
+  background: transparent;
+  color: #aaa;
+  border: 1px solid #333;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.storage-btn:active {
+  background: #2a2a3e;
+  color: #fff;
+}
+
+/* Override MapLibre controls styling */
+
+.maplibregl-ctrl-group {
+  background: #1a1a2e !important;
+  border: 1px solid #333 !important;
+}
+
+.maplibregl-ctrl-group button {
+  background-color: #1a1a2e !important;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid #333 !important;
+}
+
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1);
+}
+
+.maplibregl-ctrl-attrib {
+  background: rgba(26, 26, 46, 0.7) !important;
+  color: #888 !important;
+  font-size: 10px !important;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: #aaa !important;
+}
+
+/* Safe area for notched devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .bottom-sheet {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
