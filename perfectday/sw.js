@@ -1,4 +1,4 @@
-const CACHE_NAME = 'perfectday-v7';
+const CACHE_NAME = 'perfectday-v8';
 const ASSETS = [
   '/perfectday/',
   '/perfectday/index',
@@ -70,13 +70,19 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   console.log('Service worker activating:', CACHE_NAME);
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
+    caches.keys().then(async (keys) => {
+      const hadOldCache = keys.some(key => key !== CACHE_NAME);
+      await Promise.all(
         keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
       );
+      await self.clients.claim();
+      // If we replaced an old cache, reload all tabs to serve fresh files
+      if (hadOldCache) {
+        const clients = await self.clients.matchAll({ type: 'window' });
+        clients.forEach(client => client.navigate(client.url));
+      }
     })
   );
-  self.clients.claim();
 });
 
 async function matchCache(request) {
