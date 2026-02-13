@@ -148,7 +148,7 @@ body {
   height: 40px;
   margin-left: -2px;
   margin-top: -20px;
-  transition: transform 0.15s ease-out;
+  transition: transform 0.3s ease-out;
   transform-origin: center center;
 }
 

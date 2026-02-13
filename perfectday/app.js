@@ -116,14 +116,15 @@ const App = {
       g.altitude != null ? `${Math.round(g.altitude)} m` : '--';
 
     // Heading: prefer compass, fall back to GPS heading
-    const heading = o.heading != null ? o.heading : g.heading;
-    if (heading != null) {
-      const cardinal = Sensors.getCardinal(heading);
-      document.getElementById('summaryHeading').textContent = `${Math.round(heading)}° ${cardinal}`;
+    const rawHeading = o.heading != null ? o.heading : g.heading;
+    if (rawHeading != null) {
+      const cardinal = Sensors.getCardinal(rawHeading);
+      document.getElementById('summaryHeading').textContent = `${Math.round(rawHeading)}° ${cardinal}`;
 
-      // Rotate compass needle
+      // Smooth heading for needle rotation to prevent jitter
+      const smoothed = Sensors.smoothHeading(rawHeading);
       const needle = document.querySelector('.compass-needle');
-      needle.style.transform = `rotate(${heading}deg)`;
+      needle.style.transform = `rotate(${smoothed}deg)`;
       document.getElementById('compassLetter').textContent = cardinal;
     } else {
       document.getElementById('summaryHeading').textContent = '--';

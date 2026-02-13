@@ -7,6 +7,7 @@ const Sensors = {
   watchId: null,
   sensorsEnabled: false,
   _onUpdate: null,
+  _smoothedHeading: null,  // smoothed heading in degrees (0-360)
 
   onUpdate(callback) {
     this._onUpdate = callback;
@@ -132,6 +133,24 @@ const Sensors = {
   },
 
   // ── Utility ──
+
+  // Low-pass filter for compass heading that handles 360/0 wraparound
+  smoothHeading(raw) {
+    if (raw == null) return this._smoothedHeading;
+    if (this._smoothedHeading == null) {
+      this._smoothedHeading = raw;
+      return raw;
+    }
+
+    // Calculate shortest angular difference (-180 to 180)
+    let diff = raw - this._smoothedHeading;
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
+
+    // Smoothing factor: 0.15 = heavy smoothing, stable needle
+    this._smoothedHeading = (this._smoothedHeading + diff * 0.15 + 360) % 360;
+    return this._smoothedHeading;
+  },
 
   getCardinal(degrees) {
     if (degrees == null) return '--';
