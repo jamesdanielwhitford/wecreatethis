@@ -1,4 +1,4 @@
-const CACHE_NAME = 'perfectday-v6';
+const CACHE_NAME = 'perfectday-v7';
 const ASSETS = [
   '/perfectday/',
   '/perfectday/index',

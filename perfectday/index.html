@@ -146,6 +146,14 @@
         scope: '/perfectday/',
         updateViaCache: 'none'
       });
+      // Auto-reload when new service worker takes over to clear stale cache
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
     }
   </script>
 </body>
