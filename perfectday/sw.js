@@ -1,4 +1,4 @@
-const CACHE_NAME = 'perfectday-v3';
+const CACHE_NAME = 'perfectday-v4';
 const ASSETS = [
   '/perfectday/',
   '/perfectday/index',
@@ -9,6 +9,12 @@ const ASSETS = [
   '/perfectday/manifest.json',
   '/perfectday/icon-192.png',
   '/perfectday/icon-512.png'
+];
+
+// CDN assets needed for offline — cached separately since they're cross-origin
+const CDN_ASSETS = [
+  'https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.js',
+  'https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.css'
 ];
 
 function normalizeUrl(url, base = self.location.origin) {
@@ -30,7 +36,8 @@ self.addEventListener('install', (event) => {
   console.log('Service worker installing:', CACHE_NAME);
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      const fetchPromises = ASSETS.map(async (url) => {
+      // Cache local assets
+      const localPromises = ASSETS.map(async (url) => {
         try {
           const response = await fetch(url);
           if (response.ok) {
@@ -41,7 +48,20 @@ self.addEventListener('install', (event) => {
           console.warn('Failed to cache:', url, err);
         }
       });
-      await Promise.all(fetchPromises);
+
+      // Cache CDN assets (stored by their full URL)
+      const cdnPromises = CDN_ASSETS.map(async (url) => {
+        try {
+          const response = await fetch(url);
+          if (response.ok) {
+            await cache.put(url, response.clone());
+          }
+        } catch (err) {
+          console.warn('Failed to cache CDN:', url, err);
+        }
+      });
+
+      await Promise.all([...localPromises, ...cdnPromises]);
     })
   );
   self.skipWaiting();
@@ -68,11 +88,31 @@ async function matchCache(request) {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Don't intercept CDN or tile server requests - let the app handle those
-  if (url.hostname !== self.location.hostname) {
+  // Tile server requests — let the app's custom protocol handle these via IndexedDB
+  if (url.hostname.includes('tiles.openfreemap.org')) {
     return;
   }
 
+  // CDN requests (MapLibre JS/CSS) — serve from cache, update in background
+  if (url.hostname !== self.location.hostname) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(event.request.url);
+        const networkPromise = fetch(event.request).then(response => {
+          if (response.ok) cache.put(event.request.url, response.clone());
+          return response;
+        }).catch(() => null);
+
+        if (cached) return cached;
+        const networkResponse = await networkPromise;
+        if (networkResponse) return networkResponse;
+        return new Response('Offline - CDN asset not cached', { status: 503 });
+      })
+    );
+    return;
+  }
+
+  // Local app assets — cache-first with background refresh
   event.respondWith(
     matchCache(event.request).then(async (cached) => {
       const networkPromise = fetch(event.request).then(async (response) => {

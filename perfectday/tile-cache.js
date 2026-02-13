@@ -3,7 +3,7 @@
 const TileCache = {
   db: null,
   DB_NAME: 'perfectday-tiles',
-  DB_VERSION: 1,
+  DB_VERSION: 2,
 
   async init() {
     if (this.db) return this.db;
@@ -18,6 +18,9 @@ const TileCache = {
         const db = event.target.result;
         if (!db.objectStoreNames.contains('tiles')) {
           db.createObjectStore('tiles', { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains('resources')) {
+          db.createObjectStore('resources', { keyPath: 'key' });
         }
       };
     });
@@ -88,6 +91,31 @@ const TileCache = {
     });
   },
 
+  // Cache non-tile resources (style JSON, sprites, glyphs) in IndexedDB too
+  async getResource(key) {
+    const db = await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('resources', 'readonly');
+      const request = tx.objectStore('resources').get(key);
+      request.onsuccess = () => resolve(request.result ? request.result.data : null);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async saveResource(key, data) {
+    const db = await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('resources', 'readwrite');
+      const request = tx.objectStore('resources').put({
+        key: key,
+        data: data,
+        cachedAt: Date.now()
+      });
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  },
+
   // Register custom protocol with MapLibre to intercept tile requests
   registerProtocol() {
     maplibregl.addProtocol('cached', async (params, abortController) => {
@@ -96,10 +124,19 @@ const TileCache = {
       // Extract z/x/y from tile URL
       const match = url.match(/\/(\d+)\/(\d+)\/(\d+)\.(pbf|mvt)/);
       if (!match) {
-        // Not a tile request (style, sprite, glyphs) — fetch directly
-        const response = await fetch(url, { signal: abortController.signal });
-        const data = await response.arrayBuffer();
-        return { data };
+        // Non-tile request (style, sprite, glyphs) — try network, fall back to cache
+        try {
+          const response = await fetch(url, { signal: abortController.signal });
+          const data = await response.arrayBuffer();
+          // Cache for offline use
+          this.saveResource(url, data).catch(() => {});
+          return { data };
+        } catch (e) {
+          // Offline — try cached version
+          const cached = await this.getResource(url);
+          if (cached) return { data: cached };
+          throw e;
+        }
       }
 
       const tileKey = `${match[1]}/${match[2]}/${match[3]}`;
@@ -115,13 +152,18 @@ const TileCache = {
       }
 
       // Fetch from network
-      const response = await fetch(url, { signal: abortController.signal });
-      const data = await response.arrayBuffer();
+      try {
+        const response = await fetch(url, { signal: abortController.signal });
+        const data = await response.arrayBuffer();
 
-      // Cache the tile (don't await — fire and forget)
-      this.saveTile(tileKey, data).catch(() => {});
+        // Cache the tile (don't await — fire and forget)
+        this.saveTile(tileKey, data).catch(() => {});
 
-      return { data };
+        return { data };
+      } catch (e) {
+        // Offline and tile not cached — return empty tile instead of crashing
+        return { data: new ArrayBuffer(0) };
+      }
     });
   }
 };

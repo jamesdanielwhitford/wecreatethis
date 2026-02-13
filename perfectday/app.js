@@ -30,8 +30,8 @@ const App = {
       zoom: 2,
       attributionControl: true,
       transformRequest: (url, resourceType) => {
-        // Route tile requests through our caching protocol
-        if (resourceType === 'Tile' && url.startsWith('https://')) {
+        // Route all tile server requests through our caching protocol for offline support
+        if (url.startsWith('https://') && resourceType !== 'Unknown') {
           return { url: url.replace('https://', 'cached://') };
         }
         return { url };
