@@ -1,4 +1,4 @@
-const CACHE_NAME = 'beautiful-mind-v11';
+const CACHE_NAME = 'beautiful-mind-v12';
 const ASSETS = [
   '/beautiful-mind/',
   '/beautiful-mind/index',

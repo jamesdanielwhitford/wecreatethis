@@ -91,7 +91,7 @@ function openDB() {
   if (db) return Promise.resolve(db);
 
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('notes-app', 2);
+    const request = indexedDB.open('notes-app', 3);
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       db = request.result;
@@ -108,7 +108,60 @@ function openDB() {
         const notesStore = database.createObjectStore('notes', { keyPath: 'id' });
         notesStore.createIndex('folder', 'folder', { unique: false });
       }
+      // Store for folders (new in v3)
+      if (!database.objectStoreNames.contains('folders')) {
+        database.createObjectStore('folders', { keyPath: 'path' });
+      }
     };
+  });
+}
+
+// ============================================
+// Folder Management (Database)
+// ============================================
+async function saveFolder(folderPath, type = 'folder') {
+  await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('folders', 'readwrite');
+    const folder = {
+      path: folderPath,
+      type: type, // 'folder' or 'book'
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    tx.objectStore('folders').put(folder);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function getFolder(folderPath) {
+  await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('folders', 'readonly');
+    const request = tx.objectStore('folders').get(folderPath);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function getAllFolders() {
+  await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('folders', 'readonly');
+    const request = tx.objectStore('folders').getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function deleteFolder(folderPath) {
+  await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('folders', 'readwrite');
+    tx.objectStore('folders').delete(folderPath);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
   });
 }
 
@@ -179,12 +232,26 @@ const fsStorage = {
     const targetFolder = await getOrCreateFolder(state.dirHandle, folder);
     const fileContent = createFrontmatter(meta) + content;
     await writeTextFile(targetFolder, filename, fileContent);
+    // Ensure folder is tracked in database (defaults to 'folder' type)
+    if (folder) {
+      const existingFolder = await getFolder(folder);
+      if (!existingFolder) {
+        await saveFolder(folder, 'folder');
+      }
+    }
   },
 
   async saveBinaryNote(folder, filename, blob, meta) {
     const targetFolder = await getOrCreateFolder(state.dirHandle, folder);
     await writeBinaryFile(targetFolder, filename, blob);
     await writeMetadataFS(targetFolder, filename, meta);
+    // Ensure folder is tracked in database (defaults to 'folder' type)
+    if (folder) {
+      const existingFolder = await getFolder(folder);
+      if (!existingFolder) {
+        await saveFolder(folder, 'folder');
+      }
+    }
   },
 
   async readNote(note) {
@@ -401,6 +468,13 @@ const idbStorage = {
       updatedAt: new Date().toISOString(),
     };
     await this._saveNote(note);
+    // Ensure folder is tracked in database (defaults to 'folder' type)
+    if (folder) {
+      const existingFolder = await getFolder(folder);
+      if (!existingFolder) {
+        await saveFolder(folder, 'folder');
+      }
+    }
   },
 
   async saveBinaryNote(folder, filename, blob, meta) {
@@ -420,6 +494,13 @@ const idbStorage = {
       updatedAt: new Date().toISOString(),
     };
     await this._saveNote(note);
+    // Ensure folder is tracked in database (defaults to 'folder' type)
+    if (folder) {
+      const existingFolder = await getFolder(folder);
+      if (!existingFolder) {
+        await saveFolder(folder, 'folder');
+      }
+    }
   },
 
   async _saveNote(note) {
@@ -631,6 +712,17 @@ async function router() {
 
   if (hash === '#/' || hash === '#/notes' || hash === '') {
     renderNavigation(app);
+  } else if (hash.startsWith('#/folder/')) {
+    const folderPath = decodeURIComponent(hash.slice(9));
+    renderFolderView(app, folderPath);
+  } else if (hash.startsWith('#/book/')) {
+    const folderPath = decodeURIComponent(hash.slice(7));
+    renderBookTOC(app, folderPath);
+  } else if (hash.startsWith('#/read/')) {
+    const hashPart = hash.slice(7);
+    const [pathPart] = hashPart.split('?');
+    const folderPath = decodeURIComponent(pathPart);
+    renderBookReader(app, folderPath);
   } else if (hash.startsWith('#/view/')) {
     const path = decodeURIComponent(hash.slice(7));
     renderViewNote(app, path);
@@ -683,10 +775,11 @@ async function renderNavigation(container) {
       <div id="notesList" class="notes-list">Loading...</div>
     </div>
     <div id="typeMenu" class="type-menu hidden">
-      <button data-type="text">Text Note</button>
-      <button data-type="image">Image</button>
-      <button data-type="video">Video</button>
-      <button data-type="audio">Audio</button>
+      <div class="menu-section">
+        <div class="menu-label">Create Folder</div>
+        <button data-action="new-folder" data-folder-type="folder">📁 Folder</button>
+        <button data-action="new-folder" data-folder-type="book">📖 Book</button>
+      </div>
     </div>
     <div id="settingsPanel" class="settings-panel hidden">
       <div class="settings-content">
@@ -731,9 +824,22 @@ async function renderNavigation(container) {
   newBtn.onclick = () => typeMenu.classList.toggle('hidden');
 
   typeMenu.querySelectorAll('button').forEach((btn) => {
-    btn.onclick = () => {
+    btn.onclick = async () => {
       typeMenu.classList.add('hidden');
-      navigate(`#/new?type=${btn.dataset.type}`);
+
+      if (btn.dataset.action === 'new-folder') {
+        // Prompt for folder name
+        const folderName = prompt('Enter folder name:');
+        if (folderName && folderName.trim()) {
+          const folderType = btn.dataset.folderType;
+          await saveFolder(folderName.trim(), folderType);
+          // Reload the view
+          state.notes = await storage.getAllNotes();
+          renderNotesList();
+        }
+      } else {
+        navigate(`#/new?type=${btn.dataset.type}`);
+      }
     };
   });
 
@@ -782,64 +888,140 @@ async function renderNavigation(container) {
 
   // Load and render notes
   state.notes = await storage.getAllNotes();
+  await migrateStrayNotes();
   renderNotesList();
 }
 
-function renderNotesList() {
+async function migrateStrayNotes() {
+  // Find all notes without a folder (orphaned notes)
+  const strayNotes = state.notes.filter(note => !note.folder || note.folder === '');
+
+  if (strayNotes.length === 0) return;
+
+  const STRAY_FOLDER = 'Stray Notes';
+
+  // Ensure the "Stray Notes" folder exists
+  const existingFolder = await getFolder(STRAY_FOLDER);
+  if (!existingFolder) {
+    await saveFolder(STRAY_FOLDER, 'folder');
+  }
+
+  // Move each stray note to "Stray Notes" folder
+  for (const note of strayNotes) {
+    note.folder = STRAY_FOLDER;
+
+    // Update the note in storage
+    if (note.type === 'text') {
+      // For text notes, re-read content and re-save with new folder
+      const { text } = await storage.readNote(note);
+      const parsed = parseFrontmatter(text);
+      await storage.saveTextNote(STRAY_FOLDER, note.name, parsed.content, parsed.meta);
+      // Delete old note (if it was at root level in filesystem mode)
+      if (USE_FILESYSTEM) {
+        try {
+          await state.dirHandle.removeEntry(note.name);
+        } catch (e) {
+          // Ignore errors - note might already be moved
+        }
+      } else {
+        // For IndexedDB, delete the old root-level entry
+        await openDB();
+        await new Promise((resolve) => {
+          const tx = db.transaction('notes', 'readwrite');
+          tx.objectStore('notes').delete(note.name);
+          tx.oncomplete = () => resolve();
+        });
+      }
+    } else {
+      // For binary notes
+      const { url, meta } = await storage.readNote(note);
+      // Convert URL back to blob
+      const response = await fetch(url);
+      const blob = await response.blob();
+      await storage.saveBinaryNote(STRAY_FOLDER, note.name, blob, meta);
+      // Delete old note
+      if (USE_FILESYSTEM) {
+        try {
+          await state.dirHandle.removeEntry(note.name);
+          await state.dirHandle.removeEntry(`${note.name}.meta.json`);
+        } catch (e) {
+          // Ignore errors
+        }
+      } else {
+        await openDB();
+        await new Promise((resolve) => {
+          const tx = db.transaction('notes', 'readwrite');
+          tx.objectStore('notes').delete(note.name);
+          tx.oncomplete = () => resolve();
+        });
+      }
+    }
+  }
+
+  // Reload notes after migration
+  state.notes = await storage.getAllNotes();
+}
+
+async function renderNotesList() {
   const container = document.getElementById('notesList');
   if (!state.notes.length) {
     container.innerHTML = '<p class="empty">No notes yet</p>';
     return;
   }
 
-  // Group by folder
-  const tree = {};
+  // Get all unique folders from notes
+  const folderPaths = new Set();
   state.notes.forEach((note) => {
-    const folder = note.folder || '';
-    if (!tree[folder]) tree[folder] = [];
-    tree[folder].push(note);
-  });
-
-  // Sort folders
-  const folders = Object.keys(tree).sort();
-
-  let html = '';
-  folders.forEach((folder) => {
-    const isExpanded = state.expandedFolders.has(folder);
-    const notes = tree[folder].sort((a, b) => a.name.localeCompare(b.name));
-
-    if (folder) {
-      html += `
-        <div class="folder ${isExpanded ? 'expanded' : ''}" data-folder="${folder}">
-          <div class="folder-header">
-            <span class="folder-icon">${isExpanded ? '&#9660;' : '&#9654;'}</span>
-            <span class="folder-name">${folder}</span>
-            <button class="folder-delete" data-folder="${folder}" title="Delete folder">&#128465;</button>
-          </div>
-          <div class="folder-contents ${isExpanded ? '' : 'hidden'}">
-            ${renderNotesInFolder(notes)}
-          </div>
-        </div>
-      `;
-    } else {
-      html += renderNotesInFolder(notes);
+    if (note.folder) {
+      folderPaths.add(note.folder);
     }
   });
 
-  container.innerHTML = html;
+  // Get all folder metadata from database
+  const allFolderMeta = await getAllFolders();
+  const folderMetaMap = {};
+  allFolderMeta.forEach(f => {
+    folderMetaMap[f.path] = f;
+  });
 
-  // Folder toggle handlers
-  container.querySelectorAll('.folder-header').forEach((el) => {
-    el.onclick = (e) => {
-      // Don't toggle if clicking delete button
+  // Sort folders
+  const folders = Array.from(folderPaths).sort();
+
+  let html = '';
+  folders.forEach((folder) => {
+    const folderMeta = folderMetaMap[folder];
+    const folderType = folderMeta ? folderMeta.type : 'folder';
+    const notesInFolder = state.notes.filter(n => n.folder === folder);
+    const noteCount = notesInFolder.length;
+
+    // Show folder as a clickable card
+    html += `
+      <div class="folder-card" data-folder="${folder}" data-type="${folderType}">
+        <div class="folder-card-icon">${folderType === 'book' ? '📖' : '📁'}</div>
+        <div class="folder-card-name">${folder}</div>
+        <div class="folder-card-count">${noteCount} ${noteCount === 1 ? 'note' : 'notes'}</div>
+        <button class="folder-delete" data-folder="${folder}" title="Delete folder">&#128465;</button>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html || '<p class="empty">No folders yet</p>';
+
+  // Folder click handlers - navigate into folder or book
+  container.querySelectorAll('.folder-card').forEach((card) => {
+    card.onclick = (e) => {
+      // Don't navigate if clicking delete button
       if (e.target.classList.contains('folder-delete')) return;
-      const folder = el.parentElement.dataset.folder;
-      if (state.expandedFolders.has(folder)) {
-        state.expandedFolders.delete(folder);
+      const folder = card.dataset.folder;
+      const folderType = card.dataset.type;
+
+      if (folderType === 'book') {
+        // Navigate to book table of contents
+        navigate(`#/book/${encodeURIComponent(folder)}`);
       } else {
-        state.expandedFolders.add(folder);
+        // Navigate to folder notes view
+        navigate(`#/folder/${encodeURIComponent(folder)}`);
       }
-      renderNotesList();
     };
   });
 
@@ -856,15 +1038,11 @@ function renderNotesList() {
 
       if (confirm(message)) {
         await storage.deleteFolder(folderPath);
+        await deleteFolder(folderPath); // Also delete from folders store
         state.notes = await storage.getAllNotes();
         renderNotesList();
       }
     };
-  });
-
-  // Note click handlers
-  container.querySelectorAll('.note-item').forEach((el) => {
-    el.onclick = () => navigate(`#/view/${encodeURIComponent(el.dataset.path)}`);
   });
 }
 
@@ -880,6 +1058,286 @@ function renderNotesInFolder(notes) {
   `
     )
     .join('');
+}
+
+// ============================================
+// Folder View (Regular folder with notes list)
+// ============================================
+async function renderFolderView(container, folderPath) {
+  const notesInFolder = state.notes.filter(n => n.folder === folderPath);
+
+  container.innerHTML = `
+    <div class="nav-view">
+      <header>
+        <button id="backBtn" class="back-btn">&#8592; Back</button>
+        <h1>${folderPath}</h1>
+        <div class="header-actions">
+          <button id="newNote">+ New</button>
+        </div>
+      </header>
+      <div id="notesList" class="notes-list">
+        ${notesInFolder.length === 0 ? '<p class="empty">No notes in this folder yet</p>' : renderNotesInFolder(notesInFolder)}
+      </div>
+    </div>
+    <div id="typeMenu" class="type-menu hidden">
+      <button data-type="text">Text Note</button>
+      <button data-type="image">Image</button>
+      <button data-type="video">Video</button>
+      <button data-type="audio">Audio</button>
+    </div>
+  `;
+
+  // Back button
+  document.getElementById('backBtn').onclick = () => navigate('#/');
+
+  // New note button
+  const newNoteBtn = document.getElementById('newNote');
+  const typeMenu = document.getElementById('typeMenu');
+
+  newNoteBtn.onclick = () => typeMenu.classList.toggle('hidden');
+
+  typeMenu.querySelectorAll('button').forEach((btn) => {
+    btn.onclick = () => {
+      const type = btn.dataset.type;
+      navigate(`#/new?type=${type}&folder=${encodeURIComponent(folderPath)}`);
+    };
+  });
+
+  // Note click handlers
+  document.querySelectorAll('.note-item').forEach((el) => {
+    el.onclick = () => navigate(`#/view/${encodeURIComponent(el.dataset.path)}`);
+  });
+}
+
+// ============================================
+// Book Table of Contents
+// ============================================
+async function renderBookTOC(container, folderPath) {
+  const notesInBook = state.notes.filter(n => n.folder === folderPath);
+
+  // Extract headings from text notes
+  const headings = [];
+  for (const note of notesInBook) {
+    if (note.type === 'text') {
+      const { text } = await storage.readNote(note);
+      const parsed = parseFrontmatter(text);
+      const lines = parsed.content.split('\n');
+
+      lines.forEach((line, index) => {
+        const match = line.match(/^(#{1,3})\s+(.+)$/);
+        if (match) {
+          const level = match[1].length;
+          const title = match[2];
+          headings.push({
+            level,
+            title,
+            notePath: note.path,
+            lineIndex: index
+          });
+        }
+      });
+    }
+  }
+
+  const headingsHTML = headings.map(h => `
+    <div class="toc-item toc-level-${h.level}" data-path="${h.notePath}" data-line="${h.lineIndex}">
+      ${h.title}
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <div class="nav-view">
+      <header>
+        <button id="backBtn" class="back-btn">&#8592; Back</button>
+        <h1>${folderPath}</h1>
+        <div class="header-actions">
+          <button id="readBookBtn">Read Book</button>
+        </div>
+      </header>
+      <div class="book-toc">
+        <h2>Table of Contents</h2>
+        ${headingsHTML || '<p class="empty">No headings found</p>'}
+      </div>
+    </div>
+  `;
+
+  // Back button
+  document.getElementById('backBtn').onclick = () => navigate('#/');
+
+  // Read book button - navigate to reader view
+  document.getElementById('readBookBtn').onclick = () => {
+    navigate(`#/read/${encodeURIComponent(folderPath)}`);
+  };
+
+  // TOC item click handlers
+  document.querySelectorAll('.toc-item').forEach((el) => {
+    el.onclick = () => {
+      // Navigate to reader view at specific heading
+      const notePath = el.dataset.path;
+      const lineIndex = el.dataset.line;
+      navigate(`#/read/${encodeURIComponent(folderPath)}?note=${encodeURIComponent(notePath)}&line=${lineIndex}`);
+    };
+  });
+}
+
+// ============================================
+// Book Reader (Continuous flow with pagination)
+// ============================================
+async function renderBookReader(container, folderPath) {
+  const notesInBook = state.notes.filter(n => n.folder === folderPath).sort((a, b) => a.name.localeCompare(b.name));
+
+  // Build continuous content array (notes flow together)
+  const contentBlocks = [];
+
+  for (const note of notesInBook) {
+    if (note.type === 'text') {
+      const { text } = await storage.readNote(note);
+      const parsed = parseFrontmatter(text);
+      contentBlocks.push({
+        type: 'text',
+        content: parsed.content,
+        notePath: note.path
+      });
+    } else if (note.type === 'image') {
+      const { url } = await storage.readNote(note);
+      contentBlocks.push({
+        type: 'image',
+        url,
+        notePath: note.path
+      });
+    } else if (note.type === 'video') {
+      const { url } = await storage.readNote(note);
+      contentBlocks.push({
+        type: 'video',
+        url,
+        notePath: note.path
+      });
+    } else if (note.type === 'audio') {
+      const { url } = await storage.readNote(note);
+      contentBlocks.push({
+        type: 'audio',
+        url,
+        notePath: note.path
+      });
+    }
+  }
+
+  // Render the reader interface
+  container.innerHTML = `
+    <div class="book-reader">
+      <div class="book-reader-header">
+        <button id="backToTOC" class="back-btn">&#8592; Contents</button>
+        <h1>${folderPath}</h1>
+      </div>
+      <div class="book-reader-content" id="bookContent">
+        ${renderBookContent(contentBlocks)}
+      </div>
+      <div class="book-reader-nav">
+        <button id="prevPage" class="nav-btn nav-left" aria-label="Previous page">&#8592;</button>
+        <button id="nextPage" class="nav-btn nav-right" aria-label="Next page">&#8594;</button>
+      </div>
+      <div class="page-indicator" id="pageIndicator">Page 1</div>
+    </div>
+  `;
+
+  // Back to TOC
+  document.getElementById('backToTOC').onclick = () => navigate(`#/book/${encodeURIComponent(folderPath)}`);
+
+  // Pagination will be implemented in next step
+  const contentDiv = document.getElementById('bookContent');
+  let currentPage = 0;
+  const pageHeight = window.innerHeight - 120; // Account for header
+
+  function updatePagination() {
+    const totalHeight = contentDiv.scrollHeight;
+    const totalPages = Math.ceil(totalHeight / pageHeight);
+
+    document.getElementById('pageIndicator').textContent = `Page ${currentPage + 1} of ${totalPages}`;
+
+    // Scroll to current page
+    contentDiv.scrollTop = currentPage * pageHeight;
+
+    // Enable/disable buttons
+    document.getElementById('prevPage').disabled = currentPage === 0;
+    document.getElementById('nextPage').disabled = currentPage >= totalPages - 1;
+  }
+
+  document.getElementById('prevPage').onclick = () => {
+    if (currentPage > 0) {
+      currentPage--;
+      updatePagination();
+    }
+  };
+
+  document.getElementById('nextPage').onclick = () => {
+    const totalHeight = contentDiv.scrollHeight;
+    const totalPages = Math.ceil(totalHeight / pageHeight);
+    if (currentPage < totalPages - 1) {
+      currentPage++;
+      updatePagination();
+    }
+  };
+
+  // Kindle-style tap navigation - tap left/right sides of content area
+  contentDiv.addEventListener('click', (e) => {
+    const rect = contentDiv.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const contentWidth = rect.width;
+
+    // Divide content into three zones: left 30%, middle 40%, right 30%
+    if (clickX < contentWidth * 0.3) {
+      // Left tap - previous page
+      if (currentPage > 0) {
+        currentPage--;
+        updatePagination();
+      }
+    } else if (clickX > contentWidth * 0.7) {
+      // Right tap - next page
+      const totalHeight = contentDiv.scrollHeight;
+      const totalPages = Math.ceil(totalHeight / pageHeight);
+      if (currentPage < totalPages - 1) {
+        currentPage++;
+        updatePagination();
+      }
+    }
+    // Middle 40% does nothing (allows for text selection, link clicking, etc.)
+  });
+
+  // Also support keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      if (currentPage > 0) {
+        currentPage--;
+        updatePagination();
+      }
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      const totalHeight = contentDiv.scrollHeight;
+      const totalPages = Math.ceil(totalHeight / pageHeight);
+      if (currentPage < totalPages - 1) {
+        currentPage++;
+        updatePagination();
+      }
+    }
+  });
+
+  // Initial pagination setup
+  updatePagination();
+}
+
+function renderBookContent(contentBlocks) {
+  return contentBlocks.map(block => {
+    if (block.type === 'text') {
+      // Use marked.js to render markdown
+      return `<div class="book-text-block">${marked.parse(block.content)}</div>`;
+    } else if (block.type === 'image') {
+      return `<div class="book-image-block"><img src="${block.url}" alt="Image"></div>`;
+    } else if (block.type === 'video') {
+      return `<div class="book-video-block"><video controls src="${block.url}"></video></div>`;
+    } else if (block.type === 'audio') {
+      return `<div class="book-audio-block"><audio controls src="${block.url}"></audio></div>`;
+    }
+    return '';
+  }).join('');
 }
 
 // ============================================
