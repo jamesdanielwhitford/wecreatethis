@@ -317,7 +317,15 @@ const LifeList = {
     const cacheKey = `wiki_img_${searchTerm}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
-      return cached === 'null' ? null : cached;
+      // Bust null cache entries when online and retry with new hyphen-fallback logic
+      if (cached === 'null' && navigator.onLine) {
+        console.log('[WikiAPI] Busting null cache for', searchTerm, '- will retry with fallback logic');
+        localStorage.removeItem(cacheKey);
+        // Continue to fetch fresh with hyphen fallback
+      } else {
+        // Return cached URL (or null if we cached a failed lookup while offline)
+        return cached === 'null' ? null : cached;
+      }
     }
 
     // Try original search term first, then retry without hyphens if needed

@@ -1,6 +1,6 @@
 // Birdle - Bird Bingo App
 
-const APP_VERSION = 120; // Match service worker version
+const APP_VERSION = 119; // Match service worker version
 
 const App = {
   birds: [],
@@ -1746,10 +1746,18 @@ const App = {
     if (!forceRefetch) {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
-        if (cached !== 'null') {
-          console.log('[WikiAPI] ✓ Using cached image for:', searchTerm);
+        // Bust null cache entries when online and retry with new hyphen-fallback logic
+        if (cached === 'null' && navigator.onLine) {
+          console.log('[WikiAPI] Busting null cache for', searchTerm, '- will retry with fallback logic');
+          localStorage.removeItem(cacheKey);
+          // Continue to fetch fresh with hyphen fallback
+        } else {
+          // Return cached URL (or null if we cached a failed lookup while offline)
+          if (cached !== 'null') {
+            console.log('[WikiAPI] ✓ Using cached image for:', searchTerm);
+          }
+          return cached === 'null' ? null : cached;
         }
-        return cached === 'null' ? null : cached;
       }
     }
 
