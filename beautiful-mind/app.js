@@ -91,7 +91,7 @@ function openDB() {
   if (db) return Promise.resolve(db);
 
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('notes-app', 2);
+    const request = indexedDB.open('notes-app', 3);
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       db = request.result;
