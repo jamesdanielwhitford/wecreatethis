@@ -1,6 +1,6 @@
 // Birdle - Bird Bingo App
 
-const APP_VERSION = 119; // Match service worker version
+const APP_VERSION = 120; // Match service worker version
 
 const App = {
   birds: [],
@@ -247,8 +247,13 @@ const App = {
       } else if (lastSearch.type === 'region' && lastSearch.code) {
         // Try to get a nice display name from cached location
         const cached = LocationService?.getCached();
-        if (cached && (cached.stateCode === lastSearch.code || cached.countryCode === lastSearch.code)) {
+        if (cached && cached.stateCode === lastSearch.code) {
           btnText.textContent = LocationService.getRegionDisplayName(cached);
+          return;
+        }
+        if (cached && cached.countryCode === lastSearch.code && !lastSearch.stateCode) {
+          // Country-only search — show just the country name
+          btnText.textContent = cached.countryName || lastSearch.code;
           return;
         }
 
