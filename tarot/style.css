@@ -53,6 +53,10 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    margin-left: -20px;
+    margin-right: -20px;
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
 .page-header h1 {
@@ -607,8 +611,10 @@ main {
     top: 0;
     background: var(--primary-bg);
     z-index: 100;
-    padding: 16px 0;
+    padding: 16px 20px;
     margin-top: -16px;
+    margin-left: -20px;
+    margin-right: -20px;
 }
 
 .back-btn {
@@ -1032,6 +1038,14 @@ footer {
 @media (max-width: 360px) {
     body {
         padding: 16px;
+    }
+
+    .page-header,
+    .reading-nav {
+        margin-left: -16px;
+        margin-right: -16px;
+        padding-left: 16px;
+        padding-right: 16px;
     }
 
     h1 {
