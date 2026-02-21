@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#02db02">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Clanker News">
+  <title>Clanker News</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    body { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; margin: 8px; background: #ffffff; }
+    td { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; }
+    input { font-family: monospace; font-size: 10pt; }
+    a:link { color: #000000; text-decoration: none; }
+    a:visited { color: #828282; text-decoration: none; }
+    .default { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; }
+    .title { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; overflow: hidden; }
+    .subtext { font-family: Verdana, Geneva, sans-serif; font-size: 7pt; color: #828282; }
+    .subtext td { font-family: Verdana, Geneva, sans-serif; font-size: 7pt; color: #828282; }
+    .yclinks { font-family: Verdana, Geneva, sans-serif; font-size: 8pt; color: #828282; }
+    .pagetop { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #222222; line-height: 12px; }
+    .comhead { font-family: Verdana, Geneva, sans-serif; font-size: 8pt; color: #828282; }
+    .hnname { margin-left: 1px; margin-right: 5px; }
+    #hnmain { min-width: 796px; }
+    .title a { word-break: break-word; }
+    .pagetop a:link, .pagetop a:visited { color: #000000; }
+    .subtext a:link, .subtext a:visited { color: #828282; }
+    .subtext a:hover { text-decoration: underline; }
+    .comhead a:link, .comhead a:visited { color: #828282; }
+    .comhead a:hover { text-decoration: underline; }
+    .hnmore { text-decoration: underline; }
+    .hnmore a:link, .hnmore a:visited { color: #828282; }
+    .votearrow {
+      width: 0; height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-bottom: 8px solid #999999;
+      margin: 3px 2px 6px;
+      display: inline-block;
+      cursor: pointer;
+    }
+
+    /* Year dropdown */
+    #year-selector { position: relative; display: inline-block; }
+    #year-btn {
+      color: #000000; font-size: 10pt; font-family: Verdana, Geneva, sans-serif;
+      cursor: pointer; font-weight: bold; text-decoration: underline;
+      background: none; border: none; padding: 0; margin-right: 6px;
+    }
+    #year-dropdown {
+      display: none; position: absolute; top: 18px; left: 0;
+      background: #02db02; border: 1px solid #009900;
+      z-index: 200; min-width: 60px;
+    }
+    #year-dropdown a {
+      display: block; padding: 3px 10px;
+      color: #000000; font-size: 9pt; text-decoration: none;
+    }
+    #year-dropdown a:hover { background: #00bb00; }
+    #year-dropdown a.active-year { font-weight: bold; }
+
+    /* Month links in nav bar */
+    #month-links a { color: #000000; font-size: 9pt; text-decoration: none; padding: 0 4px; }
+    #month-links a:hover { text-decoration: underline; }
+    #month-links a.active-month { font-weight: bold; text-decoration: underline; }
+
+    /* Hidden item */
+    tr.hidden-item { display: none; }
+
+    @media only screen and (min-width: 300px) and (max-width: 750px) {
+      #hnmain { width: 100%; min-width: 0; }
+      body { padding: 0; margin: 0; width: 100%; }
+      td { height: inherit !important; }
+      .title { font-size: inherit; }
+      span.pagetop { display: block; margin: 3px 5px; font-size: 12px; line-height: normal; }
+      span.pagetop b { display: block; font-size: 15px; }
+      .title { font-size: 11pt; line-height: 14pt; }
+      .subtext { font-size: 9pt; }
+      .votearrow { transform: scale(1.3, 1.3); margin-right: 6px; }
+      .votelinks { min-width: 18px; }
+      input[type="text"] { font-size: 16px; width: 90%; }
+    }
+  </style>
+</head>
+<body>
+
+<center>
+<table id="hnmain" border="0" cellpadding="0" cellspacing="0" width="85%" bgcolor="#f6f6ef">
+  <tbody>
+
+  <!-- Header bar -->
+  <tr>
+    <td bgcolor="#02db02">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="padding:2px">
+        <tbody>
+        <tr>
+          <td style="width:18px;padding-right:4px;">
+            <a href="/clankernews/">
+              <div style="width:18px;height:18px;border:1px solid #ffffff;background:#02db02;display:flex;align-items:center;justify-content:center;">
+                <svg width="10" height="12" viewBox="0 0 5 6" style="display:block;image-rendering:pixelated;">
+                  <rect fill="white" x="1" y="0" width="3" height="1"/>
+                  <rect fill="white" x="0" y="1" width="1" height="1"/>
+                  <rect fill="white" x="4" y="1" width="1" height="1"/>
+                  <rect fill="white" x="0" y="2" width="1" height="1"/>
+                  <rect fill="white" x="0" y="3" width="1" height="1"/>
+                  <rect fill="white" x="0" y="4" width="1" height="1"/>
+                  <rect fill="white" x="4" y="4" width="1" height="1"/>
+                  <rect fill="white" x="1" y="5" width="3" height="1"/>
+                </svg>
+              </div>
+            </a>
+          </td>
+          <td>
+            <span class="pagetop">
+              <b class="hnname"><a href="/clankernews/" style="color:#000000;font-weight:700;">Clanker News</a></b>
+              <span id="year-selector">
+                <button id="year-btn"></button>
+                <div id="year-dropdown"></div>
+              </span>
+              <span id="month-pipe" style="display:none;"> | </span><span id="month-links"></span>
+            </span>
+          </td>
+          <td style="text-align:right;padding-right:4px;">
+            <span class="pagetop"><a href="/clankernews/" id="all-link">all</a></span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Spacer -->
+  <tr style="height:10px;"><td></td></tr>
+
+  <!-- Story list -->
+  <tr>
+    <td>
+      <table border="0" cellpadding="0" cellspacing="0" id="story-table" style="width:100%">
+        <tbody id="story-tbody">
+          <!-- Rendered by JS -->
+        </tbody>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Footer -->
+  <tr style="height:10px;"><td></td></tr>
+  <tr>
+    <td>
+      <table width="100%" cellspacing="0" cellpadding="1">
+        <tbody>
+        <tr>
+          <td style="border-top:1px solid #02db02;"></td>
+        </tr>
+        <tr>
+          <td class="yclinks" style="text-align:center;padding:5px 0 8px;">
+            <a href="#">Guidelines</a> |
+            <a href="#">About</a> |
+            <a href="#">Contact</a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </td>
+  </tr>
+
+  </tbody>
+</table>
+</center>
+
+<script>
+const POSTS = [
+  { id: 1,  title: "Why I Built a New Kind of News Reader",        domain: "clankernews.com", score: 214, author: "james",   ago: "1 day ago",    comments: 47, date: "2026-02" },
+  { id: 2,  title: "The Offline-First Manifesto",                  domain: "clankernews.com", score: 189, author: "james",   ago: "3 days ago",   comments: 32, date: "2026-02" },
+  { id: 3,  title: "Building PWAs That Actually Work",             domain: "clankernews.com", score: 156, author: "james",   ago: "1 week ago",   comments: 28, date: "2026-01" },
+  { id: 4,  title: "IndexedDB: The Underrated Database",           domain: "clankernews.com", score: 301, author: "james",   ago: "2 weeks ago",  comments: 61, date: "2026-01" },
+  { id: 5,  title: "Service Workers From Scratch",                 domain: "clankernews.com", score: 178, author: "james",   ago: "3 weeks ago",  comments: 39, date: "2026-01" },
+  { id: 6,  title: "Vanilla JS is Enough",                         domain: "clankernews.com", score: 422, author: "james",   ago: "1 month ago",  comments: 88, date: "2025-12" },
+  { id: 7,  title: "How I Shipped Six Apps in Six Months",         domain: "clankernews.com", score: 267, author: "james",   ago: "5 weeks ago",  comments: 54, date: "2025-11" },
+  { id: 8,  title: "The Case for Table-Based Layouts in 2025",     domain: "clankernews.com", score: 143, author: "james",   ago: "2 months ago", comments: 71, date: "2025-10" },
+  { id: 9,  title: "Making Mobile Games With Pure JavaScript",      domain: "clankernews.com", score: 198, author: "james",   ago: "3 months ago", comments: 43, date: "2025-09" },
+  { id: 10, title: "GPS, Compass and the Browser's Sensor APIs",   domain: "clankernews.com", score: 134, author: "james",   ago: "4 months ago", comments: 29, date: "2025-08" },
+  { id: 11, title: "Designing for Offline: Lessons Learned",       domain: "clankernews.com", score: 309, author: "james",   ago: "5 months ago", comments: 67, date: "2025-07" },
+  { id: 12, title: "Why Every App Should Be a PWA",                domain: "clankernews.com", score: 245, author: "james",   ago: "6 months ago", comments: 55, date: "2025-06" },
+  { id: 13, title: "Cloudflare Pages: Zero-Config Deployments",    domain: "clankernews.com", score: 176, author: "james",   ago: "7 months ago", comments: 38, date: "2025-05" },
+  { id: 14, title: "Bird Watching App: A Post-Mortem",             domain: "clankernews.com", score: 119, author: "james",   ago: "8 months ago", comments: 22, date: "2025-04" },
+  { id: 15, title: "From React to Vanilla: What I Gained",         domain: "clankernews.com", score: 388, author: "james",   ago: "9 months ago", comments: 93, date: "2025-03" },
+  { id: 16, title: "IndexedDB Migrations the Easy Way",            domain: "clankernews.com", score: 152, author: "james",   ago: "10 months ago",comments: 31, date: "2025-02" },
+  { id: 17, title: "Tarot Cards and WebGL: An Unlikely Pair",      domain: "clankernews.com", score: 201, author: "james",   ago: "11 months ago",comments: 46, date: "2025-01" },
+  { id: 18, title: "Cache Invalidation Is Not That Hard",          domain: "clankernews.com", score: 277, author: "james",   ago: "1 year ago",   comments: 58, date: "2024-12" },
+  { id: 19, title: "The Beauty of the URL Normalization Pattern",  domain: "clankernews.com", score: 164, author: "james",   ago: "1 year ago",   comments: 35, date: "2024-11" },
+  { id: 20, title: "Hello World — Why I Started This Blog",        domain: "clankernews.com", score: 97,  author: "james",   ago: "1 year ago",   comments: 19, date: "2024-10" },
+];
+
+// Derive available years and months from posts
+function getYearsMonths(posts) {
+  const map = {};
+  posts.forEach(p => {
+    const [year, month] = p.date.split('-');
+    if (!map[year]) map[year] = new Set();
+    map[year].add(month);
+  });
+  // Sort years descending, months descending within year
+  const result = {};
+  Object.keys(map).sort((a, b) => b - a).forEach(y => {
+    result[y] = [...map[y]].sort((a, b) => a - b);
+  });
+  return result;
+}
+
+const MONTH_NAMES = {
+  '01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
+  '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'
+};
+
+let activeYear = null;
+let activeMonth = null;
+
+const _yearsMonthsAll = getYearsMonths(POSTS);
+const _allYears = Object.keys(_yearsMonthsAll).sort((a, b) => b - a);
+
+function renderNav() {
+  const yearBtn = document.getElementById('year-btn');
+  const yearDropdown = document.getElementById('year-dropdown');
+
+  // Populate dropdown with all years
+  yearDropdown.innerHTML = _allYears.map(y =>
+    `<a href="#" class="year-option" data-year="${y}">${y}</a>`
+  ).join('');
+
+  yearDropdown.querySelectorAll('.year-option').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      activeYear = a.dataset.year;
+      activeMonth = null;
+      yearDropdown.style.display = 'none';
+      updateYearBtn();
+      renderMonths();
+      updateActiveStates();
+      renderStories();
+    });
+  });
+
+  // Toggle dropdown on button click
+  yearBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    yearDropdown.style.display = yearDropdown.style.display === 'block' ? 'none' : 'block';
+  });
+
+  // Close dropdown on outside click
+  document.addEventListener('click', () => {
+    yearDropdown.style.display = 'none';
+  });
+
+  updateYearBtn();
+  renderMonths();
+}
+
+function updateYearBtn() {
+  const yearBtn = document.getElementById('year-btn');
+  yearBtn.textContent = (activeYear || 'Year') + ' ▾';
+  // Mark active in dropdown
+  document.querySelectorAll('.year-option').forEach(a => {
+    a.classList.toggle('active-year', a.dataset.year === activeYear);
+  });
+}
+
+function renderMonths() {
+  const monthLinks = document.getElementById('month-links');
+  const monthPipe = document.getElementById('month-pipe');
+  if (!activeYear || !_yearsMonthsAll[activeYear]) {
+    monthLinks.innerHTML = '';
+    monthPipe.style.display = 'none';
+    return;
+  }
+  monthPipe.style.display = '';
+  const months = _yearsMonthsAll[activeYear];
+  monthLinks.innerHTML = months.map((m, i) =>
+    (i > 0 ? ' | ' : '') +
+    `<a href="#" class="month-link" data-month="${m}">${MONTH_NAMES[m]}</a>`
+  ).join('');
+  monthLinks.querySelectorAll('.month-link').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      activeMonth = (activeMonth === a.dataset.month) ? null : a.dataset.month;
+      updateActiveStates();
+      renderStories();
+    });
+  });
+  updateActiveStates();
+}
+
+function updateActiveStates() {
+  document.querySelectorAll('.month-link').forEach(a => {
+    a.classList.toggle('active-month', a.dataset.month === activeMonth);
+  });
+  document.querySelectorAll('.year-option').forEach(a => {
+    a.classList.toggle('active-year', a.dataset.year === activeYear);
+  });
+}
+
+function filteredPosts() {
+  if (!activeYear && !activeMonth) return POSTS;
+  return POSTS.filter(p => {
+    const [y, m] = p.date.split('-');
+    if (activeYear && y !== activeYear) return false;
+    if (activeMonth && m !== activeMonth) return false;
+    return true;
+  });
+}
+
+function renderStories() {
+  const tbody = document.getElementById('story-tbody');
+  const posts = filteredPosts();
+  let html = '';
+
+  posts.forEach((post, i) => {
+    const rank = i + 1;
+    html += `
+      <tr class="athing" id="post-${post.id}" style="height:19px;">
+        <td class="title" style="width:22px;text-align:right;vertical-align:top;color:#828282;font-size:10pt;">${rank}.</td>
+        <td class="votelinks" style="width:14px;vertical-align:top;">
+          <div class="votearrow" title="upvote"></div>
+        </td>
+        <td class="title" style="vertical-align:middle;">
+          <span class="titleline">
+            <a href="#">${post.title}</a>
+            <span class="sitebit comhead" style="font-size:8pt;color:#828282;"> (<a href="#" style="color:#828282;">${post.domain}</a>)</span>
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2"></td>
+        <td class="subtext" style="padding:0;">
+          <span class="score">${post.score} points</span>
+          by <a href="#">${post.author}</a>
+          <a href="#">${post.ago}</a>
+          | <a href="#">hide</a>
+          | <a href="#">${post.comments} comments</a>
+        </td>
+      </tr>
+      <tr class="spacer" style="height:5px;"><td></td></tr>`;
+  });
+
+  if (posts.length === 0) {
+    html = `<tr><td colspan="3" style="padding:20px 8px;color:#828282;font-size:10pt;">No posts for this period.</td></tr>`;
+  }
+
+  tbody.innerHTML = html;
+}
+
+// "All" link resets filter
+document.getElementById('all-link').addEventListener('click', e => {
+  e.preventDefault();
+  activeYear = null;
+  activeMonth = null;
+  updateYearBtn();
+  renderMonths();
+  updateActiveStates();
+  renderStories();
+});
+
+// Init — default to current year/month
+const _now = new Date();
+const _curYear = String(_now.getFullYear());
+const _curMonth = String(_now.getMonth() + 1).padStart(2, '0');
+if (_yearsMonthsAll[_curYear]) {
+  activeYear = _curYear;
+  activeMonth = _yearsMonthsAll[_curYear].includes(_curMonth) ? _curMonth : null;
+}
+renderNav();
+renderStories();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/clankernews/sw.js', { scope: '/clankernews/' });
+}
+</script>
+
+</body>
+</html>
