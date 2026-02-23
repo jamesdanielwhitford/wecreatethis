@@ -363,14 +363,6 @@ document.getElementById('all-link').addEventListener('click', e => {
   renderStories();
 });
 
-// Init — default to current year/month
-const _now = new Date();
-const _curYear = String(_now.getFullYear());
-const _curMonth = String(_now.getMonth() + 1).padStart(2, '0');
-if (_yearsMonthsAll[_curYear]) {
-  activeYear = _curYear;
-  activeMonth = _yearsMonthsAll[_curYear].includes(_curMonth) ? _curMonth : null;
-}
 renderNav();
 renderStories();
 
