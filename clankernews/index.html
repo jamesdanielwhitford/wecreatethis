@@ -31,8 +31,7 @@
     .subtext a:hover { text-decoration: underline; }
     .comhead a:link, .comhead a:visited { color: #828282; }
     .comhead a:hover { text-decoration: underline; }
-    .hnmore { text-decoration: underline; }
-    .hnmore a:link, .hnmore a:visited { color: #828282; }
+    .hnmore a:link, .hnmore a:visited { color: #828282; text-decoration: none; }
     .stararrow {
       display: inline-block;
       cursor: pointer;
@@ -199,6 +198,26 @@ const POSTS = [
   { id: 18, title: "Cache Invalidation Is Not That Hard",          domain: "clankernews.com", score: 277, author: "james",   ago: "1 year ago",   comments: 58, date: "2024-12" },
   { id: 19, title: "The Beauty of the URL Normalization Pattern",  domain: "clankernews.com", score: 164, author: "james",   ago: "1 year ago",   comments: 35, date: "2024-11" },
   { id: 20, title: "Hello World — Why I Started This Blog",        domain: "clankernews.com", score: 97,  author: "james",   ago: "1 year ago",   comments: 19, date: "2024-10" },
+  { id: 21, title: "The Hidden Cost of Third-Party Scripts",       domain: "clankernews.com", score: 183, author: "james",   ago: "1 year ago",   comments: 41, date: "2024-09" },
+  { id: 22, title: "WebSockets vs Server-Sent Events",             domain: "clankernews.com", score: 229, author: "james",   ago: "1 year ago",   comments: 53, date: "2024-08" },
+  { id: 23, title: "Writing a Tiny CSS Framework",                 domain: "clankernews.com", score: 144, author: "james",   ago: "1 year ago",   comments: 27, date: "2024-07" },
+  { id: 24, title: "Dark Mode Without a Framework",                domain: "clankernews.com", score: 311, author: "james",   ago: "1 year ago",   comments: 64, date: "2024-06" },
+  { id: 25, title: "Animating With the Web Animations API",        domain: "clankernews.com", score: 172, author: "james",   ago: "1 year ago",   comments: 36, date: "2024-05" },
+  { id: 26, title: "How I Use the File System Access API",         domain: "clankernews.com", score: 258, author: "james",   ago: "2 years ago",  comments: 49, date: "2024-04" },
+  { id: 27, title: "Streams API: Underrated and Underused",        domain: "clankernews.com", score: 139, author: "james",   ago: "2 years ago",  comments: 23, date: "2024-03" },
+  { id: 28, title: "Building a Pomodoro Timer From Scratch",       domain: "clankernews.com", score: 196, author: "james",   ago: "2 years ago",  comments: 44, date: "2024-02" },
+  { id: 29, title: "My Approach to Accessible Web Apps",           domain: "clankernews.com", score: 284, author: "james",   ago: "2 years ago",  comments: 61, date: "2024-01" },
+  { id: 30, title: "Deploying to Cloudflare Workers",              domain: "clankernews.com", score: 167, author: "james",   ago: "2 years ago",  comments: 33, date: "2023-12" },
+  { id: 31, title: "TypeScript Is a Tax I Don't Want to Pay",      domain: "clankernews.com", score: 512, author: "james",   ago: "2 years ago",  comments: 112,date: "2023-11" },
+  { id: 32, title: "The Clipboard API Is Actually Good Now",       domain: "clankernews.com", score: 148, author: "james",   ago: "2 years ago",  comments: 29, date: "2023-10" },
+  { id: 33, title: "Lazy Loading Images the Right Way",            domain: "clankernews.com", score: 221, author: "james",   ago: "2 years ago",  comments: 47, date: "2023-09" },
+  { id: 34, title: "CSS Grid for Real Layouts",                    domain: "clankernews.com", score: 293, author: "james",   ago: "2 years ago",  comments: 58, date: "2023-08" },
+  { id: 35, title: "Web Components Are Not Dead",                  domain: "clankernews.com", score: 176, author: "james",   ago: "2 years ago",  comments: 39, date: "2023-07" },
+  { id: 36, title: "Why I Switched From npm to Bun",              domain: "clankernews.com", score: 334, author: "james",   ago: "2 years ago",  comments: 77, date: "2023-06" },
+  { id: 37, title: "The Intl API: Internationalisation for Free",  domain: "clankernews.com", score: 159, author: "james",   ago: "2 years ago",  comments: 31, date: "2023-05" },
+  { id: 38, title: "Debounce and Throttle Without Lodash",         domain: "clankernews.com", score: 208, author: "james",   ago: "2 years ago",  comments: 43, date: "2023-04" },
+  { id: 39, title: "PWA Install Prompts: A Complete Guide",        domain: "clankernews.com", score: 241, author: "james",   ago: "2 years ago",  comments: 52, date: "2023-03" },
+  { id: 40, title: "Testing Vanilla JS Without a Framework",       domain: "clankernews.com", score: 187, author: "james",   ago: "2 years ago",  comments: 38, date: "2023-02" },
 ];
 
 // Derive available years and months from posts
@@ -225,6 +244,8 @@ const MONTH_NAMES = {
 let activeYear = null;
 let activeMonth = null;
 let starredOnly = false;
+let currentPage = 1;
+const PAGE_SIZE = 30;
 
 // Persist stars in localStorage
 const STARRED_KEY = 'clankernews_starred';
@@ -254,6 +275,7 @@ function renderNav() {
       e.preventDefault();
       activeYear = a.dataset.year;
       activeMonth = null;
+      currentPage = 1;
       yearDropdown.style.display = 'none';
       updateYearBtn();
       renderMonths();
@@ -304,6 +326,7 @@ function renderMonths() {
     a.addEventListener('click', e => {
       e.preventDefault();
       activeMonth = (activeMonth === a.dataset.month) ? null : a.dataset.month;
+      currentPage = 1;
       updateActiveStates();
       renderStories();
     });
@@ -332,11 +355,14 @@ function filteredPosts() {
 
 function renderStories() {
   const tbody = document.getElementById('story-tbody');
-  const posts = filteredPosts();
+  const allPosts = filteredPosts();
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pagePosts = allPosts.slice(start, start + PAGE_SIZE);
+  const hasMore = allPosts.length > start + PAGE_SIZE;
   let html = '';
 
-  posts.forEach((post, i) => {
-    const rank = i + 1;
+  pagePosts.forEach((post, i) => {
+    const rank = start + i + 1;
     const isStarred = starred.has(post.id);
     html += `
       <tr class="athing" id="post-${post.id}" data-post-id="${post.id}" style="height:19px;">
@@ -368,11 +394,32 @@ function renderStories() {
       <tr class="spacer" data-post-id="${post.id}" style="height:5px;"><td></td></tr>`;
   });
 
-  if (posts.length === 0) {
+  if (allPosts.length === 0) {
     html = `<tr><td colspan="3" style="padding:20px 8px;color:#828282;font-size:10pt;">No posts for this period.</td></tr>`;
   }
 
+  if (hasMore) {
+    html += `
+      <tr class="morespace" style="height:10px;"><td></td></tr>
+      <tr>
+        <td colspan="3" class="title hnmore" style="padding:4px 0 8px 38px;">
+          <a href="#" id="more-link">More</a>
+        </td>
+      </tr>`;
+  }
+
   tbody.innerHTML = html;
+
+  // More link
+  const moreLink = document.getElementById('more-link');
+  if (moreLink) {
+    moreLink.addEventListener('click', e => {
+      e.preventDefault();
+      currentPage++;
+      renderStories();
+      window.scrollTo(0, 0);
+    });
+  }
 
   // Hover: show star only for the hovered post's rows
   tbody.querySelectorAll('.stararrow').forEach(el => {
@@ -412,6 +459,7 @@ document.getElementById('all-link').addEventListener('click', e => {
   starredOnly = false;
   activeYear = null;
   activeMonth = null;
+  currentPage = 1;
   updateStarredLink();
   updateYearBtn();
   renderMonths();
@@ -423,6 +471,7 @@ document.getElementById('all-link').addEventListener('click', e => {
 document.getElementById('starred-link').addEventListener('click', e => {
   e.preventDefault();
   starredOnly = !starredOnly;
+  currentPage = 1;
   updateStarredLink();
   renderStories();
 });
