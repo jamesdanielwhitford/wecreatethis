@@ -33,15 +33,21 @@
     .comhead a:hover { text-decoration: underline; }
     .hnmore { text-decoration: underline; }
     .hnmore a:link, .hnmore a:visited { color: #828282; }
-    .votearrow {
-      width: 0; height: 0;
-      border-left: 5px solid transparent;
-      border-right: 5px solid transparent;
-      border-bottom: 8px solid #999999;
-      margin: 3px 2px 6px;
+    .stararrow {
       display: inline-block;
       cursor: pointer;
+      width: 14px;
+      height: 14px;
+      margin: 2px 2px 4px;
+      vertical-align: middle;
+      opacity: 0;
+      transition: opacity 0.1s;
     }
+    .stararrow.starred { opacity: 1; }
+    .stararrow.hover-show { opacity: 1; }
+    .stararrow svg { display: block; }
+    .stararrow.starred svg polygon { fill: #999999; stroke: none; }
+    .stararrow:not(.starred) svg polygon { fill: none; stroke: #999999; stroke-width: 1.5; }
 
     /* Year dropdown */
     #year-selector { position: relative; display: inline-block; }
@@ -124,7 +130,7 @@
             </span>
           </td>
           <td style="text-align:right;padding-right:4px;">
-            <span class="pagetop"><a href="/clankernews/" id="all-link">all</a></span>
+            <span class="pagetop"><a href="/clankernews/" id="all-link">all</a> | <a href="#" id="starred-link">starred</a></span>
           </td>
         </tr>
         </tbody>
@@ -218,6 +224,18 @@ const MONTH_NAMES = {
 
 let activeYear = null;
 let activeMonth = null;
+let starredOnly = false;
+
+// Persist stars in localStorage
+const STARRED_KEY = 'clankernews_starred';
+function loadStarred() {
+  try { return new Set(JSON.parse(localStorage.getItem(STARRED_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+function saveStarred(set) {
+  localStorage.setItem(STARRED_KEY, JSON.stringify([...set]));
+}
+let starred = loadStarred();
 
 const _yearsMonthsAll = getYearsMonths(POSTS);
 const _allYears = Object.keys(_yearsMonthsAll).sort((a, b) => b - a);
@@ -303,8 +321,8 @@ function updateActiveStates() {
 }
 
 function filteredPosts() {
-  if (!activeYear && !activeMonth) return POSTS;
   return POSTS.filter(p => {
+    if (starredOnly && !starred.has(p.id)) return false;
     const [y, m] = p.date.split('-');
     if (activeYear && y !== activeYear) return false;
     if (activeMonth && m !== activeMonth) return false;
@@ -319,11 +337,16 @@ function renderStories() {
 
   posts.forEach((post, i) => {
     const rank = i + 1;
+    const isStarred = starred.has(post.id);
     html += `
-      <tr class="athing" id="post-${post.id}" style="height:19px;">
+      <tr class="athing" id="post-${post.id}" data-post-id="${post.id}" style="height:19px;">
         <td class="title" style="width:22px;text-align:right;vertical-align:top;color:#828282;font-size:10pt;">${rank}.</td>
-        <td class="votelinks" style="width:14px;vertical-align:top;">
-          <div class="votearrow" title="upvote"></div>
+        <td class="votelinks" style="width:14px;vertical-align:top;padding-top:2px;">
+          <div class="stararrow${isStarred ? ' starred' : ''}" data-id="${post.id}" title="${isStarred ? 'unstar' : 'star'}">
+            <svg width="14" height="14" viewBox="0 0 14 14">
+              <polygon points="7,1 8.8,5.3 13.5,5.7 10,8.7 11.1,13.3 7,10.7 2.9,13.3 4,8.7 0.5,5.7 5.2,5.3" />
+            </svg>
+          </div>
         </td>
         <td class="title" style="vertical-align:middle;">
           <span class="titleline">
@@ -332,7 +355,7 @@ function renderStories() {
           </span>
         </td>
       </tr>
-      <tr>
+      <tr data-post-id="${post.id}">
         <td colspan="2"></td>
         <td class="subtext" style="padding:0;">
           <span class="score">${post.score} points</span>
@@ -342,7 +365,7 @@ function renderStories() {
           | <a href="#">${post.comments} comments</a>
         </td>
       </tr>
-      <tr class="spacer" style="height:5px;"><td></td></tr>`;
+      <tr class="spacer" data-post-id="${post.id}" style="height:5px;"><td></td></tr>`;
   });
 
   if (posts.length === 0) {
@@ -350,20 +373,68 @@ function renderStories() {
   }
 
   tbody.innerHTML = html;
+
+  // Hover: show star only for the hovered post's rows
+  tbody.querySelectorAll('.stararrow').forEach(el => {
+    const id = el.dataset.id;
+    const rows = tbody.querySelectorAll(`[data-post-id="${id}"]`);
+    rows.forEach(row => {
+      row.addEventListener('mouseenter', () => el.classList.add('hover-show'));
+      row.addEventListener('mouseleave', () => el.classList.remove('hover-show'));
+    });
+  });
+
+  // Star click handlers
+  tbody.querySelectorAll('.stararrow').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      const id = Number(el.dataset.id);
+      if (starred.has(id)) {
+        starred.delete(id);
+      } else {
+        starred.add(id);
+      }
+      saveStarred(starred);
+      // If in starred view and unstarring, re-render; otherwise just toggle visually
+      if (starredOnly) {
+        renderStories();
+      } else {
+        el.classList.toggle('starred', starred.has(id));
+        el.title = starred.has(id) ? 'unstar' : 'star';
+      }
+    });
+  });
 }
 
 // "All" link resets filter
 document.getElementById('all-link').addEventListener('click', e => {
   e.preventDefault();
+  starredOnly = false;
   activeYear = null;
   activeMonth = null;
+  updateStarredLink();
   updateYearBtn();
   renderMonths();
   updateActiveStates();
   renderStories();
 });
 
+// "Starred" link
+document.getElementById('starred-link').addEventListener('click', e => {
+  e.preventDefault();
+  starredOnly = !starredOnly;
+  updateStarredLink();
+  renderStories();
+});
+
+function updateStarredLink() {
+  const el = document.getElementById('starred-link');
+  el.style.fontWeight = starredOnly ? 'bold' : '';
+  el.style.textDecoration = starredOnly ? 'underline' : '';
+}
+
 renderNav();
+updateStarredLink();
 renderStories();
 
 if ('serviceWorker' in navigator) {
