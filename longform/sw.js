@@ -1,4 +1,4 @@
-const CACHE_NAME = 'clankernews-v3';
+const CACHE_NAME = 'longform-v1';
 
 function normalizeUrl(url) {
   const urlObj = new URL(url);
@@ -16,17 +16,17 @@ function normalizeUrl(url) {
 }
 
 const urlsToCache = [
-  '/clankernews/',
-  '/clankernews/index.html',
-  '/clankernews/manifest.json',
-  '/clankernews/icon-192.png',
-  '/clankernews/icon-512.png'
+  '/longform/',
+  '/longform/index.html',
+  '/longform/manifest.json',
+  '/longform/icon-192.png',
+  '/longform/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching ClankerNews files');
+      console.log('[SW] Caching Long Form files');
       return cache.addAll(urlsToCache);
     })
   );

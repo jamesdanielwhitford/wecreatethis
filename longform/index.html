@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#02db02">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Clanker News">
-  <title>Clanker News</title>
+  <meta name="apple-mobile-web-app-title" content="Long Form">
+  <title>Long Form</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <style>
@@ -107,7 +107,7 @@
         <tbody>
         <tr>
           <td style="width:18px;padding-right:4px;">
-            <a href="/clankernews/">
+            <a href="/longform/">
               <div style="width:18px;height:18px;border:1px solid #ffffff;background:#02db02;display:flex;align-items:center;justify-content:center;">
                 <svg width="10" height="12" viewBox="0 0 5 6" style="display:block;image-rendering:pixelated;">
                   <rect fill="white" x="1" y="0" width="3" height="1"/>
@@ -124,7 +124,7 @@
           </td>
           <td>
             <span class="pagetop">
-              <b class="hnname"><a href="/clankernews/" style="color:#000000;font-weight:700;">Clanker News</a></b>
+              <b class="hnname"><a href="/longform/" style="color:#000000;font-weight:700;">Long Form</a></b>
               <span id="year-selector">
                 <button id="year-btn"></button>
                 <div id="year-dropdown"></div>
@@ -133,7 +133,7 @@
             </span>
           </td>
           <td style="text-align:right;padding-right:4px;">
-            <span class="pagetop"><a href="/clankernews/" id="all-link">all</a> | <a href="#" id="starred-link">starred</a></span>
+            <span class="pagetop"><a href="/longform/" id="all-link">all</a> | <a href="#" id="starred-link">starred</a></span>
           </td>
         </tr>
         </tbody>
@@ -252,7 +252,7 @@ let currentPage = 1;
 const PAGE_SIZE = 30;
 
 // Persist stars in localStorage
-const STARRED_KEY = 'clankernews_starred';
+const STARRED_KEY = 'longform_starred';
 function loadStarred() {
   try { return new Set(JSON.parse(localStorage.getItem(STARRED_KEY) || '[]')); }
   catch { return new Set(); }
@@ -491,7 +491,7 @@ updateStarredLink();
 renderStories();
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/clankernews/sw.js', { scope: '/clankernews/' });
+  navigator.serviceWorker.register('/longform/sw.js', { scope: '/longform/' });
 }
 </script>
 

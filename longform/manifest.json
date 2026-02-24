@@ -1,6 +1,6 @@
 {
-  "name": "Clanker News",
-  "short_name": "Clanker News",
+  "name": "Long Form",
+  "short_name": "Long Form",
   "description": "A blog index styled like Hacker News",
   "start_url": "./index.html",
   "display": "standalone",
