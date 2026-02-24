@@ -31,56 +31,42 @@
     .subtext a:hover { text-decoration: underline; }
     .comhead a:link, .comhead a:visited { color: #828282; }
     .comhead a:hover { text-decoration: underline; }
-    .hnmore a:link, .hnmore a:visited { color: #828282; text-decoration: none; }
+
     .votearrow {
       width: 10px;
       height: 10px;
       border: 0px;
       margin: 3px 2px 6px;
       background: url("data:image/svg+xml,%3Csvg height='32' viewBox='0 0 32 16' width='32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m2 27 14-29 14 29z' fill='%23999'/%3E%3C/svg%3E") 0% 0% / 10px, linear-gradient(transparent, transparent) no-repeat;
-      cursor: pointer;
+      cursor: default;
       display: block;
     }
 
-    /* Year dropdown */
-    #year-selector { position: relative; display: inline-block; }
-    #year-btn {
-      color: #000000; font-size: 10pt; font-family: Verdana, Geneva, sans-serif;
-      cursor: pointer; font-weight: bold; text-decoration: underline;
-      background: none; border: none; padding: 0; margin-right: 6px;
-    }
-    #year-dropdown {
-      display: none; position: absolute; top: 18px; left: 0;
-      background: #02db02; border: 1px solid #009900;
-      z-index: 200; min-width: 60px;
-    }
-    #year-dropdown a {
-      display: block; padding: 3px 10px;
-      color: #000000; font-size: 9pt; text-decoration: none;
-    }
-    #year-dropdown a:hover { background: #00bb00; }
-    #year-dropdown a.active-year { font-weight: bold; }
+    /* Comment styles */
+    .commtext { font-size: 12px; color: rgb(0,0,0); font-family: Verdana, Geneva, sans-serif; line-height: normal; }
+    .commtext p { margin: 8px 0 0 0; }
+    .commtext pre { font-family: monospace; font-size: 12px; margin: 12px 0; padding: 2px; white-space: pre-wrap; }
+    .reply a:link, .reply a:visited { font-size: 10px; color: rgb(0,0,0); text-decoration: underline; }
+    .coll { display: none; }
 
-    /* Month links in nav bar */
-    #month-links a { color: #000000; font-size: 9pt; text-decoration: none; padding: 0 4px; }
-    #month-links a:hover { text-decoration: underline; }
-    #month-links a.active-month { font-weight: bold; text-decoration: underline; }
-
-    /* Hidden item */
-    tr.hidden-item { display: none; }
+    .reply-form { margin-top: 6px; display: none; }
+    .reply-form textarea {
+      display: block;
+      border: 1px solid rgb(118,118,118);
+      font-family: monospace;
+      font-size: 10pt;
+      margin-bottom: 4px;
+    }
+    .reply-cancel:link, .reply-cancel:visited { font-size: 10pt; color: #828282; text-decoration: underline; }
 
     @media only screen and (min-width: 300px) and (max-width: 750px) {
       #hnmain { width: 100%; min-width: 0; }
       body { padding: 0; margin: 0; width: 100%; }
       td { height: inherit !important; }
-      .title { font-size: inherit; }
       span.pagetop { display: block; margin: 3px 5px; font-size: 12px; line-height: normal; }
       span.pagetop b { display: block; font-size: 15px; }
-      .title { font-size: 11pt; line-height: 14pt; }
-      .subtext { font-size: 9pt; }
       .votearrow { transform: scale(1.3, 1.3); margin-right: 6px; }
       .votelinks { min-width: 18px; }
-      input[type="text"] { font-size: 16px; width: 90%; }
     }
   </style>
 </head>
@@ -115,15 +101,7 @@
           <td>
             <span class="pagetop">
               <b class="hnname"><a href="/longform/" style="color:#000000;font-weight:700;">Long Form</a></b>
-              <span id="year-selector">
-                <button id="year-btn"></button>
-                <div id="year-dropdown"></div>
-              </span>
-              <span id="month-pipe" style="display:none;"> | </span><span id="month-links"></span>
             </span>
-          </td>
-          <td style="text-align:right;padding-right:4px;">
-            <span class="pagetop"><a href="/longform/" id="all-link">all</a></span>
           </td>
         </tr>
         </tbody>
@@ -134,12 +112,18 @@
   <!-- Spacer -->
   <tr style="height:10px;"><td></td></tr>
 
-  <!-- Story list -->
+  <!-- Content -->
   <tr>
     <td>
-      <table border="0" cellpadding="0" cellspacing="0" id="story-table" style="width:100%">
-        <tbody id="story-tbody">
-          <!-- Rendered by JS -->
+      <table border="0" class="fatitem" id="item-tbody">
+        <tbody id="fatitem-tbody">
+          <!-- Story header + form rendered by JS -->
+        </tbody>
+      </table>
+      <br>
+      <table border="0" class="comment-tree" id="comments">
+        <tbody id="comment-tbody">
+          <!-- Comments rendered by JS -->
         </tbody>
       </table>
     </td>
@@ -171,6 +155,8 @@
 </center>
 
 <script>
+const S_GIF = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
 const POSTS = [
   { id: 1,  title: "Why I Built a New Kind of News Reader",        domain: "clankernews.com", score: 214, author: "james",   ago: "1 day ago",    comments: 47, date: "2026-02" },
   { id: 2,  title: "The Offline-First Manifesto",                  domain: "clankernews.com", score: 189, author: "james",   ago: "3 days ago",   comments: 32, date: "2026-02" },
@@ -214,205 +200,293 @@ const POSTS = [
   { id: 40, title: "Testing Vanilla JS Without a Framework",       domain: "clankernews.com", score: 187, author: "james",   ago: "2 years ago",  comments: 38, date: "2023-02" },
 ];
 
-// Derive available years and months from posts
-function getYearsMonths(posts) {
-  const map = {};
-  posts.forEach(p => {
-    const [year, month] = p.date.split('-');
-    if (!map[year]) map[year] = new Set();
-    map[year].add(month);
-  });
-  // Sort years descending, months descending within year
-  const result = {};
-  Object.keys(map).sort((a, b) => b - a).forEach(y => {
-    result[y] = [...map[y]].sort((a, b) => a - b);
-  });
-  return result;
+// --- URL / post init ---
+
+function getPostId() {
+  return parseInt(new URLSearchParams(window.location.search).get('id'), 10);
 }
 
-const MONTH_NAMES = {
-  '01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
-  '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'
-};
+const postId = getPostId();
+const post = POSTS.find(p => p.id === postId);
 
-let activeYear = null;
-let activeMonth = null;
-let currentPage = 1;
-const PAGE_SIZE = 30;
+if (!post) {
+  document.getElementById('item-tbody').innerHTML =
+    '<tr><td style="padding:20px;color:#828282;font-size:10pt;">Post not found.</td></tr>';
+  throw new Error('Post not found: ' + postId);
+}
 
-const _yearsMonthsAll = getYearsMonths(POSTS);
-const _allYears = Object.keys(_yearsMonthsAll).sort((a, b) => b - a);
+document.title = post.title + ' | Long Form';
 
-function renderNav() {
-  const yearBtn = document.getElementById('year-btn');
-  const yearDropdown = document.getElementById('year-dropdown');
+// --- Helpers ---
 
-  // Populate dropdown with all years
-  yearDropdown.innerHTML = _allYears.map(y =>
-    `<a href="#" class="year-option" data-year="${y}">${y}</a>`
-  ).join('');
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  const s = Math.floor(diff / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  const d = Math.floor(h / 24);
+  if (d >= 365) { const y = Math.floor(d / 365); return y + ' year' + (y !== 1 ? 's' : '') + ' ago'; }
+  if (d >= 30)  { const mo = Math.floor(d / 30);  return mo + ' month' + (mo !== 1 ? 's' : '') + ' ago'; }
+  if (d >= 1)   return d + ' day' + (d !== 1 ? 's' : '') + ' ago';
+  if (h >= 1)   return h + ' hour' + (h !== 1 ? 's' : '') + ' ago';
+  if (m >= 1)   return m + ' minute' + (m !== 1 ? 's' : '') + ' ago';
+  return 'just now';
+}
 
-  yearDropdown.querySelectorAll('.year-option').forEach(a => {
-    a.addEventListener('click', e => {
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// --- IndexedDB ---
+
+let db;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('longform-comments', 1);
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('comments')) {
+        const store = d.createObjectStore('comments', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('postId', 'postId', { unique: false });
+        store.createIndex('parentId', 'parentId', { unique: false });
+      }
+    };
+    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function getCommentsByPostId(pid) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('comments', 'readonly');
+    const req = tx.objectStore('comments').index('postId').getAll(pid);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function addComment(comment) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('comments', 'readwrite');
+    const req = tx.objectStore('comments').add(comment);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// --- Tree builder ---
+
+function buildTree(comments) {
+  const byId = {};
+  const roots = [];
+  comments.forEach(c => { byId[c.id] = { ...c, children: [] }; });
+  comments.forEach(c => {
+    if (c.parentId === null || c.parentId === undefined) {
+      roots.push(byId[c.id]);
+    } else if (byId[c.parentId]) {
+      byId[c.parentId].children.push(byId[c.id]);
+    }
+  });
+  roots.sort((a, b) => b.createdAt - a.createdAt);
+  function sortChildren(node) {
+    node.children.sort((a, b) => a.createdAt - b.createdAt);
+    node.children.forEach(sortChildren);
+  }
+  roots.forEach(sortChildren);
+  return roots;
+}
+
+// --- Render functions ---
+
+function renderStoryHeader() {
+  return `
+    <tr class="athing submission">
+      <td align="right" valign="top" class="title"><span class="rank"></span></td>
+      <td valign="top" class="votelinks">
+        <center><div class="votearrow" title="upvote"></div></center>
+      </td>
+      <td class="title">
+        <span class="titleline">
+          <a href="#">${escapeHtml(post.title)}</a>
+          <span class="sitebit comhead"> (<a href="#" style="color:#828282;">${escapeHtml(post.domain)}</a>)</span>
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2"></td>
+      <td class="subtext">
+        <span class="score">${post.score} points</span> by
+        <a href="#" class="hnuser">${escapeHtml(post.author)}</a>
+        <span class="age"><a href="#">${escapeHtml(post.ago)}</a></span>
+        | <a href="#">hide</a>
+        | <a href="#">past</a>
+        | <a href="#">favorite</a>
+        | <a href="#comments">${post.comments}&nbsp;comments</a>
+      </td>
+    </tr>
+    <tr style="height:10px;"><td></td></tr>`;
+}
+
+function renderCommentForm() {
+  return `
+    <tr>
+      <td colspan="2"></td>
+      <td>
+        <form id="comment-form">
+          <textarea id="comment-text" name="text" rows="8" cols="80" wrap="virtual" style="vertical-align:bottom"></textarea>
+          &nbsp;<font size="-2" color="#AFAFAF">help</font><br><br>
+          <input type="submit" value="add comment">
+        </form>
+      </td>
+    </tr>
+    <tr style="height:20px;"><td></td></tr>`;
+}
+
+function renderComment(node, depth, ancestors) {
+  const indentPx = depth * 40;
+  const ago = timeAgo(node.createdAt);
+  const ancestorAttr = ancestors.length ? ` data-ancestors="${ancestors.join(',')}"` : '';
+  const isRoot = depth === 0;
+  const navs = isRoot
+    ? ` | <a href="#">next</a> <a class="togg" data-id="${node.id}" href="#">[&ndash;]</a>`
+    : ` | <a href="#comment-${ancestors[0]}">root</a> | <a href="#comment-${ancestors[ancestors.length - 1]}">parent</a> | <a href="#">next</a> <a class="togg" data-id="${node.id}" href="#">[&ndash;]</a>`;
+
+  let rows = `
+    <tr class="athing comtr" id="comment-${node.id}"${ancestorAttr}>
+      <td>
+        <table border="0">
+          <tbody>
+            <tr>
+              <td class="ind"><img src="${S_GIF}" height="1" width="${indentPx}"></td>
+              <td valign="top" class="votelinks">
+                <center><div class="votearrow" title="upvote"></div></center>
+              </td>
+              <td class="default">
+                <div style="margin-top:2px;margin-bottom:-10px;">
+                  <span class="comhead">
+                    <a class="hnuser" href="#">james</a>&nbsp;<span class="age"><a href="#">${ago}</a></span><span class="navs">${navs}</span>
+                  </span>
+                </div>
+                <br>
+                <div class="comment" id="cbody-${node.id}">
+                  <span class="commtext">${escapeHtml(node.text)}</span>
+                  <div class="reply"><a href="#" class="reply-link" data-id="${node.id}">reply</a></div>
+                  <div class="reply-form" id="reply-form-${node.id}">
+                    <textarea rows="6" cols="60" id="reply-text-${node.id}"
+                      style="border:1px solid rgb(118,118,118);font-family:monospace;font-size:10pt;display:block;"></textarea>
+                    <br>
+                    <input type="button" value="add comment" class="reply-submit" data-parent="${node.id}">
+                    &nbsp;<a href="#" class="reply-cancel" data-id="${node.id}">cancel</a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>`;
+
+  const childAncestors = [...ancestors, node.id];
+  node.children.forEach(child => {
+    rows += renderComment(child, depth + 1, childAncestors);
+  });
+
+  return rows;
+}
+
+// --- Main render ---
+
+async function renderPage() {
+  await openDB();
+
+  document.getElementById('fatitem-tbody').innerHTML = renderStoryHeader() + renderCommentForm();
+
+  const allComments = await getCommentsByPostId(postId);
+  const tree = buildTree(allComments);
+
+  let commentsHtml = '';
+  if (tree.length === 0) {
+    commentsHtml = `<tr><td style="padding:8px 0;color:#828282;font-size:10pt;">No comments yet.</td></tr>`;
+  } else {
+    tree.forEach(root => {
+      commentsHtml += renderComment(root, 0, []);
+    });
+  }
+
+  document.getElementById('comment-tbody').innerHTML = commentsHtml;
+  bindEvents();
+}
+
+// --- Event binding ---
+
+function bindEvents() {
+  // Root comment submit
+  document.getElementById('comment-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = document.getElementById('comment-text').value.trim();
+    if (!text) return;
+    await addComment({ postId, parentId: null, author: 'james', text, createdAt: Date.now() });
+    document.getElementById('comment-text').value = '';
+    await renderPage();
+  });
+
+  // Collapse toggles
+  document.querySelectorAll('.togg').forEach(link => {
+    link.addEventListener('click', (e) => {
       e.preventDefault();
-      activeYear = a.dataset.year;
-      activeMonth = null;
-      currentPage = 1;
-      yearDropdown.style.display = 'none';
-      updateYearBtn();
-      renderMonths();
-      updateActiveStates();
-      renderStories();
+      const id = String(link.dataset.id);
+      const body = document.getElementById('cbody-' + id);
+      const collapsed = body.classList.toggle('coll');
+      link.textContent = collapsed ? '[+]' : '[\u2013]';
+      // Hide/show all descendant rows
+      document.querySelectorAll('[data-ancestors]').forEach(row => {
+        if (row.dataset.ancestors.split(',').includes(id)) {
+          row.style.display = collapsed ? 'none' : '';
+        }
+      });
     });
   });
 
-  // Toggle dropdown on button click
-  yearBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    yearDropdown.style.display = yearDropdown.style.display === 'block' ? 'none' : 'block';
-  });
-
-  // Close dropdown on outside click
-  document.addEventListener('click', () => {
-    yearDropdown.style.display = 'none';
-  });
-
-  updateYearBtn();
-  renderMonths();
-}
-
-function updateYearBtn() {
-  const yearBtn = document.getElementById('year-btn');
-  yearBtn.textContent = (activeYear || 'Year') + ' ▾';
-  // Mark active in dropdown
-  document.querySelectorAll('.year-option').forEach(a => {
-    a.classList.toggle('active-year', a.dataset.year === activeYear);
-  });
-}
-
-function renderMonths() {
-  const monthLinks = document.getElementById('month-links');
-  const monthPipe = document.getElementById('month-pipe');
-  if (!activeYear || !_yearsMonthsAll[activeYear]) {
-    monthLinks.innerHTML = '';
-    monthPipe.style.display = 'none';
-    return;
-  }
-  monthPipe.style.display = '';
-  const months = _yearsMonthsAll[activeYear];
-  monthLinks.innerHTML = months.map((m, i) =>
-    (i > 0 ? ' | ' : '') +
-    `<a href="#" class="month-link" data-month="${m}">${MONTH_NAMES[m]}</a>`
-  ).join('');
-  monthLinks.querySelectorAll('.month-link').forEach(a => {
-    a.addEventListener('click', e => {
+  // Reply link — show inline form
+  document.querySelectorAll('.reply-link').forEach(link => {
+    link.addEventListener('click', (e) => {
       e.preventDefault();
-      activeMonth = (activeMonth === a.dataset.month) ? null : a.dataset.month;
-      currentPage = 1;
-      updateActiveStates();
-      renderStories();
+      const form = document.getElementById('reply-form-' + link.dataset.id);
+      form.style.display = form.style.display === 'block' ? 'none' : 'block';
     });
   });
-  updateActiveStates();
-}
 
-function updateActiveStates() {
-  document.querySelectorAll('.month-link').forEach(a => {
-    a.classList.toggle('active-month', a.dataset.month === activeMonth);
-  });
-  document.querySelectorAll('.year-option').forEach(a => {
-    a.classList.toggle('active-year', a.dataset.year === activeYear);
-  });
-}
-
-function filteredPosts() {
-  return POSTS.filter(p => {
-    const [y, m] = p.date.split('-');
-    if (activeYear && y !== activeYear) return false;
-    if (activeMonth && m !== activeMonth) return false;
-    return true;
-  });
-}
-
-function renderStories() {
-  const tbody = document.getElementById('story-tbody');
-  const allPosts = filteredPosts();
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const pagePosts = allPosts.slice(start, start + PAGE_SIZE);
-  const hasMore = allPosts.length > start + PAGE_SIZE;
-  let html = '';
-
-  pagePosts.forEach((post, i) => {
-    const rank = start + i + 1;
-    html += `
-      <tr class="athing" id="post-${post.id}" data-post-id="${post.id}" style="height:19px;">
-        <td class="title" style="width:22px;text-align:right;vertical-align:top;padding-right:3px;color:#828282;font-size:10pt;"><span class="rank">${rank}.</span></td>
-        <td class="votelinks" style="width:14px;vertical-align:top;">
-          <a href="#" id="up_${post.id}"><div class="votearrow" title="upvote"></div></a>
-        </td>
-        <td class="title" style="vertical-align:top;">
-          <span class="titleline">
-            <a href="/longform/post.html?id=${post.id}">${post.title}</a>
-            <span class="sitebit comhead" style="font-size:8pt;color:#828282;"> (<a href="#" style="color:#828282;">${post.domain}</a>)</span>
-          </span>
-        </td>
-      </tr>
-      <tr data-post-id="${post.id}">
-        <td colspan="2"></td>
-        <td class="subtext" style="padding:0;">
-          <span class="score">${post.score} points</span>
-          by <a href="#">${post.author}</a>
-          <a href="#">${post.ago}</a>
-          | <a href="#">hide</a>
-          | <a href="/longform/post.html?id=${post.id}#comments">${post.comments} comments</a>
-        </td>
-      </tr>
-      <tr class="spacer" data-post-id="${post.id}" style="height:5px;"><td></td></tr>`;
-  });
-
-  if (allPosts.length === 0) {
-    html = `<tr><td colspan="3" style="padding:20px 8px;color:#828282;font-size:10pt;">No posts for this period.</td></tr>`;
-  }
-
-  if (hasMore) {
-    html += `
-      <tr class="morespace" style="height:10px;"><td></td></tr>
-      <tr>
-        <td colspan="3" class="title hnmore" style="padding:4px 0 8px 38px;">
-          <a href="#" id="more-link">More</a>
-        </td>
-      </tr>`;
-  }
-
-  tbody.innerHTML = html;
-
-  // More link
-  const moreLink = document.getElementById('more-link');
-  if (moreLink) {
-    moreLink.addEventListener('click', e => {
+  // Reply cancel
+  document.querySelectorAll('.reply-cancel').forEach(link => {
+    link.addEventListener('click', (e) => {
       e.preventDefault();
-      currentPage++;
-      renderStories();
-      window.scrollTo(0, 0);
+      const id = link.dataset.id;
+      document.getElementById('reply-form-' + id).style.display = 'none';
+      document.getElementById('reply-text-' + id).value = '';
     });
-  }
+  });
 
+  // Reply submit
+  document.querySelectorAll('.reply-submit').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const parentId = parseInt(btn.dataset.parent, 10);
+      const text = document.getElementById('reply-text-' + parentId).value.trim();
+      if (!text) return;
+      await addComment({ postId, parentId, author: 'james', text, createdAt: Date.now() });
+      await renderPage();
+    });
+  });
 }
 
-// "All" link resets filter
-document.getElementById('all-link').addEventListener('click', e => {
-  e.preventDefault();
-  activeYear = null;
-  activeMonth = null;
-  currentPage = 1;
-  updateYearBtn();
-  renderMonths();
-  updateActiveStates();
-  renderStories();
-});
+// --- Boot ---
 
-renderNav();
-renderStories();
+renderPage();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/longform/sw.js', { scope: '/longform/' });
