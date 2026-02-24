@@ -346,11 +346,11 @@ function renderStories() {
     const rank = start + i + 1;
     html += `
       <tr class="athing" id="post-${post.id}" data-post-id="${post.id}" style="height:19px;">
-        <td class="title" style="width:22px;text-align:right;vertical-align:top;color:#828282;font-size:10pt;">${rank}.</td>
+        <td class="title" style="width:22px;text-align:right;vertical-align:top;padding-right:3px;color:#828282;font-size:10pt;"><span class="rank">${rank}.</span></td>
         <td class="votelinks" style="width:14px;vertical-align:top;">
           <a href="#" id="up_${post.id}"><div class="votearrow" title="upvote"></div></a>
         </td>
-        <td class="title" style="vertical-align:middle;">
+        <td class="title" style="vertical-align:top;">
           <span class="titleline">
             <a href="#">${post.title}</a>
             <span class="sitebit comhead" style="font-size:8pt;color:#828282;"> (<a href="#" style="color:#828282;">${post.domain}</a>)</span>
