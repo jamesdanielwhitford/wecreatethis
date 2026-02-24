@@ -151,6 +151,15 @@ function unhidePost(postId) {
   saveHidden(h);
 }
 
+function deletePost(postId) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('posts', 'readwrite');
+    const req = tx.objectStore('posts').delete(postId);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
 // --- IndexedDB ---
 
 let db;
@@ -309,6 +318,7 @@ function renderStories() {
         <td class="subtext" style="padding:0;">
           <a href="#">${agoText}</a>
           | <a href="#" class="unhide-link" data-post-id="${post.id}">unhide</a>
+          | <a href="#" class="delete-link" data-post-id="${post.id}">delete</a>
           | <a href="/longform/post.html?id=${post.id}${isUserPost ? '&src=user' : ''}">${commentCount} comment${commentCount !== 1 ? 's' : ''}</a>
         </td>
       </tr>
@@ -347,6 +357,21 @@ function renderStories() {
       e.preventDefault();
       unhidePost(Number(a.dataset.postId));
       POSTS = POSTS.filter(p => p.id !== Number(a.dataset.postId));
+      renderStories();
+    });
+  });
+
+  // Wire up delete links
+  document.querySelectorAll('.delete-link').forEach(a => {
+    a.addEventListener('click', async e => {
+      e.preventDefault();
+      const id = Number(a.dataset.postId);
+      const post = POSTS.find(p => p.id === id);
+      const title = post ? post.title : 'this post';
+      if (!confirm('Delete "' + title + '"? This cannot be undone.')) return;
+      await deletePost(id);
+      unhidePost(id);
+      POSTS = POSTS.filter(p => p.id !== id);
       renderStories();
     });
   });
