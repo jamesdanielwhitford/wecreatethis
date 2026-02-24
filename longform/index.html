@@ -72,6 +72,18 @@
     /* Hidden item */
     tr.hidden-item { display: none; }
 
+    /* Rank reorder */
+    .rank-btn {
+      background: none; border: none; padding: 0; margin: 0;
+      font-family: Verdana, Geneva, sans-serif; font-size: 10pt;
+      color: #828282; cursor: pointer;
+    }
+    .rank-btn:hover { text-decoration: underline; color: var(--ink); }
+    .rank-input {
+      width: 32px; font-family: monospace; font-size: 10pt;
+      border: 1px solid #ccc; padding: 1px 3px; color: #000;
+    }
+
     @media only screen and (min-width: 300px) and (max-width: 750px) {
       #hnmain { width: 100%; min-width: 0; }
       body { padding: 0; margin: 0; width: 100%; }
@@ -174,6 +186,52 @@
 </center>
 
 <script>
+
+// --- Sort order (stored in localStorage as JSON map: postId -> order) ---
+
+function loadSortOrders() {
+  try { return JSON.parse(localStorage.getItem('lf-sort') || '{}'); } catch(e) { return {}; }
+}
+
+function saveSortOrders(map) {
+  localStorage.setItem('lf-sort', JSON.stringify(map));
+}
+
+function applySortOrders(posts) {
+  const map = loadSortOrders();
+  // assign a stable default order to any post not yet in the map
+  // based on current array index so first load keeps newest-first
+  let changed = false;
+  posts.forEach((p, i) => {
+    if (map[p.id] === undefined) { map[p.id] = i + 1; changed = true; }
+  });
+  if (changed) saveSortOrders(map);
+  // sort by stored order
+  posts.sort((a, b) => map[a.id] - map[b.id]);
+  return posts;
+}
+
+function movePostToRank(postId, newRank, totalPosts) {
+  const map = loadSortOrders();
+  // Clamp
+  newRank = Math.max(1, Math.min(newRank, totalPosts));
+  const oldRank = map[postId];
+  if (oldRank === newRank) return;
+  // Shift other posts
+  if (newRank < oldRank) {
+    // moving up: bump down posts that were between newRank and oldRank-1
+    Object.keys(map).forEach(id => {
+      if (id != postId && map[id] >= newRank && map[id] < oldRank) map[id]++;
+    });
+  } else {
+    // moving down: bump up posts that were between oldRank+1 and newRank
+    Object.keys(map).forEach(id => {
+      if (id != postId && map[id] > oldRank && map[id] <= newRank) map[id]--;
+    });
+  }
+  map[postId] = newRank;
+  saveSortOrders(map);
+}
 
 // --- IndexedDB ---
 
@@ -433,7 +491,9 @@ function renderStories() {
 
     html += `
       <tr class="athing" id="post-${post.id}" data-post-id="${post.id}" style="height:19px;">
-        <td class="title" style="width:22px;text-align:right;vertical-align:top;padding-right:3px;color:#828282;font-size:10pt;"><span class="rank">${rank}.</span></td>
+        <td class="title" style="width:22px;text-align:right;vertical-align:top;padding-right:3px;color:#828282;font-size:10pt;">
+          <button class="rank-btn" data-post-id="${post.id}" data-rank="${rank}">${rank}.</button>
+        </td>
         <td class="votelinks" style="width:14px;vertical-align:top;">
           <a href="#" id="up_${post.id}"><div class="votearrow" title="upvote"></div></a>
         </td>
@@ -471,6 +531,62 @@ function renderStories() {
 
   tbody.innerHTML = html;
 
+  // Wire up rank buttons — click shows an inline input
+  const totalFiltered = allPosts.length;
+  document.querySelectorAll('.rank-btn').forEach(btn => {
+    const pid = Number(btn.dataset.postId);
+    const currentRank = Number(btn.dataset.rank);
+
+    btn.addEventListener('click', () => {
+      // Replace button with a small input pre-filled with current rank
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'rank-input';
+      input.value = currentRank;
+      btn.replaceWith(input);
+      input.select();
+
+      function commit() {
+        const raw = input.value.trim();
+        // Ignore empty or non-numeric input
+        if (raw === '' || !/^-?\d+$/.test(raw)) {
+          renderStories();
+          return;
+        }
+        let n = parseInt(raw, 10);
+        // Negative -> positive
+        if (n < 0) n = Math.abs(n);
+        // Zero -> 1
+        if (n === 0) n = 1;
+        // Cap at list length
+        if (n > totalFiltered) n = totalFiltered;
+        movePostToRank(pid, n, totalFiltered);
+        POSTS = applySortOrders(POSTS);
+        renderStories();
+      }
+
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        if (e.key === 'Escape') { renderStories(); }
+      });
+      input.addEventListener('blur', commit);
+    });
+  });
+
+  // Wire up upvote arrows — move post up one position
+  pagePosts.forEach((post, i) => {
+    const rank = start + i + 1;
+    const upEl = document.getElementById('up_' + post.id);
+    if (!upEl) return;
+    upEl.addEventListener('click', e => {
+      e.preventDefault();
+      if (rank <= 1) return;
+      movePostToRank(post.id, rank - 1, totalFiltered);
+      POSTS = applySortOrders(POSTS);
+      renderStories();
+    });
+  });
+
   const moreLink = document.getElementById('more-link');
   if (moreLink) {
     moreLink.addEventListener('click', e => {
@@ -488,9 +604,9 @@ async function init() {
   const userPosts = await getAllUserPosts();
   const counts = await getCommentCountsForPosts(userPosts.map(p => p.id));
   userPosts.forEach(p => { p._commentCount = counts[p.id] || 0; });
-  // User posts newest first, then static posts
+  // Apply stored sort order (defaults to newest-first on first load)
   userPosts.sort((a, b) => b.createdAt - a.createdAt);
-  POSTS = userPosts;
+  POSTS = applySortOrders(userPosts);
   rebuildNav();
   renderStories();
 }
