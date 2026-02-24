@@ -227,7 +227,6 @@ function saveSortOrders(map) {
 function applySortOrders(posts) {
   const map = loadSortOrders();
   // assign a stable default order to any post not yet in the map
-  // based on current array index so first load keeps newest-first
   let changed = false;
   posts.forEach((p, i) => {
     if (map[p.id] === undefined) { map[p.id] = i + 1; changed = true; }
@@ -235,6 +234,9 @@ function applySortOrders(posts) {
   if (changed) saveSortOrders(map);
   // sort by stored order
   posts.sort((a, b) => map[a.id] - map[b.id]);
+  // normalize: reassign sequential ranks 1..N to eliminate any duplicates
+  posts.forEach((p, i) => { map[p.id] = i + 1; });
+  saveSortOrders(map);
   return posts;
 }
 
