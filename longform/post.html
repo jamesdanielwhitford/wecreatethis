@@ -333,7 +333,7 @@ function renderStoryHeader(commentCount) {
       <td colspan="2"></td>
       <td class="subtext">
         <span class="age"><a href="#">${agoText}</a></span>
-        | <a href="#">hide</a>
+        | <a href="#" id="hide-post-link">${loadHidden().has(postId) ? 'unhide' : 'hide'}</a>
         | <a href="#">past</a>
         | <a href="#">favorite</a>
         | <a href="#comments">${commentCount}&nbsp;comment${commentCount !== 1 ? 's' : ''}</a>
@@ -409,6 +409,16 @@ function renderComment(node, depth, ancestors) {
   return rows;
 }
 
+// --- Hidden posts ---
+
+function loadHidden() {
+  try { return new Set(JSON.parse(localStorage.getItem('lf-hidden') || '[]')); } catch(e) { return new Set(); }
+}
+
+function saveHidden(set) {
+  localStorage.setItem('lf-hidden', JSON.stringify([...set]));
+}
+
 // --- Main render ---
 
 async function renderPage() {
@@ -456,6 +466,24 @@ function bindEvents() {
     document.getElementById('comment-text').value = '';
     await renderPage();
   });
+
+  // Hide / unhide post
+  const hideLink = document.getElementById('hide-post-link');
+  if (hideLink) {
+    hideLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      const h = loadHidden();
+      if (h.has(postId)) {
+        h.delete(postId);
+        saveHidden(h);
+        hideLink.textContent = 'hide';
+      } else {
+        h.add(postId);
+        saveHidden(h);
+        window.location.href = '/longform/';
+      }
+    });
+  }
 
   // Collapse toggles
   document.querySelectorAll('.togg').forEach(link => {

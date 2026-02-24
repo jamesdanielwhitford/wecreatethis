@@ -1,4 +1,4 @@
-const CACHE_NAME = 'longform-v5';
+const CACHE_NAME = 'longform-v6';
 
 function normalizeUrl(url) {
   const urlObj = new URL(url);
