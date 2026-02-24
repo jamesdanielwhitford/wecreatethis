@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Long Form">
-  <title>Long Form</title>
+  <title>Long Form | Hidden</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <script>(function(){var b=localStorage.getItem('lf-brand'),k=localStorage.getItem('lf-ink'),r=document.documentElement.style;if(b)r.setProperty('--brand',b);if(k)r.setProperty('--ink',k);})();</script>
@@ -35,54 +35,7 @@
     .comhead a:link, .comhead a:visited { color: #828282; }
     .comhead a:hover { text-decoration: underline; }
     .hnmore a:link, .hnmore a:visited { color: #828282; text-decoration: none; }
-    .votearrow {
-      width: 10px;
-      height: 10px;
-      border: 0px;
-      margin: 3px 2px 6px;
-      background: url("data:image/svg+xml,%3Csvg height='32' viewBox='0 0 32 16' width='32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m2 27 14-29 14 29z' fill='%23999'/%3E%3C/svg%3E") 0% 0% / 10px, linear-gradient(transparent, transparent) no-repeat;
-      cursor: pointer;
-      display: block;
-    }
 
-    /* Year dropdown */
-    #year-selector { position: relative; display: inline-block; }
-    #year-btn {
-      color: var(--ink); font-size: 10pt; font-family: Verdana, Geneva, sans-serif;
-      cursor: pointer; font-weight: bold; text-decoration: underline;
-      background: none; border: none; padding: 0; margin-right: 6px;
-    }
-    #year-dropdown {
-      display: none; position: absolute; top: 18px; left: 0;
-      background: var(--brand); border: 1px solid #009900;
-      z-index: 200; min-width: 60px;
-    }
-    #year-dropdown a {
-      display: block; padding: 3px 10px;
-      color: var(--ink); font-size: 9pt; text-decoration: none;
-    }
-    #year-dropdown a:hover { filter: brightness(0.85); }
-    #year-dropdown a.active-year { font-weight: bold; }
-
-    /* Month links in nav bar */
-    #month-links a { color: var(--ink); font-size: 9pt; text-decoration: none; padding: 0 4px; }
-    #month-links a:hover { text-decoration: underline; }
-    #month-links a.active-month { font-weight: bold; text-decoration: underline; }
-
-    /* Hidden item */
-    tr.hidden-item { display: none; }
-
-    /* Rank reorder */
-    .rank-btn {
-      background: none; border: none; padding: 0; margin: 0;
-      font-family: Verdana, Geneva, sans-serif; font-size: 10pt;
-      color: #828282; cursor: pointer;
-    }
-    .rank-btn:hover { text-decoration: underline; color: var(--ink); }
-    .rank-input {
-      width: 32px; font-family: monospace; font-size: 10pt;
-      border: 1px solid #ccc; padding: 1px 3px; color: #000;
-    }
 
     @media only screen and (min-width: 300px) and (max-width: 750px) {
       #hnmain { width: 100%; min-width: 0; }
@@ -93,7 +46,6 @@
       span.pagetop b { display: block; font-size: 15px; }
       .title { font-size: 11pt; line-height: 14pt; }
       .subtext { font-size: 9pt; }
-      .votearrow { transform: scale(1.3, 1.3); margin-right: 6px; }
       .votelinks { min-width: 18px; }
       input[type="text"] { font-size: 16px; width: 90%; }
     }
@@ -130,11 +82,7 @@
           <td>
             <span class="pagetop">
               <b class="hnname"><a href="/longform/" style="color:var(--ink);font-weight:700;" id="site-name">Long Form</a></b>
-              <span id="year-selector">
-                <button id="year-btn"></button>
-                <div id="year-dropdown"></div>
-              </span>
-              <span id="month-pipe" style="display:none;"> | </span><span id="month-links"></span>
+              | hidden
             </span>
           </td>
           <td style="text-align:right;padding-right:4px;">
@@ -171,7 +119,7 @@
         </tr>
         <tr>
           <td class="yclinks" style="text-align:center;padding:5px 0 8px;">
-            <a href="/longform/customise">Customise</a><span id="hidden-footer-sep"> | </span><a href="/longform/hidden" id="hidden-footer-link">Hidden</a> |
+            <a href="/longform/customise">Customise</a> |
             <a href="#">About</a> |
             <a href="#">Contact</a>
           </td>
@@ -187,7 +135,7 @@
 
 <script>
 
-// --- Hidden posts (stored in localStorage as JSON array of post IDs) ---
+// --- Hidden posts ---
 
 function loadHidden() {
   try { return new Set(JSON.parse(localStorage.getItem('lf-hidden') || '[]')); } catch(e) { return new Set(); }
@@ -197,67 +145,10 @@ function saveHidden(set) {
   localStorage.setItem('lf-hidden', JSON.stringify([...set]));
 }
 
-function hidePost(postId) {
+function unhidePost(postId) {
   const h = loadHidden();
-  h.add(postId);
+  h.delete(postId);
   saveHidden(h);
-  updateHiddenFooter();
-}
-
-function updateHiddenFooter() {
-  const h = loadHidden();
-  const sep = document.getElementById('hidden-footer-sep');
-  const link = document.getElementById('hidden-footer-link');
-  if (!sep || !link) return;
-  const show = h.size > 0;
-  sep.style.display = show ? '' : 'none';
-  link.style.display = show ? '' : 'none';
-}
-
-// --- Sort order (stored in localStorage as JSON map: postId -> order) ---
-
-function loadSortOrders() {
-  try { return JSON.parse(localStorage.getItem('lf-sort') || '{}'); } catch(e) { return {}; }
-}
-
-function saveSortOrders(map) {
-  localStorage.setItem('lf-sort', JSON.stringify(map));
-}
-
-function applySortOrders(posts) {
-  const map = loadSortOrders();
-  // assign a stable default order to any post not yet in the map
-  // based on current array index so first load keeps newest-first
-  let changed = false;
-  posts.forEach((p, i) => {
-    if (map[p.id] === undefined) { map[p.id] = i + 1; changed = true; }
-  });
-  if (changed) saveSortOrders(map);
-  // sort by stored order
-  posts.sort((a, b) => map[a.id] - map[b.id]);
-  return posts;
-}
-
-function movePostToRank(postId, newRank, totalPosts) {
-  const map = loadSortOrders();
-  // Clamp
-  newRank = Math.max(1, Math.min(newRank, totalPosts));
-  const oldRank = map[postId];
-  if (oldRank === newRank) return;
-  // Shift other posts
-  if (newRank < oldRank) {
-    // moving up: bump down posts that were between newRank and oldRank-1
-    Object.keys(map).forEach(id => {
-      if (id != postId && map[id] >= newRank && map[id] < oldRank) map[id]++;
-    });
-  } else {
-    // moving down: bump up posts that were between oldRank+1 and newRank
-    Object.keys(map).forEach(id => {
-      if (id != postId && map[id] > oldRank && map[id] <= newRank) map[id]--;
-    });
-  }
-  map[postId] = newRank;
-  saveSortOrders(map);
 }
 
 // --- IndexedDB ---
@@ -366,130 +257,12 @@ function postDomain(post) {
   return post.domain || 'longform';
 }
 
-// --- Derive available years and months ---
-
-function getYearsMonths(posts) {
-  const map = {};
-  posts.forEach(p => {
-    const [year, month] = p.date.split('-');
-    if (!map[year]) map[year] = new Set();
-    map[year].add(month);
-  });
-  const result = {};
-  Object.keys(map).sort((a, b) => b - a).forEach(y => {
-    result[y] = [...map[y]].sort((a, b) => a - b);
-  });
-  return result;
-}
-
-const MONTH_NAMES = {
-  '01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
-  '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'
-};
-
 let POSTS = [];
-let _yearsMonthsAll = {};
-let _allYears = [];
-
-let activeYear = null;
-let activeMonth = null;
 let currentPage = 1;
 const PAGE_SIZE = 30;
 
-function rebuildNav() {
-  _yearsMonthsAll = getYearsMonths(POSTS);
-  _allYears = Object.keys(_yearsMonthsAll).sort((a, b) => b - a);
-  renderNav();
-}
-
-function renderNav() {
-  const yearBtn = document.getElementById('year-btn');
-  const yearDropdown = document.getElementById('year-dropdown');
-
-  yearDropdown.innerHTML = _allYears.map(y =>
-    `<a href="#" class="year-option" data-year="${y}">${y}</a>`
-  ).join('');
-
-  yearDropdown.querySelectorAll('.year-option').forEach(a => {
-    a.addEventListener('click', e => {
-      e.preventDefault();
-      activeYear = a.dataset.year;
-      activeMonth = null;
-      currentPage = 1;
-      yearDropdown.style.display = 'none';
-      updateYearBtn();
-      renderMonths();
-      updateActiveStates();
-      renderStories();
-    });
-  });
-
-  yearBtn.onclick = null;
-  yearBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    yearDropdown.style.display = yearDropdown.style.display === 'block' ? 'none' : 'block';
-  });
-
-  document.addEventListener('click', () => {
-    yearDropdown.style.display = 'none';
-  });
-
-  updateYearBtn();
-  renderMonths();
-}
-
-function updateYearBtn() {
-  const yearBtn = document.getElementById('year-btn');
-  yearBtn.textContent = (activeYear || 'Year') + ' ▾';
-  document.querySelectorAll('.year-option').forEach(a => {
-    a.classList.toggle('active-year', a.dataset.year === activeYear);
-  });
-}
-
-function renderMonths() {
-  const monthLinks = document.getElementById('month-links');
-  const monthPipe = document.getElementById('month-pipe');
-  if (!activeYear || !_yearsMonthsAll[activeYear]) {
-    monthLinks.innerHTML = '';
-    monthPipe.style.display = 'none';
-    return;
-  }
-  monthPipe.style.display = '';
-  const months = _yearsMonthsAll[activeYear];
-  monthLinks.innerHTML = months.map((m, i) =>
-    (i > 0 ? ' | ' : '') +
-    `<a href="#" class="month-link" data-month="${m}">${MONTH_NAMES[m]}</a>`
-  ).join('');
-  monthLinks.querySelectorAll('.month-link').forEach(a => {
-    a.addEventListener('click', e => {
-      e.preventDefault();
-      activeMonth = (activeMonth === a.dataset.month) ? null : a.dataset.month;
-      currentPage = 1;
-      updateActiveStates();
-      renderStories();
-    });
-  });
-  updateActiveStates();
-}
-
-function updateActiveStates() {
-  document.querySelectorAll('.month-link').forEach(a => {
-    a.classList.toggle('active-month', a.dataset.month === activeMonth);
-  });
-  document.querySelectorAll('.year-option').forEach(a => {
-    a.classList.toggle('active-year', a.dataset.year === activeYear);
-  });
-}
-
 function filteredPosts() {
-  const hidden = loadHidden();
-  return POSTS.filter(p => {
-    if (hidden.has(p.id)) return false;
-    const [y, m] = p.date.split('-');
-    if (activeYear && y !== activeYear) return false;
-    if (activeMonth && m !== activeMonth) return false;
-    return true;
-  });
+  return POSTS;
 }
 
 function escapeHtml(str) {
@@ -521,11 +294,9 @@ function renderStories() {
     html += `
       <tr class="athing" id="post-${post.id}" data-post-id="${post.id}" style="height:19px;">
         <td class="title" style="width:22px;text-align:right;vertical-align:top;padding-right:3px;color:#828282;font-size:10pt;">
-          <button class="rank-btn" data-post-id="${post.id}" data-rank="${rank}">${rank}.</button>
+          ${rank}.
         </td>
-        <td class="votelinks" style="width:14px;vertical-align:top;">
-          <a href="#" id="up_${post.id}"><div class="votearrow" title="upvote"></div></a>
-        </td>
+        <td class="votelinks" style="width:14px;vertical-align:top;"></td>
         <td class="title" style="vertical-align:top;">
           <span class="titleline">
             <a href="${href}"${target}>${escapeHtml(post.title)}</a>
@@ -537,7 +308,7 @@ function renderStories() {
         <td colspan="2"></td>
         <td class="subtext" style="padding:0;">
           <a href="#">${agoText}</a>
-          | <a href="#" class="hide-link" data-post-id="${post.id}">hide</a>
+          | <a href="#" class="unhide-link" data-post-id="${post.id}">unhide</a>
           | <a href="/longform/post.html?id=${post.id}${isUserPost ? '&src=user' : ''}">${commentCount} comment${commentCount !== 1 ? 's' : ''}</a>
         </td>
       </tr>
@@ -545,7 +316,7 @@ function renderStories() {
   });
 
   if (allPosts.length === 0) {
-    html = `<tr><td colspan="3" style="padding:20px 8px;color:#828282;font-size:10pt;">No posts for this period.</td></tr>`;
+    html = `<tr><td colspan="3" style="padding:20px 8px;color:#828282;font-size:10pt;">No hidden posts.</td></tr>`;
   }
 
   if (hasMore) {
@@ -560,62 +331,6 @@ function renderStories() {
 
   tbody.innerHTML = html;
 
-  // Wire up rank buttons — click shows an inline input
-  const totalFiltered = allPosts.length;
-  document.querySelectorAll('.rank-btn').forEach(btn => {
-    const pid = Number(btn.dataset.postId);
-    const currentRank = Number(btn.dataset.rank);
-
-    btn.addEventListener('click', () => {
-      // Replace button with a small input pre-filled with current rank
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'rank-input';
-      input.value = currentRank;
-      btn.replaceWith(input);
-      input.select();
-
-      function commit() {
-        const raw = input.value.trim();
-        // Ignore empty or non-numeric input
-        if (raw === '' || !/^-?\d+$/.test(raw)) {
-          renderStories();
-          return;
-        }
-        let n = parseInt(raw, 10);
-        // Negative -> positive
-        if (n < 0) n = Math.abs(n);
-        // Zero -> 1
-        if (n === 0) n = 1;
-        // Cap at list length
-        if (n > totalFiltered) n = totalFiltered;
-        movePostToRank(pid, n, totalFiltered);
-        POSTS = applySortOrders(POSTS);
-        renderStories();
-      }
-
-      input.addEventListener('keydown', e => {
-        if (e.key === 'Enter') { e.preventDefault(); commit(); }
-        if (e.key === 'Escape') { renderStories(); }
-      });
-      input.addEventListener('blur', commit);
-    });
-  });
-
-  // Wire up upvote arrows — move post up one position
-  pagePosts.forEach((post, i) => {
-    const rank = start + i + 1;
-    const upEl = document.getElementById('up_' + post.id);
-    if (!upEl) return;
-    upEl.addEventListener('click', e => {
-      e.preventDefault();
-      if (rank <= 1) return;
-      movePostToRank(post.id, rank - 1, totalFiltered);
-      POSTS = applySortOrders(POSTS);
-      renderStories();
-    });
-  });
-
   const moreLink = document.getElementById('more-link');
   if (moreLink) {
     moreLink.addEventListener('click', e => {
@@ -626,11 +341,12 @@ function renderStories() {
     });
   }
 
-  // Wire up hide links
-  document.querySelectorAll('.hide-link').forEach(a => {
+  // Wire up unhide links
+  document.querySelectorAll('.unhide-link').forEach(a => {
     a.addEventListener('click', e => {
       e.preventDefault();
-      hidePost(Number(a.dataset.postId));
+      unhidePost(Number(a.dataset.postId));
+      POSTS = POSTS.filter(p => p.id !== Number(a.dataset.postId));
       renderStories();
     });
   });
@@ -639,15 +355,15 @@ function renderStories() {
 async function init() {
   await openDB();
   await openCommentsDB();
+  const hidden = loadHidden();
   const userPosts = await getAllUserPosts();
-  const counts = await getCommentCountsForPosts(userPosts.map(p => p.id));
-  userPosts.forEach(p => { p._commentCount = counts[p.id] || 0; });
-  // Apply stored sort order (defaults to newest-first on first load)
-  userPosts.sort((a, b) => b.createdAt - a.createdAt);
-  POSTS = applySortOrders(userPosts);
-  rebuildNav();
+  // Only show hidden posts
+  const hiddenPosts = userPosts.filter(p => hidden.has(p.id));
+  const counts = await getCommentCountsForPosts(hiddenPosts.map(p => p.id));
+  hiddenPosts.forEach(p => { p._commentCount = counts[p.id] || 0; });
+  hiddenPosts.sort((a, b) => b.createdAt - a.createdAt);
+  POSTS = hiddenPosts;
   renderStories();
-  updateHiddenFooter();
 }
 
 init();
