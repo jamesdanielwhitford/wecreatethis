@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#02db02">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Long Form">
+  <title>Customise | Long Form</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <script>(function(){var b=localStorage.getItem('lf-brand'),k=localStorage.getItem('lf-ink'),r=document.documentElement.style;if(b)r.setProperty('--brand',b);if(k)r.setProperty('--ink',k);})();</script>
+  <style>
+    :root { --brand: #02db02; --ink: #000000; }
+    body { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; margin: 8px; background: #ffffff; }
+    td { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; }
+    a:link { color: var(--ink); text-decoration: none; }
+    a:visited { color: #828282; text-decoration: none; }
+    .pagetop { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #222222; line-height: 12px; }
+    .hnname { margin-left: 1px; margin-right: 5px; }
+    .yclinks { font-family: Verdana, Geneva, sans-serif; font-size: 8pt; color: #828282; }
+    .yclinks a:link, .yclinks a:visited { color: #828282; }
+    #hnmain { min-width: 796px; }
+    .pagetop a:link, .pagetop a:visited { color: var(--ink); }
+
+    .customise-form { padding: 12px 16px 20px; }
+    .customise-form table { border-spacing: 0; }
+    .customise-form td { padding: 6px 8px; vertical-align: middle; }
+    .customise-form td:first-child { text-align: right; color: #828282; font-size: 10pt; white-space: nowrap; }
+
+    .customise-form input[type="text"] {
+      border: 1px solid #ccc;
+      padding: 3px 4px;
+      font-size: 10pt;
+      font-family: Verdana, Geneva, sans-serif;
+      width: 220px;
+    }
+    .customise-form input[type="color"] {
+      width: 44px;
+      height: 26px;
+      border: 1px solid #ccc;
+      padding: 1px;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+    .color-row { display: flex; align-items: center; gap: 8px; }
+    .color-hex {
+      font-family: monospace;
+      font-size: 10pt;
+      color: #828282;
+      width: 70px;
+    }
+    input[type="submit"] {
+      font-family: Verdana, Geneva, sans-serif;
+      font-size: 10pt;
+      cursor: pointer;
+      padding: 3px 10px;
+    }
+    .reset-link { font-size: 10pt; color: #828282; text-decoration: underline; cursor: pointer; }
+
+    /* Live preview strip */
+    #preview-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 10px;
+      background: var(--brand);
+      font-size: 10pt;
+      font-family: Verdana, Geneva, sans-serif;
+      font-weight: bold;
+      color: var(--ink);
+      margin-top: 4px;
+    }
+    #preview-bar span { font-size: 9pt; font-weight: normal; color: var(--ink); }
+
+    @media only screen and (min-width: 300px) and (max-width: 750px) {
+      #hnmain { width: 100%; min-width: 0; }
+      body { padding: 0; margin: 0; width: 100%; }
+      td { height: inherit !important; }
+      span.pagetop { display: block; margin: 3px 5px; font-size: 12px; line-height: normal; }
+      span.pagetop b { display: block; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<center>
+<table id="hnmain" border="0" cellpadding="0" cellspacing="0" width="85%" bgcolor="#f6f6ef">
+  <tbody>
+
+  <!-- Header bar -->
+  <tr>
+    <td style="background:var(--brand)">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="padding:2px">
+        <tbody>
+        <tr>
+          <td style="width:18px;padding-right:4px;">
+            <a href="/longform/">
+              <div style="width:18px;height:18px;border:1px solid #ffffff;background:var(--brand);display:flex;align-items:center;justify-content:center;">
+                <svg width="10" height="12" viewBox="0 0 5 6" style="display:block;image-rendering:pixelated;">
+                  <rect fill="white" x="1" y="0" width="3" height="1"/>
+                  <rect fill="white" x="0" y="1" width="1" height="1"/>
+                  <rect fill="white" x="4" y="1" width="1" height="1"/>
+                  <rect fill="white" x="0" y="2" width="1" height="1"/>
+                  <rect fill="white" x="0" y="3" width="1" height="1"/>
+                  <rect fill="white" x="0" y="4" width="1" height="1"/>
+                  <rect fill="white" x="4" y="4" width="1" height="1"/>
+                  <rect fill="white" x="1" y="5" width="3" height="1"/>
+                </svg>
+              </div>
+            </a>
+          </td>
+          <td>
+            <span class="pagetop">
+              <b class="hnname"><a href="/longform/" style="color:var(--ink);font-weight:700;" id="site-name">Long Form</a></b>
+              <span style="color:var(--ink);">customise</span>
+            </span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Spacer -->
+  <tr style="height:10px;"><td></td></tr>
+
+  <!-- Form -->
+  <tr>
+    <td>
+      <div class="customise-form">
+        <table>
+          <tbody>
+            <tr>
+              <td>site name</td>
+              <td>
+                <input type="text" id="input-name" maxlength="32" autocomplete="off" placeholder="Long Form">
+                <div style="font-size:8pt;color:#828282;margin-top:2px;">max 32 characters</div>
+              </td>
+            </tr>
+            <tr>
+              <td>brand color</td>
+              <td>
+                <div class="color-row">
+                  <input type="color" id="input-brand" value="#02db02">
+                  <span class="color-hex" id="hex-brand">#02db02</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>link color</td>
+              <td>
+                <div class="color-row">
+                  <input type="color" id="input-ink" value="#000000">
+                  <span class="color-hex" id="hex-ink">#000000</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>preview</td>
+              <td>
+                <div id="preview-bar">
+                  <span id="preview-name">Long Form</span>
+                  <span>| new | customise</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td></td>
+              <td style="padding-top:10px;">
+                <input type="button" id="btn-save" value="save">
+                &nbsp;<span class="reset-link" id="btn-reset">reset to defaults</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </td>
+  </tr>
+
+  <!-- Footer -->
+  <tr style="height:10px;"><td></td></tr>
+  <tr>
+    <td>
+      <table width="100%" cellspacing="0" cellpadding="1">
+        <tbody>
+        <tr>
+          <td style="border-top:1px solid var(--brand);"></td>
+        </tr>
+        <tr>
+          <td class="yclinks" style="text-align:center;padding:5px 0 8px;">
+            <a href="/longform/customise">Customise</a> |
+            <a href="#">About</a> |
+            <a href="#">Contact</a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </td>
+  </tr>
+
+  </tbody>
+</table>
+</center>
+
+<script>
+const DEFAULTS = { brand: '#02db02', ink: '#000000', name: 'Long Form' };
+
+function loadSettings() {
+  return {
+    brand: localStorage.getItem('lf-brand') || DEFAULTS.brand,
+    ink:   localStorage.getItem('lf-ink')   || DEFAULTS.ink,
+    name:  localStorage.getItem('lf-name')  || DEFAULTS.name,
+  };
+}
+
+function applyToPage(s) {
+  document.documentElement.style.setProperty('--brand', s.brand);
+  document.documentElement.style.setProperty('--ink', s.ink);
+  const siteNameEl = document.getElementById('site-name');
+  if (siteNameEl) siteNameEl.textContent = s.name || DEFAULTS.name;
+}
+
+function updatePreview(s) {
+  document.getElementById('preview-bar').style.background = s.brand;
+  document.getElementById('preview-bar').style.color = s.ink;
+  document.querySelectorAll('#preview-bar span').forEach(el => el.style.color = s.ink);
+  document.getElementById('preview-name').textContent = s.name || DEFAULTS.name;
+}
+
+// Init
+const settings = loadSettings();
+applyToPage(settings);
+
+const inputBrand = document.getElementById('input-brand');
+const inputInk   = document.getElementById('input-ink');
+const inputName  = document.getElementById('input-name');
+const hexBrand   = document.getElementById('hex-brand');
+const hexInk     = document.getElementById('hex-ink');
+
+inputBrand.value = settings.brand;
+inputInk.value   = settings.ink;
+inputName.value  = settings.name !== DEFAULTS.name ? settings.name : '';
+hexBrand.textContent = settings.brand;
+hexInk.textContent   = settings.ink;
+updatePreview(settings);
+
+function currentValues() {
+  return {
+    brand: inputBrand.value,
+    ink:   inputInk.value,
+    name:  inputName.value.trim() || DEFAULTS.name,
+  };
+}
+
+inputBrand.addEventListener('input', () => {
+  hexBrand.textContent = inputBrand.value;
+  updatePreview(currentValues());
+  document.documentElement.style.setProperty('--brand', inputBrand.value);
+});
+
+inputInk.addEventListener('input', () => {
+  hexInk.textContent = inputInk.value;
+  updatePreview(currentValues());
+  document.documentElement.style.setProperty('--ink', inputInk.value);
+});
+
+inputName.addEventListener('input', () => {
+  updatePreview(currentValues());
+});
+
+document.getElementById('btn-save').addEventListener('click', () => {
+  const s = currentValues();
+  localStorage.setItem('lf-brand', s.brand);
+  localStorage.setItem('lf-ink',   s.ink);
+  if (s.name && s.name !== DEFAULTS.name) {
+    localStorage.setItem('lf-name', s.name);
+  } else {
+    localStorage.removeItem('lf-name');
+  }
+  applyToPage(s);
+  const btn = document.getElementById('btn-save');
+  btn.value = 'saved!';
+  setTimeout(() => { btn.value = 'save'; }, 1500);
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  localStorage.removeItem('lf-brand');
+  localStorage.removeItem('lf-ink');
+  localStorage.removeItem('lf-name');
+  inputBrand.value = DEFAULTS.brand;
+  inputInk.value   = DEFAULTS.ink;
+  inputName.value  = '';
+  hexBrand.textContent = DEFAULTS.brand;
+  hexInk.textContent   = DEFAULTS.ink;
+  applyToPage(DEFAULTS);
+  updatePreview(DEFAULTS);
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/longform/sw.js', { scope: '/longform/' });
+}
+</script>
+
+</body>
+</html>

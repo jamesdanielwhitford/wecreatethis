@@ -10,17 +10,20 @@
   <title>Submit | Long Form</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
+  <script>(function(){var b=localStorage.getItem('lf-brand'),k=localStorage.getItem('lf-ink'),r=document.documentElement.style;if(b)r.setProperty('--brand',b);if(k)r.setProperty('--ink',k);})();</script>
   <style>
+    :root { --brand: #02db02; --ink: #000000; }
     body { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; margin: 8px; background: #ffffff; }
     td { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; }
     input, textarea, select { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; }
-    a:link { color: #000000; text-decoration: none; }
+    a:link { color: var(--ink); text-decoration: none; }
     a:visited { color: #828282; text-decoration: none; }
     .pagetop { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #222222; line-height: 12px; }
     .hnname { margin-left: 1px; margin-right: 5px; }
     .yclinks { font-family: Verdana, Geneva, sans-serif; font-size: 8pt; color: #828282; }
+    .yclinks a:link, .yclinks a:visited { color: #828282; }
     #hnmain { min-width: 796px; }
-    .pagetop a:link, .pagetop a:visited { color: #000000; }
+    .pagetop a:link, .pagetop a:visited { color: var(--ink); }
 
     /* Form styles */
     .submit-form { padding: 8px 16px 16px; }
@@ -51,7 +54,7 @@
       border-right: none;
     }
     .type-tab:last-child { border-right: 1px solid #ccc; }
-    .type-tab.active { background: #02db02; color: #000; border-color: #02db02; font-weight: bold; }
+    .type-tab.active { background: var(--brand); color: var(--ink); border-color: var(--brand); font-weight: bold; }
     .type-tab:hover:not(.active) { background: #f0f0f0; }
     .field-group { display: none; }
     .field-group.visible { display: table-row; }
@@ -83,13 +86,13 @@
 
   <!-- Header bar -->
   <tr>
-    <td bgcolor="#02db02">
+    <td style="background:var(--brand)">
       <table border="0" cellpadding="0" cellspacing="0" width="100%" style="padding:2px">
         <tbody>
         <tr>
           <td style="width:18px;padding-right:4px;">
             <a href="/longform/">
-              <div style="width:18px;height:18px;border:1px solid #ffffff;background:#02db02;display:flex;align-items:center;justify-content:center;">
+              <div style="width:18px;height:18px;border:1px solid #ffffff;background:var(--brand);display:flex;align-items:center;justify-content:center;">
                 <svg width="10" height="12" viewBox="0 0 5 6" style="display:block;image-rendering:pixelated;">
                   <rect fill="white" x="1" y="0" width="3" height="1"/>
                   <rect fill="white" x="0" y="1" width="1" height="1"/>
@@ -105,7 +108,7 @@
           </td>
           <td>
             <span class="pagetop">
-              <b class="hnname"><a href="/longform/" style="color:#000000;font-weight:700;">Long Form</a></b>
+              <b class="hnname"><a href="/longform/" style="color:var(--ink);font-weight:700;" id="site-name">Long Form</a></b>
               submit
             </span>
           </td>
@@ -188,11 +191,11 @@
       <table width="100%" cellspacing="0" cellpadding="1">
         <tbody>
         <tr>
-          <td style="border-top:1px solid #02db02;"></td>
+          <td style="border-top:1px solid var(--brand);"></td>
         </tr>
         <tr>
           <td class="yclinks" style="text-align:center;padding:5px 0 8px;">
-            <a href="#">Guidelines</a> |
+            <a href="/longform/customise">Customise</a> |
             <a href="#">About</a> |
             <a href="#">Contact</a>
           </td>
@@ -300,6 +303,11 @@ document.getElementById('submit-form').addEventListener('submit', async (e) => {
   await savePost(post);
   window.location.href = '/longform/';
 });
+
+(function(){
+  const name = localStorage.getItem('lf-name');
+  if (name) { const el = document.getElementById('site-name'); if (el) el.textContent = name; }
+})();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/longform/sw.js', { scope: '/longform/' });

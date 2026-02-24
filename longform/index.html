@@ -10,23 +10,26 @@
   <title>Long Form</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
+  <script>(function(){var b=localStorage.getItem('lf-brand'),k=localStorage.getItem('lf-ink'),r=document.documentElement.style;if(b)r.setProperty('--brand',b);if(k)r.setProperty('--ink',k);})();</script>
   <style>
+    :root { --brand: #02db02; --ink: #000000; }
     body { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; margin: 8px; background: #ffffff; }
     td { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; }
     input { font-family: monospace; font-size: 10pt; }
-    a:link { color: #000000; text-decoration: none; }
+    a:link { color: var(--ink); text-decoration: none; }
     a:visited { color: #828282; text-decoration: none; }
     .default { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; }
     .title { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; overflow: hidden; }
     .subtext { font-family: Verdana, Geneva, sans-serif; font-size: 7pt; color: #828282; }
     .subtext td { font-family: Verdana, Geneva, sans-serif; font-size: 7pt; color: #828282; }
     .yclinks { font-family: Verdana, Geneva, sans-serif; font-size: 8pt; color: #828282; }
+    .yclinks a:link, .yclinks a:visited { color: #828282; }
     .pagetop { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #222222; line-height: 12px; }
     .comhead { font-family: Verdana, Geneva, sans-serif; font-size: 8pt; color: #828282; }
     .hnname { margin-left: 1px; margin-right: 5px; }
     #hnmain { min-width: 796px; }
     .title a { word-break: break-word; }
-    .pagetop a:link, .pagetop a:visited { color: #000000; }
+    .pagetop a:link, .pagetop a:visited { color: var(--ink); }
     .subtext a:link, .subtext a:visited { color: #828282; }
     .subtext a:hover { text-decoration: underline; }
     .comhead a:link, .comhead a:visited { color: #828282; }
@@ -45,24 +48,24 @@
     /* Year dropdown */
     #year-selector { position: relative; display: inline-block; }
     #year-btn {
-      color: #000000; font-size: 10pt; font-family: Verdana, Geneva, sans-serif;
+      color: var(--ink); font-size: 10pt; font-family: Verdana, Geneva, sans-serif;
       cursor: pointer; font-weight: bold; text-decoration: underline;
       background: none; border: none; padding: 0; margin-right: 6px;
     }
     #year-dropdown {
       display: none; position: absolute; top: 18px; left: 0;
-      background: #02db02; border: 1px solid #009900;
+      background: var(--brand); border: 1px solid #009900;
       z-index: 200; min-width: 60px;
     }
     #year-dropdown a {
       display: block; padding: 3px 10px;
-      color: #000000; font-size: 9pt; text-decoration: none;
+      color: var(--ink); font-size: 9pt; text-decoration: none;
     }
-    #year-dropdown a:hover { background: #00bb00; }
+    #year-dropdown a:hover { filter: brightness(0.85); }
     #year-dropdown a.active-year { font-weight: bold; }
 
     /* Month links in nav bar */
-    #month-links a { color: #000000; font-size: 9pt; text-decoration: none; padding: 0 4px; }
+    #month-links a { color: var(--ink); font-size: 9pt; text-decoration: none; padding: 0 4px; }
     #month-links a:hover { text-decoration: underline; }
     #month-links a.active-month { font-weight: bold; text-decoration: underline; }
 
@@ -92,13 +95,13 @@
 
   <!-- Header bar -->
   <tr>
-    <td bgcolor="#02db02">
+    <td style="background:var(--brand)">
       <table border="0" cellpadding="0" cellspacing="0" width="100%" style="padding:2px">
         <tbody>
         <tr>
           <td style="width:18px;padding-right:4px;">
             <a href="/longform/">
-              <div style="width:18px;height:18px;border:1px solid #ffffff;background:#02db02;display:flex;align-items:center;justify-content:center;">
+              <div style="width:18px;height:18px;border:1px solid #ffffff;background:var(--brand);display:flex;align-items:center;justify-content:center;">
                 <svg width="10" height="12" viewBox="0 0 5 6" style="display:block;image-rendering:pixelated;">
                   <rect fill="white" x="1" y="0" width="3" height="1"/>
                   <rect fill="white" x="0" y="1" width="1" height="1"/>
@@ -114,7 +117,7 @@
           </td>
           <td>
             <span class="pagetop">
-              <b class="hnname"><a href="/longform/" style="color:#000000;font-weight:700;">Long Form</a></b>
+              <b class="hnname"><a href="/longform/" style="color:var(--ink);font-weight:700;" id="site-name">Long Form</a></b>
               <span id="year-selector">
                 <button id="year-btn"></button>
                 <div id="year-dropdown"></div>
@@ -152,11 +155,11 @@
       <table width="100%" cellspacing="0" cellpadding="1">
         <tbody>
         <tr>
-          <td style="border-top:1px solid #02db02;"></td>
+          <td style="border-top:1px solid var(--brand);"></td>
         </tr>
         <tr>
           <td class="yclinks" style="text-align:center;padding:5px 0 8px;">
-            <a href="#">Guidelines</a> |
+            <a href="/longform/customise">Customise</a> |
             <a href="#">About</a> |
             <a href="#">Contact</a>
           </td>
@@ -493,6 +496,11 @@ async function init() {
 }
 
 init();
+
+(function(){
+  const name = localStorage.getItem('lf-name');
+  if (name) { const el = document.getElementById('site-name'); if (el) el.textContent = name; }
+})();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/longform/sw.js', { scope: '/longform/' });
