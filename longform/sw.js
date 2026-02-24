@@ -1,4 +1,4 @@
-const CACHE_NAME = 'longform-v6';
+const CACHE_NAME = 'longform-v7';
 
 function normalizeUrl(url) {
   const urlObj = new URL(url);
@@ -61,6 +61,11 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }
 
