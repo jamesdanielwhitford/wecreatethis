@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#02db02">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Long Form">
+  <title>Submit | Long Form</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    body { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; margin: 8px; background: #ffffff; }
+    td { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; }
+    input, textarea, select { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; }
+    a:link { color: #000000; text-decoration: none; }
+    a:visited { color: #828282; text-decoration: none; }
+    .pagetop { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #222222; line-height: 12px; }
+    .hnname { margin-left: 1px; margin-right: 5px; }
+    .yclinks { font-family: Verdana, Geneva, sans-serif; font-size: 8pt; color: #828282; }
+    #hnmain { min-width: 796px; }
+    .pagetop a:link, .pagetop a:visited { color: #000000; }
+
+    /* Form styles */
+    .submit-form { padding: 8px 16px 16px; }
+    .submit-form table { border-spacing: 0; }
+    .submit-form td { padding: 4px 6px; vertical-align: top; }
+    .submit-form td:first-child { text-align: right; color: #828282; font-size: 10pt; white-space: nowrap; padding-top: 6px; }
+    .submit-form input[type="text"],
+    .submit-form input[type="url"],
+    .submit-form textarea {
+      border: 1px solid #ccc;
+      padding: 3px 4px;
+      font-size: 10pt;
+      font-family: Verdana, Geneva, sans-serif;
+    }
+    .submit-form input[type="text"],
+    .submit-form input[type="url"] { width: 400px; }
+    .submit-form textarea { width: 400px; height: 200px; resize: vertical; }
+    .submit-form input[type="file"] { font-size: 10pt; }
+    .type-tabs { display: flex; gap: 0; margin-bottom: 0; }
+    .type-tab {
+      padding: 3px 12px;
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: pointer;
+      font-family: Verdana, Geneva, sans-serif;
+      font-size: 10pt;
+      color: #828282;
+      border-right: none;
+    }
+    .type-tab:last-child { border-right: 1px solid #ccc; }
+    .type-tab.active { background: #02db02; color: #000; border-color: #02db02; font-weight: bold; }
+    .type-tab:hover:not(.active) { background: #f0f0f0; }
+    .field-group { display: none; }
+    .field-group.visible { display: table-row; }
+    input[type="submit"] {
+      font-family: Verdana, Geneva, sans-serif;
+      font-size: 10pt;
+      cursor: pointer;
+      padding: 3px 10px;
+    }
+    .hint { font-size: 8pt; color: #828282; margin-top: 2px; }
+
+    @media only screen and (min-width: 300px) and (max-width: 750px) {
+      #hnmain { width: 100%; min-width: 0; }
+      body { padding: 0; margin: 0; width: 100%; }
+      td { height: inherit !important; }
+      span.pagetop { display: block; margin: 3px 5px; font-size: 12px; line-height: normal; }
+      span.pagetop b { display: block; font-size: 15px; }
+      .submit-form input[type="text"],
+      .submit-form input[type="url"],
+      .submit-form textarea { width: calc(100vw - 120px); }
+    }
+  </style>
+</head>
+<body>
+
+<center>
+<table id="hnmain" border="0" cellpadding="0" cellspacing="0" width="85%" bgcolor="#f6f6ef">
+  <tbody>
+
+  <!-- Header bar -->
+  <tr>
+    <td bgcolor="#02db02">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="padding:2px">
+        <tbody>
+        <tr>
+          <td style="width:18px;padding-right:4px;">
+            <a href="/longform/">
+              <div style="width:18px;height:18px;border:1px solid #ffffff;background:#02db02;display:flex;align-items:center;justify-content:center;">
+                <svg width="10" height="12" viewBox="0 0 5 6" style="display:block;image-rendering:pixelated;">
+                  <rect fill="white" x="1" y="0" width="3" height="1"/>
+                  <rect fill="white" x="0" y="1" width="1" height="1"/>
+                  <rect fill="white" x="4" y="1" width="1" height="1"/>
+                  <rect fill="white" x="0" y="2" width="1" height="1"/>
+                  <rect fill="white" x="0" y="3" width="1" height="1"/>
+                  <rect fill="white" x="0" y="4" width="1" height="1"/>
+                  <rect fill="white" x="4" y="4" width="1" height="1"/>
+                  <rect fill="white" x="1" y="5" width="3" height="1"/>
+                </svg>
+              </div>
+            </a>
+          </td>
+          <td>
+            <span class="pagetop">
+              <b class="hnname"><a href="/longform/" style="color:#000000;font-weight:700;">Long Form</a></b>
+              submit
+            </span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Spacer -->
+  <tr style="height:10px;"><td></td></tr>
+
+  <!-- Form -->
+  <tr>
+    <td>
+      <div class="submit-form">
+        <form id="submit-form">
+          <table>
+            <tbody>
+              <tr>
+                <td>title</td>
+                <td><input type="text" id="post-title" maxlength="200" required autocomplete="off"></td>
+              </tr>
+              <tr>
+                <td>type</td>
+                <td>
+                  <div class="type-tabs">
+                    <button type="button" class="type-tab active" data-type="link">link</button>
+                    <button type="button" class="type-tab" data-type="txt">txt</button>
+                    <button type="button" class="type-tab" data-type="file">file</button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- link field -->
+              <tr class="field-group" id="field-link">
+                <td>url</td>
+                <td>
+                  <input type="url" id="post-url" placeholder="https://">
+                  <div class="hint">Link opens directly when title is clicked.</div>
+                </td>
+              </tr>
+
+              <!-- txt field -->
+              <tr class="field-group" id="field-txt">
+                <td>text</td>
+                <td>
+                  <textarea id="post-text" placeholder="Write your post here..."></textarea>
+                  <div class="hint">Opens as a plain reader in a new tab.</div>
+                </td>
+              </tr>
+
+              <!-- file field -->
+              <tr class="field-group" id="field-file">
+                <td>file</td>
+                <td>
+                  <input type="file" id="post-file">
+                  <div class="hint">File is stored locally and opens in a new tab.</div>
+                </td>
+              </tr>
+
+              <tr>
+                <td></td>
+                <td style="padding-top:10px;">
+                  <input type="submit" value="submit">
+                  &nbsp;<a href="/longform/" style="font-size:10pt;color:#828282;">cancel</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </form>
+      </div>
+    </td>
+  </tr>
+
+  <!-- Footer -->
+  <tr style="height:10px;"><td></td></tr>
+  <tr>
+    <td>
+      <table width="100%" cellspacing="0" cellpadding="1">
+        <tbody>
+        <tr>
+          <td style="border-top:1px solid #02db02;"></td>
+        </tr>
+        <tr>
+          <td class="yclinks" style="text-align:center;padding:5px 0 8px;">
+            <a href="#">Guidelines</a> |
+            <a href="#">About</a> |
+            <a href="#">Contact</a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </td>
+  </tr>
+
+  </tbody>
+</table>
+</center>
+
+<script>
+// --- Type tab switching ---
+
+let activeType = 'link';
+
+document.querySelectorAll('.type-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeType = btn.dataset.type;
+    document.querySelectorAll('.type-tab').forEach(b => b.classList.toggle('active', b === btn));
+    document.getElementById('field-link').classList.toggle('visible', activeType === 'link');
+    document.getElementById('field-txt').classList.toggle('visible', activeType === 'txt');
+    document.getElementById('field-file').classList.toggle('visible', activeType === 'file');
+  });
+});
+
+// Show link field by default
+document.getElementById('field-link').classList.add('visible');
+
+// --- IndexedDB ---
+
+let db;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('longform-posts', 1);
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('posts')) {
+        const store = d.createObjectStore('posts', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('createdAt', 'createdAt', { unique: false });
+      }
+    };
+    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function savePost(post) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('posts', 'readwrite');
+    const req = tx.objectStore('posts').add(post);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// --- Form submit ---
+
+document.getElementById('submit-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const title = document.getElementById('post-title').value.trim();
+  if (!title) return;
+
+  const now = Date.now();
+  const dateStr = new Date(now).toISOString().slice(0, 7); // YYYY-MM
+
+  const post = {
+    title,
+    type: activeType,
+    author: 'james',
+    score: 1,
+    comments: 0,
+    date: dateStr,
+    createdAt: now,
+  };
+
+  if (activeType === 'link') {
+    const url = document.getElementById('post-url').value.trim();
+    if (!url) { alert('Please enter a URL.'); return; }
+    post.url = url;
+  } else if (activeType === 'txt') {
+    const text = document.getElementById('post-text').value.trim();
+    if (!text) { alert('Please enter some text.'); return; }
+    post.text = text;
+  } else if (activeType === 'file') {
+    const fileInput = document.getElementById('post-file');
+    if (!fileInput.files.length) { alert('Please choose a file.'); return; }
+    const file = fileInput.files[0];
+    post.fileName = file.name;
+    post.fileMime = file.type;
+    // Read file as data URL for offline storage
+    post.fileData = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  await openDB();
+  await savePost(post);
+  window.location.href = '/longform/';
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/longform/sw.js', { scope: '/longform/' });
+}
+</script>
+
+</body>
+</html>

@@ -157,65 +157,16 @@
 <script>
 const S_GIF = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
-const POSTS = [
-  { id: 1,  title: "Why I Built a New Kind of News Reader",        domain: "clankernews.com", score: 214, author: "james",   ago: "1 day ago",    comments: 47, date: "2026-02" },
-  { id: 2,  title: "The Offline-First Manifesto",                  domain: "clankernews.com", score: 189, author: "james",   ago: "3 days ago",   comments: 32, date: "2026-02" },
-  { id: 3,  title: "Building PWAs That Actually Work",             domain: "clankernews.com", score: 156, author: "james",   ago: "1 week ago",   comments: 28, date: "2026-01" },
-  { id: 4,  title: "IndexedDB: The Underrated Database",           domain: "clankernews.com", score: 301, author: "james",   ago: "2 weeks ago",  comments: 61, date: "2026-01" },
-  { id: 5,  title: "Service Workers From Scratch",                 domain: "clankernews.com", score: 178, author: "james",   ago: "3 weeks ago",  comments: 39, date: "2026-01" },
-  { id: 6,  title: "Vanilla JS is Enough",                         domain: "clankernews.com", score: 422, author: "james",   ago: "1 month ago",  comments: 88, date: "2025-12" },
-  { id: 7,  title: "How I Shipped Six Apps in Six Months",         domain: "clankernews.com", score: 267, author: "james",   ago: "5 weeks ago",  comments: 54, date: "2025-11" },
-  { id: 8,  title: "The Case for Table-Based Layouts in 2025",     domain: "clankernews.com", score: 143, author: "james",   ago: "2 months ago", comments: 71, date: "2025-10" },
-  { id: 9,  title: "Making Mobile Games With Pure JavaScript",      domain: "clankernews.com", score: 198, author: "james",   ago: "3 months ago", comments: 43, date: "2025-09" },
-  { id: 10, title: "GPS, Compass and the Browser's Sensor APIs",   domain: "clankernews.com", score: 134, author: "james",   ago: "4 months ago", comments: 29, date: "2025-08" },
-  { id: 11, title: "Designing for Offline: Lessons Learned",       domain: "clankernews.com", score: 309, author: "james",   ago: "5 months ago", comments: 67, date: "2025-07" },
-  { id: 12, title: "Why Every App Should Be a PWA",                domain: "clankernews.com", score: 245, author: "james",   ago: "6 months ago", comments: 55, date: "2025-06" },
-  { id: 13, title: "Cloudflare Pages: Zero-Config Deployments",    domain: "clankernews.com", score: 176, author: "james",   ago: "7 months ago", comments: 38, date: "2025-05" },
-  { id: 14, title: "Bird Watching App: A Post-Mortem",             domain: "clankernews.com", score: 119, author: "james",   ago: "8 months ago", comments: 22, date: "2025-04" },
-  { id: 15, title: "From React to Vanilla: What I Gained",         domain: "clankernews.com", score: 388, author: "james",   ago: "9 months ago", comments: 93, date: "2025-03" },
-  { id: 16, title: "IndexedDB Migrations the Easy Way",            domain: "clankernews.com", score: 152, author: "james",   ago: "10 months ago",comments: 31, date: "2025-02" },
-  { id: 17, title: "Tarot Cards and WebGL: An Unlikely Pair",      domain: "clankernews.com", score: 201, author: "james",   ago: "11 months ago",comments: 46, date: "2025-01" },
-  { id: 18, title: "Cache Invalidation Is Not That Hard",          domain: "clankernews.com", score: 277, author: "james",   ago: "1 year ago",   comments: 58, date: "2024-12" },
-  { id: 19, title: "The Beauty of the URL Normalization Pattern",  domain: "clankernews.com", score: 164, author: "james",   ago: "1 year ago",   comments: 35, date: "2024-11" },
-  { id: 20, title: "Hello World — Why I Started This Blog",        domain: "clankernews.com", score: 97,  author: "james",   ago: "1 year ago",   comments: 19, date: "2024-10" },
-  { id: 21, title: "The Hidden Cost of Third-Party Scripts",       domain: "clankernews.com", score: 183, author: "james",   ago: "1 year ago",   comments: 41, date: "2024-09" },
-  { id: 22, title: "WebSockets vs Server-Sent Events",             domain: "clankernews.com", score: 229, author: "james",   ago: "1 year ago",   comments: 53, date: "2024-08" },
-  { id: 23, title: "Writing a Tiny CSS Framework",                 domain: "clankernews.com", score: 144, author: "james",   ago: "1 year ago",   comments: 27, date: "2024-07" },
-  { id: 24, title: "Dark Mode Without a Framework",                domain: "clankernews.com", score: 311, author: "james",   ago: "1 year ago",   comments: 64, date: "2024-06" },
-  { id: 25, title: "Animating With the Web Animations API",        domain: "clankernews.com", score: 172, author: "james",   ago: "1 year ago",   comments: 36, date: "2024-05" },
-  { id: 26, title: "How I Use the File System Access API",         domain: "clankernews.com", score: 258, author: "james",   ago: "2 years ago",  comments: 49, date: "2024-04" },
-  { id: 27, title: "Streams API: Underrated and Underused",        domain: "clankernews.com", score: 139, author: "james",   ago: "2 years ago",  comments: 23, date: "2024-03" },
-  { id: 28, title: "Building a Pomodoro Timer From Scratch",       domain: "clankernews.com", score: 196, author: "james",   ago: "2 years ago",  comments: 44, date: "2024-02" },
-  { id: 29, title: "My Approach to Accessible Web Apps",           domain: "clankernews.com", score: 284, author: "james",   ago: "2 years ago",  comments: 61, date: "2024-01" },
-  { id: 30, title: "Deploying to Cloudflare Workers",              domain: "clankernews.com", score: 167, author: "james",   ago: "2 years ago",  comments: 33, date: "2023-12" },
-  { id: 31, title: "TypeScript Is a Tax I Don't Want to Pay",      domain: "clankernews.com", score: 512, author: "james",   ago: "2 years ago",  comments: 112,date: "2023-11" },
-  { id: 32, title: "The Clipboard API Is Actually Good Now",       domain: "clankernews.com", score: 148, author: "james",   ago: "2 years ago",  comments: 29, date: "2023-10" },
-  { id: 33, title: "Lazy Loading Images the Right Way",            domain: "clankernews.com", score: 221, author: "james",   ago: "2 years ago",  comments: 47, date: "2023-09" },
-  { id: 34, title: "CSS Grid for Real Layouts",                    domain: "clankernews.com", score: 293, author: "james",   ago: "2 years ago",  comments: 58, date: "2023-08" },
-  { id: 35, title: "Web Components Are Not Dead",                  domain: "clankernews.com", score: 176, author: "james",   ago: "2 years ago",  comments: 39, date: "2023-07" },
-  { id: 36, title: "Why I Switched From npm to Bun",              domain: "clankernews.com", score: 334, author: "james",   ago: "2 years ago",  comments: 77, date: "2023-06" },
-  { id: 37, title: "The Intl API: Internationalisation for Free",  domain: "clankernews.com", score: 159, author: "james",   ago: "2 years ago",  comments: 31, date: "2023-05" },
-  { id: 38, title: "Debounce and Throttle Without Lodash",         domain: "clankernews.com", score: 208, author: "james",   ago: "2 years ago",  comments: 43, date: "2023-04" },
-  { id: 39, title: "PWA Install Prompts: A Complete Guide",        domain: "clankernews.com", score: 241, author: "james",   ago: "2 years ago",  comments: 52, date: "2023-03" },
-  { id: 40, title: "Testing Vanilla JS Without a Framework",       domain: "clankernews.com", score: 187, author: "james",   ago: "2 years ago",  comments: 38, date: "2023-02" },
-];
-
 // --- URL / post init ---
 
-function getPostId() {
-  return parseInt(new URLSearchParams(window.location.search).get('id'), 10);
+function getParam(name) {
+  return new URLSearchParams(window.location.search).get(name);
 }
 
-const postId = getPostId();
-const post = POSTS.find(p => p.id === postId);
+const postId = parseInt(getParam('id'), 10);
+const postSrc = getParam('src'); // 'user' means load from IndexedDB
 
-if (!post) {
-  document.getElementById('item-tbody').innerHTML =
-    '<tr><td style="padding:20px;color:#828282;font-size:10pt;">Post not found.</td></tr>';
-  throw new Error('Post not found: ' + postId);
-}
-
-document.title = post.title + ' | Long Form';
+let post = null;
 
 // --- Helpers ---
 
@@ -245,6 +196,7 @@ function escapeHtml(str) {
 // --- IndexedDB ---
 
 let db;
+let postsDb;
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -259,6 +211,29 @@ function openDB() {
     };
     req.onsuccess = (e) => { db = e.target.result; resolve(db); };
     req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function openPostsDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('longform-posts', 1);
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('posts')) {
+        d.createObjectStore('posts', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    req.onsuccess = (e) => { postsDb = e.target.result; resolve(postsDb); };
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function getUserPost(id) {
+  return new Promise((resolve, reject) => {
+    const tx = postsDb.transaction('posts', 'readonly');
+    const req = tx.objectStore('posts').get(id);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
   });
 }
 
@@ -304,7 +279,29 @@ function buildTree(comments) {
 
 // --- Render functions ---
 
+function postTitleHref(p) {
+  if (p.type === 'link') return p.url || '#';
+  if (p.type === 'txt') return '/longform/view?id=' + p.id + '&src=user';
+  if (p.type === 'file') return '/longform/view?id=' + p.id + '&src=user';
+  return '#';
+}
+
+function postTitleTarget(p) {
+  return (p.type === 'link' || p.type === 'txt' || p.type === 'file') ? ' target="_blank" rel="noopener"' : '';
+}
+
+function postDomain(p) {
+  if (p.type === 'link' && p.url) {
+    try { return new URL(p.url).hostname.replace(/^www\./, ''); } catch(e) {}
+  }
+  return p.domain || 'longform';
+}
+
 function renderStoryHeader() {
+  const href = escapeHtml(postTitleHref(post));
+  const target = postTitleTarget(post);
+  const domain = escapeHtml(postDomain(post));
+  const agoText = post.createdAt ? timeAgo(post.createdAt) : escapeHtml(post.ago || '');
   return `
     <tr class="athing submission">
       <td align="right" valign="top" class="title"><span class="rank"></span></td>
@@ -313,21 +310,21 @@ function renderStoryHeader() {
       </td>
       <td class="title">
         <span class="titleline">
-          <a href="#">${escapeHtml(post.title)}</a>
-          <span class="sitebit comhead"> (<a href="#" style="color:#828282;">${escapeHtml(post.domain)}</a>)</span>
+          <a href="${href}"${target}>${escapeHtml(post.title)}</a>
+          <span class="sitebit comhead"> (<span style="color:#828282;">${domain}</span>)</span>
         </span>
       </td>
     </tr>
     <tr>
       <td colspan="2"></td>
       <td class="subtext">
-        <span class="score">${post.score} points</span> by
-        <a href="#" class="hnuser">${escapeHtml(post.author)}</a>
-        <span class="age"><a href="#">${escapeHtml(post.ago)}</a></span>
+        <span class="score">${post.score || 1} points</span> by
+        <a href="#" class="hnuser">${escapeHtml(post.author || 'james')}</a>
+        <span class="age"><a href="#">${agoText}</a></span>
         | <a href="#">hide</a>
         | <a href="#">past</a>
         | <a href="#">favorite</a>
-        | <a href="#comments">${post.comments}&nbsp;comments</a>
+        | <a href="#comments">${post.comments || 0}&nbsp;comments</a>
       </td>
     </tr>
     <tr style="height:10px;"><td></td></tr>`;
@@ -404,6 +401,18 @@ function renderComment(node, depth, ancestors) {
 
 async function renderPage() {
   await openDB();
+
+  // Resolve post on first call only
+  if (!post) {
+    await openPostsDB();
+    post = await getUserPost(postId);
+    if (!post) {
+      document.getElementById('fatitem-tbody').innerHTML =
+        '<tr><td style="padding:20px;color:#828282;font-size:10pt;">Post not found.</td></tr>';
+      return;
+    }
+    document.title = post.title + ' | Long Form';
+  }
 
   document.getElementById('fatitem-tbody').innerHTML = renderStoryHeader() + renderCommentForm();
 
