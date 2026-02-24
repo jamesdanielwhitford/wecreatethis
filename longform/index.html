@@ -616,9 +616,11 @@ function renderStories() {
     if (!upEl) return;
     upEl.addEventListener('click', e => {
       e.preventDefault();
-      if (rank <= 1) return;
+      console.log('[upvote] post.id:', post.id, 'rank:', rank, 'totalFiltered:', totalFiltered);
+      if (rank <= 1) { console.log('[upvote] already at top, skipping'); return; }
       movePostToRank(post.id, rank - 1, totalFiltered);
       POSTS = applySortOrders(POSTS);
+      console.log('[upvote] moved to rank', rank - 1, '| new sort:', localStorage.getItem('lf-sort'));
       renderStories();
     });
   });
