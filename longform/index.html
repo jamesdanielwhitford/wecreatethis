@@ -32,21 +32,15 @@
     .comhead a:link, .comhead a:visited { color: #828282; }
     .comhead a:hover { text-decoration: underline; }
     .hnmore a:link, .hnmore a:visited { color: #828282; text-decoration: none; }
-    .stararrow {
-      display: inline-block;
+    .votearrow {
+      width: 10px;
+      height: 10px;
+      border: 0px;
+      margin: 3px 2px 6px;
+      background: url("data:image/svg+xml,%3Csvg height='32' viewBox='0 0 32 16' width='32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m2 27 14-29 14 29z' fill='%23999'/%3E%3C/svg%3E") 0% 0% / 10px, linear-gradient(transparent, transparent) no-repeat;
       cursor: pointer;
-      width: 14px;
-      height: 14px;
-      margin: 2px 2px 4px;
-      vertical-align: middle;
-      opacity: 0;
-      transition: opacity 0.1s;
+      display: block;
     }
-    .stararrow.starred { opacity: 1; }
-    .stararrow.hover-show { opacity: 1; }
-    .stararrow svg { display: block; }
-    .stararrow.starred svg polygon { fill: #999999; stroke: none; }
-    .stararrow:not(.starred) svg polygon { fill: none; stroke: #999999; stroke-width: 1.5; }
 
     /* Year dropdown */
     #year-selector { position: relative; display: inline-block; }
@@ -74,10 +68,6 @@
 
     /* Hidden item */
     tr.hidden-item { display: none; }
-
-    @media (hover: none) {
-      .stararrow { opacity: 1; }
-    }
 
     @media only screen and (min-width: 300px) and (max-width: 750px) {
       #hnmain { width: 100%; min-width: 0; }
@@ -133,7 +123,7 @@
             </span>
           </td>
           <td style="text-align:right;padding-right:4px;">
-            <span class="pagetop"><a href="/longform/" id="all-link">all</a> | <a href="#" id="starred-link">starred</a></span>
+            <span class="pagetop"><a href="/longform/" id="all-link">all</a></span>
           </td>
         </tr>
         </tbody>
@@ -247,20 +237,8 @@ const MONTH_NAMES = {
 
 let activeYear = null;
 let activeMonth = null;
-let starredOnly = false;
 let currentPage = 1;
 const PAGE_SIZE = 30;
-
-// Persist stars in localStorage
-const STARRED_KEY = 'longform_starred';
-function loadStarred() {
-  try { return new Set(JSON.parse(localStorage.getItem(STARRED_KEY) || '[]')); }
-  catch { return new Set(); }
-}
-function saveStarred(set) {
-  localStorage.setItem(STARRED_KEY, JSON.stringify([...set]));
-}
-let starred = loadStarred();
 
 const _yearsMonthsAll = getYearsMonths(POSTS);
 const _allYears = Object.keys(_yearsMonthsAll).sort((a, b) => b - a);
@@ -349,7 +327,6 @@ function updateActiveStates() {
 
 function filteredPosts() {
   return POSTS.filter(p => {
-    if (starredOnly && !starred.has(p.id)) return false;
     const [y, m] = p.date.split('-');
     if (activeYear && y !== activeYear) return false;
     if (activeMonth && m !== activeMonth) return false;
@@ -367,16 +344,11 @@ function renderStories() {
 
   pagePosts.forEach((post, i) => {
     const rank = start + i + 1;
-    const isStarred = starred.has(post.id);
     html += `
       <tr class="athing" id="post-${post.id}" data-post-id="${post.id}" style="height:19px;">
         <td class="title" style="width:22px;text-align:right;vertical-align:top;color:#828282;font-size:10pt;">${rank}.</td>
-        <td class="votelinks" style="width:14px;vertical-align:top;padding-top:2px;">
-          <div class="stararrow${isStarred ? ' starred' : ''}" data-id="${post.id}" title="${isStarred ? 'unstar' : 'star'}">
-            <svg width="14" height="14" viewBox="0 0 14 14">
-              <polygon points="7,1 8.8,5.3 13.5,5.7 10,8.7 11.1,13.3 7,10.7 2.9,13.3 4,8.7 0.5,5.7 5.2,5.3" />
-            </svg>
-          </div>
+        <td class="votelinks" style="width:14px;vertical-align:top;">
+          <a href="#" id="up_${post.id}"><div class="votearrow" title="upvote"></div></a>
         </td>
         <td class="title" style="vertical-align:middle;">
           <span class="titleline">
@@ -425,69 +397,21 @@ function renderStories() {
     });
   }
 
-  // Hover: show star only for the hovered post's rows
-  tbody.querySelectorAll('.stararrow').forEach(el => {
-    const id = el.dataset.id;
-    const rows = tbody.querySelectorAll(`[data-post-id="${id}"]`);
-    rows.forEach(row => {
-      row.addEventListener('mouseenter', () => el.classList.add('hover-show'));
-      row.addEventListener('mouseleave', () => el.classList.remove('hover-show'));
-    });
-  });
-
-  // Star click handlers
-  tbody.querySelectorAll('.stararrow').forEach(el => {
-    el.addEventListener('click', e => {
-      e.preventDefault();
-      const id = Number(el.dataset.id);
-      if (starred.has(id)) {
-        starred.delete(id);
-      } else {
-        starred.add(id);
-      }
-      saveStarred(starred);
-      // If in starred view and unstarring, re-render; otherwise just toggle visually
-      if (starredOnly) {
-        renderStories();
-      } else {
-        el.classList.toggle('starred', starred.has(id));
-        el.title = starred.has(id) ? 'unstar' : 'star';
-      }
-    });
-  });
 }
 
 // "All" link resets filter
 document.getElementById('all-link').addEventListener('click', e => {
   e.preventDefault();
-  starredOnly = false;
   activeYear = null;
   activeMonth = null;
   currentPage = 1;
-  updateStarredLink();
   updateYearBtn();
   renderMonths();
   updateActiveStates();
   renderStories();
 });
 
-// "Starred" link
-document.getElementById('starred-link').addEventListener('click', e => {
-  e.preventDefault();
-  starredOnly = !starredOnly;
-  currentPage = 1;
-  updateStarredLink();
-  renderStories();
-});
-
-function updateStarredLink() {
-  const el = document.getElementById('starred-link');
-  el.style.fontWeight = starredOnly ? 'bold' : '';
-  el.style.textDecoration = starredOnly ? 'underline' : '';
-}
-
 renderNav();
-updateStarredLink();
 renderStories();
 
 if ('serviceWorker' in navigator) {
