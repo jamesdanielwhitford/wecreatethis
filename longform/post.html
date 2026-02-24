@@ -243,6 +243,15 @@ function getUserPost(id) {
   });
 }
 
+function deletePostFromDB(id) {
+  return new Promise((resolve, reject) => {
+    const tx = postsDb.transaction('posts', 'readwrite');
+    const req = tx.objectStore('posts').delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
 function getCommentsByPostId(pid) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction('comments', 'readonly');
@@ -334,8 +343,7 @@ function renderStoryHeader(commentCount) {
       <td class="subtext">
         <span class="age"><a href="#">${agoText}</a></span>
         | <a href="#" id="hide-post-link">${loadHidden().has(postId) ? 'unhide' : 'hide'}</a>
-        | <a href="#">past</a>
-        | <a href="#">favorite</a>
+        | <a href="#" id="delete-post-link">delete</a>
         | <a href="#comments">${commentCount}&nbsp;comment${commentCount !== 1 ? 's' : ''}</a>
       </td>
     </tr>
@@ -482,6 +490,20 @@ function bindEvents() {
         saveHidden(h);
         window.location.href = '/longform/';
       }
+    });
+  }
+
+  // Delete post
+  const deleteLink = document.getElementById('delete-post-link');
+  if (deleteLink) {
+    deleteLink.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (!confirm('Delete "' + (post ? post.title : 'this post') + '"? This cannot be undone.')) return;
+      await deletePostFromDB(postId);
+      const h = loadHidden();
+      h.delete(postId);
+      saveHidden(h);
+      window.location.href = '/longform/';
     });
   }
 
