@@ -175,6 +175,7 @@
 // --- IndexedDB ---
 
 let db;
+let commentsDb;
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -188,6 +189,41 @@ function openDB() {
     };
     req.onsuccess = (e) => { db = e.target.result; resolve(db); };
     req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function openCommentsDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('longform-comments', 1);
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('comments')) {
+        const store = d.createObjectStore('comments', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('postId', 'postId', { unique: false });
+        store.createIndex('parentId', 'parentId', { unique: false });
+      }
+    };
+    req.onsuccess = (e) => { commentsDb = e.target.result; resolve(commentsDb); };
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function getCommentCountsForPosts(postIds) {
+  return new Promise((resolve, reject) => {
+    const counts = {};
+    postIds.forEach(id => { counts[id] = 0; });
+    const tx = commentsDb.transaction('comments', 'readonly');
+    const store = tx.objectStore('comments').index('postId');
+    let pending = postIds.length;
+    if (pending === 0) { resolve(counts); return; }
+    postIds.forEach(id => {
+      const req = store.count(id);
+      req.onsuccess = () => {
+        counts[id] = req.result;
+        if (--pending === 0) resolve(counts);
+      };
+      req.onerror = () => reject(req.error);
+    });
   });
 }
 
@@ -230,6 +266,14 @@ function postTitleTarget(post) {
 function postDomain(post) {
   if (post.type === 'link' && post.url) {
     try { return new URL(post.url).hostname.replace(/^www\./, ''); } catch(e) {}
+  }
+  if (post.type === 'txt') return 'txt';
+  if (post.type === 'file') {
+    if (post.fileName) {
+      const ext = post.fileName.split('.').pop().toLowerCase();
+      if (ext) return ext;
+    }
+    if (post.fileMime) return post.fileMime.split('/').pop().split('+')[0].toLowerCase();
   }
   return post.domain || 'longform';
 }
@@ -382,7 +426,7 @@ function renderStories() {
     const domain = escapeHtml(postDomain(post));
     const isUserPost = !!post.createdAt;
     const agoText = isUserPost ? timeAgo(post.createdAt) : escapeHtml(post.ago || '');
-    const commentCount = post.comments || 0;
+    const commentCount = isUserPost ? (post._commentCount || 0) : (post.comments || 0);
 
     html += `
       <tr class="athing" id="post-${post.id}" data-post-id="${post.id}" style="height:19px;">
@@ -400,8 +444,6 @@ function renderStories() {
       <tr data-post-id="${post.id}">
         <td colspan="2"></td>
         <td class="subtext" style="padding:0;">
-          <span class="score">${post.score || 1} points</span>
-          by <a href="#">${escapeHtml(post.author || 'james')}</a>
           <a href="#">${agoText}</a>
           | <a href="#">hide</a>
           | <a href="/longform/post.html?id=${post.id}${isUserPost ? '&src=user' : ''}">${commentCount} comment${commentCount !== 1 ? 's' : ''}</a>
@@ -439,7 +481,10 @@ function renderStories() {
 
 async function init() {
   await openDB();
+  await openCommentsDB();
   const userPosts = await getAllUserPosts();
+  const counts = await getCommentCountsForPosts(userPosts.map(p => p.id));
+  userPosts.forEach(p => { p._commentCount = counts[p.id] || 0; });
   // User posts newest first, then static posts
   userPosts.sort((a, b) => b.createdAt - a.createdAt);
   POSTS = userPosts;

@@ -294,10 +294,18 @@ function postDomain(p) {
   if (p.type === 'link' && p.url) {
     try { return new URL(p.url).hostname.replace(/^www\./, ''); } catch(e) {}
   }
+  if (p.type === 'txt') return 'txt';
+  if (p.type === 'file') {
+    if (p.fileName) {
+      const ext = p.fileName.split('.').pop().toLowerCase();
+      if (ext) return ext;
+    }
+    if (p.fileMime) return p.fileMime.split('/').pop().split('+')[0].toLowerCase();
+  }
   return p.domain || 'longform';
 }
 
-function renderStoryHeader() {
+function renderStoryHeader(commentCount) {
   const href = escapeHtml(postTitleHref(post));
   const target = postTitleTarget(post);
   const domain = escapeHtml(postDomain(post));
@@ -318,13 +326,11 @@ function renderStoryHeader() {
     <tr>
       <td colspan="2"></td>
       <td class="subtext">
-        <span class="score">${post.score || 1} points</span> by
-        <a href="#" class="hnuser">${escapeHtml(post.author || 'james')}</a>
         <span class="age"><a href="#">${agoText}</a></span>
         | <a href="#">hide</a>
         | <a href="#">past</a>
         | <a href="#">favorite</a>
-        | <a href="#comments">${post.comments || 0}&nbsp;comments</a>
+        | <a href="#comments">${commentCount}&nbsp;comment${commentCount !== 1 ? 's' : ''}</a>
       </td>
     </tr>
     <tr style="height:10px;"><td></td></tr>`;
@@ -414,10 +420,10 @@ async function renderPage() {
     document.title = post.title + ' | Long Form';
   }
 
-  document.getElementById('fatitem-tbody').innerHTML = renderStoryHeader() + renderCommentForm();
-
   const allComments = await getCommentsByPostId(postId);
   const tree = buildTree(allComments);
+
+  document.getElementById('fatitem-tbody').innerHTML = renderStoryHeader(allComments.length) + renderCommentForm();
 
   let commentsHtml = '';
   if (tree.length === 0) {
