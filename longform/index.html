@@ -227,9 +227,14 @@ function saveSortOrders(map) {
 function applySortOrders(posts) {
   const map = loadSortOrders();
   // assign a stable default order to any post not yet in the map
+  // use max existing rank + 1 to avoid collisions with already-ranked posts
   let changed = false;
-  posts.forEach((p, i) => {
-    if (map[p.id] === undefined) { map[p.id] = i + 1; changed = true; }
+  posts.forEach((p) => {
+    if (map[p.id] === undefined) {
+      const maxRank = Object.keys(map).length > 0 ? Math.max(...Object.values(map)) : 0;
+      map[p.id] = maxRank + 1;
+      changed = true;
+    }
   });
   if (changed) saveSortOrders(map);
   // sort by stored order
