@@ -53,9 +53,9 @@
       background: none; border: none; padding: 0; margin-right: 6px;
     }
     #year-dropdown {
-      display: none; position: absolute; top: 18px; left: 0;
+      display: none; position: fixed;
       background: var(--brand); border: 1px solid #009900;
-      z-index: 200; min-width: 60px;
+      z-index: 9999; min-width: 60px;
     }
     #year-dropdown a {
       display: block; padding: 3px 10px;
@@ -427,7 +427,14 @@ function renderNav() {
   yearBtn.onclick = null;
   yearBtn.addEventListener('click', e => {
     e.stopPropagation();
-    yearDropdown.style.display = yearDropdown.style.display === 'block' ? 'none' : 'block';
+    if (yearDropdown.style.display === 'block') {
+      yearDropdown.style.display = 'none';
+    } else {
+      const rect = yearBtn.getBoundingClientRect();
+      yearDropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+      yearDropdown.style.left = rect.left + 'px';
+      yearDropdown.style.display = 'block';
+    }
   });
 
   document.addEventListener('click', () => {
