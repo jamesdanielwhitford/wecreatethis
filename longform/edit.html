@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#02db02">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Long Form">
+  <title>Edit | Long Form</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <script>(function(){var b=localStorage.getItem('lf-brand'),k=localStorage.getItem('lf-ink'),r=document.documentElement.style;if(b)r.setProperty('--brand',b);if(k)r.setProperty('--ink',k);var raw=localStorage.getItem('lf-icon');if(raw){try{var g=JSON.parse(raw),rects='';for(var row=0;row<6;row++){for(var col=0;col<5;col++){if(g[row*5+col]){rects+='<rect fill="white" x="'+col+'" y="'+row+'" width="1" height="1"/>';}}}window._lfIconSvg=rects;}catch(e){}}})();</script>
+  <style>
+    :root { --brand: #02db02; --ink: #000000; }
+    body { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; margin: 8px; background: #ffffff; }
+    td { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; }
+    input, textarea, select { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; }
+    a:link { color: var(--ink); text-decoration: none; }
+    a:visited { color: #828282; text-decoration: none; }
+    .pagetop { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #222222; line-height: 12px; }
+    .hnname { margin-left: 1px; margin-right: 5px; }
+    .yclinks { font-family: Verdana, Geneva, sans-serif; font-size: 8pt; color: #828282; }
+    .yclinks a:link, .yclinks a:visited { color: #828282; }
+    #hnmain { min-width: 796px; }
+    .pagetop a:link, .pagetop a:visited { color: var(--ink); }
+
+    /* Form styles */
+    .submit-form { padding: 8px 16px 16px; }
+    .submit-form table { border-spacing: 0; }
+    .submit-form td { padding: 4px 6px; vertical-align: top; }
+    .submit-form td:first-child { text-align: right; color: #828282; font-size: 10pt; white-space: nowrap; padding-top: 6px; }
+    .submit-form input[type="text"],
+    .submit-form input[type="url"],
+    .submit-form textarea {
+      border: 1px solid #ccc;
+      padding: 3px 4px;
+      font-size: 10pt;
+      font-family: Verdana, Geneva, sans-serif;
+    }
+    .submit-form input[type="text"],
+    .submit-form input[type="url"] { width: 400px; }
+    .submit-form textarea { width: 400px; height: 200px; resize: vertical; }
+    .submit-form input[type="file"] { font-size: 10pt; }
+    .type-tabs { display: flex; gap: 0; margin-bottom: 0; }
+    .type-tab {
+      padding: 3px 12px;
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: pointer;
+      font-family: Verdana, Geneva, sans-serif;
+      font-size: 10pt;
+      color: #828282;
+      border-right: none;
+    }
+    .type-tab:last-child { border-right: 1px solid #ccc; }
+    .type-tab.active { background: var(--brand); color: var(--ink); border-color: var(--brand); font-weight: bold; }
+    .type-tab:hover:not(.active) { background: #f0f0f0; }
+    .field-group { display: none; }
+    .field-group.visible { display: table-row; }
+    input[type="submit"] {
+      font-family: Verdana, Geneva, sans-serif;
+      font-size: 10pt;
+      cursor: pointer;
+      padding: 3px 10px;
+    }
+    .hint { font-size: 8pt; color: #828282; margin-top: 2px; }
+
+    /* Topic/subtopic form dropdowns */
+    .topic-dropdown-btn {
+      font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: var(--ink);
+      cursor: pointer; font-weight: bold; text-decoration: underline;
+      background: none; border: none; padding: 0; margin-right: 6px;
+    }
+    .topic-popup {
+      display: none; position: fixed;
+      background: var(--brand); border: 1px solid #009900;
+      z-index: 9999; min-width: 140px;
+    }
+    .topic-popup a { display: block; padding: 3px 10px; color: var(--ink); font-size: 9pt; text-decoration: none; }
+    .topic-popup a:hover { filter: brightness(0.85); }
+    .topic-popup a.active-item { font-weight: bold; }
+    .topic-edit-input {
+      border: 1px solid #ccc; padding: 3px 4px;
+      font-size: 10pt; font-family: Verdana, Geneva, sans-serif; width: 200px;
+    }
+    .topic-edit-save {
+      font-family: Verdana, Geneva, sans-serif; font-size: 10pt;
+      cursor: pointer; padding: 2px 8px; margin-left: 4px;
+    }
+
+    @media only screen and (max-width: 750px) {
+      #hnmain { width: 100%; min-width: 0; }
+      body { padding: 0; margin: 0; width: 100%; }
+      td { height: inherit !important; }
+      span.pagetop { display: block; margin: 3px 5px; font-size: 12px; line-height: normal; }
+      span.pagetop b { display: block; font-size: 15px; }
+      .submit-form input[type="text"],
+      .submit-form input[type="url"],
+      .submit-form textarea { width: calc(100vw - 120px); }
+      .topic-edit-input { width: calc(100vw - 160px); }
+    }
+  </style>
+</head>
+<body>
+
+<center>
+<table id="hnmain" border="0" cellpadding="0" cellspacing="0" width="85%" bgcolor="#f6f6ef">
+  <tbody>
+
+  <!-- Header bar -->
+  <tr>
+    <td style="background:var(--brand)">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="padding:2px">
+        <tbody>
+        <tr>
+          <td style="width:18px;padding-right:4px;">
+            <a href="/longform/">
+              <div style="width:18px;height:18px;border:1px solid #ffffff;background:var(--brand);display:flex;align-items:center;justify-content:center;">
+                <svg width="10" height="12" viewBox="0 0 5 6" style="display:block;image-rendering:pixelated;">
+                  <rect fill="white" x="0" y="0" width="1" height="1"/>
+                  <rect fill="white" x="4" y="0" width="1" height="1"/>
+                  <rect fill="white" x="1" y="1" width="1" height="1"/>
+                  <rect fill="white" x="3" y="1" width="1" height="1"/>
+                  <rect fill="white" x="0" y="2" width="1" height="1"/>
+                  <rect fill="white" x="4" y="2" width="1" height="1"/>
+                  <rect fill="white" x="0" y="3" width="1" height="1"/>
+                  <rect fill="white" x="4" y="3" width="1" height="1"/>
+                  <rect fill="white" x="0" y="4" width="1" height="1"/>
+                  <rect fill="white" x="4" y="4" width="1" height="1"/>
+                  <rect fill="white" x="1" y="5" width="3" height="1"/>
+                </svg>
+              </div>
+            </a>
+          </td>
+          <td>
+            <span class="pagetop">
+              <b class="hnname"><a href="/longform/" style="color:var(--ink);font-weight:700;" id="site-name">Long Form</a></b>
+              edit
+            </span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Spacer -->
+  <tr style="height:10px;"><td></td></tr>
+
+  <!-- Form -->
+  <tr>
+    <td>
+      <div class="submit-form">
+        <form id="submit-form">
+          <table>
+            <tbody>
+              <tr>
+                <td>title</td>
+                <td><input type="text" id="post-title" maxlength="200" required autocomplete="off"></td>
+              </tr>
+
+              <!-- Topic row -->
+              <tr id="row-topic">
+                <td>topic</td>
+                <td>
+                  <button type="button" class="topic-dropdown-btn" id="topic-select-btn">None ▾</button>
+                  <div class="topic-popup" id="topic-select-popup"></div>
+                  <span id="topic-edit-area" style="display:none;">
+                    <input type="text" class="topic-edit-input" id="topic-edit-input" maxlength="100">
+                    <button type="button" class="topic-edit-save" id="topic-edit-save">save</button>
+                  </span>
+                  <input type="text" class="topic-edit-input" id="topic-new-input" placeholder="new topic name" maxlength="100" style="display:none;">
+                </td>
+              </tr>
+
+              <!-- Subtopic row -->
+              <tr id="row-subtopic" style="display:none;">
+                <td>subtopic</td>
+                <td>
+                  <button type="button" class="topic-dropdown-btn" id="subtopic-select-btn">None ▾</button>
+                  <div class="topic-popup" id="subtopic-select-popup"></div>
+                  <span id="subtopic-edit-area" style="display:none;">
+                    <input type="text" class="topic-edit-input" id="subtopic-edit-input" maxlength="100">
+                    <button type="button" class="topic-edit-save" id="subtopic-edit-save">save</button>
+                  </span>
+                  <input type="text" class="topic-edit-input" id="subtopic-new-input" placeholder="new subtopic name" maxlength="100" style="display:none;">
+                </td>
+              </tr>
+
+              <tr>
+                <td>type</td>
+                <td>
+                  <div class="type-tabs">
+                    <button type="button" class="type-tab active" data-type="link">link</button>
+                    <button type="button" class="type-tab" data-type="txt">md</button>
+                    <button type="button" class="type-tab" data-type="file">file</button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- link field -->
+              <tr class="field-group" id="field-link">
+                <td>url</td>
+                <td>
+                  <input type="url" id="post-url" placeholder="https://">
+                  <div class="hint">Link opens directly when title is clicked.</div>
+                </td>
+              </tr>
+
+              <!-- txt field -->
+              <tr class="field-group" id="field-txt">
+                <td>text</td>
+                <td>
+                  <textarea id="post-text" placeholder="Write your post in Markdown..."></textarea>
+                  <div class="hint">Markdown is rendered in a reader view in a new tab.</div>
+                </td>
+              </tr>
+
+              <!-- file field -->
+              <tr class="field-group" id="field-file">
+                <td>file</td>
+                <td>
+                  <input type="file" id="post-file">
+                  <div id="file-current" class="hint"></div>
+                  <div class="hint">Leave empty to keep existing file. Choose a new file to replace it.</div>
+                </td>
+              </tr>
+
+              <tr>
+                <td></td>
+                <td style="padding-top:10px;">
+                  <input type="submit" value="save">
+                  &nbsp;<a id="cancel-link" href="/longform/" style="font-size:10pt;color:#828282;">cancel</a>
+                  &nbsp;<a href="#" id="delete-link" style="font-size:10pt;color:#c00;">delete</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </form>
+      </div>
+    </td>
+  </tr>
+
+  <!-- Footer -->
+  <tr style="height:10px;"><td></td></tr>
+  <tr>
+    <td>
+      <table width="100%" cellspacing="0" cellpadding="1">
+        <tbody>
+        <tr>
+          <td style="border-top:1px solid var(--brand);"></td>
+        </tr>
+        <tr>
+          <td class="yclinks" style="text-align:center;padding:5px 0 8px;">
+            <a href="/longform/customise">Customise</a> |
+            <a href="#">About</a> |
+            <a href="#">Contact</a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </td>
+  </tr>
+
+  </tbody>
+</table>
+</center>
+
+<script>
+function getParam(name) {
+  return new URLSearchParams(window.location.search).get(name);
+}
+
+const postId = parseInt(getParam('id'), 10);
+
+// Update cancel link to go back to post page
+document.getElementById('cancel-link').href = '/longform/post.html?id=' + postId + '&src=user';
+
+// --- Type tab switching ---
+
+let activeType = 'link';
+
+document.querySelectorAll('.type-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeType = btn.dataset.type;
+    document.querySelectorAll('.type-tab').forEach(b => b.classList.toggle('active', b === btn));
+    document.getElementById('field-link').classList.toggle('visible', activeType === 'link');
+    document.getElementById('field-txt').classList.toggle('visible', activeType === 'txt');
+    document.getElementById('field-file').classList.toggle('visible', activeType === 'file');
+  });
+});
+
+// Show link field by default (overridden when post loads)
+document.getElementById('field-link').classList.add('visible');
+
+// Dismiss topic/subtopic popups on outside click
+document.addEventListener('click', () => {
+  document.getElementById('topic-select-popup').style.display = 'none';
+  document.getElementById('subtopic-select-popup').style.display = 'none';
+});
+
+// --- IndexedDB ---
+
+let db;
+let commentsDb;
+let existingPost = null;
+
+let TOPICS = [];
+let SUBTOPICS = [];
+let selectedTopicId = null;
+let selectedSubtopicId = null;
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('longform-posts', 2);
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      const oldVersion = e.oldVersion;
+      if (oldVersion < 1) {
+        const store = d.createObjectStore('posts', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('createdAt', 'createdAt', { unique: false });
+      }
+      if (oldVersion < 2) {
+        const topicStore = d.createObjectStore('topics', { keyPath: 'id', autoIncrement: true });
+        topicStore.createIndex('name', 'name', { unique: true });
+        const subtopicStore = d.createObjectStore('subtopics', { keyPath: 'id', autoIncrement: true });
+        subtopicStore.createIndex('name', 'name', { unique: false });
+        subtopicStore.createIndex('topicId', 'topicId', { unique: false });
+      }
+    };
+    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function getPost(id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('posts', 'readonly');
+    const req = tx.objectStore('posts').get(id);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function updatePost(post) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('posts', 'readwrite');
+    const req = tx.objectStore('posts').put(post);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function openCommentsDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('longform-comments', 1);
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('comments')) {
+        const store = d.createObjectStore('comments', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('postId', 'postId', { unique: false });
+        store.createIndex('parentId', 'parentId', { unique: false });
+      }
+    };
+    req.onsuccess = (e) => { commentsDb = e.target.result; resolve(commentsDb); };
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function deletePostFromDB(id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('posts', 'readwrite');
+    const req = tx.objectStore('posts').delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function deleteCommentsByPostId(pid) {
+  return new Promise((resolve, reject) => {
+    const tx = commentsDb.transaction('comments', 'readwrite');
+    const req = tx.objectStore('comments').index('postId').getAll(pid);
+    req.onsuccess = () => {
+      const comments = req.result;
+      let remaining = comments.length;
+      if (remaining === 0) { resolve(); return; }
+      comments.forEach(c => {
+        const del = tx.objectStore('comments').delete(c.id);
+        del.onsuccess = () => { if (--remaining === 0) resolve(); };
+        del.onerror = () => reject(del.error);
+      });
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function getPostsByTopicId(topicId) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('posts', 'readonly');
+    const req = tx.objectStore('posts').getAll();
+    req.onsuccess = () => resolve(req.result.filter(p => p.topicId === topicId));
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function getPostsBySubtopicId(subtopicId) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('posts', 'readonly');
+    const req = tx.objectStore('posts').getAll();
+    req.onsuccess = () => resolve(req.result.filter(p => p.subtopicId === subtopicId));
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function deleteSubtopicsByTopicId(topicId) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('subtopics', 'readwrite');
+    const req = tx.objectStore('subtopics').index('topicId').getAll(topicId);
+    req.onsuccess = () => {
+      const subs = req.result;
+      let remaining = subs.length;
+      if (remaining === 0) { resolve(); return; }
+      subs.forEach(s => {
+        const del = tx.objectStore('subtopics').delete(s.id);
+        del.onsuccess = () => { if (--remaining === 0) resolve(); };
+        del.onerror = () => reject(del.error);
+      });
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function deleteSubtopic(id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('subtopics', 'readwrite');
+    const req = tx.objectStore('subtopics').delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function deleteTopic(id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('topics', 'readwrite');
+    const req = tx.objectStore('topics').delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function cleanupOrphanedTopics(p) {
+  if (!p.topicId) return;
+  if (p.subtopicId) {
+    const subsWithPosts = await getPostsBySubtopicId(p.subtopicId);
+    if (subsWithPosts.length <= 1) await deleteSubtopic(p.subtopicId);
+  }
+  const topicPosts = await getPostsByTopicId(p.topicId);
+  if (topicPosts.length <= 1) {
+    await deleteSubtopicsByTopicId(p.topicId);
+    await deleteTopic(p.topicId);
+  }
+}
+
+// --- Topic/subtopic DB helpers ---
+
+function getAllTopics() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('topics', 'readonly');
+    const req = tx.objectStore('topics').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function getAllSubtopics() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('subtopics', 'readonly');
+    const req = tx.objectStore('subtopics').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function saveTopic(name) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('topics', 'readwrite');
+    const req = tx.objectStore('topics').add({ name });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function saveSubtopic(name, topicId) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('subtopics', 'readwrite');
+    const req = tx.objectStore('subtopics').add({ name, topicId });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function renameTopic(id, name) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('topics', 'readwrite');
+    const store = tx.objectStore('topics');
+    const getReq = store.get(id);
+    getReq.onsuccess = () => {
+      const record = getReq.result;
+      record.name = name;
+      const putReq = store.put(record);
+      putReq.onsuccess = () => resolve();
+      putReq.onerror = () => reject(putReq.error);
+    };
+    getReq.onerror = () => reject(getReq.error);
+  });
+}
+
+function renameSubtopic(id, name) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('subtopics', 'readwrite');
+    const store = tx.objectStore('subtopics');
+    const getReq = store.get(id);
+    getReq.onsuccess = () => {
+      const record = getReq.result;
+      record.name = name;
+      const putReq = store.put(record);
+      putReq.onsuccess = () => resolve();
+      putReq.onerror = () => reject(putReq.error);
+    };
+    getReq.onerror = () => reject(getReq.error);
+  });
+}
+
+// --- Topic/subtopic UI (identical to new.html) ---
+
+function renderSubtopicDropdown() {
+  const btn        = document.getElementById('subtopic-select-btn');
+  const popup      = document.getElementById('subtopic-select-popup');
+  const editArea   = document.getElementById('subtopic-edit-area');
+  const editInput  = document.getElementById('subtopic-edit-input');
+  const editSave   = document.getElementById('subtopic-edit-save');
+  const newInput   = document.getElementById('subtopic-new-input');
+
+  const topicSubtopics = selectedTopicId === -1 ? [] :
+    SUBTOPICS.filter(s => s.topicId === selectedTopicId);
+
+  if (selectedSubtopicId === null) {
+    btn.textContent = 'None \u25be';
+    editArea.style.display = 'none';
+    newInput.style.display = 'none';
+  } else if (selectedSubtopicId === -1) {
+    btn.textContent = '+ New subtopic \u25be';
+    editArea.style.display = 'none';
+    newInput.style.display = '';
+    newInput.focus();
+  } else {
+    const sub = topicSubtopics.find(s => s.id === selectedSubtopicId);
+    btn.textContent = (sub ? sub.name : '?') + ' \u25be';
+    newInput.style.display = 'none';
+    editArea.style.display = '';
+    editInput.value = sub ? sub.name : '';
+    editSave.onclick = async () => {
+      const newName = editInput.value.trim();
+      if (!newName) return;
+      await renameSubtopic(selectedSubtopicId, newName);
+      const s = SUBTOPICS.find(x => x.id === selectedSubtopicId);
+      if (s) s.name = newName;
+      renderSubtopicDropdown();
+    };
+  }
+
+  popup.innerHTML =
+    `<a href="#" class="subtopic-popup-option" data-id="">None</a>` +
+    topicSubtopics.map(s =>
+      `<a href="#" class="subtopic-popup-option${s.id === selectedSubtopicId ? ' active-item' : ''}" data-id="${s.id}">${escapeHtml(s.name)}</a>`
+    ).join('') +
+    `<a href="#" class="subtopic-popup-option" data-id="-1">+ New subtopic</a>`;
+
+  popup.querySelectorAll('.subtopic-popup-option').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const raw = a.dataset.id;
+      selectedSubtopicId = raw === '' ? null : Number(raw);
+      popup.style.display = 'none';
+      renderSubtopicDropdown();
+    });
+  });
+
+  btn.onclick = null;
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (popup.style.display === 'block') {
+      popup.style.display = 'none';
+    } else {
+      const rect = btn.getBoundingClientRect();
+      popup.style.top = (rect.bottom + window.scrollY) + 'px';
+      popup.style.left = rect.left + 'px';
+      popup.style.display = 'block';
+    }
+  });
+}
+
+function renderTopicDropdown() {
+  const btn       = document.getElementById('topic-select-btn');
+  const popup     = document.getElementById('topic-select-popup');
+  const editArea  = document.getElementById('topic-edit-area');
+  const editInput = document.getElementById('topic-edit-input');
+  const editSave  = document.getElementById('topic-edit-save');
+  const newInput  = document.getElementById('topic-new-input');
+  const rowSubtopic = document.getElementById('row-subtopic');
+
+  if (selectedTopicId === null) {
+    btn.textContent = 'None \u25be';
+    editArea.style.display = 'none';
+    newInput.style.display = 'none';
+    rowSubtopic.style.display = 'none';
+  } else if (selectedTopicId === -1) {
+    btn.textContent = '+ New topic \u25be';
+    editArea.style.display = 'none';
+    newInput.style.display = '';
+    newInput.focus();
+    rowSubtopic.style.display = '';
+    renderSubtopicDropdown();
+  } else {
+    const topic = TOPICS.find(t => t.id === selectedTopicId);
+    btn.textContent = (topic ? topic.name : '?') + ' \u25be';
+    newInput.style.display = 'none';
+    editArea.style.display = '';
+    editInput.value = topic ? topic.name : '';
+    editSave.onclick = async () => {
+      const newName = editInput.value.trim();
+      if (!newName) return;
+      await renameTopic(selectedTopicId, newName);
+      const t = TOPICS.find(x => x.id === selectedTopicId);
+      if (t) t.name = newName;
+      renderTopicDropdown();
+    };
+    rowSubtopic.style.display = '';
+    renderSubtopicDropdown();
+  }
+
+  popup.innerHTML =
+    `<a href="#" class="topic-popup-option" data-id="">None</a>` +
+    TOPICS.map(t =>
+      `<a href="#" class="topic-popup-option${t.id === selectedTopicId ? ' active-item' : ''}" data-id="${t.id}">${escapeHtml(t.name)}</a>`
+    ).join('') +
+    `<a href="#" class="topic-popup-option" data-id="-1">+ New topic</a>`;
+
+  popup.querySelectorAll('.topic-popup-option').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const raw = a.dataset.id;
+      selectedTopicId = raw === '' ? null : Number(raw);
+      selectedSubtopicId = null;
+      popup.style.display = 'none';
+      renderTopicDropdown();
+    });
+  });
+
+  btn.onclick = null;
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (popup.style.display === 'block') {
+      popup.style.display = 'none';
+    } else {
+      const rect = btn.getBoundingClientRect();
+      popup.style.top = (rect.bottom + window.scrollY) + 'px';
+      popup.style.left = rect.left + 'px';
+      popup.style.display = 'block';
+    }
+  });
+}
+
+// --- Prefill form from existing post ---
+
+function switchToType(type) {
+  activeType = type;
+  document.querySelectorAll('.type-tab').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  document.getElementById('field-link').classList.toggle('visible', type === 'link');
+  document.getElementById('field-txt').classList.toggle('visible', type === 'txt');
+  document.getElementById('field-file').classList.toggle('visible', type === 'file');
+}
+
+function prefillForm(post) {
+  document.getElementById('post-title').value = post.title || '';
+  switchToType(post.type || 'link');
+
+  if (post.type === 'link') {
+    document.getElementById('post-url').value = post.url || '';
+  } else if (post.type === 'txt') {
+    document.getElementById('post-text').value = post.text || '';
+  } else if (post.type === 'file') {
+    if (post.fileName) {
+      document.getElementById('file-current').textContent = 'Current file: ' + post.fileName;
+    }
+  }
+
+  selectedTopicId = post.topicId != null ? post.topicId : null;
+  selectedSubtopicId = post.subtopicId != null ? post.subtopicId : null;
+  renderTopicDropdown();
+}
+
+// --- Form submit ---
+
+document.getElementById('submit-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const title = document.getElementById('post-title').value.trim();
+  if (!title) return;
+
+  const post = { ...existingPost, title, type: activeType };
+
+  // Clear type-specific fields that no longer apply
+  delete post.url;
+  delete post.text;
+  delete post.fileData;
+  delete post.fileName;
+  delete post.fileMime;
+
+  // Resolve topic
+  let resolvedTopicId = null;
+  if (selectedTopicId === -1) {
+    const newName = document.getElementById('topic-new-input').value.trim();
+    if (newName) {
+      try {
+        resolvedTopicId = await saveTopic(newName);
+      } catch (_) {
+        const ex = TOPICS.find(t => t.name === newName);
+        if (ex) resolvedTopicId = ex.id;
+      }
+    }
+  } else if (selectedTopicId !== null) {
+    resolvedTopicId = selectedTopicId;
+  }
+
+  // Resolve subtopic
+  let resolvedSubtopicId = null;
+  if (resolvedTopicId !== null) {
+    if (selectedSubtopicId === -1) {
+      const newSubName = document.getElementById('subtopic-new-input').value.trim();
+      if (newSubName) resolvedSubtopicId = await saveSubtopic(newSubName, resolvedTopicId);
+    } else if (selectedSubtopicId !== null) {
+      resolvedSubtopicId = selectedSubtopicId;
+    }
+  }
+
+  if (resolvedTopicId !== null) {
+    post.topicId = resolvedTopicId;
+  } else {
+    delete post.topicId;
+  }
+  if (resolvedSubtopicId !== null) {
+    post.subtopicId = resolvedSubtopicId;
+  } else {
+    delete post.subtopicId;
+  }
+
+  if (activeType === 'link') {
+    const url = document.getElementById('post-url').value.trim();
+    if (!url) { alert('Please enter a URL.'); return; }
+    post.url = url;
+  } else if (activeType === 'txt') {
+    const text = document.getElementById('post-text').value.trim();
+    if (!text) { alert('Please enter some text.'); return; }
+    post.text = text;
+  } else if (activeType === 'file') {
+    const fileInput = document.getElementById('post-file');
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      post.fileName = file.name;
+      post.fileMime = file.type;
+      post.fileData = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+    } else {
+      // Keep existing file data
+      post.fileData = existingPost.fileData;
+      post.fileName = existingPost.fileName;
+      post.fileMime = existingPost.fileMime;
+    }
+  }
+
+  await updatePost(post);
+  window.location.href = '/longform/post.html?id=' + post.id + '&src=user';
+});
+
+(function(){
+  const name = localStorage.getItem('lf-name');
+  if (name) { const el = document.getElementById('site-name'); if (el) el.textContent = name; }
+})();
+
+document.getElementById('delete-link').addEventListener('click', async (e) => {
+  e.preventDefault();
+  if (!existingPost) return;
+  if (!confirm('Delete "' + existingPost.title + '"? This cannot be undone.')) return;
+  await cleanupOrphanedTopics(existingPost);
+  await deletePostFromDB(existingPost.id);
+  await deleteCommentsByPostId(existingPost.id);
+  const hidden = JSON.parse(localStorage.getItem('lf-hidden') || '[]').filter(id => id !== existingPost.id);
+  localStorage.setItem('lf-hidden', JSON.stringify(hidden));
+  localStorage.removeItem('lf-filters');
+  window.location.href = '/longform/';
+});
+
+async function init() {
+  await openDB();
+  await openCommentsDB();
+  TOPICS = await getAllTopics();
+  SUBTOPICS = await getAllSubtopics();
+
+  existingPost = await getPost(postId);
+  if (!existingPost) {
+    document.querySelector('.submit-form').innerHTML = '<p style="color:#828282;">Post not found.</p>';
+    return;
+  }
+
+  document.title = 'Edit: ' + existingPost.title + ' | Long Form';
+  prefillForm(existingPost);
+}
+
+init();
+
+if (window._lfIconSvg !== undefined) {
+  const navSvg = document.querySelector('td[style*="width:18px"] svg');
+  if (navSvg) navSvg.innerHTML = window._lfIconSvg;
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/longform/sw.js', { scope: '/longform/' });
+}
+</script>
+
+</body>
+</html>

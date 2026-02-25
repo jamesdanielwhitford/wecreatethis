@@ -535,8 +535,7 @@ function renderNav() {
     });
   });
 
-  yearBtn.onclick = null;
-  yearBtn.addEventListener('click', e => {
+  yearBtn.onclick = e => {
     e.stopPropagation();
     if (yearDropdown.style.display === 'block') {
       yearDropdown.style.display = 'none';
@@ -546,15 +545,7 @@ function renderNav() {
       yearDropdown.style.left = rect.left + 'px';
       yearDropdown.style.display = 'block';
     }
-  });
-
-  document.addEventListener('click', () => {
-    yearDropdown.style.display = 'none';
-    const td = document.getElementById('topic-dropdown');
-    const sd = document.getElementById('subtopic-dropdown');
-    if (td) td.style.display = 'none';
-    if (sd) sd.style.display = 'none';
-  });
+  };
 
   updateYearBtn();
   renderMonths();
@@ -639,8 +630,7 @@ function renderTopicNav() {
     });
   });
 
-  topicBtn.onclick = null;
-  topicBtn.addEventListener('click', e => {
+  topicBtn.onclick = e => {
     e.stopPropagation();
     if (topicDropdown.style.display === 'block') {
       topicDropdown.style.display = 'none';
@@ -650,7 +640,7 @@ function renderTopicNav() {
       topicDropdown.style.left = rect.left + 'px';
       topicDropdown.style.display = 'block';
     }
-  });
+  };
 
   if (activeTopicId === null) {
     subtopicPipe.style.display = 'none';
@@ -691,8 +681,7 @@ function renderTopicNav() {
     });
   });
 
-  subtopicBtn.onclick = null;
-  subtopicBtn.addEventListener('click', e => {
+  subtopicBtn.onclick = e => {
     e.stopPropagation();
     if (subtopicDropdown.style.display === 'block') {
       subtopicDropdown.style.display = 'none';
@@ -702,7 +691,7 @@ function renderTopicNav() {
       subtopicDropdown.style.left = rect.left + 'px';
       subtopicDropdown.style.display = 'block';
     }
-  });
+  };
 }
 
 function updateActiveStates() {
@@ -789,8 +778,9 @@ function renderStories() {
       <tr data-post-id="${post.id}">
         <td colspan="2"></td>
         <td class="subtext" style="padding:0;">
-          <a href="#">${agoText}</a>
+          <span>${agoText}</span>
           | <a href="#" class="hide-link" data-post-id="${post.id}">hide</a>
+          | <a href="/longform/edit?id=${post.id}&src=user">edit</a>
           | <a href="/longform/post.html?id=${post.id}${isUserPost ? '&src=user' : ''}">${commentCount} note${commentCount !== 1 ? 's' : ''}</a>
         </td>
       </tr>
@@ -904,10 +894,32 @@ async function init() {
 
 init();
 
+document.addEventListener('click', () => {
+  document.getElementById('year-dropdown').style.display = 'none';
+  const td = document.getElementById('topic-dropdown');
+  const sd = document.getElementById('subtopic-dropdown');
+  if (td) td.style.display = 'none';
+  if (sd) sd.style.display = 'none';
+});
+
 (function(){
   const name = localStorage.getItem('lf-name');
   if (name) { const el = document.getElementById('site-name'); if (el) el.textContent = name; }
 })();
+
+document.getElementById('site-name').addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  activeYear = null;
+  activeMonth = null;
+  activeTopicId = null;
+  activeSubtopicId = null;
+  currentPage = 1;
+  saveFilters();
+  rebuildNav();
+  renderStories();
+  window.scrollTo(0, 0);
+});
 
 if (window._lfIconSvg !== undefined) {
   const navSvg = document.querySelector('td[style*="width:18px"] svg');
