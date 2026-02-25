@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pixel Editor — 5×6 Navbar Icon</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #1a1a1a; color: #ccc; font-family: monospace; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; gap: 24px; min-height: 100vh; }
+    h1 { font-size: 14px; color: #888; letter-spacing: 0.05em; }
+
+    .preview-row { display: flex; align-items: center; gap: 24px; }
+
+    /* Navbar replica */
+    .navbar {
+      background: #02db02;
+      padding: 2px 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 2px;
+      font-family: Verdana, Geneva, sans-serif;
+      font-size: 10pt;
+    }
+    .navbar-icon {
+      width: 18px; height: 18px;
+      border: 1px solid #fff;
+      background: #02db02;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .navbar-icon svg { display: block; image-rendering: pixelated; }
+    .navbar-text { color: #000; font-weight: 700; }
+
+    /* Grid */
+    .grid-wrap { display: flex; flex-direction: column; gap: 2px; }
+    .grid-row { display: flex; gap: 2px; }
+    .cell {
+      width: 40px; height: 40px;
+      background: #333;
+      border: 1px solid #444;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: background 0.05s;
+    }
+    .cell.on { background: #ffffff; border-color: #fff; }
+    .cell:hover { border-color: #888; }
+
+    /* Buttons */
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    button {
+      background: #2a2a2a;
+      color: #ccc;
+      border: 1px solid #444;
+      padding: 8px 16px;
+      font-family: monospace;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    button:hover { background: #333; border-color: #888; }
+    button.primary { background: #02db02; color: #000; border-color: #02db02; font-weight: 700; }
+    button.primary:hover { background: #00c200; }
+    button.danger { border-color: #aa3333; color: #cc6666; }
+    button.danger:hover { background: #2a1a1a; }
+
+    /* Output */
+    .output {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 16px;
+      width: 100%;
+      max-width: 600px;
+    }
+    .output h2 { font-size: 12px; color: #666; margin-bottom: 10px; }
+    pre {
+      font-size: 12px;
+      color: #8fc;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.6;
+    }
+
+    .grid-label { font-size: 11px; color: #555; text-align: center; }
+  </style>
+</head>
+<body>
+
+<h1>PIXEL EDITOR — 5×6 navbar icon</h1>
+
+<div class="preview-row">
+  <div>
+    <div class="grid-label" style="margin-bottom:6px;">live preview</div>
+    <div class="navbar">
+      <div class="navbar-icon">
+        <svg id="preview-svg" width="10" height="12" viewBox="0 0 5 6"></svg>
+      </div>
+      <span class="navbar-text">Long Form</span>
+    </div>
+  </div>
+
+  <div>
+    <div class="grid-label" style="margin-bottom:6px;">2× preview</div>
+    <div class="navbar">
+      <div class="navbar-icon" style="width:36px;height:36px;">
+        <svg id="preview-svg-2x" width="20" height="24" viewBox="0 0 5 6"></svg>
+      </div>
+      <span class="navbar-text">Long Form</span>
+    </div>
+  </div>
+</div>
+
+<div class="grid-wrap" id="grid"></div>
+
+<div class="controls">
+  <button class="danger" onclick="clearGrid()">Clear</button>
+  <button onclick="invertGrid()">Invert</button>
+  <button onclick="loadPreset('C')">Load C</button>
+  <button onclick="loadPreset('spiral')">Load Spiral A</button>
+  <button class="primary" onclick="exportAll()">Export for Claude</button>
+</div>
+
+<div class="output" id="output" style="display:none;">
+  <h2>Copy this and paste to Claude →</h2>
+  <pre id="output-text"></pre>
+</div>
+
+<script>
+const COLS = 5;
+const ROWS = 6;
+let grid = Array.from({length: ROWS}, () => Array(COLS).fill(false));
+let painting = false;
+let paintValue = true;
+
+const PRESETS = {
+  C: [
+    [0,1,1,1,0],
+    [1,0,0,0,1],
+    [1,0,0,0,0],
+    [1,0,0,0,0],
+    [1,0,0,0,1],
+    [0,1,1,1,0],
+  ],
+  spiral: [
+    [1,1,1,1,1],
+    [1,0,0,0,1],
+    [1,0,1,1,0],
+    [1,0,0,1,0],
+    [1,1,1,1,0],
+    [0,0,0,0,0],
+  ],
+};
+
+function buildGrid() {
+  const wrap = document.getElementById('grid');
+  wrap.innerHTML = '';
+  for (let r = 0; r < ROWS; r++) {
+    const row = document.createElement('div');
+    row.className = 'grid-row';
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (grid[r][c] ? ' on' : '');
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      cell.addEventListener('mousedown', e => {
+        e.preventDefault();
+        painting = true;
+        paintValue = !grid[r][c];
+        toggle(r, c, paintValue);
+      });
+      cell.addEventListener('mouseenter', () => {
+        if (painting) toggle(r, c, paintValue);
+      });
+      row.appendChild(cell);
+    }
+    wrap.appendChild(row);
+  }
+}
+
+document.addEventListener('mouseup', () => { painting = false; });
+
+function toggle(r, c, val) {
+  grid[r][c] = val;
+  const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+  if (cell) cell.className = 'cell' + (val ? ' on' : '');
+  updatePreview();
+}
+
+function clearGrid() {
+  grid = Array.from({length: ROWS}, () => Array(COLS).fill(false));
+  buildGrid();
+  updatePreview();
+}
+
+function invertGrid() {
+  grid = grid.map(row => row.map(v => !v));
+  buildGrid();
+  updatePreview();
+}
+
+function loadPreset(name) {
+  const p = PRESETS[name];
+  grid = p.map(row => row.map(v => !!v));
+  buildGrid();
+  updatePreview();
+}
+
+function updatePreview() {
+  ['preview-svg', 'preview-svg-2x'].forEach(id => {
+    const svg = document.getElementById(id);
+    svg.innerHTML = '';
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (grid[r][c]) {
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('fill', 'white');
+          rect.setAttribute('x', c);
+          rect.setAttribute('y', r);
+          rect.setAttribute('width', 1);
+          rect.setAttribute('height', 1);
+          svg.appendChild(rect);
+        }
+      }
+    }
+  });
+}
+
+function exportAll() {
+  // Build ASCII art
+  let ascii = '';
+  for (let r = 0; r < ROWS; r++) {
+    ascii += grid[r].map(v => v ? 'X' : '.').join(' ') + '\n';
+  }
+
+  // Build SVG rects — merge consecutive pixels in each row
+  let rects = '';
+  for (let r = 0; r < ROWS; r++) {
+    let c = 0;
+    while (c < COLS) {
+      if (grid[r][c]) {
+        let run = 1;
+        while (c + run < COLS && grid[r][c + run]) run++;
+        if (run === 1) {
+          rects += `                  <rect fill="white" x="${c}" y="${r}" width="1" height="1"/>\n`;
+        } else {
+          rects += `                  <rect fill="white" x="${c}" y="${r}" width="${run}" height="1"/>\n`;
+        }
+        c += run;
+      } else {
+        c++;
+      }
+    }
+  }
+
+  const svgBlock = `                <svg width="10" height="12" viewBox="0 0 5 6" style="display:block;image-rendering:pixelated;">\n${rects}                </svg>`;
+
+  const out = `GRID (${COLS}×${ROWS}):\n${ascii}\nSVG RECTS:\n${svgBlock}`;
+
+  document.getElementById('output').style.display = 'block';
+  document.getElementById('output-text').textContent = out;
+}
+
+// Init
+loadPreset('C');
+</script>
+</body>
+</html>
