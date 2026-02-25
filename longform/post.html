@@ -42,7 +42,7 @@
       border: 0px;
       margin: 3px 2px 6px;
       background: url("data:image/svg+xml,%3Csvg height='32' viewBox='0 0 32 16' width='32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m2 27 14-29 14 29z' fill='%23999'/%3E%3C/svg%3E") 0% 0% / 10px, linear-gradient(transparent, transparent) no-repeat;
-      cursor: default;
+      cursor: pointer;
       display: block;
     }
 
@@ -62,6 +62,28 @@
       margin-bottom: 4px;
     }
     .reply-cancel:link, .reply-cancel:visited { font-size: 10pt; color: #828282; text-decoration: underline; }
+
+    /* Delete modal */
+    #delete-modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.35); z-index: 9999;
+      align-items: center; justify-content: center;
+    }
+    #delete-modal-overlay.open { display: flex; }
+    #delete-modal {
+      background: #f6f6ef; border: 1px solid #ccc;
+      padding: 16px 20px; font-family: Verdana, Geneva, sans-serif;
+      font-size: 10pt; color: #333; max-width: 320px; width: 90%;
+    }
+    #delete-modal p { margin: 0 0 14px; }
+    #delete-modal .modal-btns { display: flex; flex-direction: column; gap: 6px; }
+    #delete-modal button {
+      font-family: Verdana, Geneva, sans-serif; font-size: 10pt;
+      cursor: pointer; padding: 4px 10px; text-align: left;
+      background: #fff; border: 1px solid #ccc; color: #333;
+    }
+    #delete-modal button:hover { background: #eee; }
+    #delete-modal button.danger { color: #c00; }
 
     @media only screen and (max-width: 750px) {
       #hnmain { width: 100%; min-width: 0; }
@@ -163,6 +185,18 @@
   </tbody>
 </table>
 </center>
+
+<!-- Delete confirmation modal -->
+<div id="delete-modal-overlay">
+  <div id="delete-modal">
+    <p>This note has replies. What would you like to do?</p>
+    <div class="modal-btns">
+      <button id="modal-delete-all" class="danger">Delete note and all replies</button>
+      <button id="modal-delete-only">Delete note only (replies move up)</button>
+      <button id="modal-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const S_GIF = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -370,6 +404,35 @@ function addComment(comment) {
   });
 }
 
+function updateComment(comment) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('comments', 'readwrite');
+    const req = tx.objectStore('comments').put(comment);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function deleteComment(id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('comments', 'readwrite');
+    const req = tx.objectStore('comments').delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// Collect all descendant IDs of a note (recursive, from flat list)
+function getDescendantIds(id, allComments) {
+  const ids = [];
+  const children = allComments.filter(c => c.parentId === id);
+  children.forEach(c => {
+    ids.push(c.id);
+    ids.push(...getDescendantIds(c.id, allComments));
+  });
+  return ids;
+}
+
 // --- Tree builder ---
 
 function buildTree(comments) {
@@ -383,12 +446,17 @@ function buildTree(comments) {
       byId[c.parentId].children.push(byId[c.id]);
     }
   });
-  roots.sort((a, b) => b.createdAt - a.createdAt);
-  function sortChildren(node) {
-    node.children.sort((a, b) => a.createdAt - b.createdAt);
-    node.children.forEach(sortChildren);
+
+  function assignAndSort(siblings, newestFirst) {
+    // Assign sortOrder to any sibling missing one
+    const maxOrder = siblings.reduce((m, s) => Math.max(m, s.sortOrder ?? 0), 0);
+    let next = maxOrder + 1;
+    siblings.forEach(s => { if (s.sortOrder == null) { s.sortOrder = next++; } });
+    siblings.sort((a, b) => newestFirst ? b.sortOrder - a.sortOrder : a.sortOrder - b.sortOrder);
+    siblings.forEach(s => assignAndSort(s.children, false));
   }
-  roots.forEach(sortChildren);
+
+  assignAndSort(roots, true);
   return roots;
 }
 
@@ -444,7 +512,7 @@ function renderStoryHeader(commentCount) {
         <span class="age"><a href="#">${agoText}</a></span>
         | <a href="#" id="hide-post-link">${loadHidden().has(postId) ? 'unhide' : 'hide'}</a>
         | <a href="#" id="delete-post-link">delete</a>
-        | <a href="#comments">${commentCount}&nbsp;comment${commentCount !== 1 ? 's' : ''}</a>
+        | <a href="#comments">${commentCount}&nbsp;note${commentCount !== 1 ? 's' : ''}</a>
       </td>
     </tr>
     <tr style="height:10px;"><td></td></tr>`;
@@ -458,7 +526,7 @@ function renderCommentForm() {
         <form id="comment-form">
           <textarea id="comment-text" name="text" rows="8" cols="80" wrap="virtual" style="vertical-align:bottom"></textarea>
           &nbsp;<font size="-2" color="#AFAFAF">help</font><br><br>
-          <input type="submit" value="add comment">
+          <input type="submit" value="add note">
         </form>
       </td>
     </tr>
@@ -471,8 +539,8 @@ function renderComment(node, depth, ancestors) {
   const ancestorAttr = ancestors.length ? ` data-ancestors="${ancestors.join(',')}"` : '';
   const isRoot = depth === 0;
   const navs = isRoot
-    ? ` | <a href="#">next</a> <a class="togg" data-id="${node.id}" href="#">[&ndash;]</a>`
-    : ` | <a href="#comment-${ancestors[0]}">root</a> | <a href="#comment-${ancestors[ancestors.length - 1]}">parent</a> | <a href="#">next</a> <a class="togg" data-id="${node.id}" href="#">[&ndash;]</a>`;
+    ? ` <a class="togg" data-id="${node.id}" href="#">[&ndash;]</a>`
+    : ` | <a href="#comment-${ancestors[0]}">root</a> | <a href="#comment-${ancestors[ancestors.length - 1]}">parent</a> <a class="togg" data-id="${node.id}" href="#">[&ndash;]</a>`;
 
   let rows = `
     <tr class="athing comtr" id="comment-${node.id}"${ancestorAttr}>
@@ -487,19 +555,30 @@ function renderComment(node, depth, ancestors) {
               <td class="default">
                 <div style="margin-top:2px;margin-bottom:-10px;">
                   <span class="comhead">
-                    <a class="hnuser" href="#">james</a>&nbsp;<span class="age"><a href="#">${ago}</a></span><span class="navs">${navs}</span>
+                    <span class="age"><a href="#">${ago}</a></span><span class="navs">${navs}</span>
                   </span>
                 </div>
                 <br>
                 <div class="comment" id="cbody-${node.id}">
-                  <span class="commtext">${escapeHtml(node.text)}</span>
-                  <div class="reply"><a href="#" class="reply-link" data-id="${node.id}">reply</a></div>
+                  <span class="commtext" id="commtext-${node.id}">${escapeHtml(node.text)}</span>
+                  <div class="reply">
+                    <a href="#" class="reply-link" data-id="${node.id}">reply</a>
+                    | <a href="#" class="edit-link" data-id="${node.id}">edit</a>
+                    | <a href="#" class="delete-link" data-id="${node.id}" data-has-children="${node.children.length > 0 ? '1' : '0'}">delete</a>
+                  </div>
                   <div class="reply-form" id="reply-form-${node.id}">
                     <textarea rows="6" cols="60" id="reply-text-${node.id}"
                       style="border:1px solid rgb(118,118,118);font-family:monospace;font-size:10pt;display:block;"></textarea>
                     <br>
-                    <input type="button" value="add comment" class="reply-submit" data-parent="${node.id}">
+                    <input type="button" value="add note" class="reply-submit" data-parent="${node.id}">
                     &nbsp;<a href="#" class="reply-cancel" data-id="${node.id}">cancel</a>
+                  </div>
+                  <div class="edit-form" id="edit-form-${node.id}" style="display:none;margin-top:6px;">
+                    <textarea rows="6" cols="60" id="edit-text-${node.id}"
+                      style="border:1px solid rgb(118,118,118);font-family:monospace;font-size:10pt;display:block;">${escapeHtml(node.text)}</textarea>
+                    <br>
+                    <input type="button" value="save" class="edit-submit" data-id="${node.id}">
+                    &nbsp;<a href="#" class="edit-cancel" data-id="${node.id}">cancel</a>
                   </div>
                 </div>
               </td>
@@ -551,7 +630,7 @@ async function renderPage() {
 
   let commentsHtml = '';
   if (tree.length === 0) {
-    commentsHtml = `<tr><td style="padding:8px 0;color:#828282;font-size:10pt;">No comments yet.</td></tr>`;
+    commentsHtml = `<tr><td style="padding:8px 0;color:#828282;font-size:10pt;">No notes yet.</td></tr>`;
   } else {
     tree.forEach(root => {
       commentsHtml += renderComment(root, 0, []);
@@ -570,7 +649,10 @@ function bindEvents() {
     e.preventDefault();
     const text = document.getElementById('comment-text').value.trim();
     if (!text) return;
-    await addComment({ postId, parentId: null, author: 'james', text, createdAt: Date.now() });
+    const allComments = await getCommentsByPostId(postId);
+    const roots = allComments.filter(c => c.parentId == null);
+    const maxOrder = roots.reduce((m, c) => Math.max(m, c.sortOrder ?? 0), 0);
+    await addComment({ postId, parentId: null, author: 'james', text, createdAt: Date.now(), sortOrder: maxOrder + 1 });
     document.getElementById('comment-text').value = '';
     await renderPage();
   });
@@ -651,7 +733,127 @@ function bindEvents() {
       const parentId = parseInt(btn.dataset.parent, 10);
       const text = document.getElementById('reply-text-' + parentId).value.trim();
       if (!text) return;
-      await addComment({ postId, parentId, author: 'james', text, createdAt: Date.now() });
+      const allComments = await getCommentsByPostId(postId);
+      const siblings = allComments.filter(c => c.parentId === parentId);
+      const maxOrder = siblings.reduce((m, c) => Math.max(m, c.sortOrder ?? 0), 0);
+      await addComment({ postId, parentId, author: 'james', text, createdAt: Date.now(), sortOrder: maxOrder + 1 });
+      await renderPage();
+    });
+  });
+
+  // Edit link — show inline edit form
+  document.querySelectorAll('.edit-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const id = link.dataset.id;
+      const form = document.getElementById('edit-form-' + id);
+      form.style.display = form.style.display === 'block' ? 'none' : 'block';
+      if (form.style.display === 'block') document.getElementById('edit-text-' + id).focus();
+    });
+  });
+
+  // Edit cancel
+  document.querySelectorAll('.edit-cancel').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('edit-form-' + link.dataset.id).style.display = 'none';
+    });
+  });
+
+  // Edit save
+  document.querySelectorAll('.edit-submit').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = parseInt(btn.dataset.id, 10);
+      const text = document.getElementById('edit-text-' + id).value.trim();
+      if (!text) return;
+      const allComments = await getCommentsByPostId(postId);
+      const note = allComments.find(c => c.id === id);
+      if (!note) return;
+      note.text = text;
+      await updateComment(note);
+      await renderPage();
+    });
+  });
+
+  // Delete link
+  const overlay = document.getElementById('delete-modal-overlay');
+  function closeModal() { overlay.classList.remove('open'); }
+
+  document.querySelectorAll('.delete-link').forEach(link => {
+    link.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const id = parseInt(link.dataset.id, 10);
+      const hasChildren = link.dataset.hasChildren === '1';
+
+      if (hasChildren) {
+        overlay.classList.add('open');
+
+        // Clone buttons to clear old listeners
+        ['modal-delete-all', 'modal-delete-only', 'modal-cancel'].forEach(btnId => {
+          const old = document.getElementById(btnId);
+          const fresh = old.cloneNode(true);
+          old.parentNode.replaceChild(fresh, old);
+        });
+
+        document.getElementById('modal-cancel').addEventListener('click', closeModal);
+
+        document.getElementById('modal-delete-all').addEventListener('click', async () => {
+          closeModal();
+          const allComments = await getCommentsByPostId(postId);
+          const descIds = getDescendantIds(id, allComments);
+          await Promise.all([deleteComment(id), ...descIds.map(deleteComment)]);
+          await renderPage();
+        });
+
+        document.getElementById('modal-delete-only').addEventListener('click', async () => {
+          closeModal();
+          const allComments = await getCommentsByPostId(postId);
+          const note = allComments.find(c => c.id === id);
+          const children = allComments.filter(c => c.parentId === id);
+          await Promise.all(children.map(c => {
+            c.parentId = note.parentId ?? null;
+            return updateComment(c);
+          }));
+          await deleteComment(id);
+          await renderPage();
+        });
+
+      } else {
+        if (!confirm('Delete this note?')) return;
+        await deleteComment(id);
+        await renderPage();
+      }
+    });
+  });
+
+  // Upvote arrows — move note up one position among siblings
+  document.querySelectorAll('.votearrow').forEach(arrow => {
+    arrow.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const tr = arrow.closest('tr.athing.comtr');
+      if (!tr) return;
+      const id = parseInt(tr.id.replace('comment-', ''), 10);
+      const allComments = await getCommentsByPostId(postId);
+      const note = allComments.find(c => c.id === id);
+      if (!note) return;
+      const siblings = allComments.filter(c =>
+        (c.parentId ?? null) === (note.parentId ?? null)
+      );
+      // Assign sortOrder to any missing, same logic as buildTree
+      const isRoot = note.parentId == null;
+      const maxOrder = siblings.reduce((m, c) => Math.max(m, c.sortOrder ?? 0), 0);
+      let next = maxOrder + 1;
+      siblings.forEach(s => { if (s.sortOrder == null) s.sortOrder = next++; });
+      // Sort same direction as buildTree (roots: desc, children: asc)
+      siblings.sort((a, b) => isRoot ? b.sortOrder - a.sortOrder : a.sortOrder - b.sortOrder);
+      const idx = siblings.findIndex(s => s.id === id);
+      if (idx <= 0) return; // already first
+      const above = siblings[idx - 1];
+      // Swap sortOrders
+      const tmp = above.sortOrder;
+      above.sortOrder = note.sortOrder;
+      note.sortOrder = tmp;
+      await Promise.all([updateComment(note), updateComment(above)]);
       await renderPage();
     });
   });
