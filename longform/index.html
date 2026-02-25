@@ -434,7 +434,7 @@ function postDomain(post) {
   if (post.type === 'link' && post.url) {
     try { return new URL(post.url).hostname.replace(/^www\./, ''); } catch(e) {}
   }
-  if (post.type === 'txt') return 'txt';
+  if (post.type === 'txt') return 'md';
   if (post.type === 'file') {
     if (post.fileName) {
       const ext = post.fileName.split('.').pop().toLowerCase();
