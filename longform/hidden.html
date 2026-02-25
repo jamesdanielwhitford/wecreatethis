@@ -344,12 +344,14 @@ function postTitleHref(post) {
 }
 
 function postTitleTarget(post) {
+  if (post._noNewTab) return '';
   return (post.type === 'link' || post.type === 'txt' || post.type === 'file') ? ' target="_blank" rel="noopener"' : '';
 }
 
 function postDomain(post) {
+  if (post.domain) return post.domain;
   if (post.type === 'link' && post.url) {
-    try { return new URL(post.url).hostname.replace(/^www\./, ''); } catch(e) {}
+    try { return new URL(post.url, window.location.href).hostname.replace(/^www\./, ''); } catch(e) {}
   }
   if (post.type === 'txt') return 'md';
   if (post.type === 'file') {
@@ -488,13 +490,29 @@ const WELCOME_POST = {
   _isWelcome: true
 };
 
+const EXAMPLE_POST = {
+  id: -2,
+  title: 'Example',
+  type: 'link',
+  url: '/longform/example',
+  domain: 'wecreatethis.com',
+  author: 'James Daniel Whitford',
+  date: '2026-02',
+  createdAt: 1740481199000,
+  score: 0,
+  comments: 0,
+  _isWelcome: true,
+  _noNewTab: true
+};
+
 async function init() {
   await openDB();
   await openCommentsDB();
   const hidden = loadHidden();
   const userPosts = await getAllUserPosts();
-  // Include welcome post if hidden
+  // Include static posts if hidden
   if (hidden.has(0)) userPosts.push(WELCOME_POST);
+  if (hidden.has(-2)) userPosts.push(EXAMPLE_POST);
   // Only show hidden posts
   const hiddenPosts = userPosts.filter(p => hidden.has(p.id));
   const counts = await getCommentCountsForPosts(hiddenPosts.filter(p => !p._isWelcome).map(p => p.id));

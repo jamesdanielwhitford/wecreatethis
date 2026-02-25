@@ -220,6 +220,21 @@ const WELCOME_POST = {
   _isWelcome: true
 };
 
+const EXAMPLE_POST = {
+  id: -2,
+  title: 'Example',
+  type: 'link',
+  url: '/longform/example',
+  domain: 'wecreatethis.com',
+  author: 'James Daniel Whitford',
+  date: '2026-02',
+  createdAt: 1740481199000,
+  score: 0,
+  comments: 0,
+  _isWelcome: true,
+  _noNewTab: true
+};
+
 let post = null;
 
 // --- Helpers ---
@@ -480,12 +495,14 @@ function postTitleHref(p) {
 }
 
 function postTitleTarget(p) {
+  if (p._noNewTab) return '';
   return (p.type === 'link' || p.type === 'txt' || p.type === 'file') ? ' target="_blank" rel="noopener"' : '';
 }
 
 function postDomain(p) {
+  if (p.domain) return p.domain;
   if (p.type === 'link' && p.url) {
-    try { return new URL(p.url).hostname.replace(/^www\./, ''); } catch(e) {}
+    try { return new URL(p.url, window.location.href).hostname.replace(/^www\./, ''); } catch(e) {}
   }
   if (p.type === 'txt') return 'md';
   if (p.type === 'file') {
@@ -627,6 +644,8 @@ async function renderPage() {
   if (!post) {
     if (postId === 0) {
       post = WELCOME_POST;
+    } else if (postId === -2) {
+      post = EXAMPLE_POST;
     } else {
       await openPostsDB();
       post = await getUserPost(postId);
