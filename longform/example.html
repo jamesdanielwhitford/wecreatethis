@@ -266,7 +266,7 @@ const EXAMPLE_POSTS = [
   },
   {
     id: 'ex-12',
-    title: '112 Meditation',
+    title: '112 Meditations',
     type: 'link',
     url: 'https://ia802905.us.archive.org/view_archive.php?archive=/32/items/plus-mystics/PLUS%20MYSTICS.rar&file=PLUS%20MYSTICS%2FARTICLES%2FENG%2FPDF%2FShiva%20112.pdf',
     author: 'Shiva',
@@ -797,7 +797,7 @@ function renderStories() {
         <td colspan="2"></td>
         <td class="subtext" style="padding:0;">
           ${post.author ? `by ${escapeHtml(post.author)} | ` : ''}<span>${agoText}</span>
-          | <span>${commentCount} note${commentCount !== 1 ? 's' : ''}</span>
+          | <a href="/longform/post?id=${escapeHtml(post.id)}&src=example">${commentCount} note${commentCount !== 1 ? 's' : ''}</a>
         </td>
       </tr>
       <tr class="spacer" data-post-id="${post.id}" style="height:5px;"><td></td></tr>`;
@@ -882,7 +882,32 @@ function renderStories() {
   }
 }
 
-function init() {
+// --- Load live note counts from IndexedDB ---
+
+function loadNoteCounts() {
+  return new Promise((resolve) => {
+    const req = indexedDB.open('longform-comments', 1);
+    req.onsuccess = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('comments')) { resolve({}); return; }
+      const tx = db.transaction('comments', 'readonly');
+      const getAllReq = tx.objectStore('comments').getAll();
+      getAllReq.onsuccess = () => {
+        const counts = {};
+        getAllReq.result.forEach(c => {
+          if (typeof c.postId === 'string' && c.postId.startsWith('ex-')) {
+            counts[c.postId] = (counts[c.postId] || 0) + 1;
+          }
+        });
+        resolve(counts);
+      };
+      getAllReq.onerror = () => resolve({});
+    };
+    req.onerror = () => resolve({});
+  });
+}
+
+async function init() {
   // Derive topics/subtopics from example posts
   const topicMap = {};
   const subtopicMap = {};
@@ -896,6 +921,10 @@ function init() {
   });
   TOPICS = Object.values(topicMap);
   SUBTOPICS = Object.values(subtopicMap);
+
+  // Load live note counts
+  const noteCounts = await loadNoteCounts();
+  EXAMPLE_POSTS.forEach(p => { p._commentCount = noteCounts[p.id] || 0; });
 
   POSTS = applySortOrders(EXAMPLE_POSTS.slice());
   loadFilters();

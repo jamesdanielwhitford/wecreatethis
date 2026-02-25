@@ -133,6 +133,7 @@
           <td>
             <span class="pagetop">
               <b class="hnname"><a href="/longform/" style="color:var(--ink);font-weight:700;" id="site-name">Long Form</a></b>
+              <span id="page-subtitle"></span>
             </span>
           </td>
         </tr>
@@ -204,8 +205,8 @@ function getParam(name) {
 }
 
 const postIdRaw = getParam('id');
-const postId = parseInt(postIdRaw, 10);
-const postSrc = getParam('src'); // 'user' means load from IndexedDB
+const postSrc = getParam('src'); // 'user' means load from IndexedDB; 'example' means hardcoded example post
+const postId = postSrc === 'example' ? postIdRaw : parseInt(postIdRaw, 10);
 
 const WELCOME_POST = {
   id: 0,
@@ -233,6 +234,22 @@ const EXAMPLE_POST = {
   comments: 0,
   _isWelcome: true,
   _noNewTab: true
+};
+
+const EXAMPLE_POSTS_MAP = {
+  'ex-0':  { id: 'ex-0',  title: 'Welcome', type: 'txt', author: 'James Daniel Whitford', date: '2026-02', createdAt: 1740481200000, _isWelcome: true },
+  'ex-1':  { id: 'ex-1',  title: 'Clay Seed Balls', type: 'link', url: 'https://www.youtube.com/watch?v=A4-bwW8PWI0', author: 'Masanobu Fukuoka', date: '1975-01', createdAt: 157766400000, _isWelcome: true },
+  'ex-2':  { id: 'ex-2',  title: 'Autonomic nervous system', type: 'link', url: 'https://www.youtube.com/watch?v=yIWKrQTznXc&list=PLDa4njVmUZTveVdfPmvtpczQKDNOHwtQ4', author: 'Khan Academy', date: '2014-01', createdAt: 1388534400000, _isWelcome: true },
+  'ex-3':  { id: 'ex-3',  title: 'Accordion Fold Notebook', type: 'link', url: 'https://www.youtube.com/watch?v=dWf5xHeJC0M&list=PLDa4njVmUZTveVdfPmvtpczQKDNOHwtQ4', author: 'Ido Agassi', date: '2025-01', createdAt: 1735689600000, _isWelcome: true },
+  'ex-4':  { id: 'ex-4',  title: 'How to take wildlife photography', type: 'link', url: 'https://www.youtube.com/watch?v=kdE78ImoGMQ&list=PLDa4njVmUZTveVdfPmvtpczQKDNOHwtQ4', author: 'BBC Earth', date: '2025-01', createdAt: 1735689600000, _isWelcome: true },
+  'ex-5':  { id: 'ex-5',  title: 'Pitfire reduction Pottery', type: 'link', url: 'https://www.youtube.com/watch?v=x97vcJ_1-hU&list=PLDa4njVmUZTveVdfPmvtpczQKDNOHwtQ4', author: 'Andy Ward', date: '2025-01', createdAt: 1735689600000, _isWelcome: true },
+  'ex-6':  { id: 'ex-6',  title: 'Natural Farming', type: 'link', url: 'https://www.youtube.com/watch?v=DKrYuKlsJkI', author: 'Fukuoka Masanobu', date: '2021-01', createdAt: 1609459200000, _isWelcome: true },
+  'ex-7':  { id: 'ex-7',  title: 'Recycle Waste Water', type: 'link', url: 'https://www.youtube.com/watch?v=f-sRcVkZ9yg', author: 'Andrew Millison', date: '2022-01', createdAt: 1640995200000, _isWelcome: true },
+  'ex-8':  { id: 'ex-8',  title: 'How to Fix a Broken Ecosystem', type: 'link', url: 'https://www.youtube.com/watch?v=vL-i_yNcFVY&list=PLDa4njVmUZTveVdfPmvtpczQKDNOHwtQ4', author: 'Andrew Millison', date: '2023-01', createdAt: 1672531200000, _isWelcome: true },
+  'ex-9':  { id: 'ex-9',  title: 'The One Straw Revolution', type: 'link', url: 'https://archive.org/stream/The-One-Straw-Revolution/The-One-Straw-Revolution_djvu.txt', author: 'Masanobu Fukuoka', date: '1978-01', createdAt: 252460800000, _isWelcome: true },
+  'ex-10': { id: 'ex-10', title: 'The Dangers of Technology - Martin Heidegger', type: 'link', url: 'http://plato.stanford.edu/entries/heidegger/#N522DangTech', author: 'Stanford', date: '2025-01', createdAt: 1735689600000, _isWelcome: true },
+  'ex-11': { id: 'ex-11', title: 'The Medium is the Message - Marshall McLuhan', type: 'link', url: 'https://en.wikipedia.org/wiki/The_medium_is_the_message#McLuhan\'s_theory', author: 'Wikipedia', date: '2026-01', createdAt: 1735689600000, _isWelcome: true },
+  'ex-12': { id: 'ex-12', title: '112 Meditations', type: 'link', url: 'https://ia802905.us.archive.org/view_archive.php?archive=/32/items/plus-mystics/PLUS%20MYSTICS.rar&file=PLUS%20MYSTICS%2FARTICLES%2FENG%2FPDF%2FShiva%20112.pdf', author: 'Shiva', date: '0600-01', createdAt: -43253654400000, _isWelcome: true }
 };
 
 let post = null;
@@ -642,7 +659,14 @@ async function renderPage() {
 
   // Resolve post on first call only
   if (!post) {
-    if (postId === 0) {
+    if (postSrc === 'example') {
+      post = EXAMPLE_POSTS_MAP[postIdRaw] || null;
+      if (!post) {
+        document.getElementById('fatitem-tbody').innerHTML =
+          '<tr><td style="padding:20px;color:#828282;font-size:10pt;">Post not found.</td></tr>';
+        return;
+      }
+    } else if (postId === 0) {
       post = WELCOME_POST;
     } else if (postId === -2) {
       post = EXAMPLE_POST;
@@ -900,6 +924,14 @@ function bindEvents() {
 (function(){
   const name = localStorage.getItem('lf-name');
   if (name) { const el = document.getElementById('site-name'); if (el) el.textContent = name; }
+  if (postSrc === 'example') {
+    const logoLink = document.querySelector('td[style*="width:18px"] a');
+    if (logoLink) logoLink.href = '/longform/example';
+    const siteLink = document.getElementById('site-name');
+    if (siteLink) siteLink.href = '/longform/example';
+    const subtitle = document.getElementById('page-subtitle');
+    if (subtitle) subtitle.innerHTML = ' <span style="color:var(--ink)">| example</span>';
+  }
   (function(){
     const td = document.getElementById('footer-links');
     if (!td) return;
