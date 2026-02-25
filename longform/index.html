@@ -70,6 +70,38 @@
     #month-links a:hover { text-decoration: underline; }
     #month-links a.active-month { font-weight: bold; text-decoration: underline; }
 
+    /* Topic dropdown */
+    #topic-selector { position: relative; display: inline-block; }
+    #topic-btn {
+      color: var(--ink); font-size: 10pt; font-family: Verdana, Geneva, sans-serif;
+      cursor: pointer; font-weight: bold; text-decoration: underline;
+      background: none; border: none; padding: 0; margin-right: 6px;
+    }
+    #topic-dropdown {
+      display: none; position: fixed;
+      background: var(--brand); border: 1px solid #009900;
+      z-index: 9999; min-width: 100px;
+    }
+    #topic-dropdown a { display: block; padding: 3px 10px; color: var(--ink); font-size: 9pt; text-decoration: none; }
+    #topic-dropdown a:hover { filter: brightness(0.85); }
+    #topic-dropdown a.active-topic { font-weight: bold; }
+
+    /* Subtopic dropdown */
+    #subtopic-selector { position: relative; display: inline-block; }
+    #subtopic-btn {
+      color: var(--ink); font-size: 10pt; font-family: Verdana, Geneva, sans-serif;
+      cursor: pointer; font-weight: bold; text-decoration: underline;
+      background: none; border: none; padding: 0; margin-right: 6px;
+    }
+    #subtopic-dropdown {
+      display: none; position: fixed;
+      background: var(--brand); border: 1px solid #009900;
+      z-index: 9999; min-width: 100px;
+    }
+    #subtopic-dropdown a { display: block; padding: 3px 10px; color: var(--ink); font-size: 9pt; text-decoration: none; }
+    #subtopic-dropdown a:hover { filter: brightness(0.85); }
+    #subtopic-dropdown a.active-subtopic { font-weight: bold; }
+
     /* Hidden item */
     tr.hidden-item { display: none; }
 
@@ -139,6 +171,16 @@
                 <div id="year-dropdown"></div>
               </span>
               <span id="month-pipe" style="display:none;"> | </span><span id="month-links"></span>
+              <span id="topic-pipe" style="display:none;"> | </span>
+              <span id="topic-selector" style="display:none;">
+                <button id="topic-btn"></button>
+                <div id="topic-dropdown"></div>
+              </span>
+              <span id="subtopic-pipe" style="display:none;"> | </span>
+              <span id="subtopic-selector" style="display:none;">
+                <button id="subtopic-btn"></button>
+                <div id="subtopic-dropdown"></div>
+              </span>
             </span>
           </td>
           <td style="text-align:right;padding-right:4px;">
@@ -278,12 +320,20 @@ let commentsDb;
 
 function openDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('longform-posts', 1);
+    const req = indexedDB.open('longform-posts', 2);
     req.onupgradeneeded = (e) => {
       const d = e.target.result;
-      if (!d.objectStoreNames.contains('posts')) {
+      const oldVersion = e.oldVersion;
+      if (oldVersion < 1) {
         const store = d.createObjectStore('posts', { keyPath: 'id', autoIncrement: true });
         store.createIndex('createdAt', 'createdAt', { unique: false });
+      }
+      if (oldVersion < 2) {
+        const topicStore = d.createObjectStore('topics', { keyPath: 'id', autoIncrement: true });
+        topicStore.createIndex('name', 'name', { unique: true });
+        const subtopicStore = d.createObjectStore('subtopics', { keyPath: 'id', autoIncrement: true });
+        subtopicStore.createIndex('name', 'name', { unique: false });
+        subtopicStore.createIndex('topicId', 'topicId', { unique: false });
       }
     };
     req.onsuccess = (e) => { db = e.target.result; resolve(db); };
@@ -330,6 +380,24 @@ function getAllUserPosts() {
   return new Promise((resolve, reject) => {
     const tx = db.transaction('posts', 'readonly');
     const req = tx.objectStore('posts').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function getAllTopics() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('topics', 'readonly');
+    const req = tx.objectStore('topics').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function getAllSubtopics() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('subtopics', 'readonly');
+    const req = tx.objectStore('subtopics').getAll();
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
@@ -404,13 +472,19 @@ let _allYears = [];
 
 let activeYear = null;
 let activeMonth = null;
+let activeTopicId = null;
+let activeSubtopicId = null;
 let currentPage = 1;
 const PAGE_SIZE = 30;
+
+let TOPICS = [];
+let SUBTOPICS = [];
 
 function rebuildNav() {
   _yearsMonthsAll = getYearsMonths(POSTS);
   _allYears = Object.keys(_yearsMonthsAll).sort((a, b) => b - a);
   renderNav();
+  renderTopicNav();
 }
 
 function renderNav() {
@@ -450,6 +524,10 @@ function renderNav() {
 
   document.addEventListener('click', () => {
     yearDropdown.style.display = 'none';
+    const td = document.getElementById('topic-dropdown');
+    const sd = document.getElementById('subtopic-dropdown');
+    if (td) td.style.display = 'none';
+    if (sd) sd.style.display = 'none';
   });
 
   updateYearBtn();
@@ -490,6 +568,114 @@ function renderMonths() {
   updateActiveStates();
 }
 
+function renderTopicNav() {
+  const topicPipe      = document.getElementById('topic-pipe');
+  const topicSelector  = document.getElementById('topic-selector');
+  const topicBtn       = document.getElementById('topic-btn');
+  const topicDropdown  = document.getElementById('topic-dropdown');
+  const subtopicPipe     = document.getElementById('subtopic-pipe');
+  const subtopicSelector = document.getElementById('subtopic-selector');
+  const subtopicBtn      = document.getElementById('subtopic-btn');
+  const subtopicDropdown = document.getElementById('subtopic-dropdown');
+
+  if (TOPICS.length === 0) {
+    topicPipe.style.display = 'none';
+    topicSelector.style.display = 'none';
+    subtopicPipe.style.display = 'none';
+    subtopicSelector.style.display = 'none';
+    return;
+  }
+
+  topicPipe.style.display = '';
+  topicSelector.style.display = 'inline-block';
+
+  const activeTopic = TOPICS.find(t => t.id === activeTopicId);
+  topicBtn.textContent = (activeTopic ? activeTopic.name : 'Topic') + ' \u25be';
+
+  topicDropdown.innerHTML =
+    `<a href="#" class="topic-option" data-topic-id="">All</a>` +
+    TOPICS.map(t =>
+      `<a href="#" class="topic-option${t.id === activeTopicId ? ' active-topic' : ''}" data-topic-id="${t.id}">${escapeHtml(t.name)}</a>`
+    ).join('');
+
+  topicDropdown.querySelectorAll('.topic-option').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const raw = a.dataset.topicId;
+      activeTopicId = raw === '' ? null : Number(raw);
+      activeSubtopicId = null;
+      currentPage = 1;
+      topicDropdown.style.display = 'none';
+      renderTopicNav();
+      renderStories();
+    });
+  });
+
+  topicBtn.onclick = null;
+  topicBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (topicDropdown.style.display === 'block') {
+      topicDropdown.style.display = 'none';
+    } else {
+      const rect = topicBtn.getBoundingClientRect();
+      topicDropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+      topicDropdown.style.left = rect.left + 'px';
+      topicDropdown.style.display = 'block';
+    }
+  });
+
+  if (activeTopicId === null) {
+    subtopicPipe.style.display = 'none';
+    subtopicSelector.style.display = 'none';
+    return;
+  }
+
+  const topicSubtopics = SUBTOPICS.filter(s => s.topicId === activeTopicId);
+
+  if (topicSubtopics.length === 0) {
+    subtopicPipe.style.display = 'none';
+    subtopicSelector.style.display = 'none';
+    return;
+  }
+
+  subtopicPipe.style.display = '';
+  subtopicSelector.style.display = 'inline-block';
+
+  const activeSubtopic = topicSubtopics.find(s => s.id === activeSubtopicId);
+  subtopicBtn.textContent = (activeSubtopic ? activeSubtopic.name : 'Subtopic') + ' \u25be';
+
+  subtopicDropdown.innerHTML =
+    `<a href="#" class="subtopic-option" data-subtopic-id="">All</a>` +
+    topicSubtopics.map(s =>
+      `<a href="#" class="subtopic-option${s.id === activeSubtopicId ? ' active-subtopic' : ''}" data-subtopic-id="${s.id}">${escapeHtml(s.name)}</a>`
+    ).join('');
+
+  subtopicDropdown.querySelectorAll('.subtopic-option').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const raw = a.dataset.subtopicId;
+      activeSubtopicId = raw === '' ? null : Number(raw);
+      currentPage = 1;
+      subtopicDropdown.style.display = 'none';
+      renderTopicNav();
+      renderStories();
+    });
+  });
+
+  subtopicBtn.onclick = null;
+  subtopicBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (subtopicDropdown.style.display === 'block') {
+      subtopicDropdown.style.display = 'none';
+    } else {
+      const rect = subtopicBtn.getBoundingClientRect();
+      subtopicDropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+      subtopicDropdown.style.left = rect.left + 'px';
+      subtopicDropdown.style.display = 'block';
+    }
+  });
+}
+
 function updateActiveStates() {
   document.querySelectorAll('.month-link').forEach(a => {
     a.classList.toggle('active-month', a.dataset.month === activeMonth);
@@ -506,6 +692,8 @@ function filteredPosts() {
     const [y, m] = p.date.split('-');
     if (activeYear && y !== activeYear) return false;
     if (activeMonth && m !== activeMonth) return false;
+    if (activeTopicId !== null && p.topicId !== activeTopicId) return false;
+    if (activeSubtopicId !== null && p.subtopicId !== activeSubtopicId) return false;
     return true;
   });
 }
@@ -663,6 +851,8 @@ async function init() {
   // Apply stored sort order (defaults to newest-first on first load)
   userPosts.sort((a, b) => b.createdAt - a.createdAt);
   POSTS = applySortOrders(userPosts);
+  TOPICS = await getAllTopics();
+  SUBTOPICS = await getAllSubtopics();
   rebuildNav();
   renderStories();
   updateHiddenFooter();

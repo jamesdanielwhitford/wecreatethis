@@ -67,6 +67,29 @@
     }
     .hint { font-size: 8pt; color: #828282; margin-top: 2px; }
 
+    /* Topic/subtopic form dropdowns */
+    .topic-dropdown-btn {
+      font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: var(--ink);
+      cursor: pointer; font-weight: bold; text-decoration: underline;
+      background: none; border: none; padding: 0; margin-right: 6px;
+    }
+    .topic-popup {
+      display: none; position: fixed;
+      background: var(--brand); border: 1px solid #009900;
+      z-index: 9999; min-width: 140px;
+    }
+    .topic-popup a { display: block; padding: 3px 10px; color: var(--ink); font-size: 9pt; text-decoration: none; }
+    .topic-popup a:hover { filter: brightness(0.85); }
+    .topic-popup a.active-item { font-weight: bold; }
+    .topic-edit-input {
+      border: 1px solid #ccc; padding: 3px 4px;
+      font-size: 10pt; font-family: Verdana, Geneva, sans-serif; width: 200px;
+    }
+    .topic-edit-save {
+      font-family: Verdana, Geneva, sans-serif; font-size: 10pt;
+      cursor: pointer; padding: 2px 8px; margin-left: 4px;
+    }
+
     @media only screen and (max-width: 750px) {
       #hnmain { width: 100%; min-width: 0; }
       body { padding: 0; margin: 0; width: 100%; }
@@ -76,6 +99,7 @@
       .submit-form input[type="text"],
       .submit-form input[type="url"],
       .submit-form textarea { width: calc(100vw - 120px); }
+      .topic-edit-input { width: calc(100vw - 160px); }
     }
   </style>
 </head>
@@ -136,6 +160,35 @@
                 <td>title</td>
                 <td><input type="text" id="post-title" maxlength="200" required autocomplete="off"></td>
               </tr>
+
+              <!-- Topic row -->
+              <tr id="row-topic">
+                <td>topic</td>
+                <td>
+                  <button type="button" class="topic-dropdown-btn" id="topic-select-btn">None ▾</button>
+                  <div class="topic-popup" id="topic-select-popup"></div>
+                  <span id="topic-edit-area" style="display:none;">
+                    <input type="text" class="topic-edit-input" id="topic-edit-input" maxlength="100">
+                    <button type="button" class="topic-edit-save" id="topic-edit-save">save</button>
+                  </span>
+                  <input type="text" class="topic-edit-input" id="topic-new-input" placeholder="new topic name" maxlength="100" style="display:none;">
+                </td>
+              </tr>
+
+              <!-- Subtopic row -->
+              <tr id="row-subtopic" style="display:none;">
+                <td>subtopic</td>
+                <td>
+                  <button type="button" class="topic-dropdown-btn" id="subtopic-select-btn">None ▾</button>
+                  <div class="topic-popup" id="subtopic-select-popup"></div>
+                  <span id="subtopic-edit-area" style="display:none;">
+                    <input type="text" class="topic-edit-input" id="subtopic-edit-input" maxlength="100">
+                    <button type="button" class="topic-edit-save" id="subtopic-edit-save">save</button>
+                  </span>
+                  <input type="text" class="topic-edit-input" id="subtopic-new-input" placeholder="new subtopic name" maxlength="100" style="display:none;">
+                </td>
+              </tr>
+
               <tr>
                 <td>type</td>
                 <td>
@@ -231,18 +284,46 @@ document.querySelectorAll('.type-tab').forEach(btn => {
 // Show link field by default
 document.getElementById('field-link').classList.add('visible');
 
+// Dismiss topic/subtopic popups on outside click
+document.addEventListener('click', () => {
+  document.getElementById('topic-select-popup').style.display = 'none';
+  document.getElementById('subtopic-select-popup').style.display = 'none';
+});
+
 // --- IndexedDB ---
 
 let db;
 
+let TOPICS = [];
+let SUBTOPICS = [];
+let selectedTopicId = null;    // null=None, -1=new, N=existing id
+let selectedSubtopicId = null; // null=None, -1=new, N=existing id
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function openDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('longform-posts', 1);
+    const req = indexedDB.open('longform-posts', 2);
     req.onupgradeneeded = (e) => {
       const d = e.target.result;
-      if (!d.objectStoreNames.contains('posts')) {
+      const oldVersion = e.oldVersion;
+      if (oldVersion < 1) {
         const store = d.createObjectStore('posts', { keyPath: 'id', autoIncrement: true });
         store.createIndex('createdAt', 'createdAt', { unique: false });
+      }
+      if (oldVersion < 2) {
+        const topicStore = d.createObjectStore('topics', { keyPath: 'id', autoIncrement: true });
+        topicStore.createIndex('name', 'name', { unique: true });
+        const subtopicStore = d.createObjectStore('subtopics', { keyPath: 'id', autoIncrement: true });
+        subtopicStore.createIndex('name', 'name', { unique: false });
+        subtopicStore.createIndex('topicId', 'topicId', { unique: false });
       }
     };
     req.onsuccess = (e) => { db = e.target.result; resolve(db); };
@@ -259,10 +340,221 @@ function savePost(post) {
   });
 }
 
+// --- Topic/subtopic DB helpers ---
+
+function getAllTopics() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('topics', 'readonly');
+    const req = tx.objectStore('topics').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function getAllSubtopics() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('subtopics', 'readonly');
+    const req = tx.objectStore('subtopics').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function saveTopic(name) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('topics', 'readwrite');
+    const req = tx.objectStore('topics').add({ name });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function saveSubtopic(name, topicId) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('subtopics', 'readwrite');
+    const req = tx.objectStore('subtopics').add({ name, topicId });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function renameTopic(id, name) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('topics', 'readwrite');
+    const store = tx.objectStore('topics');
+    const getReq = store.get(id);
+    getReq.onsuccess = () => {
+      const record = getReq.result;
+      record.name = name;
+      const putReq = store.put(record);
+      putReq.onsuccess = () => resolve();
+      putReq.onerror = () => reject(putReq.error);
+    };
+    getReq.onerror = () => reject(getReq.error);
+  });
+}
+
+function renameSubtopic(id, name) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('subtopics', 'readwrite');
+    const store = tx.objectStore('subtopics');
+    const getReq = store.get(id);
+    getReq.onsuccess = () => {
+      const record = getReq.result;
+      record.name = name;
+      const putReq = store.put(record);
+      putReq.onsuccess = () => resolve();
+      putReq.onerror = () => reject(putReq.error);
+    };
+    getReq.onerror = () => reject(getReq.error);
+  });
+}
+
+// --- Topic/subtopic UI ---
+
+function renderSubtopicDropdown() {
+  const btn        = document.getElementById('subtopic-select-btn');
+  const popup      = document.getElementById('subtopic-select-popup');
+  const editArea   = document.getElementById('subtopic-edit-area');
+  const editInput  = document.getElementById('subtopic-edit-input');
+  const editSave   = document.getElementById('subtopic-edit-save');
+  const newInput   = document.getElementById('subtopic-new-input');
+
+  const topicSubtopics = selectedTopicId === -1 ? [] :
+    SUBTOPICS.filter(s => s.topicId === selectedTopicId);
+
+  if (selectedSubtopicId === null) {
+    btn.textContent = 'None \u25be';
+    editArea.style.display = 'none';
+    newInput.style.display = 'none';
+  } else if (selectedSubtopicId === -1) {
+    btn.textContent = '+ New subtopic \u25be';
+    editArea.style.display = 'none';
+    newInput.style.display = '';
+    newInput.focus();
+  } else {
+    const sub = topicSubtopics.find(s => s.id === selectedSubtopicId);
+    btn.textContent = (sub ? sub.name : '?') + ' \u25be';
+    newInput.style.display = 'none';
+    editArea.style.display = '';
+    editInput.value = sub ? sub.name : '';
+    editSave.onclick = async () => {
+      const newName = editInput.value.trim();
+      if (!newName) return;
+      await renameSubtopic(selectedSubtopicId, newName);
+      const s = SUBTOPICS.find(x => x.id === selectedSubtopicId);
+      if (s) s.name = newName;
+      renderSubtopicDropdown();
+    };
+  }
+
+  popup.innerHTML =
+    `<a href="#" class="subtopic-popup-option" data-id="">None</a>` +
+    topicSubtopics.map(s =>
+      `<a href="#" class="subtopic-popup-option${s.id === selectedSubtopicId ? ' active-item' : ''}" data-id="${s.id}">${escapeHtml(s.name)}</a>`
+    ).join('') +
+    `<a href="#" class="subtopic-popup-option" data-id="-1">+ New subtopic</a>`;
+
+  popup.querySelectorAll('.subtopic-popup-option').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const raw = a.dataset.id;
+      selectedSubtopicId = raw === '' ? null : Number(raw);
+      popup.style.display = 'none';
+      renderSubtopicDropdown();
+    });
+  });
+
+  btn.onclick = null;
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (popup.style.display === 'block') {
+      popup.style.display = 'none';
+    } else {
+      const rect = btn.getBoundingClientRect();
+      popup.style.top = (rect.bottom + window.scrollY) + 'px';
+      popup.style.left = rect.left + 'px';
+      popup.style.display = 'block';
+    }
+  });
+}
+
+function renderTopicDropdown() {
+  const btn       = document.getElementById('topic-select-btn');
+  const popup     = document.getElementById('topic-select-popup');
+  const editArea  = document.getElementById('topic-edit-area');
+  const editInput = document.getElementById('topic-edit-input');
+  const editSave  = document.getElementById('topic-edit-save');
+  const newInput  = document.getElementById('topic-new-input');
+  const rowSubtopic = document.getElementById('row-subtopic');
+
+  if (selectedTopicId === null) {
+    btn.textContent = 'None \u25be';
+    editArea.style.display = 'none';
+    newInput.style.display = 'none';
+    rowSubtopic.style.display = 'none';
+  } else if (selectedTopicId === -1) {
+    btn.textContent = '+ New topic \u25be';
+    editArea.style.display = 'none';
+    newInput.style.display = '';
+    newInput.focus();
+    rowSubtopic.style.display = '';
+    renderSubtopicDropdown();
+  } else {
+    const topic = TOPICS.find(t => t.id === selectedTopicId);
+    btn.textContent = (topic ? topic.name : '?') + ' \u25be';
+    newInput.style.display = 'none';
+    editArea.style.display = '';
+    editInput.value = topic ? topic.name : '';
+    editSave.onclick = async () => {
+      const newName = editInput.value.trim();
+      if (!newName) return;
+      await renameTopic(selectedTopicId, newName);
+      const t = TOPICS.find(x => x.id === selectedTopicId);
+      if (t) t.name = newName;
+      renderTopicDropdown();
+    };
+    rowSubtopic.style.display = '';
+    renderSubtopicDropdown();
+  }
+
+  popup.innerHTML =
+    `<a href="#" class="topic-popup-option" data-id="">None</a>` +
+    TOPICS.map(t =>
+      `<a href="#" class="topic-popup-option${t.id === selectedTopicId ? ' active-item' : ''}" data-id="${t.id}">${escapeHtml(t.name)}</a>`
+    ).join('') +
+    `<a href="#" class="topic-popup-option" data-id="-1">+ New topic</a>`;
+
+  popup.querySelectorAll('.topic-popup-option').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const raw = a.dataset.id;
+      selectedTopicId = raw === '' ? null : Number(raw);
+      selectedSubtopicId = null;
+      popup.style.display = 'none';
+      renderTopicDropdown();
+    });
+  });
+
+  btn.onclick = null;
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (popup.style.display === 'block') {
+      popup.style.display = 'none';
+    } else {
+      const rect = btn.getBoundingClientRect();
+      popup.style.top = (rect.bottom + window.scrollY) + 'px';
+      popup.style.left = rect.left + 'px';
+      popup.style.display = 'block';
+    }
+  });
+}
+
 // --- Form submit ---
 
 document.getElementById('submit-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  await openDB();
 
   const title = document.getElementById('post-title').value.trim();
   if (!title) return;
@@ -279,6 +571,36 @@ document.getElementById('submit-form').addEventListener('submit', async (e) => {
     date: dateStr,
     createdAt: now,
   };
+
+  // Resolve topic
+  let resolvedTopicId = null;
+  if (selectedTopicId === -1) {
+    const newName = document.getElementById('topic-new-input').value.trim();
+    if (newName) {
+      try {
+        resolvedTopicId = await saveTopic(newName);
+      } catch (_) {
+        const ex = TOPICS.find(t => t.name === newName);
+        if (ex) resolvedTopicId = ex.id;
+      }
+    }
+  } else if (selectedTopicId !== null) {
+    resolvedTopicId = selectedTopicId;
+  }
+
+  // Resolve subtopic
+  let resolvedSubtopicId = null;
+  if (resolvedTopicId !== null) {
+    if (selectedSubtopicId === -1) {
+      const newSubName = document.getElementById('subtopic-new-input').value.trim();
+      if (newSubName) resolvedSubtopicId = await saveSubtopic(newSubName, resolvedTopicId);
+    } else if (selectedSubtopicId !== null) {
+      resolvedSubtopicId = selectedSubtopicId;
+    }
+  }
+
+  if (resolvedTopicId !== null) post.topicId = resolvedTopicId;
+  if (resolvedSubtopicId !== null) post.subtopicId = resolvedSubtopicId;
 
   if (activeType === 'link') {
     const url = document.getElementById('post-url').value.trim();
@@ -303,7 +625,6 @@ document.getElementById('submit-form').addEventListener('submit', async (e) => {
     });
   }
 
-  await openDB();
   await savePost(post);
   window.location.href = '/longform/';
 });
@@ -312,6 +633,14 @@ document.getElementById('submit-form').addEventListener('submit', async (e) => {
   const name = localStorage.getItem('lf-name');
   if (name) { const el = document.getElementById('site-name'); if (el) el.textContent = name; }
 })();
+
+async function initTopics() {
+  await openDB();
+  TOPICS = await getAllTopics();
+  SUBTOPICS = await getAllSubtopics();
+  renderTopicDropdown();
+}
+initTopics();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/longform/sw.js', { scope: '/longform/' });
