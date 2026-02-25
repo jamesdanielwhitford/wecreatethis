@@ -1,4 +1,4 @@
-const CACHE_NAME = 'longform-v9';
+const CACHE_NAME = 'longform-v10';
 
 function normalizeUrl(url) {
   const urlObj = new URL(url);
@@ -30,6 +30,8 @@ const urlsToCache = [
   '/longform/edit.html',
   '/longform/hidden',
   '/longform/hidden.html',
+  '/longform/example',
+  '/longform/example.html',
   '/longform/manifest.json',
   '/longform/icon-192.png',
   '/longform/icon-512.png'

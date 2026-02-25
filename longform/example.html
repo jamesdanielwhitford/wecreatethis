@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Long Form">
-  <title>Long Form</title>
+  <title>Long Form | Example</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
@@ -102,9 +102,6 @@
     #subtopic-dropdown a:hover { filter: brightness(0.85); }
     #subtopic-dropdown a.active-subtopic { font-weight: bold; }
 
-    /* Hidden item */
-    tr.hidden-item { display: none; }
-
     /* Rank reorder */
     .rank-btn {
       background: none; border: none; padding: 0; margin: 0;
@@ -166,6 +163,8 @@
           <td>
             <span class="pagetop">
               <b class="hnname"><a href="/longform/" style="color:var(--ink);font-weight:700;" id="site-name">Long Form</a></b>
+              <span style="color:var(--ink)">| example</span>
+              &nbsp;
               <span id="year-selector">
                 <button id="year-btn"></button>
                 <div id="year-dropdown"></div>
@@ -217,8 +216,8 @@
         </tr>
         <tr>
           <td class="yclinks" style="text-align:center;padding:5px 0 8px;">
-            <a href="/longform/customise">Customise</a><span id="hidden-footer-sep"> | </span><a href="/longform/hidden" id="hidden-footer-link">Hidden</a> |
-            <span id="example-footer-sep" style="display:none;"></span><a href="/longform/example" id="example-footer-link" style="display:none;">Example</a><span id="example-footer-after" style="display:none;"> | </span>
+            <a href="/longform/customise">Customise</a> |
+            <span id="example-footer-sep" style="display:none;"> | </span><a href="/longform/example" id="example-footer-link" style="display:none;">Example</a>
             <a href="/longform/view?id=0" target="_blank" rel="noopener">About</a> |
             <a href="/longform/view?id=-1" target="_blank" rel="noopener">Contact</a>
           </td>
@@ -234,46 +233,34 @@
 
 <script>
 
-// --- Hidden posts (stored in localStorage as JSON array of post IDs) ---
+// --- Example posts (hardcoded) ---
 
-function loadHidden() {
-  try { return new Set(JSON.parse(localStorage.getItem('lf-hidden') || '[]')); } catch(e) { return new Set(); }
-}
-
-function saveHidden(set) {
-  localStorage.setItem('lf-hidden', JSON.stringify([...set]));
-}
-
-function hidePost(postId) {
-  const h = loadHidden();
-  h.add(postId);
-  saveHidden(h);
-  updateHiddenFooter();
-}
-
-function updateHiddenFooter() {
-  const h = loadHidden();
-  const sep = document.getElementById('hidden-footer-sep');
-  const link = document.getElementById('hidden-footer-link');
-  if (!sep || !link) return;
-  const show = h.size > 0;
-  sep.style.display = show ? '' : 'none';
-  link.style.display = show ? '' : 'none';
-}
+const EXAMPLE_POSTS = [
+  {
+    id: 'ex-0',
+    title: 'Welcome',
+    type: 'txt',
+    author: 'James Daniel Whitford',
+    date: '2026-02',
+    createdAt: 1740481200000,
+    _commentCount: 0
+  }
+  // Additional link posts will be added here
+];
 
 // --- Sort order (stored in localStorage as JSON map: postId -> order) ---
+// Uses separate key lf-example-sort to avoid colliding with main index sort
 
 function loadSortOrders() {
-  try { return JSON.parse(localStorage.getItem('lf-sort') || '{}'); } catch(e) { return {}; }
+  try { return JSON.parse(localStorage.getItem('lf-example-sort') || '{}'); } catch(e) { return {}; }
 }
 
 function saveSortOrders(map) {
-  localStorage.setItem('lf-sort', JSON.stringify(map));
+  localStorage.setItem('lf-example-sort', JSON.stringify(map));
 }
 
 function applySortOrders(posts) {
   const map = loadSortOrders();
-  // New posts (not yet in the map) get rank 0 so they sort to the top
   let changed = false;
   posts.forEach((p) => {
     if (map[p.id] === undefined) {
@@ -282,9 +269,7 @@ function applySortOrders(posts) {
     }
   });
   if (changed) saveSortOrders(map);
-  // sort by stored order (new posts with rank 0 land first)
   posts.sort((a, b) => map[a.id] - map[b.id]);
-  // normalize: reassign sequential ranks 1..N to eliminate any duplicates
   posts.forEach((p, i) => { map[p.id] = i + 1; });
   saveSortOrders(map);
   return posts;
@@ -292,114 +277,20 @@ function applySortOrders(posts) {
 
 function movePostToRank(postId, newRank, totalPosts) {
   const map = loadSortOrders();
-  // Clamp
   newRank = Math.max(1, Math.min(newRank, totalPosts));
   const oldRank = map[postId];
   if (oldRank === newRank) return;
-  // Shift other posts
   if (newRank < oldRank) {
-    // moving up: bump down posts that were between newRank and oldRank-1
     Object.keys(map).forEach(id => {
       if (id != postId && map[id] >= newRank && map[id] < oldRank) map[id]++;
     });
   } else {
-    // moving down: bump up posts that were between oldRank+1 and newRank
     Object.keys(map).forEach(id => {
       if (id != postId && map[id] > oldRank && map[id] <= newRank) map[id]--;
     });
   }
   map[postId] = newRank;
   saveSortOrders(map);
-}
-
-// --- IndexedDB ---
-
-let db;
-let commentsDb;
-
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open('longform-posts', 2);
-    req.onupgradeneeded = (e) => {
-      const d = e.target.result;
-      const oldVersion = e.oldVersion;
-      if (oldVersion < 1) {
-        const store = d.createObjectStore('posts', { keyPath: 'id', autoIncrement: true });
-        store.createIndex('createdAt', 'createdAt', { unique: false });
-      }
-      if (oldVersion < 2) {
-        const topicStore = d.createObjectStore('topics', { keyPath: 'id', autoIncrement: true });
-        topicStore.createIndex('name', 'name', { unique: true });
-        const subtopicStore = d.createObjectStore('subtopics', { keyPath: 'id', autoIncrement: true });
-        subtopicStore.createIndex('name', 'name', { unique: false });
-        subtopicStore.createIndex('topicId', 'topicId', { unique: false });
-      }
-    };
-    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
-    req.onerror = (e) => reject(e.target.error);
-  });
-}
-
-function openCommentsDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open('longform-comments', 1);
-    req.onupgradeneeded = (e) => {
-      const d = e.target.result;
-      if (!d.objectStoreNames.contains('comments')) {
-        const store = d.createObjectStore('comments', { keyPath: 'id', autoIncrement: true });
-        store.createIndex('postId', 'postId', { unique: false });
-        store.createIndex('parentId', 'parentId', { unique: false });
-      }
-    };
-    req.onsuccess = (e) => { commentsDb = e.target.result; resolve(commentsDb); };
-    req.onerror = (e) => reject(e.target.error);
-  });
-}
-
-function getCommentCountsForPosts(postIds) {
-  return new Promise((resolve, reject) => {
-    const counts = {};
-    postIds.forEach(id => { counts[id] = 0; });
-    const tx = commentsDb.transaction('comments', 'readonly');
-    const store = tx.objectStore('comments').index('postId');
-    let pending = postIds.length;
-    if (pending === 0) { resolve(counts); return; }
-    postIds.forEach(id => {
-      const req = store.count(id);
-      req.onsuccess = () => {
-        counts[id] = req.result;
-        if (--pending === 0) resolve(counts);
-      };
-      req.onerror = () => reject(req.error);
-    });
-  });
-}
-
-function getAllUserPosts() {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('posts', 'readonly');
-    const req = tx.objectStore('posts').getAll();
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-function getAllTopics() {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('topics', 'readonly');
-    const req = tx.objectStore('topics').getAll();
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-function getAllSubtopics() {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('subtopics', 'readonly');
-    const req = tx.objectStore('subtopics').getAll();
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
 }
 
 // --- Helpers ---
@@ -420,13 +311,12 @@ function timeAgo(ts) {
 
 function postTitleHref(post) {
   if (post.type === 'link') return post.url || '#';
-  if (post.type === 'txt') return '/longform/view?id=' + post.id + '&src=user';
-  if (post.type === 'file') return '/longform/view?id=' + post.id + '&src=user';
-  return '/longform/post.html?id=' + post.id;
+  if (post.type === 'txt') return '/longform/view?id=0';
+  return '#';
 }
 
 function postTitleTarget(post) {
-  return (post.type === 'link' || post.type === 'txt' || post.type === 'file') ? ' target="_blank" rel="noopener"' : '';
+  return (post.type === 'link' || post.type === 'txt') ? ' target="_blank" rel="noopener"' : '';
 }
 
 function postDomain(post) {
@@ -434,17 +324,10 @@ function postDomain(post) {
     try { return new URL(post.url).hostname.replace(/^www\./, ''); } catch(e) {}
   }
   if (post.type === 'txt') return 'md';
-  if (post.type === 'file') {
-    if (post.fileName) {
-      const ext = post.fileName.split('.').pop().toLowerCase();
-      if (ext) return ext;
-    }
-    if (post.fileMime) return post.fileMime.split('/').pop().split('+')[0].toLowerCase();
-  }
-  return post.domain || 'longform';
+  return 'longform';
 }
 
-// --- Derive available years and months ---
+// --- Filters ---
 
 function getYearsMonths(posts) {
   const map = {};
@@ -475,8 +358,12 @@ let activeTopicId = null;
 let activeSubtopicId = null;
 let currentPage = 1;
 
+// Topics/subtopics derived from EXAMPLE_POSTS
+let TOPICS = [];
+let SUBTOPICS = [];
+
 function saveFilters() {
-  localStorage.setItem('lf-filters', JSON.stringify({
+  localStorage.setItem('lf-example-filters', JSON.stringify({
     year: activeYear,
     month: activeMonth,
     topicId: activeTopicId,
@@ -486,7 +373,7 @@ function saveFilters() {
 
 function loadFilters() {
   try {
-    const f = JSON.parse(localStorage.getItem('lf-filters') || 'null');
+    const f = JSON.parse(localStorage.getItem('lf-example-filters') || 'null');
     if (!f) return;
     activeYear = f.year || null;
     activeMonth = f.month || null;
@@ -494,10 +381,8 @@ function loadFilters() {
     activeSubtopicId = f.subtopicId != null ? Number(f.subtopicId) : null;
   } catch(e) {}
 }
-const PAGE_SIZE = 30;
 
-let TOPICS = [];
-let SUBTOPICS = [];
+const PAGE_SIZE = 30;
 
 function rebuildNav() {
   _yearsMonthsAll = getYearsMonths(POSTS);
@@ -703,9 +588,7 @@ function updateActiveStates() {
 }
 
 function filteredPosts() {
-  const hidden = loadHidden();
   return POSTS.filter(p => {
-    if (hidden.has(p.id)) return false;
     const [y, m] = p.date.split('-');
     if (activeYear && y !== activeYear) return false;
     if (activeMonth && m !== activeMonth) return false;
@@ -736,7 +619,6 @@ function renderStories() {
   const hasMore = allPosts.length > start + PAGE_SIZE;
   const filtered = isFiltered();
 
-  // Build a global rank lookup (position in full POSTS array, 1-based)
   const globalRankMap = {};
   POSTS.forEach((p, i) => { globalRankMap[p.id] = i + 1; });
 
@@ -747,11 +629,8 @@ function renderStories() {
     const href = escapeHtml(postTitleHref(post));
     const target = postTitleTarget(post);
     const domain = escapeHtml(postDomain(post));
-    const isUserPost = !!post.createdAt;
-    const agoText = isUserPost ? timeAgo(post.createdAt) : escapeHtml(post.ago || '');
-    const commentCount = isUserPost ? (post._commentCount || 0) : (post.comments || 0);
-
-    const isWelcome = !!post._isWelcome;
+    const agoText = timeAgo(post.createdAt);
+    const commentCount = post._commentCount || 0;
 
     const rankCell = filtered
       ? `<span style="font-family:Verdana,Geneva,sans-serif;font-size:10pt;color:#828282;">${rank}.</span>`
@@ -760,8 +639,6 @@ function renderStories() {
     const voteCell = filtered
       ? ``
       : `<a href="#" id="up_${post.id}"><div class="votearrow" title="upvote"></div></a>`;
-
-    const editLink = isWelcome ? '' : ` | <a href="/longform/edit?id=${post.id}&src=user">edit</a>`;
 
     html += `
       <tr class="athing" id="post-${post.id}" data-post-id="${post.id}" style="height:19px;">
@@ -782,8 +659,7 @@ function renderStories() {
         <td colspan="2"></td>
         <td class="subtext" style="padding:0;">
           ${post.author ? `by ${escapeHtml(post.author)} | ` : ''}<span>${agoText}</span>
-          | <a href="#" class="hide-link" data-post-id="${post.id}">hide</a>${editLink}
-          | <a href="/longform/post.html?id=${post.id}${isUserPost ? '&src=user' : ''}">${commentCount} note${commentCount !== 1 ? 's' : ''}</a>
+          | <span>${commentCount} note${commentCount !== 1 ? 's' : ''}</span>
         </td>
       </tr>
       <tr class="spacer" data-post-id="${post.id}" style="height:5px;"><td></td></tr>`;
@@ -809,7 +685,7 @@ function renderStories() {
   if (!filtered) {
     const totalPosts = allPosts.length;
     document.querySelectorAll('.rank-btn').forEach(btn => {
-      const pid = Number(btn.dataset.postId);
+      const pid = btn.dataset.postId;
       const currentRank = Number(btn.dataset.rank);
 
       btn.addEventListener('click', () => {
@@ -866,56 +742,27 @@ function renderStories() {
       window.scrollTo(0, 0);
     });
   }
-
-  // Wire up hide links
-  document.querySelectorAll('.hide-link').forEach(a => {
-    a.addEventListener('click', e => {
-      e.preventDefault();
-      hidePost(Number(a.dataset.postId));
-      renderStories();
-    });
-  });
 }
 
-const WELCOME_POST = {
-  id: 0,
-  title: 'Welcome',
-  type: 'txt',
-  text: '',
-  author: 'James Daniel Whitford',
-  date: '2026-02',
-  createdAt: 1740481200000,
-  score: 0,
-  comments: 0,
-  _isWelcome: true
-};
+function init() {
+  // Derive topics/subtopics from example posts
+  const topicMap = {};
+  const subtopicMap = {};
+  EXAMPLE_POSTS.forEach(p => {
+    if (p.topicId != null && p.topicName && !topicMap[p.topicId]) {
+      topicMap[p.topicId] = { id: p.topicId, name: p.topicName };
+    }
+    if (p.subtopicId != null && p.subtopicName && !subtopicMap[p.subtopicId]) {
+      subtopicMap[p.subtopicId] = { id: p.subtopicId, name: p.subtopicName, topicId: p.topicId };
+    }
+  });
+  TOPICS = Object.values(topicMap);
+  SUBTOPICS = Object.values(subtopicMap);
 
-async function init() {
-  await openDB();
-  await openCommentsDB();
-  const userPosts = await getAllUserPosts();
-  const counts = await getCommentCountsForPosts(userPosts.map(p => p.id));
-  userPosts.forEach(p => { p._commentCount = counts[p.id] || 0; });
-  // Apply stored sort order (defaults to newest-first on first load)
-  userPosts.sort((a, b) => b.createdAt - a.createdAt);
-  // Inject welcome post — always pinned first, not in IndexedDB
-  WELCOME_POST._commentCount = 0;
-  POSTS = applySortOrders([WELCOME_POST, ...userPosts]);
-  TOPICS = await getAllTopics();
-  SUBTOPICS = await getAllSubtopics();
+  POSTS = applySortOrders(EXAMPLE_POSTS.slice());
   loadFilters();
   rebuildNav();
   renderStories();
-  updateHiddenFooter();
-  updateExampleFooter();
-}
-
-function updateExampleFooter() {
-  const show = localStorage.getItem('lf-example') !== '0';
-  const link = document.getElementById('example-footer-link');
-  const after = document.getElementById('example-footer-after');
-  if (link) link.style.display = show ? '' : 'none';
-  if (after) after.style.display = show ? '' : 'none';
 }
 
 init();
@@ -931,21 +778,13 @@ document.addEventListener('click', () => {
 (function(){
   const name = localStorage.getItem('lf-name');
   if (name) { const el = document.getElementById('site-name'); if (el) el.textContent = name; }
+  // Example link: hide it on the example page itself (you're already here)
+  // Show it only if lf-example is not '0', but since we're on the page, just hide
+  const exSep = document.getElementById('example-footer-sep');
+  const exLink = document.getElementById('example-footer-link');
+  if (exSep) exSep.style.display = 'none';
+  if (exLink) exLink.style.display = 'none';
 })();
-
-document.getElementById('site-name').addEventListener('click', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  activeYear = null;
-  activeMonth = null;
-  activeTopicId = null;
-  activeSubtopicId = null;
-  currentPage = 1;
-  saveFilters();
-  rebuildNav();
-  renderStories();
-  window.scrollTo(0, 0);
-});
 
 if (window._lfIconSvg !== undefined) {
   const navSvg = document.querySelector('td[style*="width:18px"] svg');
