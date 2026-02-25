@@ -54,17 +54,17 @@
       <span class="app-name">Chessle</span>
     </div> -->
 
-    <!-- <div class="app-item">
+    <div class="app-item">
       <a href="/longform/" class="app-btn" style="background-image: url('/longform/icon-192.png');"></a>
       <span class="app-name">Long Form</span>
-    </div> -->
+    </div>
   </div>
 
   <script>
     if ('serviceWorker' in navigator) {
       // Clean up old/orphaned service workers from deleted projects
       navigator.serviceWorker.getRegistrations().then(registrations => {
-        const validScopes = ['/', '/birdle/', '/tarot/', '/beautiful-mind/', '/hardle/', '/pomodoro/', '/git-notes/', '/perfectday/'];
+        const validScopes = ['/', '/birdle/', '/tarot/', '/beautiful-mind/', '/hardle/', '/pomodoro/', '/git-notes/', '/perfectday/', '/longform/'];
         registrations.forEach(registration => {
           const scope = new URL(registration.scope).pathname;
           if (!validScopes.includes(scope)) {
