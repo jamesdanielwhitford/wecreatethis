@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
-  <script>(function(){var b=localStorage.getItem('lf-brand'),k=localStorage.getItem('lf-ink'),r=document.documentElement.style;if(b)r.setProperty('--brand',b);if(k)r.setProperty('--ink',k);})();</script>
+  <script>(function(){var b=localStorage.getItem('lf-brand'),k=localStorage.getItem('lf-ink'),r=document.documentElement.style;if(b)r.setProperty('--brand',b);if(k)r.setProperty('--ink',k);var raw=localStorage.getItem('lf-icon');if(raw){try{var g=JSON.parse(raw),rects='';for(var row=0;row<6;row++){for(var col=0;col<5;col++){if(g[row*5+col]){rects+='<rect fill="white" x="'+col+'" y="'+row+'" width="1" height="1"/>';}}}window._lfIconSvg=rects;}catch(e){}}})();</script>
   <style>
     :root { --brand: #02db02; --ink: #000000; }
     body { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; margin: 8px; background: #ffffff; }
@@ -64,8 +64,8 @@
     #preview-bar {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      padding: 4px 10px;
+      gap: 6px;
+      padding: 2px 8px;
       background: var(--brand);
       font-size: 10pt;
       font-family: Verdana, Geneva, sans-serif;
@@ -74,6 +74,13 @@
       margin-top: 4px;
     }
     #preview-bar span { font-size: 9pt; font-weight: normal; color: var(--ink); }
+
+    /* Pixel icon editor */
+    .icon-editor { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+    .pixel-grid { display: inline-grid; grid-template-columns: repeat(5, 16px); grid-template-rows: repeat(6, 16px); gap: 1px; background: #ccc; border: 1px solid #ccc; cursor: crosshair; user-select: none; }
+    .pixel-cell { width: 16px; height: 16px; background: #f6f6ef; }
+    .pixel-cell.on { background: #000000; }
+
 
     @media only screen and (max-width: 750px) {
       #hnmain { width: 100%; min-width: 0; }
@@ -143,6 +150,7 @@
               <td>site name</td>
               <td>
                 <input type="text" id="input-name" maxlength="32" autocomplete="off" placeholder="Long Form">
+                &nbsp;<span class="reset-link" id="btn-reset-name" style="font-size:8pt;">reset</span>
                 <div style="font-size:8pt;color:#828282;margin-top:2px;">max 32 characters</div>
               </td>
             </tr>
@@ -152,6 +160,7 @@
                 <div class="color-row">
                   <input type="color" id="input-brand" value="#02db02">
                   <span class="color-hex" id="hex-brand">#02db02</span>
+                  <span class="reset-link" id="btn-reset-brand" style="font-size:8pt;">reset</span>
                 </div>
               </td>
             </tr>
@@ -161,16 +170,37 @@
                 <div class="color-row">
                   <input type="color" id="input-ink" value="#000000">
                   <span class="color-hex" id="hex-ink">#000000</span>
+                  <span class="reset-link" id="btn-reset-ink" style="font-size:8pt;">reset</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="vertical-align:top;padding-top:8px;">navbar icon</td>
+              <td style="padding-top:8px;">
+                <div style="display:flex;align-items:flex-start;gap:8px;">
+                  <div id="pixel-grid" class="pixel-grid"></div>
+                  <span class="reset-link" id="btn-reset-icon" style="font-size:8pt;">reset</span>
                 </div>
               </td>
             </tr>
             <tr>
               <td>preview</td>
-              <td>
-                <div id="preview-bar">
-                  <span id="preview-name">Long Form</span>
-                  <span>| new | customise</span>
-                </div>
+              <td id="preview-bar" style="background:var(--brand);padding:0;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="padding:2px">
+                  <tbody><tr>
+                    <td style="width:18px;padding-right:4px;">
+                      <div style="width:18px;height:18px;border:1px solid #ffffff;background:var(--brand);display:flex;align-items:center;justify-content:center;" id="preview-icon-wrap">
+                        <svg id="preview-icon" width="10" height="12" viewBox="0 0 5 6" style="display:block;image-rendering:pixelated;"></svg>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="pagetop">
+                        <b class="hnname" style="color:var(--ink);font-weight:700;" id="preview-name">Long Form</b>
+                        <span style="color:var(--ink);">| new | customise</span>
+                      </span>
+                    </td>
+                  </tr></tbody>
+                </table>
               </td>
             </tr>
             <tr>
@@ -213,6 +243,113 @@
 
 <script>
 const DEFAULTS = { brand: '#02db02', ink: '#000000', name: 'Long Form' };
+// Default icon: the existing pixel-art logo (diamond/bracket shape)
+const DEFAULT_ICON_GRID = [
+  true, false,false,false,true,
+  false,true, false,true, false,
+  true, false,false,false,true,
+  true, false,false,false,true,
+  true, false,false,false,true,
+  false,true, true, true, false,
+];
+
+// --- Icon grid state ---
+let iconGrid = DEFAULT_ICON_GRID.slice();
+
+function loadIconGrid() {
+  const raw = localStorage.getItem('lf-icon');
+  if (!raw) return DEFAULT_ICON_GRID.slice();
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length === 30) return parsed.map(Boolean);
+  } catch(e) {}
+  return DEFAULT_ICON_GRID.slice();
+}
+
+function iconGridToSvgRects(grid) {
+  let rects = '';
+  for (let row = 0; row < 6; row++) {
+    for (let col = 0; col < 5; col++) {
+      if (grid[row * 5 + col]) {
+        rects += `<rect fill="white" x="${col}" y="${row}" width="1" height="1"/>`;
+      }
+    }
+  }
+  return rects;
+}
+
+function renderPixelGrid() {
+  const wrap = document.getElementById('pixel-grid');
+  wrap.innerHTML = '';
+  for (let i = 0; i < 30; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'pixel-cell' + (iconGrid[i] ? ' on' : '');
+    cell.dataset.i = i;
+    wrap.appendChild(cell);
+  }
+}
+
+function updateIconPreviews() {
+  const rects = iconGridToSvgRects(iconGrid);
+  document.getElementById('preview-icon').innerHTML = rects;
+  // also update page navbar
+  const navSvg = document.querySelector('td[style*="width:18px"] svg');
+  if (navSvg) navSvg.innerHTML = rects;
+}
+
+// Pixel grid painting
+let painting = false;
+let paintValue = true;
+
+const pixelGridEl = document.getElementById('pixel-grid');
+
+function paintCell(el) {
+  if (!el || !el.classList.contains('pixel-cell')) return;
+  const i = Number(el.dataset.i);
+  iconGrid[i] = paintValue;
+  el.className = 'pixel-cell' + (paintValue ? ' on' : '');
+  updateIconPreviews();
+}
+
+pixelGridEl.addEventListener('mousedown', e => {
+  if (!e.target.classList.contains('pixel-cell')) return;
+  e.preventDefault();
+  painting = true;
+  const i = Number(e.target.dataset.i);
+  paintValue = !iconGrid[i];
+  paintCell(e.target);
+});
+
+pixelGridEl.addEventListener('mouseover', e => {
+  if (!painting) return;
+  paintCell(e.target);
+});
+
+document.addEventListener('mouseup', () => { painting = false; });
+
+// Touch support
+pixelGridEl.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  if (!el || !el.classList.contains('pixel-cell')) return;
+  painting = true;
+  const i = Number(el.dataset.i);
+  paintValue = !iconGrid[i];
+  paintCell(el);
+}, { passive: false });
+
+pixelGridEl.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!painting) return;
+  const touch = e.touches[0];
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  paintCell(el);
+}, { passive: false });
+
+pixelGridEl.addEventListener('touchend', () => { painting = false; });
+
+// --- Settings ---
 
 function loadSettings() {
   return {
@@ -231,12 +368,14 @@ function applyToPage(s) {
 
 function updatePreview(s) {
   document.getElementById('preview-bar').style.background = s.brand;
-  document.getElementById('preview-bar').style.color = s.ink;
-  document.querySelectorAll('#preview-bar span').forEach(el => el.style.color = s.ink);
+  document.getElementById('preview-icon-wrap').style.background = s.brand;
   document.getElementById('preview-name').textContent = s.name || DEFAULTS.name;
+  document.getElementById('preview-name').style.color = s.ink;
+  document.querySelectorAll('#preview-bar .pagetop span').forEach(el => el.style.color = s.ink);
 }
 
 // Init
+iconGrid = loadIconGrid();
 const settings = loadSettings();
 applyToPage(settings);
 
@@ -252,6 +391,8 @@ inputName.value  = settings.name !== DEFAULTS.name ? settings.name : '';
 hexBrand.textContent = settings.brand;
 hexInk.textContent   = settings.ink;
 updatePreview(settings);
+renderPixelGrid();
+updateIconPreviews();
 
 function currentValues() {
   return {
@@ -275,6 +416,7 @@ inputInk.addEventListener('input', () => {
 
 inputName.addEventListener('input', () => {
   updatePreview(currentValues());
+  updateIconPreviews();
 });
 
 document.getElementById('btn-save').addEventListener('click', () => {
@@ -286,24 +428,73 @@ document.getElementById('btn-save').addEventListener('click', () => {
   } else {
     localStorage.removeItem('lf-name');
   }
+  // Save icon: only store if different from default
+  const isDefault = iconGrid.every((v, i) => v === DEFAULT_ICON_GRID[i]);
+  if (isDefault) {
+    localStorage.removeItem('lf-icon');
+  } else {
+    localStorage.setItem('lf-icon', JSON.stringify(iconGrid));
+  }
   applyToPage(s);
   const btn = document.getElementById('btn-save');
   btn.value = 'saved!';
   setTimeout(() => { btn.value = 'save'; }, 1500);
 });
 
+document.getElementById('btn-reset-name').addEventListener('click', () => {
+  inputName.value = '';
+  localStorage.removeItem('lf-name');
+  updatePreview(currentValues());
+  applyToPage(currentValues());
+});
+
+document.getElementById('btn-reset-brand').addEventListener('click', () => {
+  inputBrand.value = DEFAULTS.brand;
+  hexBrand.textContent = DEFAULTS.brand;
+  localStorage.removeItem('lf-brand');
+  document.documentElement.style.setProperty('--brand', DEFAULTS.brand);
+  updatePreview(currentValues());
+});
+
+document.getElementById('btn-reset-ink').addEventListener('click', () => {
+  inputInk.value = DEFAULTS.ink;
+  hexInk.textContent = DEFAULTS.ink;
+  localStorage.removeItem('lf-ink');
+  document.documentElement.style.setProperty('--ink', DEFAULTS.ink);
+  updatePreview(currentValues());
+});
+
+document.getElementById('btn-reset-icon').addEventListener('click', () => {
+  iconGrid = DEFAULT_ICON_GRID.slice();
+  localStorage.removeItem('lf-icon');
+  renderPixelGrid();
+  updateIconPreviews();
+});
+
 document.getElementById('btn-reset').addEventListener('click', () => {
   localStorage.removeItem('lf-brand');
   localStorage.removeItem('lf-ink');
   localStorage.removeItem('lf-name');
+  localStorage.removeItem('lf-icon');
   inputBrand.value = DEFAULTS.brand;
   inputInk.value   = DEFAULTS.ink;
   inputName.value  = '';
   hexBrand.textContent = DEFAULTS.brand;
   hexInk.textContent   = DEFAULTS.ink;
+  iconGrid = DEFAULT_ICON_GRID.slice();
+  renderPixelGrid();
+  updateIconPreviews();
+  document.documentElement.style.setProperty('--brand', DEFAULTS.brand);
+  document.documentElement.style.setProperty('--ink', DEFAULTS.ink);
   applyToPage(DEFAULTS);
   updatePreview(DEFAULTS);
 });
+
+// Apply saved icon to this page's navbar on load
+if (window._lfIconSvg !== undefined) {
+  const navSvg = document.querySelector('td[style*="width:18px"] svg');
+  if (navSvg) navSvg.innerHTML = window._lfIconSvg;
+}
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/longform/sw.js', { scope: '/longform/' });

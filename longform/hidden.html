@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
-  <script>(function(){var b=localStorage.getItem('lf-brand'),k=localStorage.getItem('lf-ink'),r=document.documentElement.style;if(b)r.setProperty('--brand',b);if(k)r.setProperty('--ink',k);})();</script>
+  <script>(function(){var b=localStorage.getItem('lf-brand'),k=localStorage.getItem('lf-ink'),r=document.documentElement.style;if(b)r.setProperty('--brand',b);if(k)r.setProperty('--ink',k);var raw=localStorage.getItem('lf-icon');if(raw){try{var g=JSON.parse(raw),rects='';for(var row=0;row<6;row++){for(var col=0;col<5;col++){if(g[row*5+col]){rects+='<rect fill="white" x="'+col+'" y="'+row+'" width="1" height="1"/>';}}}window._lfIconSvg=rects;}catch(e){}}})();</script>
   <style>
     :root { --brand: #02db02; --ink: #000000; }
     body { font-family: Verdana, Geneva, sans-serif; font-size: 10pt; color: #828282; margin: 8px; background: #ffffff; }
@@ -499,6 +499,11 @@ init();
   const name = localStorage.getItem('lf-name');
   if (name) { const el = document.getElementById('site-name'); if (el) el.textContent = name; }
 })();
+
+if (window._lfIconSvg !== undefined) {
+  const navSvg = document.querySelector('td[style*="width:18px"] svg');
+  if (navSvg) navSvg.innerHTML = window._lfIconSvg;
+}
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/longform/sw.js', { scope: '/longform/' });
