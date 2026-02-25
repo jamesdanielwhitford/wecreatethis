@@ -218,8 +218,8 @@
         <tr>
           <td class="yclinks" style="text-align:center;padding:5px 0 8px;">
             <a href="/longform/customise">Customise</a><span id="hidden-footer-sep"> | </span><a href="/longform/hidden" id="hidden-footer-link">Hidden</a> |
-            <a href="#">About</a> |
-            <a href="#">Contact</a>
+            <a href="/longform/view?id=0" target="_blank" rel="noopener">About</a> |
+            <a href="/longform/view?id=-1" target="_blank" rel="noopener">Contact</a>
           </td>
         </tr>
         </tbody>
@@ -272,18 +272,16 @@ function saveSortOrders(map) {
 
 function applySortOrders(posts) {
   const map = loadSortOrders();
-  // assign a stable default order to any post not yet in the map
-  // use max existing rank + 1 to avoid collisions with already-ranked posts
+  // New posts (not yet in the map) get rank 0 so they sort to the top
   let changed = false;
   posts.forEach((p) => {
     if (map[p.id] === undefined) {
-      const maxRank = Object.keys(map).length > 0 ? Math.max(...Object.values(map)) : 0;
-      map[p.id] = maxRank + 1;
+      map[p.id] = 0;
       changed = true;
     }
   });
   if (changed) saveSortOrders(map);
-  // sort by stored order
+  // sort by stored order (new posts with rank 0 land first)
   posts.sort((a, b) => map[a.id] - map[b.id]);
   // normalize: reassign sequential ranks 1..N to eliminate any duplicates
   posts.forEach((p, i) => { map[p.id] = i + 1; });
@@ -752,6 +750,8 @@ function renderStories() {
     const agoText = isUserPost ? timeAgo(post.createdAt) : escapeHtml(post.ago || '');
     const commentCount = isUserPost ? (post._commentCount || 0) : (post.comments || 0);
 
+    const isWelcome = !!post._isWelcome;
+
     const rankCell = filtered
       ? `<span style="font-family:Verdana,Geneva,sans-serif;font-size:10pt;color:#828282;">${rank}.</span>`
       : `<button class="rank-btn" data-post-id="${post.id}" data-rank="${rank}">${rank}.</button>`;
@@ -759,6 +759,8 @@ function renderStories() {
     const voteCell = filtered
       ? ``
       : `<a href="#" id="up_${post.id}"><div class="votearrow" title="upvote"></div></a>`;
+
+    const editLink = isWelcome ? '' : ` | <a href="/longform/edit?id=${post.id}&src=user">edit</a>`;
 
     html += `
       <tr class="athing" id="post-${post.id}" data-post-id="${post.id}" style="height:19px;">
@@ -779,8 +781,7 @@ function renderStories() {
         <td colspan="2"></td>
         <td class="subtext" style="padding:0;">
           ${post.author ? `by ${escapeHtml(post.author)} | ` : ''}<span>${agoText}</span>
-          | <a href="#" class="hide-link" data-post-id="${post.id}">hide</a>
-          | <a href="/longform/edit?id=${post.id}&src=user">edit</a>
+          | <a href="#" class="hide-link" data-post-id="${post.id}">hide</a>${editLink}
           | <a href="/longform/post.html?id=${post.id}${isUserPost ? '&src=user' : ''}">${commentCount} note${commentCount !== 1 ? 's' : ''}</a>
         </td>
       </tr>
@@ -875,6 +876,19 @@ function renderStories() {
   });
 }
 
+const WELCOME_POST = {
+  id: 0,
+  title: 'Welcome',
+  type: 'txt',
+  text: '',
+  author: 'James Daniel Whitford',
+  date: '2026-02',
+  createdAt: 1740481200000,
+  score: 0,
+  comments: 0,
+  _isWelcome: true
+};
+
 async function init() {
   await openDB();
   await openCommentsDB();
@@ -883,7 +897,9 @@ async function init() {
   userPosts.forEach(p => { p._commentCount = counts[p.id] || 0; });
   // Apply stored sort order (defaults to newest-first on first load)
   userPosts.sort((a, b) => b.createdAt - a.createdAt);
-  POSTS = applySortOrders(userPosts);
+  // Inject welcome post — always pinned first, not in IndexedDB
+  WELCOME_POST._commentCount = 0;
+  POSTS = applySortOrders([WELCOME_POST, ...userPosts]);
   TOPICS = await getAllTopics();
   SUBTOPICS = await getAllSubtopics();
   loadFilters();

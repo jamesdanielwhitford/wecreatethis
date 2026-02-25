@@ -173,8 +173,8 @@
         <tr>
           <td class="yclinks" style="text-align:center;padding:5px 0 8px;">
             <a href="/longform/customise">Customise</a> |
-            <a href="#">About</a> |
-            <a href="#">Contact</a>
+            <a href="/longform/view?id=0" target="_blank" rel="noopener">About</a> |
+            <a href="/longform/view?id=-1" target="_blank" rel="noopener">Contact</a>
           </td>
         </tr>
         </tbody>
@@ -207,8 +207,22 @@ function getParam(name) {
   return new URLSearchParams(window.location.search).get(name);
 }
 
-const postId = parseInt(getParam('id'), 10);
+const postIdRaw = getParam('id');
+const postId = parseInt(postIdRaw, 10);
 const postSrc = getParam('src'); // 'user' means load from IndexedDB
+
+const WELCOME_POST = {
+  id: 0,
+  title: 'Welcome',
+  type: 'txt',
+  text: '',
+  author: 'James Daniel Whitford',
+  date: '2026-02',
+  createdAt: 1740481200000,
+  score: 0,
+  comments: 0,
+  _isWelcome: true
+};
 
 let post = null;
 
@@ -493,6 +507,9 @@ function renderStoryHeader(commentCount) {
   const target = postTitleTarget(post);
   const domain = escapeHtml(postDomain(post));
   const agoText = post.createdAt ? timeAgo(post.createdAt) : escapeHtml(post.ago || '');
+  const mutableLinks = post._isWelcome
+    ? ''
+    : ` | <a href="#" id="delete-post-link">delete</a> | <a href="/longform/edit?id=${postId}&src=user">edit</a>`;
   return `
     <tr class="athing submission">
       <td align="right" valign="top" class="title"><span class="rank"></span></td>
@@ -510,9 +527,7 @@ function renderStoryHeader(commentCount) {
       <td colspan="2"></td>
       <td class="subtext">
         ${post.author ? `by ${escapeHtml(post.author)} | ` : ''}<span class="age"><a href="#">${agoText}</a></span>
-        | <a href="#" id="hide-post-link">${loadHidden().has(postId) ? 'unhide' : 'hide'}</a>
-        | <a href="#" id="delete-post-link">delete</a>
-        | <a href="/longform/edit?id=${postId}&src=user">edit</a>
+        | <a href="#" id="hide-post-link">${loadHidden().has(postId) ? 'unhide' : 'hide'}</a>${mutableLinks}
         | <a href="#comments">${commentCount}&nbsp;note${commentCount !== 1 ? 's' : ''}</a>
       </td>
     </tr>
@@ -614,12 +629,16 @@ async function renderPage() {
 
   // Resolve post on first call only
   if (!post) {
-    await openPostsDB();
-    post = await getUserPost(postId);
-    if (!post) {
-      document.getElementById('fatitem-tbody').innerHTML =
-        '<tr><td style="padding:20px;color:#828282;font-size:10pt;">Post not found.</td></tr>';
-      return;
+    if (postId === 0) {
+      post = WELCOME_POST;
+    } else {
+      await openPostsDB();
+      post = await getUserPost(postId);
+      if (!post) {
+        document.getElementById('fatitem-tbody').innerHTML =
+          '<tr><td style="padding:20px;color:#828282;font-size:10pt;">Post not found.</td></tr>';
+        return;
+      }
     }
     document.title = post.title + ' | Long Form';
   }

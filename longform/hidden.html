@@ -124,8 +124,8 @@
         <tr>
           <td class="yclinks" style="text-align:center;padding:5px 0 8px;">
             <a href="/longform/customise">Customise</a> |
-            <a href="#">About</a> |
-            <a href="#">Contact</a>
+            <a href="/longform/view?id=0" target="_blank" rel="noopener">About</a> |
+            <a href="/longform/view?id=-1" target="_blank" rel="noopener">Contact</a>
           </td>
         </tr>
         </tbody>
@@ -418,7 +418,7 @@ function renderStories() {
         <td class="subtext" style="padding:0;">
           <a href="#">${agoText}</a>
           | <a href="#" class="unhide-link" data-post-id="${post.id}">unhide</a>
-          | <a href="#" class="delete-link" data-post-id="${post.id}">delete</a>
+          ${post._isWelcome ? '' : `| <a href="#" class="delete-link" data-post-id="${post.id}">delete</a>`}
           | <a href="/longform/post.html?id=${post.id}${isUserPost ? '&src=user' : ''}">${commentCount} note${commentCount !== 1 ? 's' : ''}</a>
         </td>
       </tr>
@@ -479,15 +479,30 @@ function renderStories() {
   });
 }
 
+const WELCOME_POST = {
+  id: 0,
+  title: 'Welcome',
+  type: 'txt',
+  text: '',
+  author: 'James Daniel Whitford',
+  date: '2026-02',
+  createdAt: 1740481200000,
+  score: 0,
+  comments: 0,
+  _isWelcome: true
+};
+
 async function init() {
   await openDB();
   await openCommentsDB();
   const hidden = loadHidden();
   const userPosts = await getAllUserPosts();
+  // Include welcome post if hidden
+  if (hidden.has(0)) userPosts.push(WELCOME_POST);
   // Only show hidden posts
   const hiddenPosts = userPosts.filter(p => hidden.has(p.id));
-  const counts = await getCommentCountsForPosts(hiddenPosts.map(p => p.id));
-  hiddenPosts.forEach(p => { p._commentCount = counts[p.id] || 0; });
+  const counts = await getCommentCountsForPosts(hiddenPosts.filter(p => !p._isWelcome).map(p => p.id));
+  hiddenPosts.forEach(p => { p._commentCount = p._isWelcome ? 0 : (counts[p.id] || 0); });
   hiddenPosts.sort((a, b) => b.createdAt - a.createdAt);
   POSTS = hiddenPosts;
   renderStories();

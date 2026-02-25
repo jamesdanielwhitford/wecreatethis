@@ -122,6 +122,22 @@ function getParam(name) {
 const postId = parseInt(getParam('id'), 10);
 const src = getParam('src'); // 'user' = IndexedDB
 
+const WELCOME_POST = {
+  id: 0,
+  title: 'Welcome',
+  type: 'txt',
+  text: '',
+  _isWelcome: true
+};
+
+const CONTACT_POST = {
+  id: -1,
+  title: 'Contact',
+  type: 'txt',
+  text: '',
+  _isStatic: true
+};
+
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -288,6 +304,10 @@ function openDB() {
 }
 
 async function load() {
+  // Static posts — served without IndexedDB
+  if (postId === 0) { renderTxt(WELCOME_POST); return; }
+  if (postId === -1) { renderTxt(CONTACT_POST); return; }
+
   if (!postId || src !== 'user') {
     document.getElementById('content').innerHTML = '<p class="not-found">Post not found.</p>';
     return;
