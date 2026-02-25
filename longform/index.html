@@ -216,12 +216,7 @@
           <td style="border-top:1px solid var(--brand);"></td>
         </tr>
         <tr>
-          <td class="yclinks" style="text-align:center;padding:5px 0 8px;">
-            <a href="/longform/customise">Customise</a><span id="hidden-footer-sep"> | </span><a href="/longform/hidden" id="hidden-footer-link">Hidden</a> |
-            <span id="example-footer-sep" style="display:none;"></span><a href="/longform/example" id="example-footer-link" style="display:none;">Example</a><span id="example-footer-after" style="display:none;"> | </span>
-            <a href="/longform/view?id=0" target="_blank" rel="noopener">About</a> |
-            <a href="/longform/view?id=-1" target="_blank" rel="noopener">Contact</a>
-          </td>
+          <td class="yclinks" id="footer-links" style="text-align:center;padding:5px 0 8px;"></td>
         </tr>
         </tbody>
       </table>
@@ -251,15 +246,17 @@ function hidePost(postId) {
   updateHiddenFooter();
 }
 
-function updateHiddenFooter() {
-  const h = loadHidden();
-  const sep = document.getElementById('hidden-footer-sep');
-  const link = document.getElementById('hidden-footer-link');
-  if (!sep || !link) return;
-  const show = h.size > 0;
-  sep.style.display = show ? '' : 'none';
-  link.style.display = show ? '' : 'none';
+function updateFooterLinks() {
+  const td = document.getElementById('footer-links');
+  if (!td) return;
+  const parts = ['<a href="/longform/customise">Customise</a>'];
+  if (loadHidden().size > 0) parts.push('<a href="/longform/hidden">Hidden</a>');
+  if (localStorage.getItem('lf-example') !== '0') parts.push('<a href="/longform/example">Example</a>');
+  if (localStorage.getItem('lf-about') !== '0') parts.push('<a href="/longform/view?id=0" target="_blank" rel="noopener">About</a>');
+  if (localStorage.getItem('lf-contact') !== '0') parts.push('<a href="/longform/view?id=-1" target="_blank" rel="noopener">Contact</a>');
+  td.innerHTML = parts.join(' | ');
 }
+function updateHiddenFooter() { updateFooterLinks(); }
 
 // --- Sort order (stored in localStorage as JSON map: postId -> order) ---
 
@@ -910,13 +907,7 @@ async function init() {
   updateExampleFooter();
 }
 
-function updateExampleFooter() {
-  const show = localStorage.getItem('lf-example') !== '0';
-  const link = document.getElementById('example-footer-link');
-  const after = document.getElementById('example-footer-after');
-  if (link) link.style.display = show ? '' : 'none';
-  if (after) after.style.display = show ? '' : 'none';
-}
+function updateExampleFooter() { updateFooterLinks(); }
 
 init();
 
