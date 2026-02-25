@@ -161,6 +161,17 @@
                 <td><input type="text" id="post-title" maxlength="200" required autocomplete="off"></td>
               </tr>
 
+              <!-- Author row -->
+              <tr>
+                <td>author</td>
+                <td>
+                  <input type="text" id="post-author" maxlength="100" autocomplete="off" style="width:200px;">
+                  <label style="margin-left:8px;font-size:9pt;color:#828282;cursor:pointer;">
+                    <input type="checkbox" id="author-set-default" style="width:auto;margin:0 3px 0 0;vertical-align:middle;">set as default
+                  </label>
+                </td>
+              </tr>
+
               <!-- Topic row -->
               <tr id="row-topic">
                 <td>topic</td>
@@ -559,13 +570,25 @@ document.getElementById('submit-form').addEventListener('submit', async (e) => {
   const title = document.getElementById('post-title').value.trim();
   if (!title) return;
 
+  const authorInput = document.getElementById('post-author');
+  const typedAuthor = authorInput.value.trim();
+  const defaultAuthor = localStorage.getItem('lf-default-author') || null;
+  const author = typedAuthor || defaultAuthor;
+  if (document.getElementById('author-set-default').checked) {
+    if (typedAuthor) {
+      localStorage.setItem('lf-default-author', typedAuthor);
+    } else {
+      localStorage.removeItem('lf-default-author');
+    }
+  }
+
   const now = Date.now();
   const dateStr = new Date(now).toISOString().slice(0, 7); // YYYY-MM
 
   const post = {
     title,
     type: activeType,
-    author: 'james',
+    author: author || null,
     score: 1,
     comments: 0,
     date: dateStr,
@@ -641,6 +664,13 @@ async function initTopics() {
   renderTopicDropdown();
 }
 initTopics();
+
+// Pre-fill author placeholder from default
+(function() {
+  const def = localStorage.getItem('lf-default-author');
+  const input = document.getElementById('post-author');
+  input.placeholder = def || 'none';
+})();
 
 if (window._lfIconSvg !== undefined) {
   const navSvg = document.querySelector('td[style*="width:18px"] svg');

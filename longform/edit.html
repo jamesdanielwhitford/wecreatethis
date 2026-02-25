@@ -161,6 +161,17 @@
                 <td><input type="text" id="post-title" maxlength="200" required autocomplete="off"></td>
               </tr>
 
+              <!-- Author row -->
+              <tr>
+                <td>author</td>
+                <td>
+                  <input type="text" id="post-author" maxlength="100" autocomplete="off" style="width:200px;">
+                  <label style="margin-left:8px;font-size:9pt;color:#828282;cursor:pointer;">
+                    <input type="checkbox" id="author-set-default" style="width:auto;margin:0 3px 0 0;vertical-align:middle;">set as default
+                  </label>
+                </td>
+              </tr>
+
               <!-- Topic row -->
               <tr id="row-topic">
                 <td>topic</td>
@@ -694,6 +705,10 @@ function switchToType(type) {
 
 function prefillForm(post) {
   document.getElementById('post-title').value = post.title || '';
+  const authorInput = document.getElementById('post-author');
+  authorInput.value = post.author || '';
+  const defAuthor = localStorage.getItem('lf-default-author');
+  authorInput.placeholder = (!post.author && defAuthor) ? defAuthor : 'none';
   switchToType(post.type || 'link');
 
   if (post.type === 'link') {
@@ -719,7 +734,18 @@ document.getElementById('submit-form').addEventListener('submit', async (e) => {
   const title = document.getElementById('post-title').value.trim();
   if (!title) return;
 
-  const post = { ...existingPost, title, type: activeType };
+  const typedAuthor = document.getElementById('post-author').value.trim();
+  const defaultAuthor = localStorage.getItem('lf-default-author') || null;
+  const author = typedAuthor || defaultAuthor;
+  if (document.getElementById('author-set-default').checked) {
+    if (typedAuthor) {
+      localStorage.setItem('lf-default-author', typedAuthor);
+    } else {
+      localStorage.removeItem('lf-default-author');
+    }
+  }
+
+  const post = { ...existingPost, title, type: activeType, author: author || null };
 
   // Clear type-specific fields that no longer apply
   delete post.url;

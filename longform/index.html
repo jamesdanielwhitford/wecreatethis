@@ -778,7 +778,7 @@ function renderStories() {
       <tr data-post-id="${post.id}">
         <td colspan="2"></td>
         <td class="subtext" style="padding:0;">
-          <span>${agoText}</span>
+          ${post.author ? `by ${escapeHtml(post.author)} | ` : ''}<span>${agoText}</span>
           | <a href="#" class="hide-link" data-post-id="${post.id}">hide</a>
           | <a href="/longform/edit?id=${post.id}&src=user">edit</a>
           | <a href="/longform/post.html?id=${post.id}${isUserPost ? '&src=user' : ''}">${commentCount} note${commentCount !== 1 ? 's' : ''}</a>
