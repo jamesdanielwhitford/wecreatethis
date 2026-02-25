@@ -475,6 +475,26 @@ let activeMonth = null;
 let activeTopicId = null;
 let activeSubtopicId = null;
 let currentPage = 1;
+
+function saveFilters() {
+  localStorage.setItem('lf-filters', JSON.stringify({
+    year: activeYear,
+    month: activeMonth,
+    topicId: activeTopicId,
+    subtopicId: activeSubtopicId
+  }));
+}
+
+function loadFilters() {
+  try {
+    const f = JSON.parse(localStorage.getItem('lf-filters') || 'null');
+    if (!f) return;
+    activeYear = f.year || null;
+    activeMonth = f.month || null;
+    activeTopicId = f.topicId != null ? Number(f.topicId) : null;
+    activeSubtopicId = f.subtopicId != null ? Number(f.subtopicId) : null;
+  } catch(e) {}
+}
 const PAGE_SIZE = 30;
 
 let TOPICS = [];
@@ -491,19 +511,25 @@ function renderNav() {
   const yearBtn = document.getElementById('year-btn');
   const yearDropdown = document.getElementById('year-dropdown');
 
-  yearDropdown.innerHTML = _allYears.map(y =>
-    `<a href="#" class="year-option" data-year="${y}">${y}</a>`
-  ).join('');
+  yearDropdown.innerHTML =
+    `<a href="#" class="year-option" data-year="">All</a>` +
+    _allYears.map(y =>
+      `<a href="#" class="year-option" data-year="${y}">${y}</a>`
+    ).join('');
 
   yearDropdown.querySelectorAll('.year-option').forEach(a => {
     a.addEventListener('click', e => {
       e.preventDefault();
-      activeYear = a.dataset.year;
+      activeYear = a.dataset.year || null;
       activeMonth = null;
+      activeTopicId = null;
+      activeSubtopicId = null;
       currentPage = 1;
+      saveFilters();
       yearDropdown.style.display = 'none';
       updateYearBtn();
       renderMonths();
+      renderTopicNav();
       updateActiveStates();
       renderStories();
     });
@@ -538,7 +564,7 @@ function updateYearBtn() {
   const yearBtn = document.getElementById('year-btn');
   yearBtn.textContent = (activeYear || 'Year') + ' ▾';
   document.querySelectorAll('.year-option').forEach(a => {
-    a.classList.toggle('active-year', a.dataset.year === activeYear);
+    a.classList.toggle('active-year', (a.dataset.year || null) === activeYear);
   });
 }
 
@@ -561,6 +587,7 @@ function renderMonths() {
       e.preventDefault();
       activeMonth = (activeMonth === a.dataset.month) ? null : a.dataset.month;
       currentPage = 1;
+      saveFilters();
       updateActiveStates();
       renderStories();
     });
@@ -578,7 +605,7 @@ function renderTopicNav() {
   const subtopicBtn      = document.getElementById('subtopic-btn');
   const subtopicDropdown = document.getElementById('subtopic-dropdown');
 
-  if (TOPICS.length === 0) {
+  if (TOPICS.length === 0 || activeYear !== null) {
     topicPipe.style.display = 'none';
     topicSelector.style.display = 'none';
     subtopicPipe.style.display = 'none';
@@ -605,6 +632,7 @@ function renderTopicNav() {
       activeTopicId = raw === '' ? null : Number(raw);
       activeSubtopicId = null;
       currentPage = 1;
+      saveFilters();
       topicDropdown.style.display = 'none';
       renderTopicNav();
       renderStories();
@@ -656,6 +684,7 @@ function renderTopicNav() {
       const raw = a.dataset.subtopicId;
       activeSubtopicId = raw === '' ? null : Number(raw);
       currentPage = 1;
+      saveFilters();
       subtopicDropdown.style.display = 'none';
       renderTopicNav();
       renderStories();
@@ -707,16 +736,26 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+function isFiltered() {
+  return activeYear !== null || activeMonth !== null || activeTopicId !== null || activeSubtopicId !== null;
+}
+
 function renderStories() {
   const tbody = document.getElementById('story-tbody');
   const allPosts = filteredPosts();
   const start = (currentPage - 1) * PAGE_SIZE;
   const pagePosts = allPosts.slice(start, start + PAGE_SIZE);
   const hasMore = allPosts.length > start + PAGE_SIZE;
+  const filtered = isFiltered();
+
+  // Build a global rank lookup (position in full POSTS array, 1-based)
+  const globalRankMap = {};
+  POSTS.forEach((p, i) => { globalRankMap[p.id] = i + 1; });
+
   let html = '';
 
   pagePosts.forEach((post, i) => {
-    const rank = start + i + 1;
+    const rank = filtered ? globalRankMap[post.id] : (start + i + 1);
     const href = escapeHtml(postTitleHref(post));
     const target = postTitleTarget(post);
     const domain = escapeHtml(postDomain(post));
@@ -724,13 +763,21 @@ function renderStories() {
     const agoText = isUserPost ? timeAgo(post.createdAt) : escapeHtml(post.ago || '');
     const commentCount = isUserPost ? (post._commentCount || 0) : (post.comments || 0);
 
+    const rankCell = filtered
+      ? `<span style="font-family:Verdana,Geneva,sans-serif;font-size:10pt;color:#828282;">${rank}.</span>`
+      : `<button class="rank-btn" data-post-id="${post.id}" data-rank="${rank}">${rank}.</button>`;
+
+    const voteCell = filtered
+      ? ``
+      : `<a href="#" id="up_${post.id}"><div class="votearrow" title="upvote"></div></a>`;
+
     html += `
       <tr class="athing" id="post-${post.id}" data-post-id="${post.id}" style="height:19px;">
         <td class="title" style="width:22px;text-align:right;vertical-align:top;padding-right:3px;color:#828282;font-size:10pt;">
-          <button class="rank-btn" data-post-id="${post.id}" data-rank="${rank}">${rank}.</button>
+          ${rankCell}
         </td>
         <td class="votelinks" style="width:14px;vertical-align:top;">
-          <a href="#" id="up_${post.id}"><div class="votearrow" title="upvote"></div></a>
+          ${voteCell}
         </td>
         <td class="title" style="vertical-align:top;">
           <span class="titleline">
@@ -766,61 +813,57 @@ function renderStories() {
 
   tbody.innerHTML = html;
 
-  // Wire up rank buttons — click shows an inline input
-  const totalFiltered = allPosts.length;
-  document.querySelectorAll('.rank-btn').forEach(btn => {
-    const pid = Number(btn.dataset.postId);
-    const currentRank = Number(btn.dataset.rank);
+  // Wire up rank buttons and upvote arrows — only when no filter is active
+  if (!filtered) {
+    const totalPosts = allPosts.length;
+    document.querySelectorAll('.rank-btn').forEach(btn => {
+      const pid = Number(btn.dataset.postId);
+      const currentRank = Number(btn.dataset.rank);
 
-    btn.addEventListener('click', () => {
-      // Replace button with a small input pre-filled with current rank
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'rank-input';
-      input.value = currentRank;
-      btn.replaceWith(input);
-      input.select();
+      btn.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'rank-input';
+        input.value = currentRank;
+        btn.replaceWith(input);
+        input.select();
 
-      function commit() {
-        const raw = input.value.trim();
-        // Ignore empty or non-numeric input
-        if (raw === '' || !/^-?\d+$/.test(raw)) {
+        function commit() {
+          const raw = input.value.trim();
+          if (raw === '' || !/^-?\d+$/.test(raw)) {
+            renderStories();
+            return;
+          }
+          let n = parseInt(raw, 10);
+          if (n < 0) n = Math.abs(n);
+          if (n === 0) n = 1;
+          if (n > totalPosts) n = totalPosts;
+          movePostToRank(pid, n, totalPosts);
+          POSTS = applySortOrders(POSTS);
           renderStories();
-          return;
         }
-        let n = parseInt(raw, 10);
-        // Negative -> positive
-        if (n < 0) n = Math.abs(n);
-        // Zero -> 1
-        if (n === 0) n = 1;
-        // Cap at list length
-        if (n > totalFiltered) n = totalFiltered;
-        movePostToRank(pid, n, totalFiltered);
+
+        input.addEventListener('keydown', e => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(); }
+          if (e.key === 'Escape') { renderStories(); }
+        });
+        input.addEventListener('blur', commit);
+      });
+    });
+
+    pagePosts.forEach((post, i) => {
+      const rank = start + i + 1;
+      const upEl = document.getElementById('up_' + post.id);
+      if (!upEl) return;
+      upEl.addEventListener('click', e => {
+        e.preventDefault();
+        if (rank <= 1) return;
+        movePostToRank(post.id, rank - 1, totalPosts);
         POSTS = applySortOrders(POSTS);
         renderStories();
-      }
-
-      input.addEventListener('keydown', e => {
-        if (e.key === 'Enter') { e.preventDefault(); commit(); }
-        if (e.key === 'Escape') { renderStories(); }
       });
-      input.addEventListener('blur', commit);
     });
-  });
-
-  // Wire up upvote arrows — move post up one position
-  pagePosts.forEach((post, i) => {
-    const rank = start + i + 1;
-    const upEl = document.getElementById('up_' + post.id);
-    if (!upEl) return;
-    upEl.addEventListener('click', e => {
-      e.preventDefault();
-      if (rank <= 1) return;
-      movePostToRank(post.id, rank - 1, totalFiltered);
-      POSTS = applySortOrders(POSTS);
-      renderStories();
-    });
-  });
+  }
 
   const moreLink = document.getElementById('more-link');
   if (moreLink) {
@@ -853,6 +896,7 @@ async function init() {
   POSTS = applySortOrders(userPosts);
   TOPICS = await getAllTopics();
   SUBTOPICS = await getAllSubtopics();
+  loadFilters();
   rebuildNav();
   renderStories();
   updateHiddenFooter();
