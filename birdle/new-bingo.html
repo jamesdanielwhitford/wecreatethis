@@ -23,18 +23,47 @@
   <!-- Region Selector -->
   <div class="form-group">
     <label>Choose Your Location</label>
-    <div class="region-selects">
-      <select id="country-select">
-        <option value="">Select Country...</option>
-      </select>
-      <select id="state-select" disabled>
-        <option value="">Select State/Province...</option>
-      </select>
+    <div class="location-mode-toggle">
+      <button class="location-mode-btn active" data-mode="region">🗺️ Region</button>
+      <button class="location-mode-btn" data-mode="precise">📍 Precise</button>
     </div>
-    <p class="hint" style="margin: 16px 0; text-align: center; color: #333; font-size: 15px; font-weight: 600;">Or</p>
-    <button id="use-location-btn" class="location-btn">📍 Use My Precise Location</button>
-    <p class="hint" style="margin-top: 8px; margin-bottom: 16px; text-align: center; font-size: 13px; font-weight: 600; color: #666;">For a more accurate list</p>
-    <p id="region-info" class="hint" style="text-align: center; margin-top: 16px;"></p>
+    <div id="location-region-panel">
+      <div class="region-selects">
+        <select id="country-select">
+          <option value="">Select Country...</option>
+        </select>
+        <select id="state-select" disabled>
+          <option value="">Select State/Province...</option>
+        </select>
+      </div>
+    </div>
+    <div id="location-precise-panel" style="display:none;">
+      <button id="use-location-btn" class="location-btn">📍 Use My Precise Location</button>
+      <p class="hint" style="margin-top: 8px; text-align: center; font-size: 13px; font-weight: 600; color: #666;">For a more accurate bird list</p>
+    </div>
+    <p id="region-info" class="hint" style="text-align: center; margin-top: 12px;"></p>
+  </div>
+
+  <!-- Difficulty Selector -->
+  <div class="form-group">
+    <label>Difficulty</label>
+    <div class="difficulty-selector">
+      <button class="difficulty-btn active" data-difficulty="easy">
+        <span class="difficulty-emoji">🟢</span>
+        <span class="difficulty-name">Easy</span>
+        <span class="difficulty-desc">Most common birds</span>
+      </button>
+      <button class="difficulty-btn" data-difficulty="medium">
+        <span class="difficulty-emoji">🟡</span>
+        <span class="difficulty-name">Medium</span>
+        <span class="difficulty-desc">Less common birds</span>
+      </button>
+      <button class="difficulty-btn" data-difficulty="hard">
+        <span class="difficulty-emoji">🔴</span>
+        <span class="difficulty-name">Hard</span>
+        <span class="difficulty-desc">Rarest local birds</span>
+      </button>
+    </div>
   </div>
 
   <!-- Create Button -->
@@ -60,6 +89,33 @@
         titleInput.placeholder = defaultTitle;
         defaultTitleHint.textContent = `Leave blank for "${defaultTitle}"`;
       }
+    })();
+
+    // Difficulty selector
+    (function() {
+      const buttons = document.querySelectorAll('.difficulty-btn');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          buttons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+    })();
+
+    // Location mode toggle
+    (function() {
+      const modeBtns = document.querySelectorAll('.location-mode-btn');
+      const regionPanel = document.getElementById('location-region-panel');
+      const precisePanel = document.getElementById('location-precise-panel');
+      modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          modeBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const mode = btn.dataset.mode;
+          regionPanel.style.display = mode === 'region' ? 'block' : 'none';
+          precisePanel.style.display = mode === 'precise' ? 'block' : 'none';
+        });
+      });
     })();
   </script>
 </body>

@@ -998,6 +998,95 @@ input[type="date"].form-input {
   transform: none;
 }
 
+/* Location Mode Toggle */
+.location-mode-toggle {
+  display: flex;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.location-mode-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #666;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.location-mode-btn:first-child {
+  border-right: 2px solid #e0e0e0;
+}
+
+.location-mode-btn.active {
+  background: #333;
+  color: #fff;
+}
+
+/* Difficulty Selector */
+.difficulty-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.difficulty-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 8px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  font-family: inherit;
+}
+
+.difficulty-btn.active {
+  border-color: #333;
+  background: #f5f5f5;
+}
+
+.difficulty-btn .difficulty-emoji {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.difficulty-btn .difficulty-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.difficulty-btn .difficulty-desc {
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+}
+
+/* Difficulty badge on bingo page */
+.bingo-difficulty {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  margin-top: 4px;
+  background: #f0f0f0;
+  color: #333;
+}
+
+.bingo-difficulty.difficulty-easy { background: #e8f5e9; color: #2e7d32; }
+.bingo-difficulty.difficulty-medium { background: #fffde7; color: #f57f17; }
+.bingo-difficulty.difficulty-hard { background: #ffebee; color: #c62828; }
+
 /* Game Detail Page */
 .game-header {
   margin-bottom: 16px;

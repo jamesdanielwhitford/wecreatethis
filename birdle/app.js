@@ -1,6 +1,6 @@
 // Birdle - Bird Bingo App
 
-const APP_VERSION = 120; // Match service worker version
+const APP_VERSION = 122; // Match service worker version
 
 const App = {
   birds: [],
@@ -2452,24 +2452,23 @@ const App = {
       this.validateNewBingo();
     });
 
-    useLocationBtn?.addEventListener('click', async () => {
-      useLocationBtn.textContent = '📍 Getting precise location...';
-      useLocationBtn.disabled = true;
+    const fetchPreciseLocation = async () => {
+      if (useLocationBtn) {
+        useLocationBtn.textContent = '📍 Getting precise location...';
+        useLocationBtn.disabled = true;
+      }
 
       try {
         const location = await LocationService.getLocation(true);
         if (location && LocationService.hasValidCoordinates(location)) {
-          // Store coordinates for precise bird selection
           this.selectedCoordinates = {
             lat: location.lat,
             lng: location.lng
           };
 
-          // Set the region from GPS location
           this.selectedRegion = location.stateCode || location.countryCode;
           this.selectedRegionName = location.stateCode ? location.stateName : location.countryName;
 
-          // Update dropdowns
           countrySelect.value = location.countryCode;
 
           if (location.stateCode) {
@@ -2481,7 +2480,6 @@ const App = {
             stateSelect.disabled = false;
             stateSelect.value = location.stateCode;
           } else {
-            // If only country, load states for that country
             const states = await EBird.getStates(location.countryCode);
             stateSelect.innerHTML = '<option value="">Select State/Province...</option>';
             states.forEach(s => {
@@ -2497,9 +2495,27 @@ const App = {
         console.error('Location error:', error);
         alert('Could not get precise location. Please grant location access or select manually.');
       } finally {
-        useLocationBtn.textContent = '📍 Use My Precise Location';
-        useLocationBtn.disabled = false;
+        if (useLocationBtn) {
+          useLocationBtn.textContent = '📍 Use My Precise Location';
+          useLocationBtn.disabled = false;
+        }
       }
+    };
+
+    useLocationBtn?.addEventListener('click', fetchPreciseLocation);
+
+    // Auto-fetch precise location when switching to precise mode
+    document.querySelectorAll('.location-mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.mode === 'precise' && !this.selectedCoordinates) {
+          fetchPreciseLocation();
+        }
+        if (btn.dataset.mode === 'region') {
+          this.selectedCoordinates = null;
+          this.updateRegionInfoForBingo();
+          this.validateNewBingo();
+        }
+      });
     });
 
     createBtn?.addEventListener('click', () => {
@@ -2629,8 +2645,8 @@ const App = {
         observations = await EBird.getRecentObservations(this.selectedRegion);
       }
 
-      if (!observations || observations.length < 24) {
-        throw new Error('Not enough birds found in this region');
+      if (!observations || observations.length === 0) {
+        throw new Error('No birds found in this region');
       }
 
       // Count observations per species (for sorting by commonality)
@@ -2657,10 +2673,39 @@ const App = {
         }))
         .sort((a, b) => b.count - a.count);
 
-      // Take top 100 most common birds as the pool, then randomly pick 24
-      const birdPool = birds.slice(0, Math.min(100, birds.length));
-      this.shuffleArray(birdPool);
-      const selectedBirds = birdPool.slice(0, 24);
+      // Determine difficulty and select bird pool accordingly
+      const activeDiffBtn = document.querySelector('.difficulty-btn.active');
+      const difficulty = activeDiffBtn?.dataset.difficulty || 'medium';
+
+      // Select bird pool based on difficulty
+      let pool;
+      if (birds.length < 24) {
+        // Not enough birds for any banding - just use all of them
+        pool = [...birds];
+      } else if (birds.length < 72) {
+        // Not enough for clean thirds - fall back to overlapping bands
+        const mid = Math.floor(birds.length / 2);
+        if (difficulty === 'easy') {
+          pool = birds.slice(0, mid + 12);
+        } else if (difficulty === 'hard') {
+          pool = birds.slice(Math.max(0, mid - 12));
+        } else {
+          pool = [...birds];
+        }
+      } else {
+        // Enough birds for clean non-overlapping thirds
+        const third = Math.floor(birds.length / 3);
+        if (difficulty === 'easy') {
+          pool = birds.slice(0, third);
+        } else if (difficulty === 'hard') {
+          pool = birds.slice(third * 2);
+        } else {
+          pool = birds.slice(third, third * 2);
+        }
+      }
+
+      this.shuffleArray(pool);
+      const selectedBirds = pool.slice(0, Math.min(24, pool.length));
 
       // Pick random position for FREE space (0-24)
       const freePosition = Math.floor(Math.random() * 25);
@@ -2668,6 +2713,7 @@ const App = {
       // Create the game
       const gameData = {
         title,
+        difficulty,
         regionCode: this.selectedRegion,
         regionName: this.selectedRegionName,
         birds: selectedBirds,
@@ -3035,6 +3081,17 @@ const App = {
     });
     document.getElementById('bingo-date').textContent = `Started ${startDateStr}`;
 
+    // Show difficulty badge
+    const difficultyEl = document.getElementById('bingo-difficulty');
+    if (difficultyEl && game?.difficulty) {
+      const diffLabels = { easy: '🟢 Easy', medium: '🟡 Medium', hard: '🔴 Hard' };
+      difficultyEl.textContent = diffLabels[game.difficulty] || '';
+      difficultyEl.className = `bingo-difficulty difficulty-${game.difficulty}`;
+      difficultyEl.style.display = 'inline-block';
+    } else if (difficultyEl) {
+      difficultyEl.style.display = 'none';
+    }
+
     // Show location with coordinates if available
     const locationEl = document.getElementById('bingo-location');
     if (card.lat && card.lng) {
@@ -3069,10 +3126,13 @@ const App = {
     const freePosition = card.freePosition !== undefined ? card.freePosition : 12;
 
     // Build grid with FREE space at the stored position
+    // Total cells = birds + 1 FREE (capped at 25 for a full card)
+    const totalCells = Math.min(25, card.birds.length + 1);
+    const clampedFreePos = freePosition % totalCells;
     const grid = [];
     let birdIndex = 0;
-    for (let i = 0; i < 25; i++) {
-      if (i === freePosition) {
+    for (let i = 0; i < totalCells; i++) {
+      if (i === clampedFreePos) {
         grid.push({ isFree: true });
       } else {
         grid.push(card.birds[birdIndex++]);
