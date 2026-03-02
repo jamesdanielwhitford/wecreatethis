@@ -104,17 +104,6 @@
       white-space: pre-wrap;
     }
 
-    /* Live streaming cursor */
-    .transcript-body.streaming::after {
-      content: '|';
-      display: inline-block;
-      animation: blink 1s step-end infinite;
-      color: var(--accent-light);
-      margin-left: 1px;
-    }
-
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
     .transcript-pending {
       font-size: 0.88rem;
       color: var(--text-muted);
@@ -280,20 +269,13 @@
 
       const tsWrap = document.createElement('div');
 
-      if (note.transcriptStatus === 'streaming') {
+      if (note.transcriptStatus === 'transcribing') {
         tsLabel.innerHTML = '<div class="spinner"></div> Transcribing...';
+        const p = document.createElement('div');
+        p.className = 'transcript-pending';
+        p.textContent = 'Processing your voice note...';
         tsWrap.appendChild(tsLabel);
-        if (note.transcript) {
-          const body = document.createElement('div');
-          body.className = 'transcript-body streaming';
-          body.textContent = note.transcript;
-          tsWrap.appendChild(body);
-        } else {
-          const p = document.createElement('div');
-          p.className = 'transcript-pending';
-          p.textContent = 'Processing your voice note...';
-          tsWrap.appendChild(p);
-        }
+        tsWrap.appendChild(p);
       } else if (note.transcriptStatus === 'done' && note.transcript) {
         tsLabel.textContent = 'Transcript';
         const body = document.createElement('div');
