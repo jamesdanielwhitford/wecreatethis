@@ -52,7 +52,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: 700;
       letter-spacing: 0.02em;
     }
@@ -76,7 +76,7 @@
     .container {
       max-width: 640px;
       margin: 0 auto;
-      padding: 16px;
+      padding: 12px;
     }
 
     /* Modal */
@@ -155,8 +155,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 32px 16px;
-      gap: 16px;
+      padding: 28px 16px;
+      gap: 14px;
     }
 
     .record-btn {
@@ -171,6 +171,8 @@
       transition: transform 0.15s, box-shadow 0.2s;
       background: var(--record-red);
       box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4);
+      /* prevent SVG bleed through button boundary */
+      overflow: hidden;
     }
 
     .record-btn.recording { animation: pulse 1.5s infinite; }
@@ -183,13 +185,24 @@
 
     .record-btn:hover { transform: scale(1.05); }
     .record-btn:active { transform: scale(0.95); }
-    .record-btn svg { pointer-events: none; }
 
-    .record-status { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; }
+    /* Icon container inside record button — swap this innerHTML, not the svg */
+    .record-btn-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      width: 32px;
+      height: 32px;
+    }
+
+    .record-btn-icon svg { display: block; }
+
+    .record-status { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
     .record-status.recording { color: var(--record-red); }
 
     .record-timer {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
       color: var(--text);
@@ -202,13 +215,13 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 12px;
-      padding-bottom: 10px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
       border-bottom: 1px solid var(--border);
     }
 
     .notes-header h2 {
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -216,7 +229,7 @@
     }
 
     .notes-count {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
       background: var(--surface2);
       padding: 2px 8px;
@@ -230,14 +243,14 @@
     }
 
     .empty-state svg { opacity: 0.35; margin-bottom: 12px; }
-    .empty-state p { font-size: 0.9rem; }
+    .empty-state p { font-size: 0.88rem; }
 
     /* Note card */
     .note-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      margin-bottom: 12px;
+      border-radius: 12px;
+      margin-bottom: 10px;
       overflow: hidden;
       transition: border-color 0.2s;
     }
@@ -246,46 +259,75 @@
 
     .note-header {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
-      padding: 12px 14px 8px;
+      padding: 10px 12px 6px;
+      gap: 8px;
     }
 
-    .note-date { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+    .note-date {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      padding-top: 2px;
+      flex-shrink: 0;
+    }
 
-    .note-actions { display: flex; gap: 4px; }
+    /* Action buttons wrap and shrink on mobile */
+    .note-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      justify-content: flex-end;
+    }
 
     .note-action-btn {
       background: none;
-      border: none;
+      border: 1px solid var(--border);
       color: var(--text-muted);
       cursor: pointer;
-      padding: 4px 8px;
+      padding: 4px 6px;
       border-radius: 6px;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 600;
-      transition: color 0.2s, background 0.2s;
+      transition: color 0.2s, background 0.2s, border-color 0.2s;
       display: flex;
       align-items: center;
       gap: 4px;
+      min-width: 28px;
+      min-height: 28px;
+      justify-content: center;
+      white-space: nowrap;
     }
 
-    .note-action-btn:hover { color: var(--text); background: var(--border); }
-    .note-action-btn.danger:hover { color: var(--danger); background: rgba(239,68,68,0.1); }
-    .note-action-btn.success:hover { color: var(--success); background: rgba(34,197,94,0.1); }
+    /* Hide label text on small screens, icon only */
+    .note-action-btn span {
+      display: none;
+    }
+
+    @media (min-width: 480px) {
+      .note-action-btn span {
+        display: inline;
+      }
+    }
+
     .note-action-btn svg { flex-shrink: 0; }
+
+    .note-action-btn:hover { color: var(--text); background: var(--border); border-color: rgba(255,255,255,0.15); }
+    .note-action-btn.danger:hover { color: var(--danger); background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+    .note-action-btn.success:hover { color: var(--success); background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); }
 
     /* Audio player */
     .note-audio {
-      padding: 0 14px 10px;
+      padding: 0 12px 10px;
       display: flex;
       align-items: center;
       gap: 10px;
     }
 
     .play-btn {
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       background: var(--accent);
       border: none;
@@ -306,6 +348,7 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
+      min-width: 0;
     }
 
     .audio-progress {
@@ -326,46 +369,76 @@
     }
 
     .audio-time {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
       font-variant-numeric: tabular-nums;
     }
 
     .note-no-audio {
-      padding: 0 14px 10px;
+      padding: 0 12px 10px;
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
     }
 
     /* Transcript */
     .note-transcript {
-      padding: 10px 14px 14px;
+      padding: 8px 12px 12px;
       border-top: 1px solid var(--border);
     }
 
     .transcript-label {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--text-muted);
-      margin-bottom: 6px;
+      margin-bottom: 5px;
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
-    .transcript-text { font-size: 0.88rem; line-height: 1.6; color: var(--text); }
-    .transcript-pending { font-size: 0.85rem; color: var(--text-muted); font-style: italic; }
-    .transcript-error { font-size: 0.82rem; color: var(--warning); }
+    .transcript-text {
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: var(--text);
+      word-break: break-word;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .read-more-link {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.78rem;
+      color: var(--accent-light);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .read-more-link:hover { text-decoration: underline; }
+
+    .transcript-pending {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .transcript-error {
+      font-size: 0.8rem;
+      color: var(--warning);
+      word-break: break-word;
+    }
 
     .spinner {
       display: inline-block;
-      width: 12px;
-      height: 12px;
+      width: 11px;
+      height: 11px;
       border: 2px solid var(--border);
       border-top-color: var(--accent-light);
       border-radius: 50%;
@@ -392,6 +465,7 @@
       transition: opacity 0.25s, transform 0.25s;
       pointer-events: none;
       white-space: nowrap;
+      max-width: calc(100vw - 32px);
     }
 
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
@@ -404,22 +478,26 @@
       border: 1px solid rgba(245,158,11,0.3);
       border-radius: 10px;
       padding: 10px 14px;
-      font-size: 0.83rem;
+      font-size: 0.82rem;
       color: var(--warning);
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 8px;
+      line-height: 1.4;
     }
+
+    .no-key-banner svg { flex-shrink: 0; margin-top: 1px; }
 
     .no-key-banner button {
       background: none;
       border: none;
       color: var(--warning);
       cursor: pointer;
-      font-size: 0.83rem;
+      font-size: inherit;
       font-weight: 700;
       text-decoration: underline;
+      padding: 0;
     }
   </style>
 </head>
@@ -428,8 +506,7 @@
   <!-- Navbar -->
   <nav class="navbar">
     <div class="navbar-title">
-      <!-- mic icon -->
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="9" y="2" width="6" height="12" rx="3"/>
         <path d="M5 10a7 7 0 0 0 14 0"/>
         <line x1="12" y1="19" x2="12" y2="22"/>
@@ -439,7 +516,6 @@
     </div>
     <div class="navbar-actions">
       <button class="icon-btn" id="settingsBtn" title="API Key Settings" aria-label="Settings">
-        <!-- gear icon -->
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"/>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -463,26 +539,27 @@
 
   <div class="container">
     <!-- No key banner -->
-    <div class="no-key-banner hidden" id="noKeyBanner">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+    <div class="no-key-banner" id="noKeyBanner" style="display:none">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
         <line x1="12" y1="9" x2="12" y2="13"/>
         <line x1="12" y1="17" x2="12.01" y2="17"/>
       </svg>
-      No API key set. <button id="bannerKeyBtn">Add your Mistral API key</button> to enable transcription.
+      <span>No API key set. <button id="bannerKeyBtn">Add your Mistral API key</button> to enable transcription.</span>
     </div>
 
     <!-- Record section -->
     <div class="record-section">
       <div class="record-timer" id="recordTimer"></div>
       <button class="record-btn" id="recordBtn" title="Record voice note" aria-label="Start recording">
-        <!-- mic icon (idle) -->
-        <svg id="recordIcon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="9" y="2" width="6" height="12" rx="3"/>
-          <path d="M5 10a7 7 0 0 0 14 0"/>
-          <line x1="12" y1="19" x2="12" y2="22"/>
-          <line x1="8" y1="22" x2="16" y2="22"/>
-        </svg>
+        <div class="record-btn-icon" id="recordBtnIcon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="2" width="6" height="12" rx="3"/>
+            <path d="M5 10a7 7 0 0 0 14 0"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+            <line x1="8" y1="22" x2="16" y2="22"/>
+          </svg>
+        </div>
       </button>
       <div class="record-status" id="recordStatus">Tap to record</div>
     </div>
@@ -501,16 +578,16 @@
     const API_KEY_STORAGE = 'voice-notes-mistral-key';
     const MODEL = 'voxtral-mini-latest';
 
-    // SVG icon strings
-    const ICONS = {
-      play: `<svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>`,
-      pause: `<svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
-      stop: `<svg width="22" height="22" viewBox="0 0 24 24" fill="white" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`,
+    // SVG strings — defined once, reused
+    const SVG = {
       mic: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>`,
-      copy: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
-      refresh: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
-      trash: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
-      noMic: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4"><rect x="9" y="2" width="6" height="12" rx="3"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
+      stop: `<svg width="22" height="22" viewBox="0 0 24 24" fill="white" stroke="none"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>`,
+      play: `<svg width="13" height="13" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>`,
+      pause: `<svg width="13" height="13" viewBox="0 0 24 24" fill="white" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
+      copy: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+      refresh: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
+      trash: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+      noMic: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4"><rect x="9" y="2" width="6" height="12" rx="3"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
       micLg: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>`,
     };
 
@@ -560,6 +637,11 @@
       document.getElementById('recordTimer').textContent = '';
     }
 
+    // Set the record button icon by replacing the inner container's HTML
+    function setRecordIcon(which) {
+      document.getElementById('recordBtnIcon').innerHTML = SVG[which];
+    }
+
     async function startRecording() {
       let stream;
       try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
@@ -577,7 +659,7 @@
 
       isRecording = true;
       document.getElementById('recordBtn').classList.add('recording');
-      document.getElementById('recordIcon').innerHTML = ICONS.stop;
+      setRecordIcon('stop');
       document.getElementById('recordStatus').textContent = 'Recording... tap to stop';
       document.getElementById('recordStatus').classList.add('recording');
       startTimer();
@@ -587,7 +669,7 @@
       if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
       isRecording = false;
       document.getElementById('recordBtn').classList.remove('recording');
-      document.getElementById('recordIcon').innerHTML = ICONS.mic;
+      setRecordIcon('mic');
       document.getElementById('recordStatus').textContent = 'Tap to record';
       document.getElementById('recordStatus').classList.remove('recording');
       stopTimer();
@@ -614,7 +696,6 @@
       renderNotes();
 
       if (getApiKey()) transcribeNote(note.id);
-      else updateNoteInDOM(note.id);
     }
 
     function blobToBase64(blob) {
@@ -696,7 +777,7 @@
       card.className = 'note-card';
       card.dataset.id = note.id;
 
-      const hasAudio = note.audioBase64 && note.transcriptStatus !== 'deleted';
+      const hasAudio = !!note.audioBase64 && note.transcriptStatus !== 'deleted';
 
       // Header
       const header = document.createElement('div');
@@ -710,43 +791,41 @@
       actions.className = 'note-actions';
 
       if (note.transcript) {
-        actions.appendChild(makeActionBtn('Copy', ICONS.copy, 'success', () => {
-          navigator.clipboard.writeText(note.transcript).then(() => showToast('Copied to clipboard'));
+        actions.appendChild(makeActionBtn('Copy', SVG.copy, 'success', () => {
+          navigator.clipboard.writeText(note.transcript).then(() => showToast('Copied'));
         }));
       }
 
       if (hasAudio) {
-        const retransBtn = makeActionBtn('Retranscribe', ICONS.refresh, '', () => transcribeNote(note.id));
+        const retransBtn = makeActionBtn('Retranscribe', SVG.refresh, '', () => transcribeNote(note.id));
         if (note.transcriptStatus === 'transcribing') retransBtn.disabled = true;
         actions.appendChild(retransBtn);
-
-        actions.appendChild(makeActionBtn('Del Audio', ICONS.trash, 'danger', () => deleteAudio(note.id)));
+        actions.appendChild(makeActionBtn('Del Audio', SVG.trash, 'danger', () => deleteAudio(note.id)));
       }
 
-      actions.appendChild(makeActionBtn('Delete', ICONS.trash, 'danger', () => deleteNote(note.id)));
+      actions.appendChild(makeActionBtn('Delete', SVG.trash, 'danger', () => deleteNote(note.id)));
 
       header.appendChild(dateEl);
       header.appendChild(actions);
       card.appendChild(header);
 
-      // Audio section
+      // Audio
       if (hasAudio) {
         card.appendChild(buildAudioSection(note));
       } else if (note.transcriptStatus === 'deleted') {
         const noAudio = document.createElement('div');
         noAudio.className = 'note-no-audio';
-        noAudio.innerHTML = `${ICONS.noMic} Audio deleted`;
+        noAudio.innerHTML = `${SVG.noMic} Audio deleted`;
         card.appendChild(noAudio);
       }
 
-      // Divider
       const divider = document.createElement('div');
       divider.className = 'note-divider';
       card.appendChild(divider);
 
       // Transcript
-      const transcriptSection = document.createElement('div');
-      transcriptSection.className = 'note-transcript';
+      const ts = document.createElement('div');
+      ts.className = 'note-transcript';
 
       const label = document.createElement('div');
       label.className = 'transcript-label';
@@ -756,39 +835,45 @@
         const p = document.createElement('div');
         p.className = 'transcript-pending';
         p.textContent = 'Processing your voice note...';
-        transcriptSection.appendChild(label);
-        transcriptSection.appendChild(p);
+        ts.appendChild(label);
+        ts.appendChild(p);
       } else if (note.transcriptStatus === 'done' && note.transcript) {
         label.textContent = 'Transcript';
         const text = document.createElement('div');
         text.className = 'transcript-text';
         text.textContent = note.transcript;
-        transcriptSection.appendChild(label);
-        transcriptSection.appendChild(text);
+        ts.appendChild(label);
+        ts.appendChild(text);
+        const readMore = document.createElement('a');
+        readMore.className = 'read-more-link';
+        readMore.href = `note?id=${note.id}`;
+        readMore.textContent = 'Read more';
+        ts.appendChild(readMore);
       } else if (note.transcriptStatus === 'error') {
         label.textContent = 'Transcript';
         const err = document.createElement('div');
         err.className = 'transcript-error';
         err.textContent = `Transcription failed: ${note.transcriptError || 'Unknown error'}`;
-        transcriptSection.appendChild(label);
-        transcriptSection.appendChild(err);
+        ts.appendChild(label);
+        ts.appendChild(err);
       } else {
         label.textContent = 'Transcript';
         const p = document.createElement('div');
         p.className = 'transcript-pending';
         p.textContent = hasAudio ? 'Add your API key to transcribe this note.' : 'No transcript available.';
-        transcriptSection.appendChild(label);
-        transcriptSection.appendChild(p);
+        ts.appendChild(label);
+        ts.appendChild(p);
       }
 
-      card.appendChild(transcriptSection);
+      card.appendChild(ts);
       return card;
     }
 
     function makeActionBtn(label, iconHtml, type, onClick) {
       const btn = document.createElement('button');
       btn.className = `note-action-btn${type ? ' ' + type : ''}`;
-      btn.innerHTML = `${iconHtml} ${label}`;
+      // Icon always visible; label hidden via font-size:0 on mobile, shown on wider screens
+      btn.innerHTML = `${iconHtml}<span>${label}</span>`;
       btn.addEventListener('click', onClick);
       return btn;
     }
@@ -799,7 +884,7 @@
 
       const playBtn = document.createElement('button');
       playBtn.className = 'play-btn';
-      playBtn.innerHTML = ICONS.play;
+      playBtn.innerHTML = SVG.play;
       playBtn.setAttribute('aria-label', 'Play');
 
       const progressWrap = document.createElement('div');
@@ -836,7 +921,7 @@
           });
 
           audio.addEventListener('ended', () => {
-            playBtn.innerHTML = ICONS.play;
+            playBtn.innerHTML = SVG.play;
             progressBar.style.width = '0%';
             timeEl.textContent = note.duration ? formatTime(note.duration) : '0:00';
             if (currentlyPlaying && currentlyPlaying.noteId === note.id) currentlyPlaying = null;
@@ -852,17 +937,17 @@
           currentlyPlaying.audio.pause();
           currentlyPlaying.audio.currentTime = 0;
           const other = document.querySelector(`.note-card[data-id="${currentlyPlaying.noteId}"] .play-btn`);
-          if (other) other.innerHTML = ICONS.play;
+          if (other) other.innerHTML = SVG.play;
           currentlyPlaying = null;
         }
 
         if (a.paused) {
           a.play();
-          playBtn.innerHTML = ICONS.pause;
+          playBtn.innerHTML = SVG.pause;
           currentlyPlaying = { audio: a, noteId: note.id };
         } else {
           a.pause();
-          playBtn.innerHTML = ICONS.play;
+          playBtn.innerHTML = SVG.play;
           currentlyPlaying = null;
         }
       });
@@ -886,7 +971,7 @@
       if (notes.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'empty-state';
-        empty.innerHTML = `${ICONS.micLg}<p>No voice notes yet. Tap the button above to record.</p>`;
+        empty.innerHTML = `${SVG.micLg}<p>No voice notes yet. Tap the button above to record.</p>`;
         list.appendChild(empty);
         return;
       }
@@ -916,12 +1001,17 @@
     function deleteAudio(noteId) {
       const note = notes.find(n => n.id === noteId);
       if (!note) return;
-      if (!confirm('Delete the audio recording? The transcript will be kept.')) return;
+      if (!confirm('Delete the audio? The transcript will be kept.')) return;
       note.audioBase64 = null;
       note.transcriptStatus = note.transcript ? 'done' : 'deleted';
       saveNotes();
       updateNoteInDOM(noteId);
       showToast('Audio deleted, transcript preserved');
+    }
+
+    function checkApiKeyBanner() {
+      const banner = document.getElementById('noKeyBanner');
+      banner.style.display = getApiKey() ? 'none' : 'flex';
     }
 
     // Modal
@@ -945,10 +1035,6 @@
     }
 
     function closeModal() { document.getElementById('apiModal').classList.add('hidden'); }
-
-    function checkApiKeyBanner() {
-      document.getElementById('noKeyBanner').classList.toggle('hidden', !!getApiKey());
-    }
 
     document.getElementById('recordBtn').addEventListener('click', () => {
       if (isRecording) stopRecording(); else startRecording();

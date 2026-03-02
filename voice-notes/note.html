@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Voice Note</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface2: #16213e;
+      --accent: #7c3aed;
+      --accent-light: #a855f7;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border: rgba(255,255,255,0.08);
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+    }
+
+    .navbar {
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .back-btn:hover { color: var(--text); background: var(--border); }
+
+    .navbar-title {
+      font-size: 1rem;
+      font-weight: 700;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .note-meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    /* Audio player */
+    .audio-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .play-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .play-btn:hover { opacity: 0.85; }
+    .play-btn:active { transform: scale(0.95); }
+
+    .audio-progress-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .audio-progress {
+      width: 100%;
+      height: 5px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .audio-progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.1s;
+      pointer-events: none;
+    }
+
+    .audio-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .no-audio-notice {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    /* Transcript section */
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .transcript-body {
+      font-size: 0.95rem;
+      line-height: 1.75;
+      color: var(--text);
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .transcript-pending {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .transcript-error {
+      font-size: 0.85rem;
+      color: var(--warning);
+      word-break: break-word;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent-light);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Actions row */
+    .actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 14px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: none;
+      color: var(--text-muted);
+      transition: color 0.2s, background 0.2s, border-color 0.2s;
+    }
+
+    .btn:hover { color: var(--text); background: var(--border); border-color: rgba(255,255,255,0.15); }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-success:hover { color: var(--success); background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); }
+    .btn-danger:hover { color: var(--danger); background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(0);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      z-index: 300;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      white-space: nowrap;
+      max-width: calc(100vw - 32px);
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+    .not-found {
+      text-align: center;
+      padding: 60px 16px;
+      color: var(--text-muted);
+    }
+
+    .not-found p { font-size: 0.9rem; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/voice-notes/" class="back-btn" aria-label="Back">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </a>
+    <div class="navbar-title" id="navTitle">Voice Note</div>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="container" id="content"></div>
+
+  <script>
+    const STORAGE_KEY = 'voice-notes-v1';
+    const API_KEY_STORAGE = 'voice-notes-mistral-key';
+    const MODEL = 'voxtral-mini-latest';
+
+    const SVG = {
+      play:    `<svg width="15" height="15" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>`,
+      pause:   `<svg width="15" height="15" viewBox="0 0 24 24" fill="white" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
+      copy:    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+      refresh: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
+      trash:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+      noMic:   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4"><rect x="9" y="2" width="6" height="12" rx="3"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
+    };
+
+    function loadNotes() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+      catch { return []; }
+    }
+
+    function saveNotes(notes) { localStorage.setItem(STORAGE_KEY, JSON.stringify(notes)); }
+    function getApiKey() { return localStorage.getItem(API_KEY_STORAGE) || ''; }
+
+    function showToast(msg, duration = 2200) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(t._timeout);
+      t._timeout = setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    function formatTime(secs) {
+      const m = String(Math.floor(secs / 60)).padStart(2, '0');
+      const s = String(secs % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      const now = new Date();
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (d.toDateString() === now.toDateString()) return `Today at ${time}`;
+      if (d.toDateString() === yesterday.toDateString()) return `Yesterday at ${time}`;
+      return d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' at ' + time;
+    }
+
+    function base64ToBlob(dataUrl) {
+      const [header, data] = dataUrl.split(',');
+      const mime = header.match(/:(.*?);/)[1];
+      const binary = atob(data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return new Blob([bytes], { type: mime });
+    }
+
+    // --- Render ---
+    function render() {
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+      const notes = loadNotes();
+      const note = notes.find(n => n.id === id);
+      const content = document.getElementById('content');
+
+      if (!note) {
+        content.innerHTML = `<div class="not-found"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>Note not found.</p></div>`;
+        return;
+      }
+
+      document.getElementById('navTitle').textContent = formatDate(note.createdAt);
+      content.innerHTML = '';
+
+      // Meta
+      const meta = document.createElement('div');
+      meta.className = 'note-meta';
+      meta.textContent = formatDate(note.createdAt);
+      content.appendChild(meta);
+
+      // Audio
+      const hasAudio = !!note.audioBase64 && note.transcriptStatus !== 'deleted';
+      if (hasAudio) {
+        content.appendChild(buildAudioCard(note));
+      } else {
+        const noAudio = document.createElement('div');
+        noAudio.className = 'no-audio-notice';
+        noAudio.innerHTML = `${SVG.noMic} Audio deleted`;
+        content.appendChild(noAudio);
+      }
+
+      // Transcript
+      const tsLabel = document.createElement('div');
+      tsLabel.className = 'section-label';
+
+      const tsWrap = document.createElement('div');
+
+      if (note.transcriptStatus === 'transcribing') {
+        tsLabel.innerHTML = '<div class="spinner"></div> Transcribing...';
+        const p = document.createElement('div');
+        p.className = 'transcript-pending';
+        p.textContent = 'Processing your voice note...';
+        tsWrap.appendChild(tsLabel);
+        tsWrap.appendChild(p);
+      } else if (note.transcriptStatus === 'done' && note.transcript) {
+        tsLabel.textContent = 'Transcript';
+        const body = document.createElement('div');
+        body.className = 'transcript-body';
+        body.id = 'transcriptBody';
+        body.textContent = note.transcript;
+        tsWrap.appendChild(tsLabel);
+        tsWrap.appendChild(body);
+      } else if (note.transcriptStatus === 'error') {
+        tsLabel.textContent = 'Transcript';
+        const err = document.createElement('div');
+        err.className = 'transcript-error';
+        err.textContent = `Transcription failed: ${note.transcriptError || 'Unknown error'}`;
+        tsWrap.appendChild(tsLabel);
+        tsWrap.appendChild(err);
+      } else {
+        tsLabel.textContent = 'Transcript';
+        const p = document.createElement('div');
+        p.className = 'transcript-pending';
+        p.textContent = hasAudio ? 'Add your API key to transcribe this note.' : 'No transcript available.';
+        tsWrap.appendChild(tsLabel);
+        tsWrap.appendChild(p);
+      }
+
+      content.appendChild(tsWrap);
+
+      // Actions
+      const actionsRow = document.createElement('div');
+      actionsRow.className = 'actions-row';
+
+      if (note.transcript) {
+        const copyBtn = makeBtn('Copy text', SVG.copy, 'btn-success', () => {
+          navigator.clipboard.writeText(note.transcript).then(() => showToast('Copied'));
+        });
+        actionsRow.appendChild(copyBtn);
+      }
+
+      if (hasAudio) {
+        const retransBtn = makeBtn('Retranscribe', SVG.refresh, '', () => retranscribe(note.id));
+        if (note.transcriptStatus === 'transcribing') retransBtn.disabled = true;
+        actionsRow.appendChild(retransBtn);
+
+        const delAudioBtn = makeBtn('Delete audio', SVG.trash, 'btn-danger', () => deleteAudio(note.id));
+        actionsRow.appendChild(delAudioBtn);
+      }
+
+      const delBtn = makeBtn('Delete note', SVG.trash, 'btn-danger', () => deleteNote(note.id));
+      actionsRow.appendChild(delBtn);
+
+      content.appendChild(actionsRow);
+    }
+
+    function makeBtn(label, iconHtml, extraClass, onClick) {
+      const btn = document.createElement('button');
+      btn.className = `btn${extraClass ? ' ' + extraClass : ''}`;
+      btn.innerHTML = `${iconHtml} ${label}`;
+      btn.addEventListener('click', onClick);
+      return btn;
+    }
+
+    function buildAudioCard(note) {
+      const card = document.createElement('div');
+      card.className = 'audio-card';
+
+      const playBtn = document.createElement('button');
+      playBtn.className = 'play-btn';
+      playBtn.innerHTML = SVG.play;
+      playBtn.setAttribute('aria-label', 'Play');
+
+      const wrap = document.createElement('div');
+      wrap.className = 'audio-progress-wrap';
+
+      const track = document.createElement('div');
+      track.className = 'audio-progress';
+      const bar = document.createElement('div');
+      bar.className = 'audio-progress-bar';
+      bar.style.width = '0%';
+      track.appendChild(bar);
+
+      const timeEl = document.createElement('div');
+      timeEl.className = 'audio-time';
+      timeEl.textContent = note.duration ? formatTime(note.duration) : '0:00';
+
+      wrap.appendChild(track);
+      wrap.appendChild(timeEl);
+      card.appendChild(playBtn);
+      card.appendChild(wrap);
+
+      let audio = null;
+
+      function getAudio() {
+        if (!audio) {
+          const blob = base64ToBlob(note.audioBase64);
+          audio = new Audio(URL.createObjectURL(blob));
+          audio.addEventListener('timeupdate', () => {
+            if (audio.duration) {
+              bar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+              timeEl.textContent = `${formatTime(Math.floor(audio.currentTime))} / ${formatTime(Math.floor(audio.duration))}`;
+            }
+          });
+          audio.addEventListener('ended', () => {
+            playBtn.innerHTML = SVG.play;
+            bar.style.width = '0%';
+            timeEl.textContent = note.duration ? formatTime(note.duration) : '0:00';
+          });
+        }
+        return audio;
+      }
+
+      playBtn.addEventListener('click', () => {
+        const a = getAudio();
+        if (a.paused) { a.play(); playBtn.innerHTML = SVG.pause; }
+        else { a.pause(); playBtn.innerHTML = SVG.play; }
+      });
+
+      track.addEventListener('click', (e) => {
+        const a = getAudio();
+        if (a.duration) {
+          const rect = track.getBoundingClientRect();
+          a.currentTime = ((e.clientX - rect.left) / rect.width) * a.duration;
+        }
+      });
+
+      return card;
+    }
+
+    async function retranscribe(noteId) {
+      const notes = loadNotes();
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+
+      const apiKey = getApiKey();
+      if (!apiKey) { showToast('Add your API key first'); return; }
+
+      note.transcriptStatus = 'transcribing';
+      saveNotes(notes);
+      render();
+
+      try {
+        const blob = base64ToBlob(note.audioBase64);
+        const ext = note.audioMime.includes('webm') ? 'webm'
+          : note.audioMime.includes('ogg') ? 'ogg'
+          : note.audioMime.includes('mp4') ? 'mp4' : 'webm';
+
+        const formData = new FormData();
+        formData.append('file', blob, `recording.${ext}`);
+        formData.append('model', MODEL);
+
+        const res = await fetch('https://api.mistral.ai/v1/audio/transcriptions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}` },
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        note.transcript = data.text || '';
+        note.transcriptStatus = 'done';
+        note.transcriptError = null;
+      } catch (e) {
+        note.transcriptStatus = 'error';
+        note.transcriptError = e.message;
+      }
+
+      saveNotes(notes);
+      render();
+    }
+
+    function deleteAudio(noteId) {
+      if (!confirm('Delete the audio? The transcript will be kept.')) return;
+      const notes = loadNotes();
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+      note.audioBase64 = null;
+      note.transcriptStatus = note.transcript ? 'done' : 'deleted';
+      saveNotes(notes);
+      render();
+      showToast('Audio deleted, transcript preserved');
+    }
+
+    function deleteNote(noteId) {
+      if (!confirm('Delete this note?')) return;
+      const notes = loadNotes();
+      const updated = notes.filter(n => n.id !== noteId);
+      saveNotes(updated);
+      window.location.href = '/voice-notes/';
+    }
+
+    render();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/voice-notes/sw.js', { scope: '/voice-notes/' });
+    }
+  </script>
+</body>
+</html>
