@@ -1,0 +1,21 @@
+{
+  "name": "Voice Notes",
+  "short_name": "Voice Notes",
+  "description": "Record voice notes with AI transcription",
+  "start_url": "/voice-notes/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    {
+      "src": "/voice-notes/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/voice-notes/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

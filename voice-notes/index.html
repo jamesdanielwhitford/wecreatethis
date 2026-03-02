@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Voice Notes">
+  <title>Voice Notes</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface2: #16213e;
+      --accent: #7c3aed;
+      --accent-light: #a855f7;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border: rgba(255,255,255,0.08);
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --record-red: #ff3b30;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+    }
+
+    .navbar {
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+    }
+
+    .navbar-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .navbar-actions { display: flex; gap: 8px; }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+      transition: color 0.2s, background 0.2s;
+      display: flex;
+      align-items: center;
+    }
+
+    .icon-btn:hover { color: var(--text); background: var(--border); }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-overlay.hidden { display: none; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .modal h2 { font-size: 1.1rem; margin-bottom: 8px; }
+
+    .modal p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .modal input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+      font-family: monospace;
+    }
+
+    .modal input:focus { outline: none; border-color: var(--accent); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .btn-primary:hover:not(:disabled) { opacity: 0.85; }
+
+    /* Record section */
+    .record-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
+      gap: 16px;
+    }
+
+    .record-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s, box-shadow 0.2s;
+      background: var(--record-red);
+      box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4);
+    }
+
+    .record-btn.recording { animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.5); }
+      70%  { box-shadow: 0 0 0 20px rgba(255, 59, 48, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+    }
+
+    .record-btn:hover { transform: scale(1.05); }
+    .record-btn:active { transform: scale(0.95); }
+    .record-btn svg { pointer-events: none; }
+
+    .record-status { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; }
+    .record-status.recording { color: var(--record-red); }
+
+    .record-timer {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+      letter-spacing: 0.05em;
+      min-height: 1.8rem;
+    }
+
+    /* Notes list */
+    .notes-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .notes-header h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .notes-count {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: var(--surface2);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 16px;
+      color: var(--text-muted);
+    }
+
+    .empty-state svg { opacity: 0.35; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* Note card */
+    .note-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .note-card:hover { border-color: rgba(255,255,255,0.15); }
+
+    .note-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px 8px;
+    }
+
+    .note-date { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+
+    .note-actions { display: flex; gap: 4px; }
+
+    .note-action-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: color 0.2s, background 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .note-action-btn:hover { color: var(--text); background: var(--border); }
+    .note-action-btn.danger:hover { color: var(--danger); background: rgba(239,68,68,0.1); }
+    .note-action-btn.success:hover { color: var(--success); background: rgba(34,197,94,0.1); }
+    .note-action-btn svg { flex-shrink: 0; }
+
+    /* Audio player */
+    .note-audio {
+      padding: 0 14px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .play-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .play-btn:hover { opacity: 0.85; }
+    .play-btn:active { transform: scale(0.95); }
+
+    .audio-progress-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .audio-progress {
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .audio-progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.1s;
+      pointer-events: none;
+    }
+
+    .audio-time {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .note-no-audio {
+      padding: 0 14px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* Transcript */
+    .note-transcript {
+      padding: 10px 14px 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .transcript-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .transcript-text { font-size: 0.88rem; line-height: 1.6; color: var(--text); }
+    .transcript-pending { font-size: 0.85rem; color: var(--text-muted); font-style: italic; }
+    .transcript-error { font-size: 0.82rem; color: var(--warning); }
+
+    .spinner {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent-light);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(0);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      z-index: 300;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+    .note-divider { height: 1px; background: var(--border); }
+
+    /* No API key banner */
+    .no-key-banner {
+      background: rgba(245,158,11,0.1);
+      border: 1px solid rgba(245,158,11,0.3);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.83rem;
+      color: var(--warning);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .no-key-banner button {
+      background: none;
+      border: none;
+      color: var(--warning);
+      cursor: pointer;
+      font-size: 0.83rem;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-title">
+      <!-- mic icon -->
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="2" width="6" height="12" rx="3"/>
+        <path d="M5 10a7 7 0 0 0 14 0"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+        <line x1="8" y1="22" x2="16" y2="22"/>
+      </svg>
+      Voice Notes
+    </div>
+    <div class="navbar-actions">
+      <button class="icon-btn" id="settingsBtn" title="API Key Settings" aria-label="Settings">
+        <!-- gear icon -->
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- API Key Modal -->
+  <div class="modal-overlay hidden" id="apiModal">
+    <div class="modal">
+      <h2>Mistral API Key</h2>
+      <p>Your API key is saved locally in your browser. It's used to transcribe voice notes using Voxtral.</p>
+      <input type="password" id="apiKeyInput" placeholder="sk-..." autocomplete="off" spellcheck="false">
+      <button class="btn btn-primary" id="saveKeyBtn">Save Key</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <div class="container">
+    <!-- No key banner -->
+    <div class="no-key-banner hidden" id="noKeyBanner">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      No API key set. <button id="bannerKeyBtn">Add your Mistral API key</button> to enable transcription.
+    </div>
+
+    <!-- Record section -->
+    <div class="record-section">
+      <div class="record-timer" id="recordTimer"></div>
+      <button class="record-btn" id="recordBtn" title="Record voice note" aria-label="Start recording">
+        <!-- mic icon (idle) -->
+        <svg id="recordIcon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2" width="6" height="12" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="8" y1="22" x2="16" y2="22"/>
+        </svg>
+      </button>
+      <div class="record-status" id="recordStatus">Tap to record</div>
+    </div>
+
+    <!-- Notes list -->
+    <div class="notes-header">
+      <h2>Notes</h2>
+      <span class="notes-count" id="notesCount">0</span>
+    </div>
+
+    <div id="notesList"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'voice-notes-v1';
+    const API_KEY_STORAGE = 'voice-notes-mistral-key';
+    const MODEL = 'voxtral-mini-latest';
+
+    // SVG icon strings
+    const ICONS = {
+      play: `<svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>`,
+      pause: `<svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
+      stop: `<svg width="22" height="22" viewBox="0 0 24 24" fill="white" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`,
+      mic: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>`,
+      copy: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+      refresh: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
+      trash: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+      noMic: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4"><rect x="9" y="2" width="6" height="12" rx="3"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
+      micLg: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>`,
+    };
+
+    let notes = [];
+    let isRecording = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let timerInterval = null;
+    let timerSeconds = 0;
+    let currentlyPlaying = null;
+
+    function loadNotes() {
+      try { notes = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+      catch { notes = []; }
+    }
+
+    function saveNotes() { localStorage.setItem(STORAGE_KEY, JSON.stringify(notes)); }
+    function getApiKey() { return localStorage.getItem(API_KEY_STORAGE) || ''; }
+    function saveApiKey(key) { localStorage.setItem(API_KEY_STORAGE, key.trim()); }
+
+    function showToast(msg, duration = 2200) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(t._timeout);
+      t._timeout = setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    function formatTime(secs) {
+      const m = String(Math.floor(secs / 60)).padStart(2, '0');
+      const s = String(secs % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function startTimer() {
+      timerSeconds = 0;
+      document.getElementById('recordTimer').textContent = '00:00';
+      timerInterval = setInterval(() => {
+        timerSeconds++;
+        document.getElementById('recordTimer').textContent = formatTime(timerSeconds);
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      document.getElementById('recordTimer').textContent = '';
+    }
+
+    async function startRecording() {
+      let stream;
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+      catch { showToast('Microphone access denied'); return; }
+
+      audioChunks = [];
+      const options = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? { mimeType: 'audio/webm;codecs=opus' }
+        : MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : {};
+
+      mediaRecorder = new MediaRecorder(stream, options);
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = () => { stream.getTracks().forEach(t => t.stop()); handleRecordingDone(); };
+      mediaRecorder.start(100);
+
+      isRecording = true;
+      document.getElementById('recordBtn').classList.add('recording');
+      document.getElementById('recordIcon').innerHTML = ICONS.stop;
+      document.getElementById('recordStatus').textContent = 'Recording... tap to stop';
+      document.getElementById('recordStatus').classList.add('recording');
+      startTimer();
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      isRecording = false;
+      document.getElementById('recordBtn').classList.remove('recording');
+      document.getElementById('recordIcon').innerHTML = ICONS.mic;
+      document.getElementById('recordStatus').textContent = 'Tap to record';
+      document.getElementById('recordStatus').classList.remove('recording');
+      stopTimer();
+    }
+
+    async function handleRecordingDone() {
+      const mimeType = mediaRecorder.mimeType || 'audio/webm';
+      const blob = new Blob(audioChunks, { type: mimeType });
+      const base64 = await blobToBase64(blob);
+
+      const note = {
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+        audioBase64: base64,
+        audioMime: mimeType,
+        transcript: null,
+        transcriptStatus: 'pending',
+        transcriptError: null,
+        duration: timerSeconds,
+      };
+
+      notes.unshift(note);
+      saveNotes();
+      renderNotes();
+
+      if (getApiKey()) transcribeNote(note.id);
+      else updateNoteInDOM(note.id);
+    }
+
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    function base64ToBlob(dataUrl) {
+      const [header, data] = dataUrl.split(',');
+      const mime = header.match(/:(.*?);/)[1];
+      const binary = atob(data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return new Blob([bytes], { type: mime });
+    }
+
+    async function transcribeNote(noteId) {
+      const note = notes.find(n => n.id === noteId);
+      if (!note || note.transcriptStatus === 'deleted') return;
+
+      const apiKey = getApiKey();
+      if (!apiKey) { showToast('Add your API key first'); return; }
+
+      note.transcriptStatus = 'transcribing';
+      saveNotes();
+      updateNoteInDOM(note.id);
+
+      try {
+        const blob = base64ToBlob(note.audioBase64);
+        const ext = note.audioMime.includes('webm') ? 'webm'
+          : note.audioMime.includes('ogg') ? 'ogg'
+          : note.audioMime.includes('mp4') ? 'mp4' : 'webm';
+
+        const formData = new FormData();
+        formData.append('file', blob, `recording.${ext}`);
+        formData.append('model', MODEL);
+
+        const res = await fetch('https://api.mistral.ai/v1/audio/transcriptions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}` },
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        note.transcript = data.text || '';
+        note.transcriptStatus = 'done';
+        note.transcriptError = null;
+      } catch (e) {
+        note.transcriptStatus = 'error';
+        note.transcriptError = e.message;
+      }
+
+      saveNotes();
+      updateNoteInDOM(note.id);
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      const now = new Date();
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (d.toDateString() === now.toDateString()) return `Today ${time}`;
+      if (d.toDateString() === yesterday.toDateString()) return `Yesterday ${time}`;
+      return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + time;
+    }
+
+    function buildNoteCard(note) {
+      const card = document.createElement('div');
+      card.className = 'note-card';
+      card.dataset.id = note.id;
+
+      const hasAudio = note.audioBase64 && note.transcriptStatus !== 'deleted';
+
+      // Header
+      const header = document.createElement('div');
+      header.className = 'note-header';
+
+      const dateEl = document.createElement('div');
+      dateEl.className = 'note-date';
+      dateEl.textContent = formatDate(note.createdAt);
+
+      const actions = document.createElement('div');
+      actions.className = 'note-actions';
+
+      if (note.transcript) {
+        actions.appendChild(makeActionBtn('Copy', ICONS.copy, 'success', () => {
+          navigator.clipboard.writeText(note.transcript).then(() => showToast('Copied to clipboard'));
+        }));
+      }
+
+      if (hasAudio) {
+        const retransBtn = makeActionBtn('Retranscribe', ICONS.refresh, '', () => transcribeNote(note.id));
+        if (note.transcriptStatus === 'transcribing') retransBtn.disabled = true;
+        actions.appendChild(retransBtn);
+
+        actions.appendChild(makeActionBtn('Del Audio', ICONS.trash, 'danger', () => deleteAudio(note.id)));
+      }
+
+      actions.appendChild(makeActionBtn('Delete', ICONS.trash, 'danger', () => deleteNote(note.id)));
+
+      header.appendChild(dateEl);
+      header.appendChild(actions);
+      card.appendChild(header);
+
+      // Audio section
+      if (hasAudio) {
+        card.appendChild(buildAudioSection(note));
+      } else if (note.transcriptStatus === 'deleted') {
+        const noAudio = document.createElement('div');
+        noAudio.className = 'note-no-audio';
+        noAudio.innerHTML = `${ICONS.noMic} Audio deleted`;
+        card.appendChild(noAudio);
+      }
+
+      // Divider
+      const divider = document.createElement('div');
+      divider.className = 'note-divider';
+      card.appendChild(divider);
+
+      // Transcript
+      const transcriptSection = document.createElement('div');
+      transcriptSection.className = 'note-transcript';
+
+      const label = document.createElement('div');
+      label.className = 'transcript-label';
+
+      if (note.transcriptStatus === 'transcribing') {
+        label.innerHTML = '<div class="spinner"></div> Transcribing...';
+        const p = document.createElement('div');
+        p.className = 'transcript-pending';
+        p.textContent = 'Processing your voice note...';
+        transcriptSection.appendChild(label);
+        transcriptSection.appendChild(p);
+      } else if (note.transcriptStatus === 'done' && note.transcript) {
+        label.textContent = 'Transcript';
+        const text = document.createElement('div');
+        text.className = 'transcript-text';
+        text.textContent = note.transcript;
+        transcriptSection.appendChild(label);
+        transcriptSection.appendChild(text);
+      } else if (note.transcriptStatus === 'error') {
+        label.textContent = 'Transcript';
+        const err = document.createElement('div');
+        err.className = 'transcript-error';
+        err.textContent = `Transcription failed: ${note.transcriptError || 'Unknown error'}`;
+        transcriptSection.appendChild(label);
+        transcriptSection.appendChild(err);
+      } else {
+        label.textContent = 'Transcript';
+        const p = document.createElement('div');
+        p.className = 'transcript-pending';
+        p.textContent = hasAudio ? 'Add your API key to transcribe this note.' : 'No transcript available.';
+        transcriptSection.appendChild(label);
+        transcriptSection.appendChild(p);
+      }
+
+      card.appendChild(transcriptSection);
+      return card;
+    }
+
+    function makeActionBtn(label, iconHtml, type, onClick) {
+      const btn = document.createElement('button');
+      btn.className = `note-action-btn${type ? ' ' + type : ''}`;
+      btn.innerHTML = `${iconHtml} ${label}`;
+      btn.addEventListener('click', onClick);
+      return btn;
+    }
+
+    function buildAudioSection(note) {
+      const section = document.createElement('div');
+      section.className = 'note-audio';
+
+      const playBtn = document.createElement('button');
+      playBtn.className = 'play-btn';
+      playBtn.innerHTML = ICONS.play;
+      playBtn.setAttribute('aria-label', 'Play');
+
+      const progressWrap = document.createElement('div');
+      progressWrap.className = 'audio-progress-wrap';
+
+      const progressTrack = document.createElement('div');
+      progressTrack.className = 'audio-progress';
+      const progressBar = document.createElement('div');
+      progressBar.className = 'audio-progress-bar';
+      progressBar.style.width = '0%';
+      progressTrack.appendChild(progressBar);
+
+      const timeEl = document.createElement('div');
+      timeEl.className = 'audio-time';
+      timeEl.textContent = note.duration ? formatTime(note.duration) : '0:00';
+
+      progressWrap.appendChild(progressTrack);
+      progressWrap.appendChild(timeEl);
+      section.appendChild(playBtn);
+      section.appendChild(progressWrap);
+
+      let audio = null;
+
+      function getAudio() {
+        if (!audio) {
+          const blob = base64ToBlob(note.audioBase64);
+          audio = new Audio(URL.createObjectURL(blob));
+
+          audio.addEventListener('timeupdate', () => {
+            if (audio.duration) {
+              progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+              timeEl.textContent = `${formatTime(Math.floor(audio.currentTime))} / ${formatTime(Math.floor(audio.duration))}`;
+            }
+          });
+
+          audio.addEventListener('ended', () => {
+            playBtn.innerHTML = ICONS.play;
+            progressBar.style.width = '0%';
+            timeEl.textContent = note.duration ? formatTime(note.duration) : '0:00';
+            if (currentlyPlaying && currentlyPlaying.noteId === note.id) currentlyPlaying = null;
+          });
+        }
+        return audio;
+      }
+
+      playBtn.addEventListener('click', () => {
+        const a = getAudio();
+
+        if (currentlyPlaying && currentlyPlaying.noteId !== note.id) {
+          currentlyPlaying.audio.pause();
+          currentlyPlaying.audio.currentTime = 0;
+          const other = document.querySelector(`.note-card[data-id="${currentlyPlaying.noteId}"] .play-btn`);
+          if (other) other.innerHTML = ICONS.play;
+          currentlyPlaying = null;
+        }
+
+        if (a.paused) {
+          a.play();
+          playBtn.innerHTML = ICONS.pause;
+          currentlyPlaying = { audio: a, noteId: note.id };
+        } else {
+          a.pause();
+          playBtn.innerHTML = ICONS.play;
+          currentlyPlaying = null;
+        }
+      });
+
+      progressTrack.addEventListener('click', (e) => {
+        const a = getAudio();
+        if (a.duration) {
+          const rect = progressTrack.getBoundingClientRect();
+          a.currentTime = ((e.clientX - rect.left) / rect.width) * a.duration;
+        }
+      });
+
+      return section;
+    }
+
+    function renderNotes() {
+      const list = document.getElementById('notesList');
+      list.innerHTML = '';
+      document.getElementById('notesCount').textContent = notes.length;
+
+      if (notes.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+        empty.innerHTML = `${ICONS.micLg}<p>No voice notes yet. Tap the button above to record.</p>`;
+        list.appendChild(empty);
+        return;
+      }
+
+      notes.forEach(note => list.appendChild(buildNoteCard(note)));
+    }
+
+    function updateNoteInDOM(noteId) {
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+      const existing = document.querySelector(`.note-card[data-id="${noteId}"]`);
+      if (!existing) { renderNotes(); return; }
+      existing.replaceWith(buildNoteCard(note));
+    }
+
+    function deleteNote(noteId) {
+      if (!confirm('Delete this note?')) return;
+      notes = notes.filter(n => n.id !== noteId);
+      saveNotes();
+      document.getElementById('notesCount').textContent = notes.length;
+      const card = document.querySelector(`.note-card[data-id="${noteId}"]`);
+      if (card) card.remove();
+      if (notes.length === 0) renderNotes();
+      showToast('Note deleted');
+    }
+
+    function deleteAudio(noteId) {
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+      if (!confirm('Delete the audio recording? The transcript will be kept.')) return;
+      note.audioBase64 = null;
+      note.transcriptStatus = note.transcript ? 'done' : 'deleted';
+      saveNotes();
+      updateNoteInDOM(noteId);
+      showToast('Audio deleted, transcript preserved');
+    }
+
+    // Modal
+    document.getElementById('settingsBtn').addEventListener('click', openModal);
+    document.getElementById('bannerKeyBtn').addEventListener('click', openModal);
+    document.getElementById('apiModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('apiModal')) closeModal();
+    });
+    document.getElementById('saveKeyBtn').addEventListener('click', () => {
+      const key = document.getElementById('apiKeyInput').value.trim();
+      if (!key) { showToast('Please enter your API key'); return; }
+      saveApiKey(key);
+      closeModal();
+      showToast('API key saved');
+      checkApiKeyBanner();
+    });
+
+    function openModal() {
+      document.getElementById('apiKeyInput').value = getApiKey();
+      document.getElementById('apiModal').classList.remove('hidden');
+    }
+
+    function closeModal() { document.getElementById('apiModal').classList.add('hidden'); }
+
+    function checkApiKeyBanner() {
+      document.getElementById('noKeyBanner').classList.toggle('hidden', !!getApiKey());
+    }
+
+    document.getElementById('recordBtn').addEventListener('click', () => {
+      if (isRecording) stopRecording(); else startRecording();
+    });
+
+    // Init
+    loadNotes();
+    renderNotes();
+    checkApiKeyBanner();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/voice-notes/sw.js', { scope: '/voice-notes/' });
+    }
+  </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wecreatethis-v17';
+const CACHE_NAME = 'wecreatethis-v18';
 const ASSETS = [
   '/',
   '/index',
@@ -11,7 +11,8 @@ const ASSETS = [
   '/birdle/icon-192.png',
   '/hardle/icon-192.png',
   '/tarot/icon-192.png',
-  '/perfectday/icon-192.png'
+  '/perfectday/icon-192.png',
+  '/voice-notes/icon-192.png'
 ];
 
 // Normalize URL to canonical extensionless format
