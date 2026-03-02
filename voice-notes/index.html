@@ -531,12 +531,17 @@
       micLg: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>`,
     };
 
+    const SEGMENT_INTERVAL = 30; // seconds between mid-recording transcriptions
+
     let notes = [];
     let isRecording = false;
     let mediaRecorder = null;
-    let audioChunks = [];
+    let audioChunks = [];       // all chunks for full-recording fallback blob
+    let segmentChunks = [];     // chunks for the current 30s segment
     let timerInterval = null;
     let timerSeconds = 0;
+    let segmentInterval = null; // setInterval handle for 30s segments
+    let activeNoteId = null;    // note being recorded/transcribed
 
     // --- IndexedDB audio fallback store ---
     let audioDB = null;
@@ -635,12 +640,19 @@
       catch { showToast('Microphone access denied'); return; }
 
       audioChunks = [];
+      segmentChunks = [];
+      activeNoteId = null;
       const options = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? { mimeType: 'audio/webm;codecs=opus' }
         : MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : {};
 
       mediaRecorder = new MediaRecorder(stream, options);
-      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) {
+          audioChunks.push(e.data);
+          segmentChunks.push(e.data);
+        }
+      };
       mediaRecorder.onstop = () => { stream.getTracks().forEach(t => t.stop()); handleRecordingDone(); };
       mediaRecorder.start(100);
 
@@ -650,9 +662,15 @@
       document.getElementById('recordStatus').textContent = 'Recording... tap to stop';
       document.getElementById('recordStatus').classList.add('recording');
       startTimer();
+
+      // Every 30s, flush current segment for transcription
+      segmentInterval = setInterval(() => flushSegment(false), SEGMENT_INTERVAL * 1000);
     }
 
     function stopRecording() {
+      clearInterval(segmentInterval);
+      segmentInterval = null;
+      // activeNoteId stays set so handleRecordingDone can use it
       if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
       isRecording = false;
       document.getElementById('recordBtn').classList.remove('recording');
@@ -664,29 +682,81 @@
 
     async function handleRecordingDone() {
       const mimeType = mediaRecorder.mimeType || 'audio/webm';
-      const blob = new Blob(audioChunks, { type: mimeType });
 
-      const note = {
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        transcript: null,
-        transcriptStatus: 'streaming',
-        transcriptError: null,
-        duration: timerSeconds,
-        audioMime: mimeType,
-      };
+      // Create the note first if this is a short recording (< 30s, no segments sent yet)
+      if (!activeNoteId) {
+        const note = {
+          id: Date.now().toString(),
+          createdAt: new Date().toISOString(),
+          transcript: null,
+          transcriptStatus: 'streaming',
+          transcriptError: null,
+          duration: timerSeconds,
+          audioMime: mimeType,
+        };
+        notes.unshift(note);
+        saveNotes();
+        renderNotes();
+        activeNoteId = note.id;
 
-      notes.unshift(note);
-      saveNotes();
-      renderNotes();
+        // Save full blob as fallback
+        const blob = new Blob(audioChunks, { type: mimeType });
+        await saveAudioBlob(note.id, blob, mimeType);
+      }
 
-      // Save blob to IndexedDB as fallback in case transcription fails
-      await saveAudioBlob(note.id, blob, mimeType);
-
-      streamTranscribe(note.id, blob);
+      // Send the remaining segment (final)
+      flushSegment(true);
     }
 
-    async function streamTranscribe(noteId, blob) {
+    // Flush current segmentChunks as a transcription request.
+    // isFinal=true means this is the last segment — sets status to done when complete.
+    async function flushSegment(isFinal) {
+      const mimeType = (mediaRecorder && mediaRecorder.mimeType) || 'audio/webm';
+      const chunks = segmentChunks.splice(0); // take and clear
+      if (chunks.length === 0) {
+        // Nothing to send — if final, just mark done
+        if (isFinal && activeNoteId) {
+          const note = notes.find(n => n.id === activeNoteId);
+          if (note && note.transcriptStatus === 'streaming') {
+            note.transcriptStatus = note.transcript ? 'done' : 'error';
+            note.transcriptError = note.transcript ? null : 'No transcript received';
+            if (note.transcriptStatus === 'done') deleteAudioBlob(activeNoteId);
+            saveNotes();
+            updateNoteInDOM(activeNoteId);
+          }
+          activeNoteId = null;
+        }
+        return;
+      }
+
+      const blob = new Blob(chunks, { type: mimeType });
+
+      // Create the note on first segment if not yet created
+      if (!activeNoteId) {
+        const note = {
+          id: Date.now().toString(),
+          createdAt: new Date().toISOString(),
+          transcript: null,
+          transcriptStatus: 'streaming',
+          transcriptError: null,
+          duration: timerSeconds,
+          audioMime: mimeType,
+        };
+        notes.unshift(note);
+        saveNotes();
+        renderNotes();
+        activeNoteId = note.id;
+
+        // Save full recording blob as fallback (using all chunks so far)
+        const fullBlob = new Blob(audioChunks, { type: mimeType });
+        await saveAudioBlob(note.id, fullBlob, mimeType);
+      }
+
+      await streamTranscribe(activeNoteId, blob, isFinal);
+      if (isFinal) activeNoteId = null;
+    }
+
+    async function streamTranscribe(noteId, blob, isFinal = true) {
       const note = notes.find(n => n.id === noteId);
       if (!note) return;
 
@@ -720,27 +790,35 @@
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let segmentText = '';
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
-          buffer = lines.pop(); // keep incomplete line
+          buffer = lines.pop();
 
           for (const line of lines) {
             if (!line.startsWith('data: ')) continue;
             try {
               const evt = JSON.parse(line.slice(6));
               if (evt.type === 'transcription.text.delta' && evt.text) {
+                segmentText += evt.text;
                 note.transcript = (note.transcript || '') + evt.text;
                 saveNotes();
                 updateNoteInDOM(note.id);
               } else if (evt.type === 'transcription.done') {
-                // Use the final text if we got it, otherwise keep what we built up
-                if (evt.text) note.transcript = evt.text;
-                note.transcriptStatus = 'done';
-                deleteAudioBlob(note.id);
+                // If done event has full text, use it to correct our built-up segment
+                if (evt.text && evt.text !== segmentText) {
+                  // Replace the segment portion we appended with the corrected version
+                  const existing = note.transcript || '';
+                  note.transcript = existing.slice(0, existing.length - segmentText.length) + evt.text;
+                }
+                if (isFinal) {
+                  note.transcriptStatus = 'done';
+                  deleteAudioBlob(note.id);
+                }
                 saveNotes();
                 updateNoteInDOM(note.id);
               }
@@ -748,8 +826,8 @@
           }
         }
 
-        // Ensure done status if stream ended without transcription.done event
-        if (note.transcriptStatus === 'streaming') {
+        // Stream ended without transcription.done
+        if (isFinal && note.transcriptStatus === 'streaming') {
           note.transcriptStatus = note.transcript ? 'done' : 'error';
           note.transcriptError = note.transcript ? null : 'No transcript received';
           if (note.transcriptStatus === 'done') deleteAudioBlob(note.id);
@@ -758,11 +836,13 @@
         }
 
       } catch (e) {
-        note.transcriptStatus = 'error';
-        note.transcriptError = e.message;
-        // Keep blob in IndexedDB so user can retry
-        saveNotes();
-        updateNoteInDOM(note.id);
+        if (isFinal) {
+          note.transcriptStatus = 'error';
+          note.transcriptError = e.message;
+          saveNotes();
+          updateNoteInDOM(note.id);
+        }
+        // For mid-recording segment errors, silently continue — next segment will still try
       }
     }
 
