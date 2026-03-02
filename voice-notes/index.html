@@ -171,7 +171,6 @@
       transition: transform 0.15s, box-shadow 0.2s;
       background: var(--record-red);
       box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4);
-      /* prevent SVG bleed through button boundary */
       overflow: hidden;
     }
 
@@ -186,7 +185,6 @@
     .record-btn:hover { transform: scale(1.05); }
     .record-btn:active { transform: scale(0.95); }
 
-    /* Icon container inside record button — swap this innerHTML, not the svg */
     .record-btn-icon {
       display: flex;
       align-items: center;
@@ -273,7 +271,6 @@
       flex-shrink: 0;
     }
 
-    /* Action buttons wrap and shrink on mobile */
     .note-actions {
       display: flex;
       flex-wrap: wrap;
@@ -300,15 +297,10 @@
       white-space: nowrap;
     }
 
-    /* Hide label text on small screens, icon only */
-    .note-action-btn span {
-      display: none;
-    }
+    .note-action-btn span { display: none; }
 
     @media (min-width: 480px) {
-      .note-action-btn span {
-        display: inline;
-      }
+      .note-action-btn span { display: inline; }
     }
 
     .note-action-btn svg { flex-shrink: 0; }
@@ -316,72 +308,6 @@
     .note-action-btn:hover { color: var(--text); background: var(--border); border-color: rgba(255,255,255,0.15); }
     .note-action-btn.danger:hover { color: var(--danger); background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
     .note-action-btn.success:hover { color: var(--success); background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); }
-
-    /* Audio player */
-    .note-audio {
-      padding: 0 12px 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .play-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--accent);
-      border: none;
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-
-    .play-btn:hover { opacity: 0.85; }
-    .play-btn:active { transform: scale(0.95); }
-
-    .audio-progress-wrap {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 0;
-    }
-
-    .audio-progress {
-      width: 100%;
-      height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-      overflow: hidden;
-      cursor: pointer;
-    }
-
-    .audio-progress-bar {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 2px;
-      transition: width 0.1s;
-      pointer-events: none;
-    }
-
-    .audio-time {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .note-no-audio {
-      padding: 0 12px 10px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
 
     /* Transcript */
     .note-transcript {
@@ -411,6 +337,23 @@
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
+
+    /* Live streaming transcript — no line clamp, cursor blink */
+    .transcript-text.streaming {
+      display: block;
+      -webkit-line-clamp: unset;
+      overflow: visible;
+    }
+
+    .transcript-text.streaming::after {
+      content: '|';
+      display: inline-block;
+      animation: blink 1s step-end infinite;
+      color: var(--accent-light);
+      margin-left: 1px;
+    }
+
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
     .read-more-link {
       display: inline-block;
@@ -577,17 +520,14 @@
     const STORAGE_KEY = 'voice-notes-v1';
     const API_KEY_STORAGE = 'voice-notes-mistral-key';
     const MODEL = 'voxtral-mini-latest';
+    const ENDPOINT = 'https://api.mistral.ai/v1/audio/transcriptions';
 
-    // SVG strings — defined once, reused
     const SVG = {
       mic: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>`,
       stop: `<svg width="22" height="22" viewBox="0 0 24 24" fill="white" stroke="none"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>`,
-      play: `<svg width="13" height="13" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>`,
-      pause: `<svg width="13" height="13" viewBox="0 0 24 24" fill="white" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
-      copy: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+      copy:    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
       refresh: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
-      trash: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
-      noMic: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4"><rect x="9" y="2" width="6" height="12" rx="3"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
+      trash:   `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
       micLg: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>`,
     };
 
@@ -597,8 +537,50 @@
     let audioChunks = [];
     let timerInterval = null;
     let timerSeconds = 0;
-    let currentlyPlaying = null;
 
+    // --- IndexedDB audio fallback store ---
+    let audioDB = null;
+
+    function openAudioDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open('voice-notes-audio', 1);
+        req.onupgradeneeded = e => e.target.result.createObjectStore('blobs', { keyPath: 'id' });
+        req.onsuccess = e => { audioDB = e.target.result; resolve(audioDB); };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function saveAudioBlob(noteId, blob, mimeType) {
+      const db = audioDB || await openAudioDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('blobs', 'readwrite');
+        tx.objectStore('blobs').put({ id: noteId, blob, mimeType });
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function getAudioBlob(noteId) {
+      const db = audioDB || await openAudioDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('blobs', 'readonly');
+        const req = tx.objectStore('blobs').get(noteId);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function deleteAudioBlob(noteId) {
+      const db = audioDB || await openAudioDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('blobs', 'readwrite');
+        tx.objectStore('blobs').delete(noteId);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    // --- Notes store ---
     function loadNotes() {
       try { notes = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
       catch { notes = []; }
@@ -637,12 +619,17 @@
       document.getElementById('recordTimer').textContent = '';
     }
 
-    // Set the record button icon by replacing the inner container's HTML
     function setRecordIcon(which) {
       document.getElementById('recordBtnIcon').innerHTML = SVG[which];
     }
 
     async function startRecording() {
+      if (!getApiKey()) {
+        showToast('Add your API key first');
+        openModal();
+        return;
+      }
+
       let stream;
       try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
       catch { showToast('Microphone access denied'); return; }
@@ -678,68 +665,50 @@
     async function handleRecordingDone() {
       const mimeType = mediaRecorder.mimeType || 'audio/webm';
       const blob = new Blob(audioChunks, { type: mimeType });
-      const base64 = await blobToBase64(blob);
 
       const note = {
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
-        audioBase64: base64,
-        audioMime: mimeType,
         transcript: null,
-        transcriptStatus: 'pending',
+        transcriptStatus: 'streaming',
         transcriptError: null,
         duration: timerSeconds,
+        audioMime: mimeType,
       };
 
       notes.unshift(note);
       saveNotes();
       renderNotes();
 
-      if (getApiKey()) transcribeNote(note.id);
+      // Save blob to IndexedDB as fallback in case transcription fails
+      await saveAudioBlob(note.id, blob, mimeType);
+
+      streamTranscribe(note.id, blob);
     }
 
-    function blobToBase64(blob) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
-
-    function base64ToBlob(dataUrl) {
-      const [header, data] = dataUrl.split(',');
-      const mime = header.match(/:(.*?);/)[1];
-      const binary = atob(data);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      return new Blob([bytes], { type: mime });
-    }
-
-    async function transcribeNote(noteId) {
+    async function streamTranscribe(noteId, blob) {
       const note = notes.find(n => n.id === noteId);
-      if (!note || note.transcriptStatus === 'deleted') return;
+      if (!note) return;
 
       const apiKey = getApiKey();
-      if (!apiKey) { showToast('Add your API key first'); return; }
+      if (!apiKey) return;
 
-      note.transcriptStatus = 'transcribing';
-      saveNotes();
-      updateNoteInDOM(note.id);
+      const ext = note.audioMime.includes('webm') ? 'webm'
+        : note.audioMime.includes('ogg') ? 'ogg'
+        : note.audioMime.includes('mp4') ? 'mp4' : 'webm';
+
+      const formData = new FormData();
+      formData.append('file', blob, `recording.${ext}`);
+      formData.append('model', MODEL);
+      formData.append('stream', 'true');
 
       try {
-        const blob = base64ToBlob(note.audioBase64);
-        const ext = note.audioMime.includes('webm') ? 'webm'
-          : note.audioMime.includes('ogg') ? 'ogg'
-          : note.audioMime.includes('mp4') ? 'mp4' : 'webm';
-
-        const formData = new FormData();
-        formData.append('file', blob, `recording.${ext}`);
-        formData.append('model', MODEL);
-
-        const res = await fetch('https://api.mistral.ai/v1/audio/transcriptions', {
+        const res = await fetch(ENDPOINT, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${apiKey}` },
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Accept': 'text/event-stream',
+          },
           body: formData,
         });
 
@@ -748,17 +717,53 @@
           throw new Error(errData.message || `HTTP ${res.status}`);
         }
 
-        const data = await res.json();
-        note.transcript = data.text || '';
-        note.transcriptStatus = 'done';
-        note.transcriptError = null;
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop(); // keep incomplete line
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            try {
+              const evt = JSON.parse(line.slice(6));
+              if (evt.type === 'transcription.text.delta' && evt.text) {
+                note.transcript = (note.transcript || '') + evt.text;
+                saveNotes();
+                updateNoteInDOM(note.id);
+              } else if (evt.type === 'transcription.done') {
+                // Use the final text if we got it, otherwise keep what we built up
+                if (evt.text) note.transcript = evt.text;
+                note.transcriptStatus = 'done';
+                deleteAudioBlob(note.id);
+                saveNotes();
+                updateNoteInDOM(note.id);
+              }
+            } catch {}
+          }
+        }
+
+        // Ensure done status if stream ended without transcription.done event
+        if (note.transcriptStatus === 'streaming') {
+          note.transcriptStatus = note.transcript ? 'done' : 'error';
+          note.transcriptError = note.transcript ? null : 'No transcript received';
+          if (note.transcriptStatus === 'done') deleteAudioBlob(note.id);
+          saveNotes();
+          updateNoteInDOM(note.id);
+        }
+
       } catch (e) {
         note.transcriptStatus = 'error';
         note.transcriptError = e.message;
+        // Keep blob in IndexedDB so user can retry
+        saveNotes();
+        updateNoteInDOM(note.id);
       }
-
-      saveNotes();
-      updateNoteInDOM(note.id);
     }
 
     function formatDate(iso) {
@@ -777,8 +782,6 @@
       card.className = 'note-card';
       card.dataset.id = note.id;
 
-      const hasAudio = !!note.audioBase64 && note.transcriptStatus !== 'deleted';
-
       // Header
       const header = document.createElement('div');
       header.className = 'note-header';
@@ -796,28 +799,11 @@
         }));
       }
 
-      if (hasAudio) {
-        const retransBtn = makeActionBtn('Retranscribe', SVG.refresh, '', () => transcribeNote(note.id));
-        if (note.transcriptStatus === 'transcribing') retransBtn.disabled = true;
-        actions.appendChild(retransBtn);
-        actions.appendChild(makeActionBtn('Del Audio', SVG.trash, 'danger', () => deleteAudio(note.id)));
-      }
-
       actions.appendChild(makeActionBtn('Delete', SVG.trash, 'danger', () => deleteNote(note.id)));
 
       header.appendChild(dateEl);
       header.appendChild(actions);
       card.appendChild(header);
-
-      // Audio
-      if (hasAudio) {
-        card.appendChild(buildAudioSection(note));
-      } else if (note.transcriptStatus === 'deleted') {
-        const noAudio = document.createElement('div');
-        noAudio.className = 'note-no-audio';
-        noAudio.innerHTML = `${SVG.noMic} Audio deleted`;
-        card.appendChild(noAudio);
-      }
 
       const divider = document.createElement('div');
       divider.className = 'note-divider';
@@ -830,13 +816,20 @@
       const label = document.createElement('div');
       label.className = 'transcript-label';
 
-      if (note.transcriptStatus === 'transcribing') {
+      if (note.transcriptStatus === 'streaming') {
         label.innerHTML = '<div class="spinner"></div> Transcribing...';
-        const p = document.createElement('div');
-        p.className = 'transcript-pending';
-        p.textContent = 'Processing your voice note...';
         ts.appendChild(label);
-        ts.appendChild(p);
+        if (note.transcript) {
+          const text = document.createElement('div');
+          text.className = 'transcript-text streaming';
+          text.textContent = note.transcript;
+          ts.appendChild(text);
+        } else {
+          const p = document.createElement('div');
+          p.className = 'transcript-pending';
+          p.textContent = 'Processing your voice note...';
+          ts.appendChild(p);
+        }
       } else if (note.transcriptStatus === 'done' && note.transcript) {
         label.textContent = 'Transcript';
         const text = document.createElement('div');
@@ -856,11 +849,20 @@
         err.textContent = `Transcription failed: ${note.transcriptError || 'Unknown error'}`;
         ts.appendChild(label);
         ts.appendChild(err);
+        // Show retry button if we still have the audio blob
+        getAudioBlob(note.id).then(stored => {
+          if (stored) {
+            const retryBtn = makeActionBtn('Retry', SVG.refresh, '', () => retryTranscribe(note.id));
+            // Insert before the existing delete button in actions
+            const actionsEl = card.querySelector('.note-actions');
+            if (actionsEl) actionsEl.insertBefore(retryBtn, actionsEl.firstChild);
+          }
+        });
       } else {
         label.textContent = 'Transcript';
         const p = document.createElement('div');
         p.className = 'transcript-pending';
-        p.textContent = hasAudio ? 'Add your API key to transcribe this note.' : 'No transcript available.';
+        p.textContent = 'No transcript available.';
         ts.appendChild(label);
         ts.appendChild(p);
       }
@@ -872,95 +874,9 @@
     function makeActionBtn(label, iconHtml, type, onClick) {
       const btn = document.createElement('button');
       btn.className = `note-action-btn${type ? ' ' + type : ''}`;
-      // Icon always visible; label hidden via font-size:0 on mobile, shown on wider screens
       btn.innerHTML = `${iconHtml}<span>${label}</span>`;
       btn.addEventListener('click', onClick);
       return btn;
-    }
-
-    function buildAudioSection(note) {
-      const section = document.createElement('div');
-      section.className = 'note-audio';
-
-      const playBtn = document.createElement('button');
-      playBtn.className = 'play-btn';
-      playBtn.innerHTML = SVG.play;
-      playBtn.setAttribute('aria-label', 'Play');
-
-      const progressWrap = document.createElement('div');
-      progressWrap.className = 'audio-progress-wrap';
-
-      const progressTrack = document.createElement('div');
-      progressTrack.className = 'audio-progress';
-      const progressBar = document.createElement('div');
-      progressBar.className = 'audio-progress-bar';
-      progressBar.style.width = '0%';
-      progressTrack.appendChild(progressBar);
-
-      const timeEl = document.createElement('div');
-      timeEl.className = 'audio-time';
-      timeEl.textContent = note.duration ? formatTime(note.duration) : '0:00';
-
-      progressWrap.appendChild(progressTrack);
-      progressWrap.appendChild(timeEl);
-      section.appendChild(playBtn);
-      section.appendChild(progressWrap);
-
-      let audio = null;
-
-      function getAudio() {
-        if (!audio) {
-          const blob = base64ToBlob(note.audioBase64);
-          audio = new Audio(URL.createObjectURL(blob));
-
-          audio.addEventListener('timeupdate', () => {
-            if (audio.duration) {
-              progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
-              timeEl.textContent = `${formatTime(Math.floor(audio.currentTime))} / ${formatTime(Math.floor(audio.duration))}`;
-            }
-          });
-
-          audio.addEventListener('ended', () => {
-            playBtn.innerHTML = SVG.play;
-            progressBar.style.width = '0%';
-            timeEl.textContent = note.duration ? formatTime(note.duration) : '0:00';
-            if (currentlyPlaying && currentlyPlaying.noteId === note.id) currentlyPlaying = null;
-          });
-        }
-        return audio;
-      }
-
-      playBtn.addEventListener('click', () => {
-        const a = getAudio();
-
-        if (currentlyPlaying && currentlyPlaying.noteId !== note.id) {
-          currentlyPlaying.audio.pause();
-          currentlyPlaying.audio.currentTime = 0;
-          const other = document.querySelector(`.note-card[data-id="${currentlyPlaying.noteId}"] .play-btn`);
-          if (other) other.innerHTML = SVG.play;
-          currentlyPlaying = null;
-        }
-
-        if (a.paused) {
-          a.play();
-          playBtn.innerHTML = SVG.pause;
-          currentlyPlaying = { audio: a, noteId: note.id };
-        } else {
-          a.pause();
-          playBtn.innerHTML = SVG.play;
-          currentlyPlaying = null;
-        }
-      });
-
-      progressTrack.addEventListener('click', (e) => {
-        const a = getAudio();
-        if (a.duration) {
-          const rect = progressTrack.getBoundingClientRect();
-          a.currentTime = ((e.clientX - rect.left) / rect.width) * a.duration;
-        }
-      });
-
-      return section;
     }
 
     function renderNotes() {
@@ -987,26 +903,30 @@
       existing.replaceWith(buildNoteCard(note));
     }
 
+    async function retryTranscribe(noteId) {
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+      const stored = await getAudioBlob(noteId);
+      if (!stored) { showToast('Audio no longer available'); return; }
+      note.transcriptStatus = 'streaming';
+      note.transcriptError = null;
+      note.transcript = null;
+      saveNotes();
+      updateNoteInDOM(note.id);
+      const blob = stored.blob instanceof Blob ? stored.blob : new Blob([stored.blob], { type: stored.mimeType });
+      streamTranscribe(noteId, blob);
+    }
+
     function deleteNote(noteId) {
       if (!confirm('Delete this note?')) return;
       notes = notes.filter(n => n.id !== noteId);
       saveNotes();
+      deleteAudioBlob(noteId);
       document.getElementById('notesCount').textContent = notes.length;
       const card = document.querySelector(`.note-card[data-id="${noteId}"]`);
       if (card) card.remove();
       if (notes.length === 0) renderNotes();
       showToast('Note deleted');
-    }
-
-    function deleteAudio(noteId) {
-      const note = notes.find(n => n.id === noteId);
-      if (!note) return;
-      if (!confirm('Delete the audio? The transcript will be kept.')) return;
-      note.audioBase64 = null;
-      note.transcriptStatus = note.transcript ? 'done' : 'deleted';
-      saveNotes();
-      updateNoteInDOM(noteId);
-      showToast('Audio deleted, transcript preserved');
     }
 
     function checkApiKeyBanner() {
@@ -1041,6 +961,7 @@
     });
 
     // Init
+    openAudioDB().catch(() => {}); // warm up DB connection
     loadNotes();
     renderNotes();
     checkApiKeyBanner();

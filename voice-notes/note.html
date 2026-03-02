@@ -83,80 +83,6 @@
       margin-bottom: 16px;
     }
 
-    /* Audio player */
-    .audio-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .play-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: var(--accent);
-      border: none;
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-
-    .play-btn:hover { opacity: 0.85; }
-    .play-btn:active { transform: scale(0.95); }
-
-    .audio-progress-wrap {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-width: 0;
-    }
-
-    .audio-progress {
-      width: 100%;
-      height: 5px;
-      background: var(--border);
-      border-radius: 3px;
-      overflow: hidden;
-      cursor: pointer;
-    }
-
-    .audio-progress-bar {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 3px;
-      transition: width 0.1s;
-      pointer-events: none;
-    }
-
-    .audio-time {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .no-audio-notice {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.82rem;
-      color: var(--text-muted);
-    }
-
     /* Transcript section */
     .section-label {
       font-size: 0.7rem;
@@ -177,6 +103,17 @@
       word-break: break-word;
       white-space: pre-wrap;
     }
+
+    /* Live streaming cursor */
+    .transcript-body.streaming::after {
+      content: '|';
+      display: inline-block;
+      animation: blink 1s step-end infinite;
+      color: var(--accent-light);
+      margin-left: 1px;
+    }
+
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
     .transcript-pending {
       font-size: 0.88rem;
@@ -283,16 +220,10 @@
 
   <script>
     const STORAGE_KEY = 'voice-notes-v1';
-    const API_KEY_STORAGE = 'voice-notes-mistral-key';
-    const MODEL = 'voxtral-mini-latest';
 
     const SVG = {
-      play:    `<svg width="15" height="15" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>`,
-      pause:   `<svg width="15" height="15" viewBox="0 0 24 24" fill="white" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
-      copy:    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
-      refresh: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
-      trash:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
-      noMic:   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4"><rect x="9" y="2" width="6" height="12" rx="3"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
+      copy:  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+      trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
     };
 
     function loadNotes() {
@@ -301,7 +232,6 @@
     }
 
     function saveNotes(notes) { localStorage.setItem(STORAGE_KEY, JSON.stringify(notes)); }
-    function getApiKey() { return localStorage.getItem(API_KEY_STORAGE) || ''; }
 
     function showToast(msg, duration = 2200) {
       const t = document.getElementById('toast');
@@ -309,12 +239,6 @@
       t.classList.add('show');
       clearTimeout(t._timeout);
       t._timeout = setTimeout(() => t.classList.remove('show'), duration);
-    }
-
-    function formatTime(secs) {
-      const m = String(Math.floor(secs / 60)).padStart(2, '0');
-      const s = String(secs % 60).padStart(2, '0');
-      return `${m}:${s}`;
     }
 
     function formatDate(iso) {
@@ -326,15 +250,6 @@
       if (d.toDateString() === now.toDateString()) return `Today at ${time}`;
       if (d.toDateString() === yesterday.toDateString()) return `Yesterday at ${time}`;
       return d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' at ' + time;
-    }
-
-    function base64ToBlob(dataUrl) {
-      const [header, data] = dataUrl.split(',');
-      const mime = header.match(/:(.*?);/)[1];
-      const binary = atob(data);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      return new Blob([bytes], { type: mime });
     }
 
     // --- Render ---
@@ -359,35 +274,30 @@
       meta.textContent = formatDate(note.createdAt);
       content.appendChild(meta);
 
-      // Audio
-      const hasAudio = !!note.audioBase64 && note.transcriptStatus !== 'deleted';
-      if (hasAudio) {
-        content.appendChild(buildAudioCard(note));
-      } else {
-        const noAudio = document.createElement('div');
-        noAudio.className = 'no-audio-notice';
-        noAudio.innerHTML = `${SVG.noMic} Audio deleted`;
-        content.appendChild(noAudio);
-      }
-
       // Transcript
       const tsLabel = document.createElement('div');
       tsLabel.className = 'section-label';
 
       const tsWrap = document.createElement('div');
 
-      if (note.transcriptStatus === 'transcribing') {
+      if (note.transcriptStatus === 'streaming') {
         tsLabel.innerHTML = '<div class="spinner"></div> Transcribing...';
-        const p = document.createElement('div');
-        p.className = 'transcript-pending';
-        p.textContent = 'Processing your voice note...';
         tsWrap.appendChild(tsLabel);
-        tsWrap.appendChild(p);
+        if (note.transcript) {
+          const body = document.createElement('div');
+          body.className = 'transcript-body streaming';
+          body.textContent = note.transcript;
+          tsWrap.appendChild(body);
+        } else {
+          const p = document.createElement('div');
+          p.className = 'transcript-pending';
+          p.textContent = 'Processing your voice note...';
+          tsWrap.appendChild(p);
+        }
       } else if (note.transcriptStatus === 'done' && note.transcript) {
         tsLabel.textContent = 'Transcript';
         const body = document.createElement('div');
         body.className = 'transcript-body';
-        body.id = 'transcriptBody';
         body.textContent = note.transcript;
         tsWrap.appendChild(tsLabel);
         tsWrap.appendChild(body);
@@ -402,7 +312,7 @@
         tsLabel.textContent = 'Transcript';
         const p = document.createElement('div');
         p.className = 'transcript-pending';
-        p.textContent = hasAudio ? 'Add your API key to transcribe this note.' : 'No transcript available.';
+        p.textContent = 'No transcript available.';
         tsWrap.appendChild(tsLabel);
         tsWrap.appendChild(p);
       }
@@ -420,15 +330,6 @@
         actionsRow.appendChild(copyBtn);
       }
 
-      if (hasAudio) {
-        const retransBtn = makeBtn('Retranscribe', SVG.refresh, '', () => retranscribe(note.id));
-        if (note.transcriptStatus === 'transcribing') retransBtn.disabled = true;
-        actionsRow.appendChild(retransBtn);
-
-        const delAudioBtn = makeBtn('Delete audio', SVG.trash, 'btn-danger', () => deleteAudio(note.id));
-        actionsRow.appendChild(delAudioBtn);
-      }
-
       const delBtn = makeBtn('Delete note', SVG.trash, 'btn-danger', () => deleteNote(note.id));
       actionsRow.appendChild(delBtn);
 
@@ -441,130 +342,6 @@
       btn.innerHTML = `${iconHtml} ${label}`;
       btn.addEventListener('click', onClick);
       return btn;
-    }
-
-    function buildAudioCard(note) {
-      const card = document.createElement('div');
-      card.className = 'audio-card';
-
-      const playBtn = document.createElement('button');
-      playBtn.className = 'play-btn';
-      playBtn.innerHTML = SVG.play;
-      playBtn.setAttribute('aria-label', 'Play');
-
-      const wrap = document.createElement('div');
-      wrap.className = 'audio-progress-wrap';
-
-      const track = document.createElement('div');
-      track.className = 'audio-progress';
-      const bar = document.createElement('div');
-      bar.className = 'audio-progress-bar';
-      bar.style.width = '0%';
-      track.appendChild(bar);
-
-      const timeEl = document.createElement('div');
-      timeEl.className = 'audio-time';
-      timeEl.textContent = note.duration ? formatTime(note.duration) : '0:00';
-
-      wrap.appendChild(track);
-      wrap.appendChild(timeEl);
-      card.appendChild(playBtn);
-      card.appendChild(wrap);
-
-      let audio = null;
-
-      function getAudio() {
-        if (!audio) {
-          const blob = base64ToBlob(note.audioBase64);
-          audio = new Audio(URL.createObjectURL(blob));
-          audio.addEventListener('timeupdate', () => {
-            if (audio.duration) {
-              bar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
-              timeEl.textContent = `${formatTime(Math.floor(audio.currentTime))} / ${formatTime(Math.floor(audio.duration))}`;
-            }
-          });
-          audio.addEventListener('ended', () => {
-            playBtn.innerHTML = SVG.play;
-            bar.style.width = '0%';
-            timeEl.textContent = note.duration ? formatTime(note.duration) : '0:00';
-          });
-        }
-        return audio;
-      }
-
-      playBtn.addEventListener('click', () => {
-        const a = getAudio();
-        if (a.paused) { a.play(); playBtn.innerHTML = SVG.pause; }
-        else { a.pause(); playBtn.innerHTML = SVG.play; }
-      });
-
-      track.addEventListener('click', (e) => {
-        const a = getAudio();
-        if (a.duration) {
-          const rect = track.getBoundingClientRect();
-          a.currentTime = ((e.clientX - rect.left) / rect.width) * a.duration;
-        }
-      });
-
-      return card;
-    }
-
-    async function retranscribe(noteId) {
-      const notes = loadNotes();
-      const note = notes.find(n => n.id === noteId);
-      if (!note) return;
-
-      const apiKey = getApiKey();
-      if (!apiKey) { showToast('Add your API key first'); return; }
-
-      note.transcriptStatus = 'transcribing';
-      saveNotes(notes);
-      render();
-
-      try {
-        const blob = base64ToBlob(note.audioBase64);
-        const ext = note.audioMime.includes('webm') ? 'webm'
-          : note.audioMime.includes('ogg') ? 'ogg'
-          : note.audioMime.includes('mp4') ? 'mp4' : 'webm';
-
-        const formData = new FormData();
-        formData.append('file', blob, `recording.${ext}`);
-        formData.append('model', MODEL);
-
-        const res = await fetch('https://api.mistral.ai/v1/audio/transcriptions', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${apiKey}` },
-          body: formData,
-        });
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || `HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        note.transcript = data.text || '';
-        note.transcriptStatus = 'done';
-        note.transcriptError = null;
-      } catch (e) {
-        note.transcriptStatus = 'error';
-        note.transcriptError = e.message;
-      }
-
-      saveNotes(notes);
-      render();
-    }
-
-    function deleteAudio(noteId) {
-      if (!confirm('Delete the audio? The transcript will be kept.')) return;
-      const notes = loadNotes();
-      const note = notes.find(n => n.id === noteId);
-      if (!note) return;
-      note.audioBase64 = null;
-      note.transcriptStatus = note.transcript ? 'done' : 'deleted';
-      saveNotes(notes);
-      render();
-      showToast('Audio deleted, transcript preserved');
     }
 
     function deleteNote(noteId) {
