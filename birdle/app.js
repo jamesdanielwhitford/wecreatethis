@@ -1,6 +1,6 @@
 // Birdle - Bird Bingo App
 
-const APP_VERSION = 122; // Match service worker version
+const APP_VERSION = 124; // Match service worker version
 
 const App = {
   birds: [],

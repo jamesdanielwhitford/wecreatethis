@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Bird Sounds - Birdle</title>
+  <link rel="manifest" href="../manifest.json">
+  <link rel="apple-touch-icon" href="../icon-192.png">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    .mode-panel {
+      padding: 0 16px 16px;
+    }
+    .mode-panel .form-row {
+      margin-bottom: 10px;
+    }
+    .mode-panel select {
+      width: 100%;
+      padding: 12px;
+      padding-right: 36px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 12px center;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .mode-panel select:disabled {
+      background-color: #f5f5f5;
+      color: #999;
+    }
+.fallback-warning {
+      margin: 0 16px 16px;
+      padding: 14px 16px;
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-radius: 10px;
+      font-size: 14px;
+      color: #555;
+    }
+    .fallback-warning p {
+      margin: 0 0 10px;
+    }
+    .fallback-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .fallback-actions .btn {
+      font-size: 13px;
+      padding: 8px 14px;
+    }
+    .area-select-header {
+      text-align: center;
+      padding: 20px 16px 4px;
+      color: #666;
+      font-size: 15px;
+    }
+    .flashcard-body {
+      padding: 16px;
+    }
+    .card-counter {
+      text-align: center;
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .audio-section {
+      text-align: center;
+      padding: 32px 0 16px;
+    }
+    .play-btn {
+      font-size: 1.2rem;
+      padding: 14px 28px;
+      min-width: 160px;
+    }
+    .reveal-section {
+      text-align: center;
+      padding: 12px 0 24px;
+    }
+    .revealed-bird {
+      text-align: center;
+      padding: 0 16px 8px;
+    }
+    .revealed-bird h2 {
+      margin: 0 0 4px;
+      font-size: 1.4rem;
+    }
+    .revealed-bird .sci-name {
+      color: #666;
+      font-style: italic;
+      font-size: 14px;
+      margin: 0 0 12px;
+    }
+    .bird-reveal-image {
+      width: 100%;
+      max-height: 240px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .attribution {
+      text-align: center;
+      padding: 8px 16px 16px;
+      font-size: 13px;
+      color: #888;
+      line-height: 1.5;
+    }
+    .attribution a { color: #888; }
+    .revealed-actions {
+      text-align: center;
+      padding: 8px 16px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+    .deck-complete-body {
+      text-align: center;
+      padding: 48px 24px;
+    }
+    .deck-complete-body .big-emoji {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+    .deck-complete-body p {
+      font-size: 1.1rem;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="game-navbar">
+    <a href="../index" class="back-btn">&larr; Home</a>
+    <span style="font-weight: bold; font-size: 16px;">Bird Sounds</span>
+  </nav>
+
+  <!-- Phase: Area Select -->
+  <div id="phase-area-select" style="display: none;">
+    <div class="mode-panel" style="padding-top: 16px;">
+      <div class="form-row">
+        <select id="country-select">
+          <option value="">Loading countries&hellip;</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <select id="state-select" disabled>
+          <option value="">Select State / Province (optional)</option>
+        </select>
+      </div>
+      <button id="location-start-btn" class="btn" style="width: 100%;" disabled>Start</button>
+    </div>
+
+    <!-- Fallback warning (shown inline when results < 10) -->
+    <div id="fallback-warning" style="display: none;" class="fallback-warning">
+      <p id="fallback-message"></p>
+      <div class="fallback-actions">
+        <button id="fallback-broaden-btn" class="btn"></button>
+        <button id="fallback-use-btn" class="btn" style="background: transparent; border-color: #ccc; color: #666;"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase: Loading -->
+  <div id="phase-loading" style="display: none;">
+    <div class="loading">
+      <p id="loading-message">Loading recordings&hellip;</p>
+    </div>
+  </div>
+
+  <!-- Phase: Flashcard -->
+  <div id="phase-flashcard" style="display: none;">
+    <div class="flashcard-body">
+      <p class="card-counter" id="card-counter"></p>
+      <div class="audio-section">
+        <button id="play-btn" class="btn play-btn">&#9654; Play Sound</button>
+        <audio id="bird-audio" preload="auto"></audio>
+      </div>
+      <div class="reveal-section">
+        <button id="reveal-btn" class="btn">Reveal Bird</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase: Revealed -->
+  <div id="phase-revealed" style="display: none;">
+    <div class="flashcard-body">
+      <p class="card-counter" id="reveal-card-counter"></p>
+      <div id="reveal-image-container" style="display: none;">
+        <img id="reveal-image" class="bird-reveal-image" alt="">
+      </div>
+      <div class="revealed-bird">
+        <h2 id="reveal-name"></h2>
+        <p class="sci-name" id="reveal-sciname"></p>
+      </div>
+      <div class="attribution">
+        <span>Recording by <strong id="attr-recordist"></strong></span><br>
+        <a id="attr-license" href="#" target="_blank" rel="noopener"></a>
+        &nbsp;&middot;&nbsp;
+        <a id="attr-xclink" href="#" target="_blank" rel="noopener">xeno-canto</a>
+      </div>
+      <div class="revealed-actions">
+        <button id="replay-btn" class="btn">&#9654; Replay Sound</button>
+        <button id="next-btn" class="btn">Next Card &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase: Deck Complete -->
+  <div id="phase-deck-complete" style="display: none;">
+    <div class="deck-complete-body">
+      <div class="big-emoji">&#127381;</div>
+      <p>Deck complete!</p>
+      <button id="play-again-btn" class="btn">Play Again</button>
+      <br>
+      <button id="change-area-btn" class="btn" style="margin-top: 12px; background: transparent; border-color: #ccc; color: #666;">Change Region</button>
+    </div>
+  </div>
+
+  <!-- Phase: Error -->
+  <div id="phase-error" style="display: none;">
+    <div class="empty-state">
+      <p id="error-message">Could not load recordings.</p>
+      <button id="retry-btn" class="btn" style="margin-top: 12px;">Try Again</button>
+      <br>
+      <button id="error-change-area-btn" class="btn" style="margin-top: 10px; background: transparent; border-color: #ccc; color: #666;">Change Region</button>
+    </div>
+  </div>
+
+  <script src="../db.js"></script>
+  <script src="../ebird.js"></script>
+  <script src="../app.js"></script>
+  <script src="app.js"></script>
+  <script>
+    (async function () {
+      await BirdDB.init();
+      SoundsApp.init();
+    })();
+  </script>
+</body>
+</html>
