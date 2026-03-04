@@ -514,7 +514,8 @@
       micLg: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>`,
     };
 
-    const CHUNK_SECONDS = 30; // seconds per transcription chunk
+    const APP_VERSION = 'v3';
+    console.log(`Voice Notes ${APP_VERSION}`);
 
     let notes = [];
     let isRecording = false;
@@ -671,7 +672,6 @@
       transcribeInChunks(note.id, blob);
     }
 
-    // Split blob into CHUNK_SECONDS-sized pieces by byte proportion, send sequentially
     async function transcribeInChunks(noteId, blob) {
       const note = notes.find(n => n.id === noteId);
       if (!note) return;
@@ -683,54 +683,35 @@
         : note.audioMime.includes('ogg') ? 'ogg'
         : note.audioMime.includes('mp4') ? 'mp4' : 'webm';
 
-      // Split into chunks based on duration vs byte size proportion
-      const totalSeconds = note.duration || 1;
-      const chunkCount = Math.ceil(totalSeconds / CHUNK_SECONDS);
-      const chunkSize = Math.ceil(blob.size / chunkCount);
-      const chunks = [];
-      for (let i = 0; i < blob.size; i += chunkSize) {
-        chunks.push(blob.slice(i, i + chunkSize, blob.type));
-      }
+      const formData = new FormData();
+      formData.append('file', blob, `recording.${ext}`);
+      formData.append('model', MODEL);
 
-      let fullTranscript = '';
+      try {
+        const res = await fetch(ENDPOINT, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}` },
+          body: formData,
+        });
 
-      for (let i = 0; i < chunks.length; i++) {
-        const isLast = i === chunks.length - 1;
-        const formData = new FormData();
-        formData.append('file', chunks[i], `recording.${ext}`);
-        formData.append('model', MODEL);
-
-        try {
-          const res = await fetch(ENDPOINT, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${apiKey}` },
-            body: formData,
-          });
-
-          if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            throw new Error(errData.message || `HTTP ${res.status}`);
-          }
-
-          const data = await res.json();
-          if (data.text) fullTranscript += (fullTranscript ? ' ' : '') + data.text;
-
-          if (isLast) {
-            note.transcript = fullTranscript || null;
-            note.transcriptStatus = fullTranscript ? 'done' : 'error';
-            note.transcriptError = fullTranscript ? null : 'No transcript received';
-            if (note.transcriptStatus === 'done') deleteAudioBlob(noteId);
-            saveNotes();
-            updateNoteInDOM(noteId);
-          }
-
-        } catch (e) {
-          note.transcriptStatus = 'error';
-          note.transcriptError = e.message;
-          saveNotes();
-          updateNoteInDOM(noteId);
-          return; // stop processing further chunks on error
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `HTTP ${res.status}`);
         }
+
+        const data = await res.json();
+        note.transcript = data.text || null;
+        note.transcriptStatus = data.text ? 'done' : 'error';
+        note.transcriptError = data.text ? null : 'No transcript received';
+        if (note.transcriptStatus === 'done') deleteAudioBlob(noteId);
+        saveNotes();
+        updateNoteInDOM(noteId);
+
+      } catch (e) {
+        note.transcriptStatus = 'error';
+        note.transcriptError = e.message;
+        saveNotes();
+        updateNoteInDOM(noteId);
       }
     }
 
