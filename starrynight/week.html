@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050a05">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Starry Night">
+  <title>Starry Night — Week</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <span class="navbar-title">7-Day Forecast</span>
+    <span class="navbar-location" id="locationName">Locating…</span>
+  </nav>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- Location search -->
+  <div class="location-section hidden" id="locationSection">
+    <form class="location-form" id="locationForm">
+      <input class="location-input" id="cityInput" type="text" placeholder="Enter city name…" autocomplete="off">
+      <button class="btn" type="submit">Go</button>
+    </form>
+    <div class="location-hint">Enter a city to see the weekly forecast</div>
+  </div>
+
+  <!-- Week grid -->
+  <div class="week-grid">
+    <div class="week-grid-title">Skywatching This Week</div>
+    <div id="weekGrid">
+      <!-- Skeletons -->
+      <div class="week-row" style="pointer-events:none">
+        <div class="skeleton" style="height:14px;width:100%;border-radius:6px"></div>
+      </div>
+      <div class="week-row" style="pointer-events:none">
+        <div class="skeleton" style="height:14px;width:100%;border-radius:6px"></div>
+      </div>
+      <div class="week-row" style="pointer-events:none">
+        <div class="skeleton" style="height:14px;width:100%;border-radius:6px"></div>
+      </div>
+      <div class="week-row" style="pointer-events:none">
+        <div class="skeleton" style="height:14px;width:100%;border-radius:6px"></div>
+      </div>
+      <div class="week-row" style="pointer-events:none">
+        <div class="skeleton" style="height:14px;width:100%;border-radius:6px"></div>
+      </div>
+      <div class="week-row" style="pointer-events:none">
+        <div class="skeleton" style="height:14px;width:100%;border-radius:6px"></div>
+      </div>
+      <div class="week-row" style="pointer-events:none">
+        <div class="skeleton" style="height:14px;width:100%;border-radius:6px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item">
+      <svg class="bottom-nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+      Tonight
+    </a>
+    <a href="week.html" class="bottom-nav-item active">
+      <svg class="bottom-nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      Week
+    </a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
+  <script src="astronomy.js"></script>
+  <script src="weather.js"></script>
+  <script src="week.js"></script>
+</body>
+</html>

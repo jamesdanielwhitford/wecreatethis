@@ -1,4 +1,4 @@
-const CACHE_NAME = 'voice-notes-v6';
+const CACHE_NAME = 'voice-notes-v8';
 const ASSETS = [
   '/voice-notes/',
   '/voice-notes/index',
@@ -6,6 +6,8 @@ const ASSETS = [
   '/voice-notes/icon-192.png',
   '/voice-notes/icon-512.png',
   '/voice-notes/note',
+  '/voice-notes/reader',
+  '/voice-notes/reader-note',
 ];
 
 function normalizeUrl(url, base = self.location.origin) {

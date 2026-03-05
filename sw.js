@@ -12,7 +12,8 @@ const ASSETS = [
   '/hardle/icon-192.png',
   '/tarot/icon-192.png',
   '/perfectday/icon-192.png',
-  '/voice-notes/icon-192.png'
+  '/voice-notes/icon-192.png',
+  '/starrynight/icon-192.png'
 ];
 
 // Normalize URL to canonical extensionless format

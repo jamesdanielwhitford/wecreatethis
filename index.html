@@ -63,13 +63,18 @@
       <a href="/voice-notes/" class="app-btn" style="background-color: #1a1a2e; background-image: url('/voice-notes/icon-192.png');"></a>
       <span class="app-name">Voice Notes</span>
     </div>
+
+    <div class="app-item">
+      <a href="/starrynight/" class="app-btn" style="background-color: #050a05; background-image: url('/starrynight/icon-192.png');"></a>
+      <span class="app-name">Starry Night</span>
+    </div>
   </div>
 
   <script>
     if ('serviceWorker' in navigator) {
       // Clean up old/orphaned service workers from deleted projects
       navigator.serviceWorker.getRegistrations().then(registrations => {
-        const validScopes = ['/', '/birdle/', '/tarot/', '/beautiful-mind/', '/hardle/', '/pomodoro/', '/git-notes/', '/perfectday/', '/longform/', '/voice-notes/'];
+        const validScopes = ['/', '/birdle/', '/tarot/', '/beautiful-mind/', '/hardle/', '/pomodoro/', '/git-notes/', '/perfectday/', '/longform/', '/voice-notes/', '/starrynight/'];
         registrations.forEach(registration => {
           const scope = new URL(registration.scope).pathname;
           if (!validScopes.includes(scope)) {
