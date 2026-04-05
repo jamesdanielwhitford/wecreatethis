@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Chessle">
+  <title>Free Play - Chessle</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="freeplay.css">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+</head>
+<body class="game-page">
+  <div class="game-header-container">
+    <div class="page-header">
+      <a href="/chessle" class="back-btn">←</a>
+      <div class="fp-turn-indicator" id="turn-indicator">White to move</div>
+      <button id="fp-menu-btn" class="captured-pieces-btn" title="Options">☰</button>
+    </div>
+  </div>
+
+  <!-- Top section: color label + engine status -->
+  <div class="opponent-section" id="engine-section">
+    <div class="opponent-name" id="engine-name"></div>
+    <div class="opponent-status" id="engine-status"></div>
+  </div>
+
+  <!-- Chess board -->
+  <div class="board-wrapper">
+    <div class="chess-board" id="chess-board"></div>
+  </div>
+
+  <!-- Bottom section (white side label + controls) -->
+  <div class="player-section" id="white-section">
+    <div class="player-info-area">
+      <div class="opponent-name" id="bottom-name"></div>
+      <div class="fp-status" id="fp-status"></div>
+    </div>
+    <div class="fp-controls">
+      <button id="fp-reset-btn" class="action-btn reset-btn">Reset</button>
+      <button id="fp-hint-btn" class="action-btn fp-hint-btn">Best Move</button>
+      <button id="fp-flip-btn" class="action-btn fp-flip-btn">Flip</button>
+    </div>
+  </div>
+
+  <!-- Options Menu -->
+  <div id="fp-menu-dropdown" class="game-menu-dropdown" style="display: none;">
+    <button id="fp-toggle-threats-btn">Hide Threats</button>
+    <button id="fp-toggle-bestmove-btn">Hide Best Move</button>
+    <button id="fp-autoplay-off-btn">● Play Both Sides</button>
+    <button id="fp-autoplay-black-btn">● Engine plays Black</button>
+    <button id="fp-autoplay-white-btn">● Engine plays White</button>
+    <button id="fp-new-btn">New Game</button>
+  </div>
+
+  <script src="freeplay.js"></script>
+</body>
+</html>

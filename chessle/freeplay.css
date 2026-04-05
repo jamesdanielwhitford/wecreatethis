@@ -1,0 +1,211 @@
+/* Free Play mode - additional styles */
+
+/* Turn indicator in header */
+.fp-turn-indicator {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  flex: 1;
+  text-align: center;
+  font-family: "Cinzel", serif;
+}
+
+/* Controls row */
+.fp-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.fp-controls .action-btn {
+  font-size: 0.85rem;
+  padding: 10px 12px;
+  flex: 1;
+  max-width: 120px;
+}
+
+.fp-hint-btn {
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+}
+
+.fp-hint-btn:hover {
+  background: #1e40af;
+}
+
+.fp-hint-btn:disabled {
+  background: var(--border);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.fp-flip-btn {
+  background: var(--secondary-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.fp-flip-btn:hover {
+  background: var(--card-bg);
+}
+
+/* Status text */
+.fp-status {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  min-height: 1.4em;
+}
+
+.fp-status.check {
+  color: #dc2626;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.fp-status.thinking,
+.opponent-status.thinking {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.thinking-inline {
+  font-size: 0.8em;
+  font-style: italic;
+  color: var(--text-muted);
+  margin-left: 6px;
+}
+
+/* Legal move dot (empty square) */
+.legal-dot {
+  position: absolute;
+  width: 30%;
+  height: 30%;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Legal move ring (capture square - piece is there) */
+.legal-capture-ring {
+  position: absolute;
+  width: 90%;
+  height: 90%;
+  border-radius: 50%;
+  border: 4px solid rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  z-index: 3;
+  box-sizing: border-box;
+}
+
+/* Threat highlight - red tint on the square */
+.chess-square.threatened {
+  position: relative;
+}
+
+.chess-square.threatened::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(220, 38, 38, 0.35);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chess-square.threatened .chess-piece {
+  position: relative;
+  z-index: 2;
+}
+
+/* Best move highlight - blue tint */
+.chess-square.best-from {
+  position: relative;
+}
+
+.chess-square.best-from::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(29, 78, 216, 0.4);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chess-square.best-from .chess-piece {
+  position: relative;
+  z-index: 2;
+}
+
+.chess-square.best-to {
+  position: relative;
+}
+
+.chess-square.best-to::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(29, 78, 216, 0.35);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chess-square.best-to .chess-piece {
+  position: relative;
+  z-index: 2;
+}
+
+/* Best move dot on empty target square */
+.chess-square.best-to.empty-target::after {
+  background: rgba(29, 78, 216, 0.5);
+  border-radius: 50%;
+  top: 25%;
+  left: 25%;
+  right: 25%;
+  bottom: 25%;
+}
+
+/* Calculating indicator */
+.fp-hint-btn.calculating {
+  background: #6b7280;
+  cursor: wait;
+}
+
+/* Checkmate / stalemate overlay text */
+.fp-status.checkmate {
+  color: #dc2626;
+  font-weight: 700;
+  font-style: normal;
+  font-size: 1rem;
+}
+
+.fp-status.stalemate {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* Menu positioning */
+.game-header-container {
+  position: relative;
+}
+
+#fp-menu-dropdown {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  z-index: 100;
+}

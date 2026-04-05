@@ -1,11 +1,14 @@
-const CACHE_NAME = 'chessle-v20';
+const CACHE_NAME = 'chessle-v21';
 const ASSETS = [
   '/chessle/',
   '/chessle/index',
   '/chessle/game',
+  '/chessle/freeplay',
   '/chessle/styles.css',
+  '/chessle/freeplay.css',
   '/chessle/app.js',
   '/chessle/game.js',
+  '/chessle/freeplay.js',
   '/chessle/db.js',
   '/chessle/manifest.json',
   '/chessle/icon-192.png',

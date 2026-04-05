@@ -250,8 +250,40 @@ body {
   justify-content: center;
   align-items: flex-end;
   padding-bottom: 24px;
+  gap: 16px;
   background: linear-gradient(to bottom, transparent 0%, var(--primary-bg) 50%);
   pointer-events: none;
+}
+
+/* Free Play entry button on homepage */
+.fp-entry-btn {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 16px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text);
+  text-decoration: none;
+  font-family: "Cinzel", serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background 0.2s, transform 0.1s;
+  white-space: nowrap;
+  align-self: flex-end;
+  margin-bottom: 8px;
+}
+
+.fp-entry-btn:hover {
+  background: var(--card-bg);
+  transform: translateY(-1px);
+}
+
+.fp-entry-btn:active {
+  transform: scale(0.97);
 }
 
 .fab {
@@ -798,6 +830,7 @@ body.game-page .board-wrapper {
 }
 
 .chess-square {
+  position: relative;
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
