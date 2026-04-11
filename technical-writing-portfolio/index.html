@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>James Whitford - Technical Writing Portfolio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    * { font-family: 'Inter', sans-serif; }
+
+    @page { size: A4; margin: 15mm 18mm; }
+
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background: white;
+        padding: 0;
+        margin: 0;
+      }
+      .no-print { display: none; }
+      .page {
+        box-shadow: none;
+        margin: 0;
+        padding: 0;
+        width: auto;
+      }
+
+      /* Allow company blocks to break across pages, keep categories together */
+      .category-block,
+      li { break-inside: avoid; }
+
+      /* Keep headings glued to the content that follows */
+      h2, h3 { break-after: avoid; }
+
+      /* Prevent lone lines at top/bottom of pages */
+      p, li { orphans: 3; widows: 3; }
+
+      /* Add top padding on page 2+ so content doesn't start flush at the edge */
+      .page { padding-top: 12mm; }
+    }
+
+    .page { width: 210mm; margin: 0 auto; }
+  </style>
+</head>
+<body class="bg-gray-100 py-8">
+
+  <div class="no-print text-center mb-6">
+    <button onclick="window.print()"
+      class="bg-gray-900 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition">
+      Print / Save as PDF
+    </button>
+  </div>
+
+  <div class="page bg-white shadow-xl px-14 py-12">
+
+    <!-- Header -->
+    <div class="mb-8">
+      <p class="text-sm text-gray-700">James Whitford</p>
+      <p class="text-sm text-gray-700">Pretoria, South Africa</p>
+      <a href="mailto:james.whitford0@gmail.com" class="text-sm text-blue-600 hover:underline">james.whitford0@gmail.com</a>
+      <span class="text-sm text-gray-400 mx-2">|</span>
+      
+      <a href="https://www.linkedin.com/in/jamesdanielwhitford/" class="text-sm text-blue-600 hover:underline mr-3">LinkedIn</a>
+      
+      <a href="https://github.com/jamesdanielwhitford" class="text-sm text-blue-600 hover:underline mr-3">GitHub</a>
+      
+      <a href="/cv" class="text-sm text-blue-600 hover:underline mr-3">CV</a>
+    </div>
+
+    <!-- Title -->
+    <div class="mb-6">
+      <h1 class="text-4xl font-bold text-gray-900 mb-3">Technical Writing Portfolio</h1>
+      <div class="border-t-2 border-gray-900"></div>
+    </div>
+
+    <!-- Intro -->
+    <div class="mb-8">
+      <p class="text-sm text-gray-700 leading-relaxed mb-3">As a Frontend Developer, Software Technical Writer, and AI-native practitioner at Ritza, I develop full-stack applications, build production AI workflows, and create comprehensive technical documentation for industry-leading technology companies. I work daily with agentic systems, multi-agent patterns, RAG pipelines, and automation tools, using Claude Code as my primary development environment. This hands-on experience producing real software alongside the documentation that explains it ensures authentic, code-backed content that drives user adoption and consistently achieves top search rankings.
+</p>
+      <p class="text-sm text-gray-700 leading-relaxed">
+        <span class="font-semibold">Recent Achievement:</span> My AI/ML tutorial was featured on the front page of Hacker News, generating over 1.5k page visits and demonstrating the impact of combining practical development work with high-quality technical content.
+
+      </p>
+    </div>
+
+    <!-- Companies -->
+    
+    <div class="company-block mb-8">
+
+      <!-- Company heading -->
+      <div class="mb-3">
+        <div class="flex items-baseline gap-3">
+          <h2 class="text-xl font-bold text-gray-900">Letta</h2>
+          <span class="text-xs text-gray-400 italic">AI agent memory platform (stateful, long-term memory agents)</span>
+        </div>
+        <div class="border-t border-gray-300 mt-1"></div>
+      </div>
+
+      <!-- Categories -->
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Integration Tutorials</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/cookbooks/integrations/supabase/" class="text-blue-600 hover:underline">Build a Multi-User Chatbot with Letta, Supabase, and Next.js</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/cookbooks/integrations/supabase/" class="text-blue-600 hover:underline">Full Stack Letta and Supabase Integration</a>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Multi-Agent Pattern Guides</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/tutorials/multi-agent/supervisor-worker/" class="text-blue-600 hover:underline">The supervisor-worker pattern</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/tutorials/multi-agent/parallel-execution/" class="text-blue-600 hover:underline">The parallel execution pattern</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/tutorials/multi-agent/producer-reviewer/" class="text-blue-600 hover:underline">The producer-reviewer pattern</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/tutorials/multi-agent/round-robin/" class="text-blue-600 hover:underline">The round-robin pattern</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/tutorials/multi-agent/hierarchical-teams/" class="text-blue-600 hover:underline">The hierarchical teams pattern</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <span class="text-gray-500">The consensus voting pattern</span>
+              <span class="inline-block text-xs bg-yellow-100 text-yellow-700 rounded px-1.5 py-0.5 ml-1">Not yet published</span>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <span class="text-gray-500">The handoff pattern</span>
+              <span class="inline-block text-xs bg-yellow-100 text-yellow-700 rounded px-1.5 py-0.5 ml-1">Not yet published</span>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <span class="text-gray-500">The mesh pattern</span>
+              <span class="inline-block text-xs bg-yellow-100 text-yellow-700 rounded px-1.5 py-0.5 ml-1">Not yet published</span>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <span class="text-gray-500">The debate pattern</span>
+              <span class="inline-block text-xs bg-yellow-100 text-yellow-700 rounded px-1.5 py-0.5 ml-1">Not yet published</span>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Tutorials</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/tutorials/rag-overview" class="text-blue-600 hover:underline">RAG with Letta</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/tutorials/integrations/zapier" class="text-blue-600 hover:underline">Connecting Zapier and Letta</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/tutorials/integrations/n8n" class="text-blue-600 hover:underline">Connecting n8n and Letta</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/tutorials/customer-specific-agents-api" class="text-blue-600 hover:underline">Building a customer success CRM with the Letta API</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/tutorials/custom-rag-integration" class="text-blue-600 hover:underline">Connect your custom RAG pipeline to a Letta agent</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/tutorials/integrations/external-memory" class="text-blue-600 hover:underline">Integrating external memory storage with Letta</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <span class="text-gray-500">Letta Bot Quickstart and feature showcase</span>
+              <span class="inline-block text-xs bg-yellow-100 text-yellow-700 rounded px-1.5 py-0.5 ml-1">Not yet published</span>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Feature Documentation</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/guides/core-concepts/tools/client-tools" class="text-blue-600 hover:underline">Client tools</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <span class="text-gray-500">MCP servers</span>
+              <span class="inline-block text-xs bg-yellow-100 text-yellow-700 rounded px-1.5 py-0.5 ml-1">Not yet published</span>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <span class="text-gray-500">MemFS</span>
+              <span class="inline-block text-xs bg-yellow-100 text-yellow-700 rounded px-1.5 py-0.5 ml-1">Not yet published</span>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <span class="text-gray-500">Search</span>
+              <span class="inline-block text-xs bg-yellow-100 text-yellow-700 rounded px-1.5 py-0.5 ml-1">Not yet published</span>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <span class="text-gray-500">Background subagents</span>
+              <span class="inline-block text-xs bg-yellow-100 text-yellow-700 rounded px-1.5 py-0.5 ml-1">Not yet published</span>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">SDK Migration & Audits</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.letta.com/" class="text-blue-600 hover:underline">SDK 1.0 documentation audit and update</a>
+            
+              
+              <span class="block text-xs text-gray-500 mt-0.5 ml-0">&#9702; Full audit and rewrite of docs for SDK 1.0 release</span>
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+
+    </div>
+    
+    <div class="company-block mb-8">
+
+      <!-- Company heading -->
+      <div class="mb-3">
+        <div class="flex items-baseline gap-3">
+          <h2 class="text-xl font-bold text-gray-900">Tech Stackups</h2>
+          <span class="text-xs text-gray-400 italic">Ritza's own site - developer tool comparisons and AI guides</span>
+        </div>
+        <div class="border-t border-gray-300 mt-1"></div>
+      </div>
+
+      <!-- Categories -->
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">AX Audits</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://techstackups.com/articles/docusign-agent-experience/" class="text-blue-600 hover:underline">DocuSign for AI Agents: What Actually Works in 2026</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://techstackups.com/articles/freestyle-ax-audit/" class="text-blue-600 hover:underline">Freestyle.sh for AI Agents: An AX Audit</a>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Comparisons</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://techstackups.com/comparisons/browser-use-vs-claude-computer-use/" class="text-blue-600 hover:underline">Browser Use vs Claude Computer Use: DOM vs Vision</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://techstackups.com/comparisons/transcription-api-agent-experience-openai-groq-mistral/" class="text-blue-600 hover:underline">Agent Experience Guide: Transcription APIs - OpenAI vs Groq vs Mistral</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://techstackups.com/comparisons/browserless-vs-browserbase-vs-anchor-agent-experience/" class="text-blue-600 hover:underline">Agent Experience for Browser Automation: Browserless vs Browserbase vs Anchor</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://techstackups.com/comparisons/browserbase-vs-kernel-cloud-browser-automation/" class="text-blue-600 hover:underline">Browserbase vs Kernel: Cloud Browser Automation for AI Agents</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://techstackups.com/comparisons/replit-vs-amp/" class="text-blue-600 hover:underline">Replit vs Amp: What $20 Gets You</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://techstackups.com/comparisons/hosted-browser-benchmarks/" class="text-blue-600 hover:underline">Benchmarking Hosted Browser Providers: Speed, Stealth, CAPTCHA, and Concurrency</a>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Guides</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://techstackups.com/guides/build-ai-email-assistant-letta-n8n-resend/" class="text-blue-600 hover:underline">Build an AI Email Assistant with Letta, n8n, and Resend</a>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+
+    </div>
+    
+    <div class="company-block mb-8">
+
+      <!-- Company heading -->
+      <div class="mb-3">
+        <div class="flex items-baseline gap-3">
+          <h2 class="text-xl font-bold text-gray-900">Bryntum</h2>
+          <span class="text-xs text-gray-400 italic">Scheduling and project management UI component library</span>
+        </div>
+        <div class="border-t border-gray-300 mt-1"></div>
+      </div>
+
+      <!-- Categories -->
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Integration Tutorials</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://bryntum.com/blog/how-to-use-supabase-edge-functions-to-build-a-bryntum-gantt-chart-with-react/" class="text-blue-600 hover:underline">How to use Supabase Edge Functions to build a Bryntum Gantt chart with React</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://bryntum.com/blog/how-to-connect-and-sync-bryntum-scheduler-to-microsoft-teams/" class="text-blue-600 hover:underline">How to connect and sync Bryntum Scheduler to Microsoft Teams</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://bryntum.com/blog/how-to-visualize-your-google-sheets-data-with-bryntum-gantt/" class="text-blue-600 hover:underline">How to visualize your Google Sheets data with Bryntum Gantt</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://bryntum.com/blog/how-to-connect-and-sync-bryntum-task-board-to-jira/" class="text-blue-600 hover:underline">How to connect and sync Bryntum Task Board to Jira</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://bryntum.com/blog/how-to-connect-and-sync-bryntum-calendar-to-a-microsoft-outlook-calendar/" class="text-blue-600 hover:underline">How to connect and sync Bryntum Calendar to a Microsoft Outlook Calendar</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://bryntum.com/blog/how-to-connect-and-sync-bryntum-scheduler-pro-to-monday-com/" class="text-blue-600 hover:underline">How to connect and sync Bryntum Scheduler Pro to monday.com</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://bryntum.com/blog/creating-a-custom-bryntum-gantt-react-component-for-storyblok/" class="text-blue-600 hover:underline">Creating a custom Bryntum Gantt React component for Storyblok</a>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Software Project Tutorials</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://bryntum.com/blog/build-a-location-based-scheduler-with-mapbox-using-bryntum/" class="text-blue-600 hover:underline">Build a location-based scheduler with Mapbox using Bryntum</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://bryntum.com/blog/create-a-property-management-scheduler-with-bryntum-using-vanilla-javascript/" class="text-blue-600 hover:underline">Create a property management scheduler with Bryntum using vanilla JavaScript</a>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Migration Tutorials</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://bryntum.com/blog/how-to-connect-and-sync-bryntum-calendar-to-a-microsoft-outlook-calendar/" class="text-blue-600 hover:underline">How to connect and sync Bryntum Calendar to a Microsoft Outlook Calendar</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://bryntum.com/blog/migrate-from-dhtmlx-gantt-to-bryntum-gantt/" class="text-blue-600 hover:underline">Migrating from DHTMLX Gantt to Bryntum Gantt</a>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+
+    </div>
+    
+    <div class="company-block mb-8">
+
+      <!-- Company heading -->
+      <div class="mb-3">
+        <div class="flex items-baseline gap-3">
+          <h2 class="text-xl font-bold text-gray-900">Sourcegraph</h2>
+          <span class="text-xs text-gray-400 italic">Code intelligence and developer productivity platform</span>
+        </div>
+        <div class="border-t border-gray-300 mt-1"></div>
+      </div>
+
+      <!-- Categories -->
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Technical Articles</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://sourcegraph.com/blog/zig-programming-language-revisiting-design-approach" class="text-blue-600 hover:underline">Revisiting the design approach to the Zig programming language</a>
+            
+              
+              <span class="block text-xs text-gray-500 mt-0.5 ml-0">&#9702; Featured on the front page of Hacker News</span>
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://sourcegraph.com/blog/zoekt-creating-internal-tools-at-google" class="text-blue-600 hover:underline">Code Search at Google: The Story of Han-Wen and Zoekt</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://sourcegraph.com/blog/git-vs-perforce-salesforce-scalability-and-performance" class="text-blue-600 hover:underline">Git vs. Perforce - how Salesforce Engineering helped Sourcegraph scale to one of the largest monorepos</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://sourcegraph.com/blog/shift-left-wtf-does-it-mean" class="text-blue-600 hover:underline">"Shift left" - wtf does it mean?</a>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+
+    </div>
+    
+    <div class="company-block mb-8">
+
+      <!-- Company heading -->
+      <div class="mb-3">
+        <div class="flex items-baseline gap-3">
+          <h2 class="text-xl font-bold text-gray-900">Code Capsules</h2>
+          <span class="text-xs text-gray-400 italic">South African cloud hosting platform for developers</span>
+        </div>
+        <div class="border-t border-gray-300 mt-1"></div>
+      </div>
+
+      <!-- Categories -->
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Software Project Tutorials</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://codecapsules.io/tutorial/building-a-full-stack-application-with-express-and-htmx/" class="text-blue-600 hover:underline">Building a Full Stack Application With Express and HTMx</a>
+            
+              
+              <span class="block text-xs text-gray-500 mt-0.5 ml-0">&#9702; Top result when searching for HTMx and Express tutorials</span>
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://codecapsules.io/tutorial/building-a-reader-mode-full-stack-application-with-flask-and-redis/" class="text-blue-600 hover:underline">Building a "Reader Mode" Full Stack Application With Flask and Redis</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://codecapsules.io/tutorial/build-an-imgur-clone-with-uppy-and-caddy/" class="text-blue-600 hover:underline">Build an Imgur Clone With Uppy and Caddy</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://codecapsules.io/tutorial/building-a-full-stack-application-with-flask-and-htmx/" class="text-blue-600 hover:underline">Building a Full Stack Application With Flask and HTMx</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://codecapsules.io/tutorial/white-label-your-app-with-code-capsules/" class="text-blue-600 hover:underline">White-Label Your App With Code Capsules</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://codecapsules.io/tutorial/building-a-book-recommendations-app-with-php-sqlite-and-docker/" class="text-blue-600 hover:underline">Building a Book Recommendations App With PHP, SQLite, and Docker</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://codecapsules.io/tutorial/host-your-front-end-developer-portfolio/" class="text-blue-600 hover:underline">Host Your Front-End Developer Portfolio</a>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Technical Documentation</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://codecapsules.io/tutorial/how-to-set-up-a-mysql-data-capsule/" class="text-blue-600 hover:underline">Set Up a MySQL Data Capsule</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://codecapsules.io/tutorial/how-to-set-up-a-mongodb-data-capsule/" class="text-blue-600 hover:underline">Set Up a MongoDB Data Capsule</a>
+            
+              
+            </span>
+          </li>
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://codecapsules.io/tutorial/how-to-set-up-a-redis-data-capsule/" class="text-blue-600 hover:underline">Set Up a Redis Data Capsule</a>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+
+    </div>
+    
+    <div class="company-block mb-8">
+
+      <!-- Company heading -->
+      <div class="mb-3">
+        <div class="flex items-baseline gap-3">
+          <h2 class="text-xl font-bold text-gray-900">Replit</h2>
+          <span class="text-xs text-gray-400 italic">Browser-based IDE and collaborative coding platform</span>
+        </div>
+        <div class="border-t border-gray-300 mt-1"></div>
+      </div>
+
+      <!-- Categories -->
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Technical Documentation</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://docs.replit.com/cloud-services/storage-and-databases/replit-database" class="text-blue-600 hover:underline">Replit Key-Value Store</a>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+
+    </div>
+    
+    <div class="company-block mb-8">
+
+      <!-- Company heading -->
+      <div class="mb-3">
+        <div class="flex items-baseline gap-3">
+          <h2 class="text-xl font-bold text-gray-900">Release</h2>
+          <span class="text-xs text-gray-400 italic">Ephemeral environment platform for software teams</span>
+        </div>
+        <div class="border-t border-gray-300 mt-1"></div>
+      </div>
+
+      <!-- Categories -->
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Technical Documentation</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://release.com/blog/how-to-set-docker-compose-environment-variables" class="text-blue-600 hover:underline">How to set Docker Compose Environment Variables</a>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+
+    </div>
+    
+    <div class="company-block mb-8">
+
+      <!-- Company heading -->
+      <div class="mb-3">
+        <div class="flex items-baseline gap-3">
+          <h2 class="text-xl font-bold text-gray-900">Cerebrium</h2>
+          <span class="text-xs text-gray-400 italic">Serverless ML inference platform</span>
+        </div>
+        <div class="border-t border-gray-300 mt-1"></div>
+      </div>
+
+      <!-- Categories -->
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Technical Articles</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://ritza.co/articles/migrate-from-openai-to-cerebrium-with-vllm-for-predictable-inference/" class="text-blue-600 hover:underline">Migrate from OpenAI to Cerebrium with vLLM for Predictable Inference</a>
+            
+              
+              <span class="block text-xs text-gray-500 mt-0.5 ml-0">&#9702; Featured on Hacker News front page, 1.5k+ page visits</span>
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+
+    </div>
+    
+    <div class="company-block mb-8">
+
+      <!-- Company heading -->
+      <div class="mb-3">
+        <div class="flex items-baseline gap-3">
+          <h2 class="text-xl font-bold text-gray-900">Sentry</h2>
+          <span class="text-xs text-gray-400 italic">Application monitoring and error tracking platform</span>
+        </div>
+        <div class="border-t border-gray-300 mt-1"></div>
+      </div>
+
+      <!-- Categories -->
+      
+      <div class="category-block mb-4 ml-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Technical Articles</h3>
+        <ul class="space-y-1.5">
+          
+          <li class="flex gap-2 text-sm">
+            <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+            <span>
+              
+              <a href="https://blog.sentry.io/smarter-debugging-sentry-mcp-cursor/" class="text-blue-600 hover:underline">Smarter Debugging with Sentry MCP for Cursor</a>
+            
+              
+            </span>
+          </li>
+          
+        </ul>
+      </div>
+      
+
+    </div>
+    
+
+  </div>
+
+</body>
+</html>

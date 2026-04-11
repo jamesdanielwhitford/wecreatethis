@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>James Whitford - CV</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    * { font-family: 'Inter', sans-serif; }
+
+    @page { size: A4; margin: 0; }
+
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background: white;
+        padding: 0;
+        margin: 0;
+      }
+      .no-print { display: none; }
+      .page { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; }
+
+      /* Keep job entries and project cards together */
+      .job-entry,
+      .project-card,
+      li,
+      h2 { break-inside: avoid; }
+
+      h2 { break-after: avoid; }
+
+      p, li { orphans: 3; widows: 3; }
+
+      /* Pad the columns so content doesn't start flush at top of page 2+ */
+      .left-col, .right-col { padding-top: 12mm; }
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 py-8">
+
+  <!-- Print button (hidden on print) -->
+  <div class="no-print text-center mb-6">
+    <button onclick="window.print()"
+      class="bg-gray-900 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition">
+      Print / Save as PDF
+    </button>
+  </div>
+
+  <div class="page bg-white shadow-xl flex flex-col">
+
+    <!-- Header -->
+    <div class="bg-gray-900 text-white px-10 py-8">
+      <h1 class="text-3xl font-bold tracking-tight">James Whitford</h1>
+      <p class="text-gray-300 text-base mt-1 font-medium">Frontend Developer & Software Technical Writer</p>
+      <div class="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-sm text-gray-400">
+        <a href="mailto:james.whitford0@gmail.com" class="hover:text-white transition">james.whitford0@gmail.com</a>
+        <span>Pretoria, South Africa</span>
+        
+        <a href="https://www.linkedin.com/in/jamesdanielwhitford/" class="hover:text-white transition">LinkedIn</a>
+        
+        <a href="https://github.com/jamesdanielwhitford" class="hover:text-white transition">GitHub</a>
+        
+        <a href="/technical-writing-portfolio" class="hover:text-white transition">Portfolio</a>
+      </div>
+    </div>
+
+    <!-- Two-column body -->
+    <div class="flex flex-1">
+
+      <!-- Left column (sidebar) -->
+      <div class="left-col w-64 bg-gray-50 border-r border-gray-200 px-6 py-7 flex-shrink-0">
+
+        <!-- Skills -->
+        <section class="mb-7">
+          <h2 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Skills</h2>
+          
+          <div class="mb-3">
+            <p class="text-xs font-semibold text-gray-700">Frontend Development</p>
+            <p class="text-xs text-gray-500 leading-relaxed">HTML, CSS, JavaScript, React, TypeScript, Next.js, HTMx</p>
+          </div>
+          
+          <div class="mb-3">
+            <p class="text-xs font-semibold text-gray-700">Backend Development</p>
+            <p class="text-xs text-gray-500 leading-relaxed">Node.js, Express.js, RESTful APIs, OAuth, API integration</p>
+          </div>
+          
+          <div class="mb-3">
+            <p class="text-xs font-semibold text-gray-700">Databases</p>
+            <p class="text-xs text-gray-500 leading-relaxed">MongoDB, MySQL, Redis, Firebase Storage</p>
+          </div>
+          
+          <div class="mb-3">
+            <p class="text-xs font-semibold text-gray-700">Technical Writing</p>
+            <p class="text-xs text-gray-500 leading-relaxed">API documentation, Integration guides, Migration tutorials, SEO content, Developer tutorials</p>
+          </div>
+          
+          <div class="mb-3">
+            <p class="text-xs font-semibold text-gray-700">AI Workflows</p>
+            <p class="text-xs text-gray-500 leading-relaxed">Claude Code, Agentic workflows, Multi-agent systems, RAG pipelines, n8n, Zapier, Letta, Prompt engineering</p>
+          </div>
+          
+          <div class="mb-3">
+            <p class="text-xs font-semibold text-gray-700">Dev Tools</p>
+            <p class="text-xs text-gray-500 leading-relaxed">Git, Vercel, Jest, ESLint, Webpack, Docker</p>
+          </div>
+          
+          <div class="mb-3">
+            <p class="text-xs font-semibold text-gray-700">Languages</p>
+            <p class="text-xs text-gray-500 leading-relaxed">Python, Java, SQL</p>
+          </div>
+          
+        </section>
+
+        <!-- Certifications -->
+        <section class="mb-7">
+          <h2 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Certifications</h2>
+          
+          <div class="mb-2">
+            <p class="text-xs font-semibold text-gray-700 leading-snug">Unity Programmer Pathway</p>
+            <p class="text-xs text-gray-500">Unity &middot; 12 weeks</p>
+          </div>
+          
+          <div class="mb-2">
+            <p class="text-xs font-semibold text-gray-700 leading-snug">Google UX Design Certification</p>
+            <p class="text-xs text-gray-500">Google</p>
+          </div>
+          
+          <div class="mb-2">
+            <p class="text-xs font-semibold text-gray-700 leading-snug">Software Engineering Bootcamp</p>
+            <p class="text-xs text-gray-500">HyperionDev</p>
+          </div>
+          
+          <div class="mb-2">
+            <p class="text-xs font-semibold text-gray-700 leading-snug">Full-Stack Web Development</p>
+            <p class="text-xs text-gray-500">Udemy &middot; 32 hours</p>
+          </div>
+          
+          <div class="mb-2">
+            <p class="text-xs font-semibold text-gray-700 leading-snug">Python Development</p>
+            <p class="text-xs text-gray-500">Udemy &middot; 22 hours</p>
+          </div>
+          
+        </section>
+
+        <!-- Education -->
+        <section>
+          <h2 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Education</h2>
+          
+          <div class="mb-3">
+            <p class="text-xs font-semibold text-gray-700 leading-snug">Bachelor of Arts</p>
+            <p class="text-xs font-semibold text-gray-700 leading-snug">Philosophy and Politics</p>
+            <p class="text-xs text-gray-500">University of South Africa</p>
+            <p class="text-xs text-gray-400">2016-01 - 2021-01</p>
+          </div>
+          
+        </section>
+
+      </div>
+
+      <!-- Right column (main content) -->
+      <div class="right-col flex-1 px-8 py-7">
+
+        <!-- Summary -->
+        <section class="mb-7">
+          <h2 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Profile</h2>
+          <p class="text-sm text-gray-700 leading-relaxed">Frontend Developer, Software Technical Writer, and AI-native practitioner with 3+ years of specialized experience building full-stack applications and creating technical documentation for industry-leading technology companies. Develops production AI workflows using agents, subagents, RAG systems, and automation pipelines as a core part of daily work, using Claude Code as a primary development tool. Unique combination of hands-on development, AI workflow expertise, and technical writing produces authentic, code-backed content that drives user adoption and consistently achieves top search rankings.</p>
+        </section>
+
+        <!-- Work Experience -->
+        <section class="mb-7">
+          <h2 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">Experience</h2>
+          
+          <div class="job-entry mb-5">
+            <div class="flex items-baseline justify-between">
+              <div>
+                <span class="text-sm font-bold text-gray-900">Frontend Developer & Software Technical Writer</span>
+                
+                <span class="text-xs text-gray-400 ml-1">(Contract)</span>
+                
+              </div>
+              <span class="text-xs text-gray-400 whitespace-nowrap ml-3">
+                2022-04 - present
+              </span>
+            </div>
+            <p class="text-xs font-medium text-gray-500 mb-1">Ritza &middot; Remote</p>
+            <ul class="space-y-1">
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Authored API documentation, integration guides, migration walkthroughs, product tutorials, and developer tool comparisons for Bryntum, Sourcegraph, Code Capsules, Release, Replit, Letta, Cerebrium, and Sentry.</span>
+              </li>
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Developed responsive front-end and full-stack applications using HTMx, React, and Express.js with API authentication, OAuth, and database integrations.</span>
+              </li>
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Builds and documents production AI workflows using agents, subagents, RAG pipelines, and automation tools (n8n, Zapier) as a core part of daily work.</span>
+              </li>
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Authored multi-agent pattern guides, SDK migration documentation, and feature documentation for Letta, an AI agent memory platform.</span>
+              </li>
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Tutorial featured on Hacker News front page, generating 1.5k+ page visits.</span>
+              </li>
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Documentation and articles consistently rank #1 in search results, reducing customer support tickets and accelerating product adoption.</span>
+              </li>
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Performed quality assurance on other writers' code and documentation to ensure high client standards.</span>
+              </li>
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Mastered new technologies on tight deadlines, producing working software and documentation within days of initial client briefs.</span>
+              </li>
+              
+            </ul>
+          </div>
+          
+          <div class="job-entry mb-5">
+            <div class="flex items-baseline justify-between">
+              <div>
+                <span class="text-sm font-bold text-gray-900">Code Reviewer</span>
+                
+              </div>
+              <span class="text-xs text-gray-400 whitespace-nowrap ml-3">
+                2022-01 - 2022-04
+              </span>
+            </div>
+            <p class="text-xs font-medium text-gray-500 mb-1">CoGrammar &middot; Remote</p>
+            <ul class="space-y-1">
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Assessed and provided feedback on code submissions in Python, Java, SQL, HTML, CSS, and JavaScript.</span>
+              </li>
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Ensured code accuracy, style, efficiency, and documentation to high technical standards.</span>
+              </li>
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Delivered constructive, educational feedback to help developers improve skills.</span>
+              </li>
+              
+            </ul>
+          </div>
+          
+          <div class="job-entry mb-5">
+            <div class="flex items-baseline justify-between">
+              <div>
+                <span class="text-sm font-bold text-gray-900">Operations Manager</span>
+                
+              </div>
+              <span class="text-xs text-gray-400 whitespace-nowrap ml-3">
+                2023-05 - 2025-02
+              </span>
+            </div>
+            <p class="text-xs font-medium text-gray-500 mb-1">Equleni Guest Farm &middot; Sedgefield, South Africa</p>
+            <ul class="space-y-1">
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Managed team responsible for maintenance, guest communications, accounts, design, and overall guest experience.</span>
+              </li>
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Redesigned operational workflows to streamline processes and enhance service delivery.</span>
+              </li>
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Executed strategic branding initiatives that elevated market presence, contributing to consistent five-star reviews.</span>
+              </li>
+              
+            </ul>
+          </div>
+          
+          <div class="job-entry mb-5">
+            <div class="flex items-baseline justify-between">
+              <div>
+                <span class="text-sm font-bold text-gray-900">English Second Language Teacher</span>
+                
+              </div>
+              <span class="text-xs text-gray-400 whitespace-nowrap ml-3">
+                2021-04 - 2022-01
+              </span>
+            </div>
+            <p class="text-xs font-medium text-gray-500 mb-1">Whales English &middot; Remote</p>
+            <ul class="space-y-1">
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Taught immersive English lessons to students aged 3-18 in China using National Geographic and Oxford curricula.</span>
+              </li>
+              
+              <li class="text-xs text-gray-600 leading-relaxed flex gap-2">
+                <span class="text-gray-400 mt-0.5 flex-shrink-0">&#8226;</span>
+                <span>Developed skills in virtual instruction, cross-cultural communication, and adaptive teaching.</span>
+              </li>
+              
+            </ul>
+          </div>
+          
+        </section>
+
+        <!-- Featured Projects -->
+        <section>
+          <h2 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">Featured Projects</h2>
+          <div class="grid grid-cols-2 gap-3">
+            
+            <div class="project-card border border-gray-200 rounded-lg p-3">
+              <p class="text-xs font-semibold text-gray-800 leading-snug">Migrate from OpenAI to Cerebrium with vLLM</p>
+              <span class="inline-block text-xs bg-gray-100 text-gray-500 rounded px-1.5 py-0.5 mt-1 mb-1">AI/ML</span>
+              
+              <p class="text-xs text-gray-500">Featured on Hacker News front page with 1.5k+ page visits.</p>
+              
+            </div>
+            
+            <div class="project-card border border-gray-200 rounded-lg p-3">
+              <p class="text-xs font-semibold text-gray-800 leading-snug">Smarter Debugging with Sentry MCP for Cursor</p>
+              <span class="inline-block text-xs bg-gray-100 text-gray-500 rounded px-1.5 py-0.5 mt-1 mb-1">AI/ML</span>
+              
+              <p class="text-xs text-gray-500">Published on the official Sentry blog.</p>
+              
+            </div>
+            
+            <div class="project-card border border-gray-200 rounded-lg p-3">
+              <p class="text-xs font-semibold text-gray-800 leading-snug">Building a Full Stack App With Express and HTMx</p>
+              <span class="inline-block text-xs bg-gray-100 text-gray-500 rounded px-1.5 py-0.5 mt-1 mb-1">Full-Stack</span>
+              
+              <p class="text-xs text-gray-500">Top Google search result for HTMx/Express tutorials.</p>
+              
+            </div>
+            
+            <div class="project-card border border-gray-200 rounded-lg p-3">
+              <p class="text-xs font-semibold text-gray-800 leading-snug">JavaScript-Outlook Calendar Sync</p>
+              <span class="inline-block text-xs bg-gray-100 text-gray-500 rounded px-1.5 py-0.5 mt-1 mb-1">Integration</span>
+              
+              <p class="text-xs text-gray-500">Full calendar synchronization using Microsoft Graph API.</p>
+              
+            </div>
+            
+            <div class="project-card border border-gray-200 rounded-lg p-3">
+              <p class="text-xs font-semibold text-gray-800 leading-snug">Flask-Redis Full-Stack App</p>
+              <span class="inline-block text-xs bg-gray-100 text-gray-500 rounded px-1.5 py-0.5 mt-1 mb-1">Full-Stack</span>
+              
+              <p class="text-xs text-gray-500">Web application with Redis caching and complete documentation.</p>
+              
+            </div>
+            
+            <div class="project-card border border-gray-200 rounded-lg p-3">
+              <p class="text-xs font-semibold text-gray-800 leading-snug">Revisiting the Design of the Zig Language</p>
+              <span class="inline-block text-xs bg-gray-100 text-gray-500 rounded px-1.5 py-0.5 mt-1 mb-1">Technical Analysis</span>
+              
+              <p class="text-xs text-gray-500">Featured on Hacker News front page.</p>
+              
+            </div>
+            
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
