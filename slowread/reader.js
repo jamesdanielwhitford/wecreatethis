@@ -19,7 +19,7 @@ function applyFontSize() {
 }
 
 function applyAlign() {
-  const align = localStorage.getItem('slowread-align') || 'center';
+  const align = localStorage.getItem('slowread-align') || 'left';
   document.documentElement.style.setProperty('--sentence-align', align);
 }
 

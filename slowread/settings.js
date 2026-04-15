@@ -62,6 +62,6 @@ buildOptions(
 );
 
 buildOptions(
-  'alignOptions', ALIGN_OPTIONS, 'slowread-align', 'center',
+  'alignOptions', ALIGN_OPTIONS, 'slowread-align', 'left',
   'alignDesc', opt => opt.label
 );
