@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#080808"/>
+  <!-- Three text lines, slightly left-weighted to suggest a book page -->
+  <rect x="22" y="30" width="56" height="5" rx="2" fill="#e8e8e8"/>
+  <rect x="22" y="44" width="56" height="5" rx="2" fill="#e8e8e8"/>
+  <rect x="22" y="58" width="40" height="5" rx="2" fill="#e8e8e8"/>
+  <!-- Center spine line -->
+  <rect x="49" y="26" width="2" height="48" rx="1" fill="#555"/>
+</svg>
