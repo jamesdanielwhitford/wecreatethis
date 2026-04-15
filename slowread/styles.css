@@ -199,16 +199,22 @@ html, body {
   height: 25%;
 }
 
-/* Middle 50% left half */
+/* Middle 50%, left third */
 .zone-left {
   top: 25%; left: 0;
-  width: 50%; height: 50%;
+  width: 33.333%; height: 50%;
 }
 
-/* Middle 50% right half */
+/* Middle 50%, center third */
+.zone-center {
+  top: 25%; left: 33.333%;
+  width: 33.333%; height: 50%;
+}
+
+/* Middle 50%, right third */
 .zone-right {
   top: 25%; right: 0;
-  width: 50%; height: 50%;
+  width: 33.333%; height: 50%;
 }
 
 /* ── Menu ────────────────────────────────────────────────── */

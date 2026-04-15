@@ -35,6 +35,7 @@ const menuProg  = document.getElementById('menuProgress');
 const zoneTop    = document.getElementById('zoneTop');
 const zoneBottom = document.getElementById('zoneBottom');
 const zoneLeft   = document.getElementById('zoneLeft');
+const zoneCenter = document.getElementById('zoneCenter');
 const zoneRight  = document.getElementById('zoneRight');
 
 // ── Init ─────────────────────────────────────────────────
@@ -145,6 +146,8 @@ function resume() {
 }
 
 // ── Touch zones ───────────────────────────────────────────
+// Playing: entire screen = pause
+// Paused: top/bottom = resume, left = prev, right = next
 
 zoneTop.addEventListener('click', () => {
   if (isPaused) resume(); else pause();
@@ -155,11 +158,15 @@ zoneBottom.addEventListener('click', () => {
 });
 
 zoneLeft.addEventListener('click', () => {
-  advance(-1);
+  if (isPaused) advance(-1); else pause();
+});
+
+zoneCenter.addEventListener('click', () => {
+  if (isPaused) resume(); else pause();
 });
 
 zoneRight.addEventListener('click', () => {
-  advance(1);
+  if (isPaused) advance(1); else pause();
 });
 
 // ── Start ─────────────────────────────────────────────────
