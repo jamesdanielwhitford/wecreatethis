@@ -70,6 +70,56 @@ async function init() {
   showSentence(currentIndex, true);
 }
 
+// ── Dynamic text positioning ──────────────────────────────
+
+const _canvas = document.createElement('canvas');
+const _ctx = _canvas.getContext('2d');
+
+function measureSentenceLines(words, containerW) {
+  const spaceW = _ctx.measureText(' ').width;
+  let lineCount = 1;
+  let lineW = 0;
+  for (let i = 0; i < words.length; i++) {
+    const wordW = _ctx.measureText(words[i]).width;
+    if (i === 0) {
+      lineW = wordW;
+    } else if (lineW + spaceW + wordW > containerW) {
+      lineCount++;
+      lineW = wordW;
+    } else {
+      lineW += spaceW + wordW;
+    }
+  }
+  return lineCount;
+}
+
+let currentSentenceWords = [];
+let currentSentenceWillScroll = false;
+
+function repositionText(visibleWordCount, allWords) {
+  const p = display.querySelector('.sentence-text');
+  if (!p || visibleWordCount === 0) return;
+
+  const fontSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sentence-size') || '22', 10);
+  const lineHeight = fontSize * 1.7;
+  const containerW = Math.min(display.clientWidth - 80, 680);
+  const containerH = display.clientHeight - 160;
+
+  _ctx.font = `${fontSize}px Georgia, serif`;
+
+  const visibleWords = allWords.slice(0, visibleWordCount);
+  const lineCount = measureSentenceLines(visibleWords, containerW);
+  const textH = lineCount * lineHeight;
+
+  let marginTop;
+  if (textH <= containerH) {
+    marginTop = (containerH - textH) / 2;
+  } else {
+    marginTop = containerH - textH;
+  }
+  p.style.marginTop = marginTop + 'px';
+}
+
 // ── Sentence display ──────────────────────────────────────
 
 function showSentence(index, autoPlay) {
@@ -78,12 +128,27 @@ function showSentence(index, autoPlay) {
   updateProgress();
 
   const sentence = sentences[index];
-  const words = sentence.split(' ');
+  currentSentenceWords = sentence.split(' ');
+
+  // Pre-measure full sentence to decide if scrolling is needed
+  const fontSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sentence-size') || '22', 10);
+  const lineHeight = fontSize * 1.7;
+  const containerW = Math.min(display.clientWidth - 80, 680);
+  const containerH = display.clientHeight - 160;
+  _ctx.font = `${fontSize}px Georgia, serif`;
+  const totalLines = measureSentenceLines(currentSentenceWords, containerW);
+  const totalH = totalLines * lineHeight;
+  currentSentenceWillScroll = totalH > containerH;
 
   const p = document.createElement('p');
   p.className = 'sentence-text';
+  // Disable transition on initial placement so it doesn't animate in from wrong position
+  p.style.transition = 'none';
+  // Set initial marginTop: centered for short, top-of-container for long
+  const initialMargin = currentSentenceWillScroll ? 0 : (containerH - totalH) / 2;
+  p.style.marginTop = initialMargin + 'px';
 
-  currentSpans = words.map((word, i) => {
+  currentSpans = currentSentenceWords.map((word, i) => {
     const span = document.createElement('span');
     span.className = 'word';
     span.textContent = (i === 0 ? '' : ' ') + word;
@@ -92,6 +157,8 @@ function showSentence(index, autoPlay) {
   });
 
   display.appendChild(p);
+  // Re-enable transition after initial placement
+  requestAnimationFrame(() => { p.style.transition = ''; });
 
   if (autoPlay && !isPaused) {
     pausedWordIndex = 0;
@@ -102,6 +169,7 @@ function showSentence(index, autoPlay) {
     pausedWordIndex = 0;
     navigatedWhilePaused = true;
     currentSpans.forEach(s => s.classList.add('visible'));
+    repositionText(currentSpans.length, currentSentenceWords);
   }
 }
 
@@ -115,6 +183,7 @@ function revealWords(spans, i) {
     return;
   }
   spans[i].classList.add('visible');
+  if (currentSentenceWillScroll) repositionText(i + 1, currentSentenceWords);
   wordTimer = setTimeout(() => revealWords(spans, i + 1), getWordDelay());
 }
 
