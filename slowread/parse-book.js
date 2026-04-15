@@ -9,7 +9,10 @@ function parseBook({ file, startMarker, endMarker, id, title, author, extraFilte
   let text = raw;
   const startIdx = text.indexOf(startMarker);
   if (startIdx !== -1) text = text.slice(startIdx);
-  const endIdx = text.indexOf(endMarker);
+
+  // Use provided endMarker or fall back to the standard PG end pattern
+  const resolvedEnd = endMarker || '*** END OF THE PROJECT GUTENBERG EBOOK';
+  const endIdx = text.indexOf(resolvedEnd);
   if (endIdx !== -1) text = text.slice(0, endIdx);
 
   // Collapse whitespace and normalize line breaks
@@ -39,7 +42,6 @@ function parseBook({ file, startMarker, endMarker, id, title, author, extraFilte
 const mobyDick = parseBook({
   file: 'moby-dick.txt',
   startMarker: 'Call me Ishmael.',
-  endMarker: '*** END OF THE PROJECT GUTENBERG EBOOK MOBY DICK; OR, THE WHALE ***',
   id: 'moby-dick',
   title: 'Moby Dick',
   author: 'Herman Melville',
@@ -55,7 +57,6 @@ const mobyDick = parseBook({
 const donQuixote = parseBook({
   file: 'don-quixote.txt',
   startMarker: 'In a village of La Mancha, the name of which I have no desire to call',
-  endMarker: '*** END OF THE PROJECT GUTENBERG EBOOK DON QUIXOTE ***',
   id: 'don-quixote',
   title: 'Don Quixote',
   author: 'Miguel de Cervantes',
