@@ -9,6 +9,10 @@ function getWordDelay() {
   return parseInt(localStorage.getItem('slowread-speed') || '200', 10);
 }
 
+function getSentencePause() {
+  return parseInt(localStorage.getItem('slowread-pause') || '2000', 10);
+}
+
 function applyFontSize() {
   const size = localStorage.getItem('slowread-fontsize') || 'medium';
   document.documentElement.style.setProperty('--sentence-size', FONT_SIZE_MAP[size] || '22px');
@@ -24,6 +28,9 @@ let sentences = [];
 let currentIndex = 0;
 let isPaused = false;
 let wordTimer = null;
+let currentSpans = [];
+let pausedWordIndex = 0;
+let navigatedWhilePaused = false;
 
 // ── DOM refs ─────────────────────────────────────────────
 
@@ -63,6 +70,56 @@ async function init() {
   showSentence(currentIndex, true);
 }
 
+// ── Dynamic text positioning ──────────────────────────────
+
+const _canvas = document.createElement('canvas');
+const _ctx = _canvas.getContext('2d');
+
+function measureSentenceLines(words, containerW) {
+  const spaceW = _ctx.measureText(' ').width;
+  let lineCount = 1;
+  let lineW = 0;
+  for (let i = 0; i < words.length; i++) {
+    const wordW = _ctx.measureText(words[i]).width;
+    if (i === 0) {
+      lineW = wordW;
+    } else if (lineW + spaceW + wordW > containerW) {
+      lineCount++;
+      lineW = wordW;
+    } else {
+      lineW += spaceW + wordW;
+    }
+  }
+  return lineCount;
+}
+
+let currentSentenceWords = [];
+let currentSentenceWillScroll = false;
+
+function repositionText(visibleWordCount, allWords) {
+  const p = display.querySelector('.sentence-text');
+  if (!p || visibleWordCount === 0) return;
+
+  const fontSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sentence-size') || '22', 10);
+  const lineHeight = fontSize * 1.7;
+  const containerW = Math.min(display.clientWidth - 80, 680);
+  const containerH = display.clientHeight - 160;
+
+  _ctx.font = `${fontSize}px Georgia, serif`;
+
+  const visibleWords = allWords.slice(0, visibleWordCount);
+  const lineCount = measureSentenceLines(visibleWords, containerW);
+  const textH = lineCount * lineHeight;
+
+  let marginTop;
+  if (textH <= containerH) {
+    marginTop = (containerH - textH) / 2;
+  } else {
+    marginTop = containerH - textH;
+  }
+  p.style.marginTop = marginTop + 'px';
+}
+
 // ── Sentence display ──────────────────────────────────────
 
 function showSentence(index, autoPlay) {
@@ -71,39 +128,68 @@ function showSentence(index, autoPlay) {
   updateProgress();
 
   const sentence = sentences[index];
-  const words = sentence.split(' ');
+  currentSentenceWords = sentence.split(' ');
+
+  // Pre-measure full sentence to decide if scrolling is needed
+  const fontSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sentence-size') || '22', 10);
+  const lineHeight = fontSize * 1.7;
+  const containerW = Math.min(display.clientWidth - 80, 680);
+  const containerH = display.clientHeight - 160;
+  _ctx.font = `${fontSize}px Georgia, serif`;
+  const totalLines = measureSentenceLines(currentSentenceWords, containerW);
+  const totalH = totalLines * lineHeight;
+  currentSentenceWillScroll = totalH > containerH;
 
   const p = document.createElement('p');
   p.className = 'sentence-text';
+  // Disable transition on initial placement so it doesn't animate in from wrong position
+  p.style.transition = 'none';
+  // Set initial marginTop: centered for short, top-of-container for long
+  const initialMargin = currentSentenceWillScroll ? 0 : (containerH - totalH) / 2;
+  p.style.marginTop = initialMargin + 'px';
 
-  const spans = words.map((word, i) => {
+  currentSpans = currentSentenceWords.map((word, i) => {
     const span = document.createElement('span');
     span.className = 'word';
-    // Add a space before every word except the first
     span.textContent = (i === 0 ? '' : ' ') + word;
     p.appendChild(span);
     return span;
   });
 
   display.appendChild(p);
+  // Re-enable transition after initial placement
+  requestAnimationFrame(() => { p.style.transition = ''; });
 
   if (autoPlay && !isPaused) {
-    revealWords(spans, 0);
+    pausedWordIndex = 0;
+    navigatedWhilePaused = false;
+    revealWords(currentSpans, 0);
   } else if (isPaused) {
-    // Show all words instantly when paused or navigating manually
-    spans.forEach(s => s.classList.add('visible'));
+    // Navigated while paused: show all words, resume will start from beginning
+    pausedWordIndex = 0;
+    navigatedWhilePaused = true;
+    currentSpans.forEach(s => s.classList.add('visible'));
+    if (currentSentenceWillScroll) {
+      // Start at top so user reads from the beginning
+      const p = display.querySelector('.sentence-text');
+      if (p) { p.style.transition = 'none'; p.style.marginTop = '0px'; }
+    } else {
+      repositionText(currentSpans.length, currentSentenceWords);
+    }
   }
 }
 
 function revealWords(spans, i) {
+  pausedWordIndex = i;
   if (i >= spans.length) {
     // Sentence done, auto-advance after a pause
     wordTimer = setTimeout(() => {
       if (!isPaused) advance(1);
-    }, 900);
+    }, getSentencePause());
     return;
   }
   spans[i].classList.add('visible');
+  if (currentSentenceWillScroll) repositionText(i + 1, currentSentenceWords);
   wordTimer = setTimeout(() => revealWords(spans, i + 1), getWordDelay());
 }
 
@@ -135,39 +221,96 @@ function pause() {
   isPaused = true;
   clearTimer();
   menu.classList.add('visible');
-  // Show remaining words instantly
-  display.querySelectorAll('.word').forEach(s => s.classList.add('visible'));
+  // Leave words as-is — don't reveal the rest
 }
 
 function resume() {
   isPaused = false;
   menu.classList.remove('visible');
-  showSentence(currentIndex, true);
+  if (navigatedWhilePaused) {
+    // Navigated to a new sentence while paused: rebuild and play from start
+    navigatedWhilePaused = false;
+    showSentence(currentIndex, true);
+  } else {
+    // Resumed on same sentence: continue from where we paused
+    revealWords(currentSpans, pausedWordIndex);
+  }
 }
 
 // ── Touch zones ───────────────────────────────────────────
 // Playing: entire screen = pause
 // Paused: top/bottom = resume, left = prev, right = next
+// Paused + drag: scroll the sentence text
 
-zoneTop.addEventListener('click', () => {
-  if (isPaused) resume(); else pause();
+const DRAG_THRESHOLD = 8; // px — below this it's a tap, above it's a scroll
+
+let dragStartY = null;
+let dragStartMargin = 0;
+let isDragging = false;
+
+function getCurrentMargin() {
+  const p = display.querySelector('.sentence-text');
+  return p ? parseFloat(p.style.marginTop) || 0 : 0;
+}
+
+function setMargin(value) {
+  const p = display.querySelector('.sentence-text');
+  if (!p) return;
+  // Clamp: can't drag below initial position, can't drag so far up text disappears
+  const fontSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sentence-size') || '22', 10);
+  const lineHeight = fontSize * 1.7;
+  const containerH = display.clientHeight - 160;
+  const maxMargin = (containerH - lineHeight) / 2; // initial centered position
+  const minMargin = -(p.scrollHeight); // far enough up to read the top
+  p.style.transition = 'none';
+  p.style.marginTop = Math.min(maxMargin, Math.max(minMargin, value)) + 'px';
+}
+
+const zones = [zoneTop, zoneBottom, zoneLeft, zoneCenter, zoneRight];
+
+zones.forEach(zone => {
+  zone.addEventListener('touchstart', e => {
+    dragStartY = e.touches[0].clientY;
+    dragStartMargin = getCurrentMargin();
+    isDragging = false;
+  }, { passive: true });
+
+  zone.addEventListener('touchmove', e => {
+    if (!isPaused || dragStartY === null) return;
+    const dy = e.touches[0].clientY - dragStartY;
+    if (!isDragging && Math.abs(dy) > DRAG_THRESHOLD) isDragging = true;
+    if (isDragging) setMargin(dragStartMargin + dy);
+  }, { passive: true });
+
+  zone.addEventListener('touchend', () => {
+    dragStartY = null;
+  }, { passive: true });
 });
 
-zoneBottom.addEventListener('click', () => {
-  if (isPaused) resume(); else pause();
-});
+function handleZoneClick(action) {
+  if (isDragging) { isDragging = false; return; }
+  action();
+}
 
-zoneLeft.addEventListener('click', () => {
+zoneTop.addEventListener('click', () => handleZoneClick(() => {
+  if (isPaused) resume(); else pause();
+}));
+
+zoneBottom.addEventListener('click', () => handleZoneClick(() => {
+  if (isPaused) resume(); else pause();
+}));
+
+zoneLeft.addEventListener('click', () => handleZoneClick(() => {
   if (isPaused) advance(-1); else pause();
-});
+}));
 
-zoneCenter.addEventListener('click', () => {
+zoneCenter.addEventListener('click', () => handleZoneClick(() => {
   if (isPaused) resume(); else pause();
-});
+}));
 
-zoneRight.addEventListener('click', () => {
+zoneRight.addEventListener('click', () => handleZoneClick(() => {
   if (isPaused) advance(1); else pause();
-});
+}));
 
 // ── Start ─────────────────────────────────────────────────
 

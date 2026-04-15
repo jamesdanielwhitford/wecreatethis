@@ -153,11 +153,12 @@ html, body {
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 80px 40px;
   pointer-events: none;
   z-index: 1;
+  overflow: hidden;
 }
 
 /* Each word is a span injected by reader.js */
@@ -178,6 +179,18 @@ html, body {
   color: #fff;
   max-width: 680px;
   text-align: var(--sentence-align, center);
+  transition: margin-top 0.6s ease;
+}
+
+/* Top fade — masks text scrolling behind the menu bar */
+.reader-page::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 120px;
+  background: linear-gradient(to bottom, #000 40%, transparent);
+  z-index: 5;
+  pointer-events: none;
 }
 
 /* ── Touch zones ─────────────────────────────────────────── */

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'slowread-v2';
+const CACHE_NAME = 'slowread-v3';
 
 const ASSETS = [
   '/slowread/',

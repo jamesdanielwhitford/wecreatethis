@@ -12,6 +12,13 @@ const SIZE_OPTIONS = [
   { label: 'X-Large', value: 'xlarge' },
 ];
 
+const PAUSE_OPTIONS = [
+  { label: 'None',   ms: 0    },
+  { label: 'Short',  ms: 1000 },
+  { label: 'Normal', ms: 2000 },
+  { label: 'Long',   ms: 3500 },
+];
+
 const ALIGN_OPTIONS = [
   { label: 'Left',   value: 'left' },
   { label: 'Center', value: 'center' },
@@ -47,6 +54,11 @@ buildOptions(
 buildOptions(
   'sizeOptions', SIZE_OPTIONS, 'slowread-fontsize', 'medium',
   'sizeDesc', opt => opt.label
+);
+
+buildOptions(
+  'pauseOptions', PAUSE_OPTIONS, 'slowread-pause', '2000',
+  'pauseDesc', opt => opt.ms === 0 ? 'No pause' : `${opt.ms / 1000}s pause`
 );
 
 buildOptions(
