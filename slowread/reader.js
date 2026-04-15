@@ -1,5 +1,23 @@
-// Reading speed: ms delay between each word reveal
-const WORD_DELAY_MS = 200;
+const FONT_SIZE_MAP = {
+  small:  '16px',
+  medium: '22px',
+  large:  '28px',
+  xlarge: '36px',
+};
+
+function getWordDelay() {
+  return parseInt(localStorage.getItem('slowread-speed') || '200', 10);
+}
+
+function applyFontSize() {
+  const size = localStorage.getItem('slowread-fontsize') || 'medium';
+  document.documentElement.style.setProperty('--sentence-size', FONT_SIZE_MAP[size] || '22px');
+}
+
+function applyAlign() {
+  const align = localStorage.getItem('slowread-align') || 'center';
+  document.documentElement.style.setProperty('--sentence-align', align);
+}
 
 let book = null;
 let sentences = [];
@@ -39,6 +57,8 @@ async function init() {
   currentIndex = saved ? parseInt(saved, 10) : 0;
   if (currentIndex >= sentences.length) currentIndex = 0;
 
+  applyFontSize();
+  applyAlign();
   showSentence(currentIndex, true);
 }
 
@@ -83,7 +103,7 @@ function revealWords(spans, i) {
     return;
   }
   spans[i].classList.add('visible');
-  wordTimer = setTimeout(() => revealWords(spans, i + 1), WORD_DELAY_MS);
+  wordTimer = setTimeout(() => revealWords(spans, i + 1), getWordDelay());
 }
 
 function clearTimer() {

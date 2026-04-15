@@ -1,10 +1,12 @@
-const CACHE_NAME = 'slowread-v1';
+const CACHE_NAME = 'slowread-v2';
 
 const ASSETS = [
   '/slowread/',
   '/slowread/reader',
+  '/slowread/settings',
   '/slowread/app.js',
   '/slowread/reader.js',
+  '/slowread/settings.js',
   '/slowread/styles.css',
   '/slowread/manifest.json',
   '/slowread/book.json',
