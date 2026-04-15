@@ -9,6 +9,10 @@ function getWordDelay() {
   return parseInt(localStorage.getItem('slowread-speed') || '200', 10);
 }
 
+function getSentencePause() {
+  return parseInt(localStorage.getItem('slowread-pause') || '2000', 10);
+}
+
 function applyFontSize() {
   const size = localStorage.getItem('slowread-fontsize') || 'medium';
   document.documentElement.style.setProperty('--sentence-size', FONT_SIZE_MAP[size] || '22px');
@@ -100,7 +104,7 @@ function revealWords(spans, i) {
     // Sentence done, auto-advance after a pause
     wordTimer = setTimeout(() => {
       if (!isPaused) advance(1);
-    }, 900);
+    }, getSentencePause());
     return;
   }
   spans[i].classList.add('visible');
