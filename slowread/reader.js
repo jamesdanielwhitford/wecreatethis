@@ -28,6 +28,9 @@ let sentences = [];
 let currentIndex = 0;
 let isPaused = false;
 let wordTimer = null;
+let currentSpans = [];
+let pausedWordIndex = 0;
+let navigatedWhilePaused = false;
 
 // ── DOM refs ─────────────────────────────────────────────
 
@@ -80,10 +83,9 @@ function showSentence(index, autoPlay) {
   const p = document.createElement('p');
   p.className = 'sentence-text';
 
-  const spans = words.map((word, i) => {
+  currentSpans = words.map((word, i) => {
     const span = document.createElement('span');
     span.className = 'word';
-    // Add a space before every word except the first
     span.textContent = (i === 0 ? '' : ' ') + word;
     p.appendChild(span);
     return span;
@@ -92,14 +94,19 @@ function showSentence(index, autoPlay) {
   display.appendChild(p);
 
   if (autoPlay && !isPaused) {
-    revealWords(spans, 0);
+    pausedWordIndex = 0;
+    navigatedWhilePaused = false;
+    revealWords(currentSpans, 0);
   } else if (isPaused) {
-    // Show all words instantly when paused or navigating manually
-    spans.forEach(s => s.classList.add('visible'));
+    // Navigated while paused: show all words, resume will start from beginning
+    pausedWordIndex = 0;
+    navigatedWhilePaused = true;
+    currentSpans.forEach(s => s.classList.add('visible'));
   }
 }
 
 function revealWords(spans, i) {
+  pausedWordIndex = i;
   if (i >= spans.length) {
     // Sentence done, auto-advance after a pause
     wordTimer = setTimeout(() => {
@@ -139,14 +146,20 @@ function pause() {
   isPaused = true;
   clearTimer();
   menu.classList.add('visible');
-  // Show remaining words instantly
-  display.querySelectorAll('.word').forEach(s => s.classList.add('visible'));
+  // Leave words as-is — don't reveal the rest
 }
 
 function resume() {
   isPaused = false;
   menu.classList.remove('visible');
-  showSentence(currentIndex, true);
+  if (navigatedWhilePaused) {
+    // Navigated to a new sentence while paused: rebuild and play from start
+    navigatedWhilePaused = false;
+    showSentence(currentIndex, true);
+  } else {
+    // Resumed on same sentence: continue from where we paused
+    revealWords(currentSpans, pausedWordIndex);
+  }
 }
 
 // ── Touch zones ───────────────────────────────────────────
