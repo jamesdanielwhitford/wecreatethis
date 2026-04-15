@@ -9567,6 +9567,548 @@
       "The unharming sharks, they glided by as if with padlocks on their mouths; the savage sea-hawks sailed with sheathed beaks.",
       "On the second day, a sail drew near, nearer, and picked me up at last.",
       "It was the devious-cruising Rachel, that in her retracing search after her missing children, only found another orphan."
+    ],
+    "chapters": [
+      {
+        "title": "CHAPTER 1. Loomings.",
+        "sentenceIndex": 0
+      },
+      {
+        "title": "CHAPTER 2. The Carpet-Bag.",
+        "sentenceIndex": 101
+      },
+      {
+        "title": "CHAPTER 3. The Spouter-Inn.",
+        "sentenceIndex": 164
+      },
+      {
+        "title": "CHAPTER 4. The Counterpane.",
+        "sentenceIndex": 435
+      },
+      {
+        "title": "CHAPTER 5. Breakfast.",
+        "sentenceIndex": 492
+      },
+      {
+        "title": "CHAPTER 6. The Street.",
+        "sentenceIndex": 522
+      },
+      {
+        "title": "CHAPTER 7. The Chapel.",
+        "sentenceIndex": 567
+      },
+      {
+        "title": "CHAPTER 8. The Pulpit.",
+        "sentenceIndex": 607
+      },
+      {
+        "title": "CHAPTER 9. The Sermon.",
+        "sentenceIndex": 638
+      },
+      {
+        "title": "CHAPTER 10. A Bosom Friend.",
+        "sentenceIndex": 803
+      },
+      {
+        "title": "CHAPTER 11. Nightgown.",
+        "sentenceIndex": 872
+      },
+      {
+        "title": "CHAPTER 12. Biographical.",
+        "sentenceIndex": 895
+      },
+      {
+        "title": "CHAPTER 13. Wheelbarrow.",
+        "sentenceIndex": 930
+      },
+      {
+        "title": "CHAPTER 14. Nantucket.",
+        "sentenceIndex": 1003
+      },
+      {
+        "title": "CHAPTER 15. Chowder.",
+        "sentenceIndex": 1030
+      },
+      {
+        "title": "CHAPTER 16. The Ship.",
+        "sentenceIndex": 1091
+      },
+      {
+        "title": "CHAPTER 17. The Ramadan.",
+        "sentenceIndex": 1344
+      },
+      {
+        "title": "CHAPTER 18. His Mark.",
+        "sentenceIndex": 1458
+      },
+      {
+        "title": "CHAPTER 19. The Prophet.",
+        "sentenceIndex": 1532
+      },
+      {
+        "title": "CHAPTER 20. All Astir.",
+        "sentenceIndex": 1612
+      },
+      {
+        "title": "CHAPTER 21. Going Aboard.",
+        "sentenceIndex": 1643
+      },
+      {
+        "title": "CHAPTER 22. Merry Christmas.",
+        "sentenceIndex": 1726
+      },
+      {
+        "title": "CHAPTER 23. The Lee Shore.",
+        "sentenceIndex": 1807
+      },
+      {
+        "title": "CHAPTER 24. The Advocate.",
+        "sentenceIndex": 1827
+      },
+      {
+        "title": "CHAPTER 25. Postscript.",
+        "sentenceIndex": 1904
+      },
+      {
+        "title": "CHAPTER 26. Knights and Squires.",
+        "sentenceIndex": 1920
+      },
+      {
+        "title": "CHAPTER 27. Knights and Squires.",
+        "sentenceIndex": 1962
+      },
+      {
+        "title": "CHAPTER 28. Ahab.",
+        "sentenceIndex": 2019
+      },
+      {
+        "title": "CHAPTER 29. Enter Ahab; to Him, Stubb.",
+        "sentenceIndex": 2061
+      },
+      {
+        "title": "CHAPTER 30. The Pipe.",
+        "sentenceIndex": 2123
+      },
+      {
+        "title": "CHAPTER 31. Queen Mab.",
+        "sentenceIndex": 2139
+      },
+      {
+        "title": "CHAPTER 32. Cetology.",
+        "sentenceIndex": 2209
+      },
+      {
+        "title": "CHAPTER 33. The Specksnyder.",
+        "sentenceIndex": 2506
+      },
+      {
+        "title": "CHAPTER 34. The Cabin-Table.",
+        "sentenceIndex": 2530
+      },
+      {
+        "title": "CHAPTER 35. The Mast-Head.",
+        "sentenceIndex": 2612
+      },
+      {
+        "title": "CHAPTER 36. The Quarter-Deck.",
+        "sentenceIndex": 2675
+      },
+      {
+        "title": "CHAPTER 37. Sunset.",
+        "sentenceIndex": 2885
+      },
+      {
+        "title": "CHAPTER 38. Dusk.",
+        "sentenceIndex": 2931
+      },
+      {
+        "title": "CHAPTER 39. First Night-Watch.",
+        "sentenceIndex": 2966
+      },
+      {
+        "title": "CHAPTER 40. Midnight, Forecastle.",
+        "sentenceIndex": 2990
+      },
+      {
+        "title": "CHAPTER 41. Moby Dick.",
+        "sentenceIndex": 3192
+      },
+      {
+        "title": "CHAPTER 42. The Whiteness of the Whale.",
+        "sentenceIndex": 3290
+      },
+      {
+        "title": "CHAPTER 43. Hark!",
+        "sentenceIndex": 3388
+      },
+      {
+        "title": "CHAPTER 44. The Chart.",
+        "sentenceIndex": 3414
+      },
+      {
+        "title": "CHAPTER 45. The Affidavit.",
+        "sentenceIndex": 3467
+      },
+      {
+        "title": "CHAPTER 46. Surmises.",
+        "sentenceIndex": 3580
+      },
+      {
+        "title": "CHAPTER 47. The Mat-Maker.",
+        "sentenceIndex": 3607
+      },
+      {
+        "title": "CHAPTER 48. The First Lowering.",
+        "sentenceIndex": 3645
+      },
+      {
+        "title": "CHAPTER 49. The Hyena.",
+        "sentenceIndex": 3855
+      },
+      {
+        "title": "CHAPTER 50. Ahab’s Boat and Crew. Fedallah.",
+        "sentenceIndex": 3888
+      },
+      {
+        "title": "CHAPTER 51. The Spirit-Spout.",
+        "sentenceIndex": 3914
+      },
+      {
+        "title": "CHAPTER 52. The Albatross.",
+        "sentenceIndex": 3964
+      },
+      {
+        "title": "CHAPTER 53. The Gam.",
+        "sentenceIndex": 3993
+      },
+      {
+        "title": "CHAPTER 54. The Town-Ho’s Story.",
+        "sentenceIndex": 4045
+      },
+      {
+        "title": "CHAPTER 55. Of the Monstrous Pictures of Whales.",
+        "sentenceIndex": 4391
+      },
+      {
+        "title": "CHAPTER 56. Of the Less Erroneous Pictures of Whales, and the True",
+        "sentenceIndex": 4464
+      },
+      {
+        "title": "CHAPTER 57. Of Whales in Paint; in Teeth; in Wood; in Sheet-Iron; in",
+        "sentenceIndex": 4506
+      },
+      {
+        "title": "CHAPTER 58. Brit.",
+        "sentenceIndex": 4539
+      },
+      {
+        "title": "CHAPTER 59. Squid.",
+        "sentenceIndex": 4568
+      },
+      {
+        "title": "CHAPTER 60. The Line.",
+        "sentenceIndex": 4604
+      },
+      {
+        "title": "CHAPTER 61. Stubb Kills a Whale.",
+        "sentenceIndex": 4640
+      },
+      {
+        "title": "CHAPTER 62. The Dart.",
+        "sentenceIndex": 4733
+      },
+      {
+        "title": "CHAPTER 63. The Crotch.",
+        "sentenceIndex": 4748
+      },
+      {
+        "title": "CHAPTER 64. Stubb’s Supper.",
+        "sentenceIndex": 4766
+      },
+      {
+        "title": "CHAPTER 65. The Whale as a Dish.",
+        "sentenceIndex": 4919
+      },
+      {
+        "title": "CHAPTER 66. The Shark Massacre.",
+        "sentenceIndex": 4962
+      },
+      {
+        "title": "CHAPTER 67. Cutting In.",
+        "sentenceIndex": 4981
+      },
+      {
+        "title": "CHAPTER 68. The Blanket.",
+        "sentenceIndex": 5000
+      },
+      {
+        "title": "CHAPTER 69. The Funeral.",
+        "sentenceIndex": 5053
+      },
+      {
+        "title": "CHAPTER 70. The Sphynx.",
+        "sentenceIndex": 5077
+      },
+      {
+        "title": "CHAPTER 71. The Jeroboam’s Story.",
+        "sentenceIndex": 5116
+      },
+      {
+        "title": "CHAPTER 72. The Monkey-Rope.",
+        "sentenceIndex": 5220
+      },
+      {
+        "title": "CHAPTER 73. Stubb and Flask kill a Right Whale; and Then Have a Talk",
+        "sentenceIndex": 5307
+      },
+      {
+        "title": "CHAPTER 74. The Sperm Whale’s Head—Contrasted View.",
+        "sentenceIndex": 5415
+      },
+      {
+        "title": "CHAPTER 75. The Right Whale’s Head—Contrasted View.",
+        "sentenceIndex": 5474
+      },
+      {
+        "title": "CHAPTER 76. The Battering-Ram.",
+        "sentenceIndex": 5524
+      },
+      {
+        "title": "CHAPTER 77. The Great Heidelburgh Tun.",
+        "sentenceIndex": 5553
+      },
+      {
+        "title": "CHAPTER 78. Cistern and Buckets.",
+        "sentenceIndex": 5574
+      },
+      {
+        "title": "CHAPTER 79. The Prairie.",
+        "sentenceIndex": 5631
+      },
+      {
+        "title": "CHAPTER 80. The Nut.",
+        "sentenceIndex": 5675
+      },
+      {
+        "title": "CHAPTER 81. The Pequod Meets The Virgin.",
+        "sentenceIndex": 5711
+      },
+      {
+        "title": "CHAPTER 82. The Honor and Glory of Whaling.",
+        "sentenceIndex": 5907
+      },
+      {
+        "title": "CHAPTER 83. Jonah Historically Regarded.",
+        "sentenceIndex": 5947
+      },
+      {
+        "title": "CHAPTER 84. Pitchpoling.",
+        "sentenceIndex": 5975
+      },
+      {
+        "title": "CHAPTER 85. The Fountain.",
+        "sentenceIndex": 6010
+      },
+      {
+        "title": "CHAPTER 86. The Tail.",
+        "sentenceIndex": 6084
+      },
+      {
+        "title": "CHAPTER 87. The Grand Armada.",
+        "sentenceIndex": 6153
+      },
+      {
+        "title": "CHAPTER 88. Schools and Schoolmasters.",
+        "sentenceIndex": 6307
+      },
+      {
+        "title": "CHAPTER 89. Fast-Fish and Loose-Fish.",
+        "sentenceIndex": 6349
+      },
+      {
+        "title": "CHAPTER 90. Heads or Tails.",
+        "sentenceIndex": 6406
+      },
+      {
+        "title": "CHAPTER 91. The Pequod Meets The Rose-Bud.",
+        "sentenceIndex": 6456
+      },
+      {
+        "title": "CHAPTER 92. Ambergris.",
+        "sentenceIndex": 6575
+      },
+      {
+        "title": "CHAPTER 93. The Castaway.",
+        "sentenceIndex": 6611
+      },
+      {
+        "title": "CHAPTER 94. A Squeeze of the Hand.",
+        "sentenceIndex": 6678
+      },
+      {
+        "title": "CHAPTER 95. The Cassock.",
+        "sentenceIndex": 6736
+      },
+      {
+        "title": "CHAPTER 96. The Try-Works.",
+        "sentenceIndex": 6753
+      },
+      {
+        "title": "CHAPTER 97. The Lamp.",
+        "sentenceIndex": 6838
+      },
+      {
+        "title": "CHAPTER 98. Stowing Down and Clearing Up.",
+        "sentenceIndex": 6849
+      },
+      {
+        "title": "CHAPTER 99. The Doubloon.",
+        "sentenceIndex": 6878
+      },
+      {
+        "title": "CHAPTER 100. Leg and Arm.",
+        "sentenceIndex": 7025
+      },
+      {
+        "title": "CHAPTER 101. The Decanter.",
+        "sentenceIndex": 7156
+      },
+      {
+        "title": "CHAPTER 102. A Bower in the Arsacides.",
+        "sentenceIndex": 7231
+      },
+      {
+        "title": "CHAPTER 103. Measurement of The Whale’s Skeleton.",
+        "sentenceIndex": 7298
+      },
+      {
+        "title": "CHAPTER 104. The Fossil Whale.",
+        "sentenceIndex": 7333
+      },
+      {
+        "title": "CHAPTER 105. Does the Whale’s Magnitude Diminish?—Will He Perish?",
+        "sentenceIndex": 7386
+      },
+      {
+        "title": "CHAPTER 106. Ahab’s Leg.",
+        "sentenceIndex": 7426
+      },
+      {
+        "title": "CHAPTER 107. The Carpenter.",
+        "sentenceIndex": 7449
+      },
+      {
+        "title": "CHAPTER 108. Ahab and the Carpenter.",
+        "sentenceIndex": 7481
+      },
+      {
+        "title": "CHAPTER 109. Ahab and Starbuck in the Cabin.",
+        "sentenceIndex": 7601
+      },
+      {
+        "title": "CHAPTER 110. Queequeg in His Coffin.",
+        "sentenceIndex": 7656
+      },
+      {
+        "title": "CHAPTER 111. The Pacific.",
+        "sentenceIndex": 7740
+      },
+      {
+        "title": "CHAPTER 112. The Blacksmith.",
+        "sentenceIndex": 7754
+      },
+      {
+        "title": "CHAPTER 113. The Forge.",
+        "sentenceIndex": 7787
+      },
+      {
+        "title": "CHAPTER 114. The Gilder.",
+        "sentenceIndex": 7862
+      },
+      {
+        "title": "CHAPTER 115. The Pequod Meets The Bachelor.",
+        "sentenceIndex": 7886
+      },
+      {
+        "title": "CHAPTER 116. The Dying Whale.",
+        "sentenceIndex": 7921
+      },
+      {
+        "title": "CHAPTER 117. The Whale Watch.",
+        "sentenceIndex": 7944
+      },
+      {
+        "title": "CHAPTER 118. The Quadrant.",
+        "sentenceIndex": 7971
+      },
+      {
+        "title": "CHAPTER 119. The Candles.",
+        "sentenceIndex": 8013
+      },
+      {
+        "title": "CHAPTER 120. The Deck Towards the End of the First Night Watch.",
+        "sentenceIndex": 8153
+      },
+      {
+        "title": "CHAPTER 121. Midnight.—The Forecastle Bulwarks.",
+        "sentenceIndex": 8179
+      },
+      {
+        "title": "CHAPTER 122. Midnight Aloft.—Thunder and Lightning.",
+        "sentenceIndex": 8226
+      },
+      {
+        "title": "CHAPTER 123. The Musket.",
+        "sentenceIndex": 8238
+      },
+      {
+        "title": "CHAPTER 124. The Needle.",
+        "sentenceIndex": 8318
+      },
+      {
+        "title": "CHAPTER 125. The Log and Line.",
+        "sentenceIndex": 8371
+      },
+      {
+        "title": "CHAPTER 126. The Life-Buoy.",
+        "sentenceIndex": 8476
+      },
+      {
+        "title": "CHAPTER 127. The Deck.",
+        "sentenceIndex": 8547
+      },
+      {
+        "title": "CHAPTER 128. The Pequod Meets The Rachel.",
+        "sentenceIndex": 8624
+      },
+      {
+        "title": "CHAPTER 129. The Cabin.",
+        "sentenceIndex": 8678
+      },
+      {
+        "title": "CHAPTER 130. The Hat.",
+        "sentenceIndex": 8733
+      },
+      {
+        "title": "CHAPTER 131. The Pequod Meets The Delight.",
+        "sentenceIndex": 8778
+      },
+      {
+        "title": "CHAPTER 132. The Symphony.",
+        "sentenceIndex": 8803
+      },
+      {
+        "title": "CHAPTER 133. The Chase—First Day.",
+        "sentenceIndex": 8908
+      },
+      {
+        "title": "CHAPTER 134. The Chase—Second Day.",
+        "sentenceIndex": 9090
+      },
+      {
+        "title": "CHAPTER 135. The Chase.—Third Day.",
+        "sentenceIndex": 9263
+      }
     ]
   },
   {
@@ -18262,6 +18804,308 @@
       "For me alone was Don Quixote born, and I for him; it was his to act, mine to write; we two together make but one, notwithstanding and in spite of that pretended Tordesillesque writer who has ventured or would venture with his great, coarse, ill-trimmed ostrich quill to write the achievements of my valiant knight;—no burden for his shoulders, nor subject for his frozen wit: whom, if perchance thou shouldst come to know him, thou shalt warn to leave at rest where they lie the weary mouldering bones of Don Quixote, and not to attempt to carry him off, in opposition to all the privileges of death, to Old Castile, making him rise from the grave where in reality and truth he lies stretched at full length, powerless to make any third expedition or new sally; for the two that he has already made, so much to the enjoyment and approval of everybody to whom they have become known, in this as well as in foreign countries, are quite sufficient for the purpose of turning into ridicule the whole of those made by the whole set of the knights-errant; and so doing shalt thou discharge thy Christian calling, giving good counsel to one that bears ill-will to thee.",
       "And I shall remain satisfied, and proud to have been the first who has ever enjoyed the fruit of his writings as fully as he could desire; for my desire has been no other than to deliver over to the detestation of mankind the false and foolish tales of the books of chivalry, which, thanks to that of my true Don Quixote, are even now tottering, and doubtless doomed to fall for ever.",
       "Farewell."
+    ],
+    "chapters": [
+      {
+        "title": "CHAPTER I.",
+        "sentenceIndex": 0
+      },
+      {
+        "title": "CHAPTER II.",
+        "sentenceIndex": 39
+      },
+      {
+        "title": "CHAPTER III.",
+        "sentenceIndex": 78
+      },
+      {
+        "title": "CHAPTER IV.",
+        "sentenceIndex": 118
+      },
+      {
+        "title": "CHAPTER V.",
+        "sentenceIndex": 177
+      },
+      {
+        "title": "CHAPTER VI.",
+        "sentenceIndex": 215
+      },
+      {
+        "title": "CHAPTER VII.",
+        "sentenceIndex": 301
+      },
+      {
+        "title": "CHAPTER VIII.",
+        "sentenceIndex": 351
+      },
+      {
+        "title": "CHAPTER IX.",
+        "sentenceIndex": 419
+      },
+      {
+        "title": "CHAPTER X.",
+        "sentenceIndex": 453
+      },
+      {
+        "title": "CHAPTER XI.",
+        "sentenceIndex": 493
+      },
+      {
+        "title": "CHAPTER XII.",
+        "sentenceIndex": 546
+      },
+      {
+        "title": "CHAPTER XIII.",
+        "sentenceIndex": 606
+      },
+      {
+        "title": "CHAPTER XIV.",
+        "sentenceIndex": 669
+      },
+      {
+        "title": "CHAPTER XV.",
+        "sentenceIndex": 736
+      },
+      {
+        "title": "CHAPTER XVI.",
+        "sentenceIndex": 784
+      },
+      {
+        "title": "CHAPTER XVII.",
+        "sentenceIndex": 841
+      },
+      {
+        "title": "CHAPTER XVIII.",
+        "sentenceIndex": 918
+      },
+      {
+        "title": "CHAPTER XIX.",
+        "sentenceIndex": 1009
+      },
+      {
+        "title": "CHAPTER XX.",
+        "sentenceIndex": 1067
+      },
+      {
+        "title": "CHAPTER XXI.",
+        "sentenceIndex": 1170
+      },
+      {
+        "title": "CHAPTER XXII.",
+        "sentenceIndex": 1267
+      },
+      {
+        "title": "CHAPTER XXIII.",
+        "sentenceIndex": 1365
+      },
+      {
+        "title": "CHAPTER XXIV.",
+        "sentenceIndex": 1442
+      },
+      {
+        "title": "CHAPTER XXV.",
+        "sentenceIndex": 1500
+      },
+      {
+        "title": "CHAPTER XXVI.",
+        "sentenceIndex": 1632
+      },
+      {
+        "title": "CHAPTER XXVII.",
+        "sentenceIndex": 1694
+      },
+      {
+        "title": "CHAPTER XXVIII.",
+        "sentenceIndex": 1834
+      },
+      {
+        "title": "CHAPTER XXIX.",
+        "sentenceIndex": 1917
+      },
+      {
+        "title": "CHAPTER XXX.",
+        "sentenceIndex": 1994
+      },
+      {
+        "title": "CHAPTER XXXI.",
+        "sentenceIndex": 2096
+      },
+      {
+        "title": "CHAPTER XXXII.",
+        "sentenceIndex": 2195
+      },
+      {
+        "title": "CHAPTER XXXIII.",
+        "sentenceIndex": 2259
+      },
+      {
+        "title": "CHAPTER XXXIV.",
+        "sentenceIndex": 2382
+      },
+      {
+        "title": "CHAPTER XXXV.",
+        "sentenceIndex": 2530
+      },
+      {
+        "title": "CHAPTER XXXVI.",
+        "sentenceIndex": 2617
+      },
+      {
+        "title": "CHAPTER XXXVII.",
+        "sentenceIndex": 2690
+      },
+      {
+        "title": "CHAPTER XXXVIII.",
+        "sentenceIndex": 2772
+      },
+      {
+        "title": "CHAPTER XXXIX.",
+        "sentenceIndex": 2800
+      },
+      {
+        "title": "CHAPTER XL.",
+        "sentenceIndex": 2860
+      },
+      {
+        "title": "CHAPTER XLI.",
+        "sentenceIndex": 2957
+      },
+      {
+        "title": "CHAPTER XLII.",
+        "sentenceIndex": 3126
+      },
+      {
+        "title": "CHAPTER XLIII.",
+        "sentenceIndex": 3190
+      },
+      {
+        "title": "CHAPTER XLIV.",
+        "sentenceIndex": 3270
+      },
+      {
+        "title": "CHAPTER XLV.",
+        "sentenceIndex": 3338
+      },
+      {
+        "title": "CHAPTER XLVI.",
+        "sentenceIndex": 3398
+      },
+      {
+        "title": "CHAPTER XLVII.",
+        "sentenceIndex": 3444
+      },
+      {
+        "title": "CHAPTER XLVIII.",
+        "sentenceIndex": 3520
+      },
+      {
+        "title": "CHAPTER XLIX.",
+        "sentenceIndex": 3568
+      },
+      {
+        "title": "CHAPTER L.",
+        "sentenceIndex": 3617
+      },
+      {
+        "title": "CHAPTER LI.",
+        "sentenceIndex": 3659
+      },
+      {
+        "title": "CHAPTER LII.",
+        "sentenceIndex": 3698
+      },
+      {
+        "title": "CHAPTER I.",
+        "sentenceIndex": 3835
+      },
+      {
+        "title": "CHAPTER LIII.",
+        "sentenceIndex": 7277
+      },
+      {
+        "title": "CHAPTER LIV.",
+        "sentenceIndex": 7338
+      },
+      {
+        "title": "CHAPTER LV.",
+        "sentenceIndex": 7409
+      },
+      {
+        "title": "CHAPTER LVI.",
+        "sentenceIndex": 7468
+      },
+      {
+        "title": "CHAPTER LVII.",
+        "sentenceIndex": 7512
+      },
+      {
+        "title": "CHAPTER LVIII.",
+        "sentenceIndex": 7558
+      },
+      {
+        "title": "CHAPTER LIX.",
+        "sentenceIndex": 7660
+      },
+      {
+        "title": "CHAPTER LX.",
+        "sentenceIndex": 7742
+      },
+      {
+        "title": "CHAPTER LXI.",
+        "sentenceIndex": 7847
+      },
+      {
+        "title": "CHAPTER LXII.",
+        "sentenceIndex": 7871
+      },
+      {
+        "title": "CHAPTER LXIII.",
+        "sentenceIndex": 8008
+      },
+      {
+        "title": "CHAPTER LXIV.",
+        "sentenceIndex": 8113
+      },
+      {
+        "title": "CHAPTER LXV.",
+        "sentenceIndex": 8147
+      },
+      {
+        "title": "CHAPTER LXVI.",
+        "sentenceIndex": 8201
+      },
+      {
+        "title": "CHAPTER LXVII.",
+        "sentenceIndex": 8247
+      },
+      {
+        "title": "CHAPTER LXVIII.",
+        "sentenceIndex": 8297
+      },
+      {
+        "title": "CHAPTER LXIX.",
+        "sentenceIndex": 8351
+      },
+      {
+        "title": "CHAPTER LXX.",
+        "sentenceIndex": 8405
+      },
+      {
+        "title": "CHAPTER LXXI.",
+        "sentenceIndex": 8477
+      },
+      {
+        "title": "CHAPTER LXXII.",
+        "sentenceIndex": 8533
+      },
+      {
+        "title": "CHAPTER LXXIII.",
+        "sentenceIndex": 8578
+      },
+      {
+        "title": "CHAPTER LXXIV.",
+        "sentenceIndex": 8626
+      }
     ]
   }
 ]

@@ -273,4 +273,57 @@ html, body {
   font-size: 13px;
   color: #555;
   white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.menu-progress:hover {
+  color: #fff;
+}
+
+/* ── TOC overlay ─────────────────────────────────────────── */
+
+.toc-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 19;
+  background: #000;
+  overflow-y: auto;
+  padding: 80px 0 40px;
+}
+
+.toc-overlay.visible {
+  display: block;
+}
+
+.toc-list {
+  list-style: none;
+}
+
+.toc-item {
+  border-top: 1px solid #1a1a1a;
+  padding: 20px 32px;
+  font-size: 16px;
+  color: #555;
+  cursor: pointer;
+  font-family: Georgia, serif;
+}
+
+.toc-item:last-child {
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.toc-item:hover {
+  color: #fff;
+}
+
+.toc-item.toc-current {
+  color: #fff;
+}
+
+.toc-item.toc-resume {
+  color: #fff;
+  border-bottom: 1px solid #333;
+  margin-bottom: 16px;
 }

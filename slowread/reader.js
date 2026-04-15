@@ -39,6 +39,9 @@ const menu      = document.getElementById('readerMenu');
 const menuTitle = document.getElementById('menuTitle');
 const menuProg  = document.getElementById('menuProgress');
 
+const tocOverlay = document.getElementById('tocOverlay');
+const tocList    = document.getElementById('tocList');
+
 const zoneTop    = document.getElementById('zoneTop');
 const zoneBottom = document.getElementById('zoneBottom');
 const zoneLeft   = document.getElementById('zoneLeft');
@@ -311,6 +314,72 @@ zoneCenter.addEventListener('click', () => handleZoneClick(() => {
 zoneRight.addEventListener('click', () => handleZoneClick(() => {
   if (isPaused) advance(1); else pause();
 }));
+
+// ── Table of contents ─────────────────────────────────────
+
+let tocOpen = false;
+
+function openToc() {
+  tocOpen = true;
+  tocList.innerHTML = '';
+
+  // Resume item
+  const resume = document.createElement('div');
+  resume.className = 'toc-item toc-resume';
+  resume.textContent = 'Continue reading';
+  resume.addEventListener('click', closeToc);
+  tocList.appendChild(resume);
+
+  // Chapter items
+  (book.chapters || []).forEach(chapter => {
+    const item = document.createElement('div');
+    item.className = 'toc-item';
+
+    // Mark the current chapter
+    const currentChapter = getCurrentChapter();
+    if (currentChapter && currentChapter.sentenceIndex === chapter.sentenceIndex) {
+      item.classList.add('toc-current');
+    }
+
+    item.textContent = chapter.title;
+    item.addEventListener('click', () => {
+      closeToc();
+      currentIndex = chapter.sentenceIndex;
+      savePos();
+      if (!isPaused) pause();
+      showSentence(currentIndex, false);
+    });
+    tocList.appendChild(item);
+  });
+
+  tocOverlay.classList.add('visible');
+
+  // Scroll to current chapter
+  const currentItem = tocList.querySelector('.toc-current');
+  if (currentItem) {
+    requestAnimationFrame(() => currentItem.scrollIntoView({ block: 'center' }));
+  }
+}
+
+function closeToc() {
+  tocOpen = false;
+  tocOverlay.classList.remove('visible');
+}
+
+function getCurrentChapter() {
+  if (!book.chapters || book.chapters.length === 0) return null;
+  let current = book.chapters[0];
+  for (const ch of book.chapters) {
+    if (ch.sentenceIndex <= currentIndex) current = ch;
+    else break;
+  }
+  return current;
+}
+
+menuProg.addEventListener('click', () => {
+  if (tocOpen) closeToc();
+  else { if (!isPaused) pause(); openToc(); }
+});
 
 // ── Start ─────────────────────────────────────────────────
 
