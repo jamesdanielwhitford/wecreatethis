@@ -169,7 +169,13 @@ function showSentence(index, autoPlay) {
     pausedWordIndex = 0;
     navigatedWhilePaused = true;
     currentSpans.forEach(s => s.classList.add('visible'));
-    repositionText(currentSpans.length, currentSentenceWords);
+    if (currentSentenceWillScroll) {
+      // Start at top so user reads from the beginning
+      const p = display.querySelector('.sentence-text');
+      if (p) { p.style.transition = 'none'; p.style.marginTop = '0px'; }
+    } else {
+      repositionText(currentSpans.length, currentSentenceWords);
+    }
   }
 }
 
@@ -234,26 +240,77 @@ function resume() {
 // ── Touch zones ───────────────────────────────────────────
 // Playing: entire screen = pause
 // Paused: top/bottom = resume, left = prev, right = next
+// Paused + drag: scroll the sentence text
 
-zoneTop.addEventListener('click', () => {
-  if (isPaused) resume(); else pause();
+const DRAG_THRESHOLD = 8; // px — below this it's a tap, above it's a scroll
+
+let dragStartY = null;
+let dragStartMargin = 0;
+let isDragging = false;
+
+function getCurrentMargin() {
+  const p = display.querySelector('.sentence-text');
+  return p ? parseFloat(p.style.marginTop) || 0 : 0;
+}
+
+function setMargin(value) {
+  const p = display.querySelector('.sentence-text');
+  if (!p) return;
+  // Clamp: can't drag below initial position, can't drag so far up text disappears
+  const fontSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sentence-size') || '22', 10);
+  const lineHeight = fontSize * 1.7;
+  const containerH = display.clientHeight - 160;
+  const maxMargin = (containerH - lineHeight) / 2; // initial centered position
+  const minMargin = -(p.scrollHeight); // far enough up to read the top
+  p.style.transition = 'none';
+  p.style.marginTop = Math.min(maxMargin, Math.max(minMargin, value)) + 'px';
+}
+
+const zones = [zoneTop, zoneBottom, zoneLeft, zoneCenter, zoneRight];
+
+zones.forEach(zone => {
+  zone.addEventListener('touchstart', e => {
+    dragStartY = e.touches[0].clientY;
+    dragStartMargin = getCurrentMargin();
+    isDragging = false;
+  }, { passive: true });
+
+  zone.addEventListener('touchmove', e => {
+    if (!isPaused || dragStartY === null) return;
+    const dy = e.touches[0].clientY - dragStartY;
+    if (!isDragging && Math.abs(dy) > DRAG_THRESHOLD) isDragging = true;
+    if (isDragging) setMargin(dragStartMargin + dy);
+  }, { passive: true });
+
+  zone.addEventListener('touchend', () => {
+    dragStartY = null;
+  }, { passive: true });
 });
 
-zoneBottom.addEventListener('click', () => {
-  if (isPaused) resume(); else pause();
-});
+function handleZoneClick(action) {
+  if (isDragging) { isDragging = false; return; }
+  action();
+}
 
-zoneLeft.addEventListener('click', () => {
+zoneTop.addEventListener('click', () => handleZoneClick(() => {
+  if (isPaused) resume(); else pause();
+}));
+
+zoneBottom.addEventListener('click', () => handleZoneClick(() => {
+  if (isPaused) resume(); else pause();
+}));
+
+zoneLeft.addEventListener('click', () => handleZoneClick(() => {
   if (isPaused) advance(-1); else pause();
-});
+}));
 
-zoneCenter.addEventListener('click', () => {
+zoneCenter.addEventListener('click', () => handleZoneClick(() => {
   if (isPaused) resume(); else pause();
-});
+}));
 
-zoneRight.addEventListener('click', () => {
+zoneRight.addEventListener('click', () => handleZoneClick(() => {
   if (isPaused) advance(1); else pause();
-});
+}));
 
 // ── Start ─────────────────────────────────────────────────
 
