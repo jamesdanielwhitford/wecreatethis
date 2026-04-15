@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <title>Slow Read - Settings</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="shelf-page">
+  <div class="shelf-container">
+    <a href="/slowread/" class="back-link">Library</a>
+    <h1 class="shelf-title" style="margin-top: 32px;">Settings</h1>
+
+    <div class="settings-group">
+      <div class="settings-label">Reading speed</div>
+      <div class="settings-description" id="speedDesc"></div>
+      <div class="settings-options" id="speedOptions"></div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-label">Font size</div>
+      <div class="settings-description" id="sizeDesc"></div>
+      <div class="settings-options" id="sizeOptions"></div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-label">Text alignment</div>
+      <div class="settings-description" id="alignDesc"></div>
+      <div class="settings-options" id="alignOptions"></div>
+    </div>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

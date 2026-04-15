@@ -1,0 +1,263 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  color: #fff;
+  font-family: Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ── Shelf ─────────────────────────────────────────────── */
+
+.shelf-page {
+  overflow-y: auto;
+  padding: 60px 32px 60px;
+}
+
+.shelf-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 48px;
+}
+
+.shelf-title {
+  font-size: 13px;
+  font-weight: normal;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #555;
+  margin-bottom: 0;
+}
+
+.settings-link {
+  font-size: 13px;
+  color: #555;
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+
+.settings-link:hover {
+  color: #fff;
+}
+
+.back-link {
+  font-size: 13px;
+  color: #555;
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+
+.back-link:hover {
+  color: #fff;
+}
+
+/* ── Settings ────────────────────────────────────────────── */
+
+.settings-group {
+  margin-bottom: 48px;
+  border-top: 1px solid #1a1a1a;
+  padding-top: 24px;
+}
+
+.settings-label {
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.settings-description {
+  font-size: 13px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.settings-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.settings-option {
+  background: none;
+  border: 1px solid #333;
+  color: #555;
+  font-family: Georgia, serif;
+  font-size: 16px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.settings-option:hover {
+  border-color: #555;
+  color: #fff;
+}
+
+.settings-option.selected {
+  border-color: #fff;
+  color: #fff;
+}
+
+.book-list {
+  list-style: none;
+}
+
+.book-list li {
+  border-top: 1px solid #1a1a1a;
+  padding: 24px 0;
+}
+
+.book-list li:last-child {
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.book-list a {
+  text-decoration: none;
+  color: #fff;
+  display: block;
+}
+
+.book-list .book-title {
+  font-size: 20px;
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+
+.book-list .book-author {
+  font-size: 13px;
+  color: #555;
+  letter-spacing: 0.05em;
+}
+
+/* ── Reader ─────────────────────────────────────────────── */
+
+.reader-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sentence-display {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Each word is a span injected by reader.js */
+.word {
+  display: inline;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  white-space: pre-wrap;
+}
+
+.word.visible {
+  opacity: 1;
+}
+
+.sentence-text {
+  font-size: var(--sentence-size, 22px);
+  line-height: 1.7;
+  color: #fff;
+  max-width: 680px;
+  text-align: var(--sentence-align, center);
+}
+
+/* ── Touch zones ─────────────────────────────────────────── */
+
+.zone {
+  position: absolute;
+  z-index: 10;
+}
+
+/* Top 25% */
+.zone-top {
+  top: 0; left: 0; right: 0;
+  height: 25%;
+}
+
+/* Bottom 25% */
+.zone-bottom {
+  bottom: 0; left: 0; right: 0;
+  height: 25%;
+}
+
+/* Middle 50%, left third */
+.zone-left {
+  top: 25%; left: 0;
+  width: 33.333%; height: 50%;
+}
+
+/* Middle 50%, center third */
+.zone-center {
+  top: 25%; left: 33.333%;
+  width: 33.333%; height: 50%;
+}
+
+/* Middle 50%, right third */
+.zone-right {
+  top: 25%; right: 0;
+  width: 33.333%; height: 50%;
+}
+
+/* ── Menu ────────────────────────────────────────────────── */
+
+.reader-menu {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.reader-menu.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.menu-back {
+  font-size: 13px;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+
+.menu-title {
+  font-size: 13px;
+  color: #555;
+  text-align: center;
+  flex: 1;
+  padding: 0 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu-progress {
+  font-size: 13px;
+  color: #555;
+  white-space: nowrap;
+}

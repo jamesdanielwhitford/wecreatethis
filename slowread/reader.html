@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <title>Slow Read</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="reader-page">
+
+  <!-- Top menu (shown when paused) -->
+  <div class="reader-menu" id="readerMenu">
+    <a class="menu-back" href="/slowread/">Library</a>
+    <span class="menu-title" id="menuTitle"></span>
+    <span class="menu-progress" id="menuProgress"></span>
+  </div>
+
+  <!-- Sentence display -->
+  <div class="sentence-display" id="sentenceDisplay"></div>
+
+  <!-- Touch zones (invisible overlays) -->
+  <div class="zone zone-top"    id="zoneTop"></div>
+  <div class="zone zone-bottom" id="zoneBottom"></div>
+  <div class="zone zone-left"   id="zoneLeft"></div>
+  <div class="zone zone-center" id="zoneCenter"></div>
+  <div class="zone zone-right"  id="zoneRight"></div>
+
+  <script src="reader.js"></script>
+</body>
+</html>
