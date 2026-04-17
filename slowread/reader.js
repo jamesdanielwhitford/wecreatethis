@@ -154,7 +154,7 @@ function showSentence(index, autoPlay) {
   currentSpans = currentSentenceWords.map((word, i) => {
     const span = document.createElement('span');
     span.className = 'word';
-    span.textContent = (i === 0 ? '' : ' ') + word;
+    span.innerHTML = (i === 0 ? '' : ' ') + word;
     p.appendChild(span);
     return span;
   });
