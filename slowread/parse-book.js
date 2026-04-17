@@ -77,6 +77,8 @@ function parseBook({ file, startMarker, endMarker, id, title, author, chapterReg
     const prev = rejoined[rejoined.length - 1];
     if (prev && /^["'\u201C\u201D\u2018\u2019]\s+[a-z]/.test(seg)) {
       rejoined[rejoined.length - 1] = prev + ' ' + seg;
+    } else if (prev && /[?!]["'\u201D\u2019]$/.test(prev) && /^[a-z]/.test(seg)) {
+      rejoined[rejoined.length - 1] = prev + ' ' + seg;
     } else if (prev && /^["'\u201D\u2019]\s*$/.test(seg)) {
       rejoined[rejoined.length - 1] = prev + seg;
     } else {
@@ -224,9 +226,19 @@ const thePrince = parseBook({
   ],
 });
 
+// Strip [commentary] and leading aphorism numbers.
+// Remove _italic_ markers entirely (the em tags confuse Intl.Segmenter's
+// sentence boundary detection when a sentence starts with <em>Word</em>).
+const artOfWarRaw = fs.readFileSync('./books/art-of-war.txt', 'utf8');
+const artOfWarCleaned = artOfWarRaw
+  .replace(/\[[\s\S]*?\]/g, '')
+  .replace(/^\d[\d,\s]*\.\s+/mg, '')
+  .replace(/_([^_]+)_/g, '$1');
+fs.writeFileSync('./books/art-of-war-stripped.txt', artOfWarCleaned);
+
 const artOfWar = parseBook({
-  file: 'art-of-war.txt',
-  startMarker: 'Sun Tzŭ said: The art of war is of vital importance to the State.',
+  file: 'art-of-war-stripped.txt',
+  startMarker: 'The art of war is of vital importance to the State.',
   id: 'art-of-war',
   title: 'The Art of War',
   author: 'Sun Tzu',
@@ -234,10 +246,7 @@ const artOfWar = parseBook({
   prependChapter: 'Chapter I. Laying Plans',
   extraFilters: [
     s => /^Chapter\s/i.test(s),
-    // Strip translator commentary in square brackets
-    s => /^\[/.test(s.trim()),
-    // Strip numbered aphorism markers like "1." or "5, 6."
-    s => /^\d[\d,\s]*\./.test(s.trim()) && s.trim().length < 10,
+    s => /^"[^"]+,"\s*p\.\s*$/.test(s.trim()),
   ],
 });
 
