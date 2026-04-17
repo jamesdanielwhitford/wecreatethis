@@ -154,7 +154,7 @@ function showSentence(index, autoPlay) {
   currentSpans = currentSentenceWords.map((word, i) => {
     const span = document.createElement('span');
     span.className = 'word';
-    span.textContent = (i === 0 ? '' : ' ') + word;
+    span.innerHTML = (i === 0 ? '' : ' ') + word;
     p.appendChild(span);
     return span;
   });
@@ -246,10 +246,17 @@ function resume() {
 // Paused + drag: scroll the sentence text
 
 const DRAG_THRESHOLD = 8; // px — below this it's a tap, above it's a scroll
+const HOLD_THRESHOLD = 150; // ms — below this it's a tap, above it's a hold
 
 let dragStartY = null;
 let dragStartMargin = 0;
 let isDragging = false;
+let holdTimer = null;
+let isHolding = false;
+
+function isHoldMode() {
+  return localStorage.getItem('slowread-hold-to-play') === 'on';
+}
 
 function getCurrentMargin() {
   const p = display.querySelector('.sentence-text');
@@ -276,22 +283,40 @@ zones.forEach(zone => {
     dragStartY = e.touches[0].clientY;
     dragStartMargin = getCurrentMargin();
     isDragging = false;
+    isHolding = false;
+
+    if (isHoldMode()) {
+      holdTimer = setTimeout(() => {
+        isHolding = true;
+        if (isPaused) resume();
+      }, HOLD_THRESHOLD);
+    }
   }, { passive: true });
 
   zone.addEventListener('touchmove', e => {
-    if (!isPaused || dragStartY === null) return;
+    if (dragStartY === null) return;
     const dy = e.touches[0].clientY - dragStartY;
-    if (!isDragging && Math.abs(dy) > DRAG_THRESHOLD) isDragging = true;
-    if (isDragging) setMargin(dragStartMargin + dy);
+    if (!isDragging && Math.abs(dy) > DRAG_THRESHOLD) {
+      isDragging = true;
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+    }
+    if (isDragging && isPaused) setMargin(dragStartMargin + dy);
   }, { passive: true });
 
   zone.addEventListener('touchend', () => {
     dragStartY = null;
+    if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+    if (isHolding) {
+      if (!isPaused) pause();
+      // keep isHolding true until after the click event fires, then clear it
+      setTimeout(() => { isHolding = false; }, 0);
+    }
   }, { passive: true });
 });
 
 function handleZoneClick(action) {
   if (isDragging) { isDragging = false; return; }
+  if (isHolding) return;
   action();
 }
 

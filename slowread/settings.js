@@ -65,3 +65,13 @@ buildOptions(
   'alignOptions', ALIGN_OPTIONS, 'slowread-align', 'left',
   'alignDesc', opt => opt.label
 );
+
+const HOLD_OPTIONS = [
+  { label: 'Off', value: 'off' },
+  { label: 'On',  value: 'on'  },
+];
+
+buildOptions(
+  'holdOptions', HOLD_OPTIONS, 'slowread-hold-to-play', 'off',
+  'holdDesc', opt => opt.value === 'on' ? 'Press and hold to play, release to pause' : 'Standard tap controls'
+);
