@@ -303,15 +303,15 @@ zones.forEach(zone => {
     if (isDragging && isPaused) setMargin(dragStartMargin + dy);
   }, { passive: true });
 
-  zone.addEventListener('touchend', () => {
+  zone.addEventListener('touchend', e => {
     dragStartY = null;
     if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
     if (isHolding) {
+      e.preventDefault(); // suppress synthetic click so it can't undo the pause
+      isHolding = false;
       if (!isPaused) pause();
-      // keep isHolding true until after the click event fires, then clear it
-      setTimeout(() => { isHolding = false; }, 0);
     }
-  }, { passive: true });
+  });
 });
 
 function handleZoneClick(action) {
