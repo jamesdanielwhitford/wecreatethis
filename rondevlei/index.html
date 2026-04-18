@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Protea Propagation Guide — Sedgefield / Rondevlei</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1014; color: #ccd; font-family: 'Segoe UI', system-ui, sans-serif; padding: 24px 28px; max-width: 1150px; margin: 0 auto; line-height: 1.7; }
+
+  h1 { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
+  .subtitle { color: #556; font-size: 0.82rem; margin-bottom: 22px; }
+  h2 { font-size: 1rem; font-weight: 700; color: #a8d8b0; margin: 28px 0 12px; border-left: 3px solid #2e7d5e; padding-left: 10px; }
+  h3 { font-size: 0.83rem; font-weight: 700; color: #bbc; margin: 16px 0 7px; text-transform: uppercase; letter-spacing: 0.07em; }
+  p { font-size: 0.86rem; color: #aab; margin-bottom: 9px; }
+  strong { color: #dde; }
+  ul, ol { padding-left: 20px; margin-bottom: 10px; }
+  li { font-size: 0.86rem; color: #aab; margin-bottom: 4px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tab { padding: 7px 18px; border-radius: 7px; border: 1px solid #252d38; background: #161b22;
+         color: #778; font-size: 0.8rem; cursor: pointer; transition: all 0.15s; user-select: none; }
+  .tab:hover:not(.active) { border-color: #3a4450; color: #aab; }
+  .tab.active { background: #2e7d5e; border-color: #2e7d5e; color: #fff; font-weight: 600; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* LAYOUT */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  @media(max-width:760px){ .grid2,.grid3{ grid-template-columns:1fr; } }
+
+  /* CARDS */
+  .card { background: #161b22; border: 1px solid #252d38; border-radius: 10px; padding: 16px 18px; }
+  .card.full { grid-column: 1 / -1; }
+  .card-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #445; margin-bottom: 10px; }
+
+  canvas { max-height: 220px; }
+
+  /* PHASES */
+  .phase { background: #161b22; border: 1px solid #252d38; border-radius: 10px;
+           padding: 18px 20px; margin-bottom: 14px; position: relative; }
+  .phase-number { position: absolute; top: -13px; left: 16px; background: #2e7d5e;
+                  color: #fff; font-size: 0.7rem; font-weight: 700; padding: 3px 11px;
+                  border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .phase-title { font-size: 0.95rem; font-weight: 700; color: #fff; margin: 5px 0 3px; }
+  .phase-months { font-size: 0.76rem; color: #6fcf8a; font-weight: 600; margin-bottom: 10px; }
+  .phase-climate { background: #0d1014; border-radius: 6px; padding: 9px 13px;
+                   margin: 10px 0; font-size: 0.79rem; color: #778; }
+  .phase-climate strong { color: #99a; }
+
+  /* STEPS */
+  .step { display: flex; gap: 12px; margin-bottom: 10px; }
+  .step-num { flex-shrink: 0; width: 24px; height: 24px; background: #1e3d28;
+              border-radius: 50%; display: flex; align-items: center; justify-content: center;
+              font-size: 0.7rem; font-weight: 700; color: #6fcf8a; margin-top: 2px; }
+  .step-body p { margin: 0; }
+
+  /* ALERTS */
+  .warn { background: #221610; border: 1px solid #3d2a14; border-left: 3px solid #c0784a;
+          border-radius: 7px; padding: 11px 15px; margin: 10px 0; font-size: 0.82rem; color: #c8986a; }
+  .warn strong { color: #ddb090; }
+  .tip  { background: #101620; border: 1px solid #1a2a3d; border-left: 3px solid #4a8ac0;
+          border-radius: 7px; padding: 11px 15px; margin: 10px 0; font-size: 0.82rem; color: #7aa8d0; }
+  .tip strong { color: #90bce0; }
+
+  /* TABLES */
+  table { width: 100%; border-collapse: collapse; font-size: 0.81rem; margin: 8px 0 14px; }
+  th { background: #1a2030; color: #667; text-align: left; padding: 7px 10px;
+       font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 6px 10px; border-bottom: 1px solid #1a2030; color: #aab; vertical-align: top; }
+  tr:hover td { background: #161c26; }
+
+  /* PILLS */
+  .pill { display: inline-block; padding: 1px 9px; border-radius: 20px; font-size: 0.69rem; font-weight: 700; }
+  .green  { background:#1e3d28; color:#6fcf8a; }
+  .orange { background:#3d2a14; color:#e0a060; }
+  .red    { background:#3d1414; color:#e06060; }
+  .blue   { background:#141e3d; color:#6090e0; }
+
+  /* RECIPE BOX */
+  .recipe-box { background: #0d1014; border: 1px solid #1e2530; border-radius: 8px;
+                padding: 14px 18px; margin: 10px 0; font-size: 0.84rem; }
+  .recipe-box h4 { color: #a8d8b0; font-size: 0.78rem; margin-bottom: 7px;
+                   text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* CYCLE TABLE */
+  .cycle-wrap { overflow-x: auto; margin: 14px 0 20px; }
+  .cycle-table { border-collapse: separate; border-spacing: 3px; min-width: 700px; }
+  .cycle-table th { font-size: 0.63rem; color: #445; text-align: center; padding: 4px 2px;
+                    text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; white-space:nowrap; }
+  .cycle-table td { border-radius: 5px; padding: 6px 3px; text-align: center;
+                    font-size: 0.64rem; font-weight: 700; line-height: 1.3; vertical-align: middle; }
+  .cy-label { font-size: 0.7rem; font-weight: 700; color: #a8d8b0; white-space: nowrap;
+              padding-right: 8px !important; text-align: right !important;
+              background: transparent !important; border-radius: 0 !important; }
+  .cy-group { font-size: 0.68rem; font-weight: 700; color: #445; text-align: right !important;
+              padding: 10px 8px 2px !important; background: transparent !important;
+              border-radius: 0 !important; border-top: 1px solid #1e2530 !important; }
+
+  hr { border: none; border-top: 1px solid #1a2030; margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #1a2030;">
+  <a href="/" style="color:#6fcf8a;font-size:0.82rem;text-decoration:none;white-space:nowrap;">← wecreatethis.com</a>
+  <span style="color:#334;font-size:0.82rem;">Rondevlei / Sedgefield</span>
+</div>
+
+<h1>Protea Propagation from Cuttings — Sedgefield / Rondevlei</h1>
+<p class="subtitle">Practical guide matched to 8-year local climate data (2018–2025) · Sand Fynbos Biome · -34.02°S 22.81°E</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="show('overview',this)">Overview</div>
+  <div class="tab" onclick="show('propagation',this)">Propagation</div>
+  <div class="tab" onclick="show('planting',this)">Field Planting</div>
+  <div class="tab" onclick="show('harvest',this)">Harvest</div>
+  <div class="tab" onclick="show('calendar',this)">Monthly Calendar</div>
+  <div class="tab" onclick="show('climate',this)">Climate Data</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB: OVERVIEW -->
+<!-- ============================================================ -->
+<div id="overview" class="section active">
+
+  <h2>The Full Cycle at a Glance</h2>
+  <p>From taking a cutting to a plant in the ground takes <strong>9–14 months</strong>. Once the farm is running, propagation, growing on, and harvesting all happen simultaneously every year. The grid below shows each activity stream month by month, by year of the operation.</p>
+
+  <div class="cycle-wrap">
+    <table class="cycle-table" id="cycleTable"></table>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Cycle summary</div>
+      <table>
+        <tr><th>Phase</th><th>Duration</th><th>When</th></tr>
+        <tr><td>Take cuttings</td><td>1 day</td><td><span class="pill green">Feb–Mar</span> or <span class="pill blue">Aug–Sep</span></td></tr>
+        <tr><td>Callus formation</td><td>3–5 weeks</td><td>follows cutting</td></tr>
+        <tr><td>Root development</td><td>8–16 weeks total</td><td>follows callus</td></tr>
+        <tr><td>Pot on into bag</td><td>1 day</td><td>when roots visible both sides</td></tr>
+        <tr><td>Grow on in nursery</td><td>4–8 months</td><td>until 25–35cm tall</td></tr>
+        <tr><td>Harden off</td><td>3–4 weeks</td><td>before field planting</td></tr>
+        <tr><td>Field planting</td><td>1 day</td><td><span class="pill green">Mar–Apr</span> primary window</td></tr>
+        <tr><td>Establishment</td><td>6–18 months</td><td>first 2 summers critical</td></tr>
+        <tr><td>First harvest</td><td>year 2–3 onwards</td><td><span class="pill green">Jun–Aug</span> peak quality</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Sedgefield climate — temperature by month</div>
+      <canvas id="climateRef"></canvas>
+    </div>
+  </div>
+
+  <h2>Two Propagation Cycles</h2>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Cycle A — Autumn cuttings (recommended)</div>
+      <table>
+        <tr><th>Month</th><th>Action</th></tr>
+        <tr><td>Feb–Mar</td><td>Take cuttings from semi-hardwood spring shoots</td></tr>
+        <tr><td>Mar–Jun</td><td>Root in propagation bed (8–16 weeks)</td></tr>
+        <tr><td>May–Jul</td><td>Pot on into nursery bags</td></tr>
+        <tr><td>Jul–Jan</td><td>Grow on in bags (4–8 months)</td></tr>
+        <tr><td>Feb (yr 2)</td><td>Harden off</td></tr>
+        <tr><td>Mar–Apr (yr 2)</td><td>Field plant — 12–14 months after cutting</td></tr>
+      </table>
+      <p style="margin-top:8px"><strong>Best for:</strong> all species. Highest success rate, longest establishment window before first summer.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Cycle B — Spring cuttings (faster)</div>
+      <table>
+        <tr><th>Month</th><th>Action</th></tr>
+        <tr><td>Aug–Sep</td><td>Take cuttings from previous season's semi-hardwood</td></tr>
+        <tr><td>Sep–Dec</td><td>Root in propagation bed (8–16 weeks)</td></tr>
+        <tr><td>Nov–Jan</td><td>Pot on into nursery bags</td></tr>
+        <tr><td>Jan–Feb</td><td>Grow on in bags (summer — demands more care)</td></tr>
+        <tr><td>Feb</td><td>Harden off</td></tr>
+        <tr><td>Mar–Apr</td><td>Field plant — 7–8 months after cutting</td></tr>
+      </table>
+      <p style="margin-top:8px"><strong>Best for:</strong> fast hardy species (P. repens, P. neriifolia). Not ideal for ericas or restios.</p>
+    </div>
+  </div>
+
+  <h2>Species at a Glance</h2>
+  <div class="grid3">
+    <div class="card">
+      <div class="card-title">Protea repens (Suikerbos)</div>
+      <p>Most forgiving. Roots in 8–10 weeks. Tolerates slightly heavier soils. Flowers May–Oct, peak Jun–Aug. Good first species.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Protea cynaroides (King)</div>
+      <p>Slowest (12–16 weeks rooting, 12+ months in bags). Cut Feb only. Highest cut-flower value. Frost tolerant once established. Flowers Nov–Mar.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Leucadendron</div>
+      <p>Easiest. Roots 6–10 weeks. Take cuttings Dec–Mar. Male and female separate — cut from known females for foliage. Flowers Apr–Sep.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Leucospermum (Pincushion)</div>
+      <p>Cuttings Mar–Apr after flowering growth hardens. Needs bottom heat. Sensitive to overwatering. Flowers Aug–Nov, peak Sep–Oct.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Erica species</div>
+      <p>Most difficult. Small cuttings (5–8cm). April only. Pure sand medium. High failure rate early on. Field plant April not March.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Restios (Cape Reed)</div>
+      <p>Not from cuttings — divide clumps or grow from seed in March–April. Fastest establisher. Best groundcover and mulch source for the Fukuoka system.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB: PROPAGATION -->
+<!-- ============================================================ -->
+<div id="propagation" class="section">
+
+  <!-- PHASE 1 -->
+  <div class="phase">
+    <div class="phase-number">Phase 1</div>
+    <div class="phase-title">Taking Cuttings</div>
+    <div class="phase-months">Primary: February–March &nbsp;|&nbsp; Secondary: August–September</div>
+
+    <p>Proteas are propagated from <strong>semi-hardwood cuttings</strong> — the current season's new growth that has firmed up over several months but is not yet old woody stem. Getting the maturity right is the single most important factor.</p>
+
+    <div class="phase-climate">
+      <strong>Feb–Mar at Sedgefield:</strong> avg high 23.5–24.5°C, avg low 16–17°C, RH 94%. Warm and humid — good for parent plant vigour and cutting survival. Take cuttings early morning when humidity is highest.<br><br>
+      <strong>Aug–Sep:</strong> avg high 17.9–18.5°C, avg low 8–9.9°C, RH 88–91%. Cooler and drier. Cuttings root more slowly but are less prone to fungal rot.
+    </div>
+
+    <h3>Selecting the right shoot</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body"><p>Look for shoots from <strong>the current season's growth</strong> that pushed out in spring (Sep–Nov) and has spent 3–5 months firming up. By Feb–Mar these are the right maturity.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><p><strong>Bend test:</strong> stem should bend fairly easily but not flop. It should not bend back on itself. Snaps cleanly and is slightly springy — that is semi-hardwood. Floppy tips fail. Old woody stems fail.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><p>Best cuttings come from <strong>side shoots just below a forming bud or old flower head</strong> — highest natural rooting hormone concentration.</p></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><p>Cut <strong>10–15cm long</strong>, cleanly below a node with sharp sterilised secateurs. Take cuttings <strong>early morning</strong> — never in afternoon heat.</p></div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body"><p>Place cut ends immediately into clean water. Process within a few hours. If storing overnight, wrap in damp cloth and refrigerate.</p></div></div>
+
+    <h3>Preparing the cutting</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body"><p>Strip leaves from the bottom <strong>two-thirds of stem</strong>. Leave 4–6 leaves at tip. In Feb heat, reduce to 3–4. In Aug, 5–6 is fine.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><p><strong>Wound the base:</strong> two shallow vertical cuts opposite each other in the bark at the bottom 2cm. Exposes cambium and speeds rooting. On thin stems, light sanding works.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><p>Dip bottom 2cm into <strong>IBA rooting hormone at 4000 ppm</strong> for 5 seconds (liquid dip), or gel/powder rated for semi-hardwood. Do not skip — proteas are slow rooters and hormone treatment significantly improves success.</p></div></div>
+
+    <div class="warn"><strong>Do not</strong> take cuttings from stressed, flowering, or drought-stressed plants. Fertilise mother plants with low-phosphorus feed 6 weeks before cutting to improve shoot vigour.</div>
+  </div>
+
+  <!-- PHASE 2 -->
+  <div class="phase">
+    <div class="phase-number">Phase 2</div>
+    <div class="phase-title">Rooting in the Propagation Bed</div>
+    <div class="phase-months">Duration: 8–16 weeks from cutting to rooted plant</div>
+
+    <p>The cutting has no roots and cannot replace water lost through its leaves. Keep humidity high enough that transpiration stays low, while keeping the medium airy enough to prevent fungal rot.</p>
+
+    <div class="phase-climate">
+      <strong>Sedgefield advantage:</strong> morning RH of 88–95% year-round means you do not need an elaborate enclosed propagator. The main risk is warm afternoons (22–24°C in Feb–Mar) drying cuttings fast if exposed.
+    </div>
+
+    <h3>Rooting medium</h3>
+    <div class="recipe-box">
+      <h4>Mix recipe</h4>
+      <ul>
+        <li><strong>2 parts coarse washed river sand</strong> (not beach sand — salt kills proteas)</li>
+        <li><strong>1 part peat moss</strong> or well-composted pine bark</li>
+        <li>Optional: 10% perlite to improve drainage further</li>
+      </ul>
+      <p style="margin-top:7px">Target pH 5.0–5.5. No compost, fertiliser, or nutrient-rich material — protea roots are mycorrhizal and rich medium suppresses root development.</p>
+    </div>
+
+    <h3>Container</h3>
+    <ul>
+      <li><strong>Small clear plastic bags (500ml–1L)</strong> with air holes punched in sides, or 6–8cm pots</li>
+      <li>Clear bags let you see roots forming without disturbing the cutting</li>
+      <li>Fill with moist (not wet) rooting mix — clumps when squeezed but does not drip</li>
+      <li>Insert cutting to one-third of its length. Firm gently around base.</li>
+    </ul>
+
+    <h3>Shade tunnel setup</h3>
+    <ul>
+      <li>Simple tunnel frame — PVC pipe or bent rebar, 80–120cm tall</li>
+      <li><strong>50% shade cloth</strong> — essential in Feb–Mar. 30% adequate in winter</li>
+      <li>Orient opening south or southeast to avoid direct afternoon sun</li>
+      <li>Optional: clear plastic over shade cloth at night to trap humidity, open in morning for airflow</li>
+      <li><strong>Bottom heat mat set to 22–24°C</strong> — root temp matters more than air temp. Warm roots, cooler leaves is optimal</li>
+    </ul>
+
+    <h3>Watering</h3>
+    <ul>
+      <li>Mist leaves <strong>twice daily in summer</strong> (morning and late afternoon), once daily in winter</li>
+      <li>Check medium moisture every 3–4 days — barely damp is correct. Bottom-water by sitting pots in shallow tray for 10 minutes if dry</li>
+      <li>Never let cuttings sit in standing water</li>
+      <li>Use <strong>rainwater if possible</strong> — tap water may have chlorine and high pH. Let tap water stand 24hrs in open container first</li>
+    </ul>
+
+    <h3>Week by week</h3>
+    <table>
+      <tr><th>Weeks</th><th>What you see</th><th>Action</th></tr>
+      <tr><td>1–2</td><td>Unchanged. May wilt slightly on hot afternoons — normal if recovers by morning.</td><td>Mist. Do not disturb.</td></tr>
+      <tr><td>3–4</td><td>Leaves firm up, stop wilting. Callus forming at base.</td><td>Good sign. Keep going.</td></tr>
+      <tr><td>5–7</td><td>Tiny new leaf may appear. White callus tissue visible at base in clear bags.</td><td>Do not pot on — callus is not roots.</td></tr>
+      <tr><td>8–10</td><td>White root tips touching sides of clear bag.</td><td>Wait until roots on BOTH sides before potting on.</td></tr>
+      <tr><td>10–16</td><td>Roots well developed. Plant actively growing new leaves.</td><td>Ready to pot on.</td></tr>
+    </table>
+
+    <div class="warn"><strong>30–50% failure rate on first attempts is normal.</strong> Causes: cuttings too soft, fungal rot from overwatering, too many leaves left on, no bottom heat in winter. Failure rates drop to 10–20% by year two.</div>
+    <div class="tip"><strong>Botrytis (grey mould):</strong> Sedgefield's high summer humidity makes this your biggest risk. Remove affected cuttings immediately, increase airflow, dust sulphur powder on medium surface. Never use overhead sprinklers — mist only.</div>
+  </div>
+
+  <!-- PHASE 3 -->
+  <div class="phase">
+    <div class="phase-number">Phase 3</div>
+    <div class="phase-title">Potting On into Nursery Bags</div>
+    <div class="phase-months">When roots visible on both sides — typically month 3 to 4</div>
+
+    <p>Once roots are well developed the cutting becomes a plant and needs a proper growing bag — still nutrient-poor, still very free-draining.</p>
+
+    <h3>Bag setup</h3>
+    <ul>
+      <li><strong>Black plastic nursery bags, 2–3 litre</strong> (roughly 15cm wide, 20cm tall). Black prevents algae on roots and insulates against temperature swings</li>
+      <li>6–8 drainage holes in bottom and lower sides</li>
+      <li>Raise bags off ground on slatted bench or bricks for drainage and airflow</li>
+    </ul>
+
+    <div class="recipe-box">
+      <h4>Grow-on medium (different from rooting mix)</h4>
+      <ul>
+        <li><strong>2 parts coarse river sand</strong></li>
+        <li><strong>2 parts composted pine bark</strong> (well composted, pH neutral — not fresh)</li>
+        <li><strong>1 part perlite</strong></li>
+      </ul>
+      <p style="margin-top:7px">Still no fertiliser. Proteas form proteoid cluster roots that extract phosphorus efficiently from poor soil. Fertiliser destroys these roots. Wait until 15cm+ and actively growing, then only dilute seaweed or low-phosphorus liquid feed.</p>
+    </div>
+
+    <h3>Potting on process</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body"><p>Water the rooted cutting the day before so the root ball holds together.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><p>Fill bag one-third with grow-on mix. Tear rooting bag away carefully. Place root ball, backfill gently. Stem base at same depth as before — do not bury deeper.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><p>Water in gently. Place in 50% shade for 2 weeks while plant adjusts, then move to morning sun only position.</p></div></div>
+
+    <h3>Growing on</h3>
+    <p>Target: <strong>25–35cm height</strong> before field planting. Takes <strong>4–8 months</strong> at Sedgefield.</p>
+    <div class="phase-climate">
+      <strong>Watering:</strong> when top 2–3cm feels dry. Summer: every 2 days. Winter: every 4–6 days. Always morning. Never afternoon in summer — wet bags in hot sun causes phytophthora root rot.
+    </div>
+    <ul>
+      <li>Keep under <strong>30–40% shade cloth</strong> — cut harshest midday sun but still bright</li>
+      <li>Space bags so leaves do not touch — airflow prevents disease</li>
+      <li>Pinch growing tip once at 15cm to encourage branching</li>
+      <li>Watch for: few yellow older leaves (normal), complete yellowing (overwatering or wrong pH), black stem at base (phytophthora — remove immediately)</li>
+    </ul>
+  </div>
+
+  <!-- PHASE 4 -->
+  <div class="phase">
+    <div class="phase-number">Phase 4</div>
+    <div class="phase-title">Hardening Off</div>
+    <div class="phase-months">3–4 weeks before field planting — start late February for March planting</div>
+
+    <p>Plants grown under shade cloth are not ready for direct field conditions. Harden off gradually over 3–4 weeks.</p>
+
+    <div class="step"><div class="step-num">1</div><div class="step-body"><p><strong>Week 1:</strong> Move from 40% to 20% shade. Water normally. If leaves droop at noon, move back to more shade for a few more days.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><p><strong>Week 2:</strong> Full morning sun, shade cloth for afternoon only. Reduce watering frequency by 20%.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><p><strong>Weeks 3–4:</strong> Remove shade cloth entirely. Water only when bags feel dry at 3cm depth. Plants should not wilt even in afternoon sun.</p></div></div>
+
+    <div class="tip"><strong>Field-ready signs:</strong> firm stems in moderate wind, dark green leaves, visible root structure at drainage holes, 25–35cm height, no stress or disease.</div>
+  </div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB: FIELD PLANTING -->
+<!-- ============================================================ -->
+<div id="planting" class="section">
+
+  <div class="phase">
+    <div class="phase-number">Phase 5</div>
+    <div class="phase-title">Field Planting</div>
+    <div class="phase-months">Primary: March–April &nbsp;|&nbsp; Secondary: September (wet years only)</div>
+
+    <div class="phase-climate">
+      <strong>Why March–April:</strong> ET0 drops from 4.6mm/day in Jan to 2.5mm/day in April. Temps cool from 24°C to 21°C. Rain is reliable — March averages 48mm, April 51mm across 8 years with no year below 24mm in March. The plant gets 5–6 months of cool, moist establishment before its first summer stress.
+    </div>
+
+    <h3>Site preparation (January–February)</h3>
+    <ul>
+      <li>Minimal preparation is correct for sand fynbos — do not add compost or topsoil</li>
+      <li>Clear alien vegetation in 60cm radius per plant. Leave native fynbos groundcover in place</li>
+      <li>If heavily compacted, loosen a 40cm diameter, 30cm deep hole with a fork only — do not fill with amendments</li>
+      <li>Lay <strong>10–15cm deep mulch</strong> of dry fynbos material (restio straw, leucadendron prunings, leaf litter) in 50cm radius around each planting spot</li>
+    </ul>
+
+    <h3>Planting day</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body"><p>Choose a day after rain — soil moist 5cm down. Never plant into bone-dry soil.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><p>Soak nursery bag in water 10–15 minutes immediately before planting. Root ball should be thoroughly wet.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><p>Dig a hole the same depth as the root ball, 20% wider. No deeper — planting too deep causes collar rot.</p></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><p>Remove bag keeping root ball intact. Gently tease any circling roots outward — do not break them.</p></div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body"><p>Place plant in hole. Backfill with the same sand — no amendments. Firm gently. Stem base (soil level in bag) sits exactly at ground level — not below.</p></div></div>
+    <div class="step"><div class="step-num">6</div><div class="step-body"><p>Water in deeply with 5–10 litres. Mulch around plant (not touching stem) to 10cm depth.</p></div></div>
+
+    <h3>Establishment watering — first 2 summers</h3>
+    <table>
+      <tr><th>Period</th><th>Watering</th><th>Notes</th></tr>
+      <tr><td>Weeks 1–4 after planting</td><td>Every 3–4 days, 5L per plant</td><td>Critical window. Do not skip.</td></tr>
+      <tr><td>Month 2–3 (May–Jun)</td><td>Weekly if no rain</td><td>Winter approaching — less stress</td></tr>
+      <tr><td>Winter Jun–Aug</td><td>Only if dry spell exceeds 14 days</td><td>Sedgefield averages 40–55mm in winter — usually adequate</td></tr>
+      <tr><td>First summer (Dec–Feb)</td><td>Every 7–10 days if no rain in 10+ days</td><td>Highest risk period. Deep watering beats frequent light watering.</td></tr>
+      <tr><td>After 18 months</td><td>None needed in normal years</td><td>Deep roots access subsoil moisture. Mulch handles the rest.</td></tr>
+    </table>
+
+    <div class="warn"><strong>The first summer (Dec–Feb) after planting is when most losses happen.</strong> Sedgefield data shows dry spells of 13–22 days every year in this window. Plant in March so the plant has 9 months of root establishment before that first summer. Plants with deep roots by December survive. Plants with 3 months of roots do not.</div>
+
+    <div class="tip"><strong>Mulch is your most powerful tool.</strong> A 10–15cm layer of dry fynbos material cuts surface evaporation by 60–70% and eliminates irrigation in most years once plants are established. In a Fukuoka system this replaces all other water management.</div>
+  </div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB: HARVEST -->
+<!-- ============================================================ -->
+<div id="harvest" class="section">
+
+  <div class="phase">
+    <div class="phase-number">Phase 6</div>
+    <div class="phase-title">Harvesting Cut Flowers</div>
+    <div class="phase-months">Year 2–3 onwards. Peak quality: June–August.</div>
+
+    <p>Proteas are among the best cut flowers in the world — long vase life, dramatic form, and they dry beautifully. Getting the harvest right comes down to <strong>picking at the correct bract stage</strong>, cutting cleanly, and conditioning immediately.</p>
+
+    <h3>Flowering seasons by species at Sedgefield</h3>
+    <p>Sedgefield sits between the winter-rainfall Western Cape and summer-rainfall Eastern Cape, giving an extended flowering window across species.</p>
+    <table>
+      <tr><th>Species</th><th>Flowering months</th><th>Peak</th><th>Cut flower value</th></tr>
+      <tr><td><strong>Protea repens</strong> (Suikerbos)</td><td>May–October</td><td>Jun–Aug</td><td><span class="pill green">High</span> — nectar-heavy, great structure</td></tr>
+      <tr><td><strong>Protea cynaroides</strong> (King)</td><td>Year-round, ecotype-dependent</td><td>Nov–Mar (most plants)</td><td><span class="pill green">Very high</span> — premium export flower</td></tr>
+      <tr><td><strong>Protea neriifolia</strong></td><td>Feb–Jul (western ecotypes)</td><td>Apr–Jun</td><td><span class="pill green">High</span> — long stems, good keeping</td></tr>
+      <tr><td><strong>Leucadendron</strong></td><td>Apr–Sep (foliage year-round)</td><td>Jun–Aug</td><td><span class="pill orange">Medium</span> — foliage more valuable than flower</td></tr>
+      <tr><td><strong>Leucospermum</strong> (Pincushion)</td><td>Aug–Nov</td><td>Sep–Oct</td><td><span class="pill green">High</span> — striking form, long vase life</td></tr>
+    </table>
+
+    <div class="phase-climate">
+      <strong>Sedgefield harvest context:</strong> June–August averages 18–20°C high with 86–89% RH. Cool, humid conditions are ideal — best vase life of the year. Summer flowers (Dec–Feb) have shorter vase life due to heat stress. Winter ambient temps (Jun–Aug nights at 8–10°C) naturally condition cut flowers overnight with no refrigeration needed.
+    </div>
+
+    <h3>When to cut — the bract stage</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body"><p><strong>Too early (hard-tip):</strong> bracts tightly closed, firm, pointed. Flowers cut here will not open. Do not cut.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><p><strong>Correct (soft-tip):</strong> outer bracts have begun to loosen and separate slightly but still cohere as a unit. Bract tips have softened. Inner florets not yet visible. A few insects beginning to investigate — a good field indicator. <strong>Cut now.</strong></p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><p><strong>Too late (open):</strong> bracts fully splayed, inner florets visible and shedding pollen. Vase life is halved. Still usable but will not last.</p></div></div>
+
+    <h3>How to cut</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body"><p>Cut in <strong>early morning</strong> — stems fully turgid, temps lowest. Never cut in afternoon at Sedgefield's summer highs of 24°C+.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><p><strong>Sharp, clean secateurs or knife.</strong> Blunt cuts crush vascular tissue and reduce water uptake. Sterilise with methylated spirits or dilute bleach between plants.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><p>Cut at <strong>45-degree angle</strong>, leaving at least <strong>2–3 nodes below the cut</strong> on the plant. This allows re-shooting and next season's flowers. Never cut into old grey wood.</p></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><p><strong>40–60cm stem length minimum</strong> for commercial use. Short-stemmed proteas lose most of their market value.</p></div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body"><p>Place stems immediately into clean water in shade. Even a few minutes exposed to sun or wind desiccates the cut end severely.</p></div></div>
+    <div class="step"><div class="step-num">6</div><div class="step-body"><p>Strip all leaves from the bottom <strong>20–25cm of stem</strong> — submerged leaves rot fast, foul water, and kill the flower within days.</p></div></div>
+
+    <h3>Post-harvest conditioning</h3>
+    <p>Do this within 1–2 hours of cutting. This step determines 1 week versus 3 weeks of vase life.</p>
+    <div class="step"><div class="step-num">1</div><div class="step-body"><p><strong>Re-cut under water:</strong> submerge bottom 5cm in a bucket, make a fresh 45-degree cut. Prevents air entering vascular tissue.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><p>Stand in <strong>clean water with 1 tablespoon bleach per litre</strong>. Controls bacteria that block vascular tissue. Or use commercial flower food at correct dilution.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><p>Place in coolest available space for minimum 4 hours, ideally overnight. Target 8–12°C. In Jun–Aug at Sedgefield, a cool shed or garage is naturally perfect.</p></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><p>Storage beyond 2–3 days: refrigerate at <strong>4–6°C</strong>. Do not store near ethylene-producing fruit (bananas, apples, avocados) — ethylene accelerates ageing rapidly.</p></div></div>
+
+    <h3>Leaf blackening</h3>
+    <p>The main post-harvest problem. Caused by oxidation of phenolic compounds, accelerated by warmth, water stress, and ethylene.</p>
+    <ul>
+      <li>Harvest at soft-tip — over-mature flowers blacken faster</li>
+      <li>Condition immediately — any water stress triggers blackening</li>
+      <li>Keep below 10°C — blackening slows dramatically in cool temps</li>
+      <li>Remove blackened leaves as they appear — they accelerate neighbouring leaf blackening</li>
+      <li>Do not mist leaves after harvest — wet leaves in warm conditions blacken fast</li>
+      <li>If no refrigeration: harvest in Jun–Aug when Sedgefield's ambient temps naturally slow the process</li>
+    </ul>
+
+    <h3>End use</h3>
+    <table>
+      <tr><th>Use</th><th>Duration</th><th>Notes</th></tr>
+      <tr><td>Fresh vase / market</td><td>14–21 days</td><td>Change water every 2 days. Re-cut stems each time. Cool, away from sun.</td></tr>
+      <tr><td>Dried hung</td><td>Months to years</td><td>Let fully open in vase, then hang upside-down in dim, dry, ventilated space. Sedgefield's summer RH (94%) is too high — dry indoors with airflow.</td></tr>
+      <tr><td>Dried on plant</td><td>Months</td><td>Leave past full bloom. Cone dries naturally and releases seed — good for Fukuoka natural regeneration. The plant does the work.</td></tr>
+    </table>
+
+    <div class="tip"><strong>Harvesting is pruning.</strong> Regular cutting stimulates branching and prevents the plant becoming leggy. A harvested protea produces more stems the following season than one left unharvested. In a Fukuoka system, harvesting is your primary maintenance tool.</div>
+    <div class="warn"><strong>Do not harvest from plants under 2 years old in the field.</strong> Taking flowers before the root system is established redirects energy and significantly slows the plant. Resist until the plant's second or third spring.</div>
+  </div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB: MONTHLY CALENDAR -->
+<!-- ============================================================ -->
+<div id="calendar" class="section">
+
+  <h2>Month-by-Month Operations</h2>
+  <div class="card full">
+    <table>
+      <tr>
+        <th>Month</th>
+        <th>High / Low</th>
+        <th>Propagation</th>
+        <th>Nursery bags</th>
+        <th>Field planting</th>
+        <th>Harvest</th>
+      </tr>
+      <tr>
+        <td><strong>Jan</strong></td><td>24.5 / 17°C</td>
+        <td>No cuttings. Prune mother plants lightly after harvest to stimulate semi-hardwood growth for Feb–Mar.</td>
+        <td>Water every 2 days. Afternoon misting on hot days. 50% shade.</td>
+        <td>No planting. Mulch maintenance.</td>
+        <td><span class="pill orange">P. cynaroides</span> peak. Cut early morning. Condition immediately — heat reduces vase life.</td>
+      </tr>
+      <tr>
+        <td><strong>Feb</strong></td><td>24.5 / 16.7°C</td>
+        <td><span class="pill green">Primary cutting window opens.</span> Oct–Nov growth now semi-hardwood. Early morning only.</td>
+        <td>Pot on Aug–Sep rooted cuttings. Begin hardening off for March planting.</td>
+        <td>Prepare sites: clear aliens, lay mulch. No planting yet.</td>
+        <td><span class="pill orange">P. cynaroides, P. neriifolia</span> starting. Morning harvest only. Strip lower leaves immediately.</td>
+      </tr>
+      <tr>
+        <td><strong>Mar</strong></td><td>23.5 / 16.1°C</td>
+        <td><span class="pill green">Continue cuttings through mid-March.</span> Into rooting medium, shade tunnel, bottom heat. Mist twice daily.</td>
+        <td>Complete hardening off. Field-ready: 25cm+, firm stems, roots at drainage holes.</td>
+        <td><span class="pill green">Primary planting.</span> After first 10mm+ rain, target weeks 2–3.</td>
+        <td><span class="pill green">P. neriifolia</span> good quality. Temps cooling — better vase life than Jan–Feb.</td>
+      </tr>
+      <tr>
+        <td><strong>Apr</strong></td><td>21.2 / 13°C</td>
+        <td>Cuttings weeks 4–8. Callus forming. Watch for botrytis as nights cool.</td>
+        <td>Pot on Feb–Mar rooted cuttings into 2–3L bags.</td>
+        <td><span class="pill green">Continue planting.</span> Good for ericas. Soil cooling improves establishment.</td>
+        <td><span class="pill green">P. neriifolia peak. P. repens starting.</span> Excellent quality — cool nights, good humidity.</td>
+      </tr>
+      <tr>
+        <td><strong>May</strong></td><td>20.4 / 10.9°C</td>
+        <td>Cuttings weeks 8–12 — roots developing. Reduce misting to once daily.</td>
+        <td>Grow on bags. Pinch tips at 15cm. Water every 4–5 days.</td>
+        <td><span class="pill orange">Last reliable window.</span> Hardy proteas only. Finish by end of May.</td>
+        <td><span class="pill green">P. repens, P. neriifolia.</span> Good vase life. No refrigeration needed overnight.</td>
+      </tr>
+      <tr>
+        <td><strong>Jun</strong></td><td>19.5 / 9.8°C</td>
+        <td>Cuttings rooting fully. Check sides of clear bags. Pot on earliest-rooted.</td>
+        <td>Slow growth period. Water every 5–6 days. Protect from cold nights.</td>
+        <td>No planting. Maintain mulch. Water if dry spell exceeds 14 days.</td>
+        <td><span class="pill green">P. repens PEAK.</span> Best vase life of year — natural cool conditioning. Leucadendron foliage also excellent.</td>
+      </tr>
+      <tr>
+        <td><strong>Jul</strong></td><td>18.3 / 8.3°C</td>
+        <td>No new cuttings. Protect rooting beds below 4°C with frost cloth. Record low 1°C.</td>
+        <td>Minimum watering. Protect plants below 10cm from frost.</td>
+        <td>No planting. Coldest month — protect plants under 6 months old.</td>
+        <td><span class="pill green">P. repens PEAK.</span> Longest-lasting flowers of the year. Harvest freely. Ambient temp near-perfect for storage. Leucadendron excellent.</td>
+      </tr>
+      <tr>
+        <td><strong>Aug</strong></td><td>17.9 / 8°C</td>
+        <td><span class="pill blue">Secondary cutting window — late August.</span> Take cuttings from last year's semi-hardwood.</td>
+        <td>Growth picking up as days lengthen. Begin hardening off Sep–Oct plants.</td>
+        <td>Prepare beds. Check mulch on all stock.</td>
+        <td><span class="pill green">P. repens finishing. Leucospermum starting.</span> Harvest after frost lifts mid-morning on cold nights.</td>
+      </tr>
+      <tr>
+        <td><strong>Sep</strong></td><td>18.5 / 9.9°C</td>
+        <td>Aug cuttings weeks 1–4. Mist once daily, twice on warm days. Bottom heat 22–24°C.</td>
+        <td>Pot on Jun-rooted cuttings. Move bags to better light.</td>
+        <td><span class="pill orange">Container only if Sep rain exceeds 50mm.</span> Sep varies 31–148mm — do not plan on it.</td>
+        <td><span class="pill green">Leucospermum PEAK. P. cynaroides summer ecotypes starting.</span> Return to morning-only harvesting.</td>
+      </tr>
+      <tr>
+        <td><strong>Oct</strong></td><td>20.4 / 12.2°C</td>
+        <td>Aug cuttings weeks 6–10. Callus to early roots. Rooting speeds up in spring warmth.</td>
+        <td>Growth accelerating. Increase watering. Pot on remaining rooting-bag plants.</td>
+        <td><span class="pill orange">Conditional</span> — container stock only if soil consistently moist.</td>
+        <td><span class="pill orange">Leucospermum finishing. P. cynaroides summer ecotypes.</span> Temps rising — harvest early morning, refrigerate or sell same day.</td>
+      </tr>
+      <tr>
+        <td><strong>Nov</strong></td><td>21.6 / 13.5°C</td>
+        <td>Aug cuttings rooted. Pot on. New tip growth on cuttings = success signal.</td>
+        <td>Active growth. Water every 2–3 days. 50% shade back on as sun intensifies.</td>
+        <td>No planting after mid-November. ET0 rising sharply.</td>
+        <td><span class="pill orange">P. cynaroides summer types.</span> Heat building — harvest pre-dawn if possible. Condition at 4–6°C immediately.</td>
+      </tr>
+      <tr>
+        <td><strong>Dec</strong></td><td>23 / 15.3°C</td>
+        <td>No cuttings. Mother plants in active growth — light pruning after harvest to set up Feb material.</td>
+        <td>Peak summer. Water every 2 days. Max shade. Raise bags off hot ground.</td>
+        <td>No planting. Water young field plants. Top up mulch.</td>
+        <td><span class="pill orange">P. cynaroides only.</span> Hottest month (avg 23°C). Harvest pre-dawn, condition at 4°C immediately. Shorter vase life — price accordingly or dry instead of fresh-sell.</td>
+      </tr>
+    </table>
+  </div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB: CLIMATE DATA -->
+<!-- ============================================================ -->
+<div id="climate" class="section">
+
+  <h2>Climate Conditions at Each Phase</h2>
+  <div class="grid2">
+    <div class="card full">
+      <div class="card-title">Temperature and humidity by month</div>
+      <canvas id="phaseClimate"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Avg monthly rainfall vs ET0 (water stress)</div>
+      <canvas id="waterStress"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Cold nights below 5°C and 3°C (8-year total per month)</div>
+      <canvas id="coldRisk"></canvas>
+    </div>
+  </div>
+
+  <h2>Key Climate Facts for Propagation</h2>
+  <div class="grid3">
+    <div class="card">
+      <div class="card-title">Humidity advantage</div>
+      <p>Morning RH averages <strong>88–95% year-round</strong>. You do not need an elaborate misting system. Orient your shade tunnel to capture morning humidity and you have a natural propagation environment.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Frost risk is rising</div>
+      <p>Nights below 3°C: zero in 2018–2020, now occurring most winters. Record low <strong>1.0°C in July 2023</strong>. Build frost cloth capability before June — simple shade cloth tunnel with plastic overnight cover is enough.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Dry spells lengthening</div>
+      <p>Longest annual dry spell has grown from 12–16 days (2018–2023) to <strong>18 days (2024) and 22 days (2025)</strong>. Deep mulch (10–15cm) cuts surface evaporation 60–70% and is the single most effective response.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function show(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+
+const climate = {
+  high:   [24.5,24.5,23.5,21.2,20.4,19.5,18.3,17.9,18.5,20.4,21.6,23.0],
+  low:    [17.0,16.7,16.1,13.0,10.9, 9.8, 8.3, 8.0, 9.9,12.2,13.5,15.3],
+  rh:     [94.4,94.7,94.7,93.4,91.0,86.6,86.3,88.7,91.1,92.6,92.7,93.8],
+  below5: [0,0,0,0,1,10,33,25,5,0,0,0],
+  below3: [0,0,0,0,0, 0, 5, 4,0,0,0,0],
+};
+const monthlyRain = [58.9,41.6,54.4,53.4,47.4,45.1,38.3,39.9,64.7,56.0,53.4,52.8];
+const monthlyET0  = [143.8,118.8,104.5,75.6,66.3,65.4,67.6,74.7,85.2,110.7,127.2,141.3];
+
+const defs = {
+  responsive:true, maintainAspectRatio:true,
+  plugins:{ legend:{ labels:{ color:'#556', font:{size:10} } } },
+  scales:{
+    x:{ ticks:{color:'#556',font:{size:10}}, grid:{color:'#1a2030'} },
+    y:{ ticks:{color:'#556',font:{size:10}}, grid:{color:'#1a2030'} }
+  }
+};
+
+new Chart(document.getElementById('climateRef'),{
+  type:'line',
+  data:{ labels:MONTHS, datasets:[
+    { label:'Avg High (°C)', data:climate.high, borderColor:'#e07070', backgroundColor:'transparent', tension:0.4, pointRadius:3 },
+    { label:'Avg Low (°C)',  data:climate.low,  borderColor:'#70a0e0', backgroundColor:'transparent', tension:0.4, pointRadius:3 },
+  ]},
+  options:{...defs}
+});
+
+new Chart(document.getElementById('phaseClimate'),{
+  type:'line',
+  data:{ labels:MONTHS, datasets:[
+    { label:'Avg High (°C)', data:climate.high, borderColor:'#e07070', backgroundColor:'transparent', tension:0.4, pointRadius:4, yAxisID:'y' },
+    { label:'Avg Low (°C)',  data:climate.low,  borderColor:'#70a0e0', backgroundColor:'transparent', tension:0.4, pointRadius:4, yAxisID:'y' },
+    { label:'Max RH (%)',    data:climate.rh,   borderColor:'#6fcf8a', backgroundColor:'#6fcf8a11', fill:true, tension:0.4, pointRadius:3, yAxisID:'y2' },
+  ]},
+  options:{...defs,
+    scales:{
+      x:{ ticks:{color:'#556',font:{size:10}}, grid:{color:'#1a2030'} },
+      y:{ ticks:{color:'#556',font:{size:10}}, grid:{color:'#1a2030'}, title:{display:true,text:'°C',color:'#556',font:{size:10}} },
+      y2:{ position:'right', ticks:{color:'#556',font:{size:10}}, grid:{drawOnChartArea:false}, title:{display:true,text:'RH %',color:'#556',font:{size:10}}, min:70, max:100 }
+    }
+  }
+});
+
+new Chart(document.getElementById('waterStress'),{
+  type:'bar',
+  data:{ labels:MONTHS, datasets:[
+    { label:'Avg rain (mm)', data:monthlyRain, backgroundColor:'#4fc3f7aa', borderRadius:3 },
+    { label:'Avg ET0 (mm)',  data:monthlyET0,  backgroundColor:'#e07070aa', borderRadius:3 },
+  ]},
+  options:{...defs}
+});
+
+new Chart(document.getElementById('coldRisk'),{
+  type:'bar',
+  data:{ labels:MONTHS, datasets:[
+    { label:'Days below 5°C (8yr total)', data:climate.below5, backgroundColor:'#78b8e0aa', borderRadius:3 },
+    { label:'Days below 3°C (8yr total)', data:climate.below3, backgroundColor:'#e07070cc', borderRadius:3 },
+  ]},
+  options:{...defs}
+});
+
+// Cycle table
+const NONE  = { label:'',                    bg:'#0d1014', color:'transparent' };
+const CUT   = { label:'Take cuttings',       bg:'#1a3020', color:'#6fcf8a' };
+const CUT2  = { label:'Cuttings (2nd)',      bg:'#142030', color:'#78a8d0' };
+const CALLUS= { label:'Callus forming',      bg:'#1a2818', color:'#5aaf7a' };
+const ROOT  = { label:'Rooting',             bg:'#142818', color:'#4a9f6a' };
+const ROOT2 = { label:'Rooting',             bg:'#10202a', color:'#5090b0' };
+const POTON = { label:'Pot on → bag',        bg:'#1e2a14', color:'#90c060' };
+const GROW  = { label:'Grow on in bag',      bg:'#1a1e14', color:'#7a9050' };
+const HARDEN= { label:'Harden off',          bg:'#2a2818', color:'#c0a840' };
+const PLANT = { label:'Field planting',      bg:'#1e3828', color:'#6fcf8a' };
+const ESTAB = { label:'Establishing',        bg:'#141e14', color:'#4a7a4a' };
+const HVST  = { label:'Harvest',             bg:'#1e2a1a', color:'#a8d880' };
+const HVPK  = { label:'PEAK HARVEST',        bg:'#1a3818', color:'#6fcf8a' };
+const PREP  = { label:'Prep / mulch',        bg:'#181818', color:'#445' };
+const FROST = { label:'Frost watch',         bg:'#1a1420', color:'#a080c0' };
+const MOTHP = { label:'Prep mother plants',  bg:'#181818', color:'#445' };
+const CUTPL = { label:'Cut + Plant',         bg:'#1a3020', color:'#6fcf8a' };
+
+const rows = [
+  { group: 'Year 1', label: 'Propagation',        months: [MOTHP,CUT,CUT,CALLUS,ROOT,ROOT,POTON,CUT2,ROOT2,ROOT2,GROW,GROW] },
+  { group: null,     label: 'Field prep & plant',  months: [PREP,PREP,PLANT,PLANT,PLANT,NONE,NONE,PREP,NONE,NONE,NONE,NONE] },
+  { group: null,     label: 'Field establishment', months: [NONE,NONE,ESTAB,ESTAB,ESTAB,ESTAB,FROST,ESTAB,ESTAB,ESTAB,ESTAB,ESTAB] },
+  { group: 'Year 2', label: 'Propagation (repeat)',months: [MOTHP,CUT,CUT,CALLUS,ROOT,ROOT,POTON,CUT2,ROOT2,ROOT2,GROW,GROW] },
+  { group: null,     label: 'Nursery bags (yr1)',  months: [GROW,GROW,HARDEN,HARDEN,GROW,GROW,GROW,GROW,GROW,GROW,POTON,GROW] },
+  { group: null,     label: 'Field planting',      months: [PREP,PREP,PLANT,PLANT,NONE,NONE,NONE,PREP,NONE,NONE,NONE,NONE] },
+  { group: null,     label: 'Harvest (yr1 plants)',months: [HVST,HVST,HVST,HVST,HVST,HVPK,HVPK,HVST,HVST,HVST,NONE,NONE] },
+  { group: 'Year 3+',label: 'All streams running', months: [HVST,CUT,CUTPL,PLANT,HVST,HVPK,HVPK,CUT2,HVST,HVST,POTON,GROW] },
+];
+
+const tbl = document.getElementById('cycleTable');
+const hdr = document.createElement('tr');
+hdr.innerHTML = '<th style="min-width:130px"></th>' + MONTHS.map(m=>`<th>${m}</th>`).join('');
+tbl.appendChild(hdr);
+
+let lastGroup = null;
+rows.forEach(row => {
+  if (row.group && row.group !== lastGroup) {
+    const gr = document.createElement('tr');
+    gr.innerHTML = `<td class="cy-group" colspan="13">${row.group}</td>`;
+    tbl.appendChild(gr);
+    lastGroup = row.group;
+  }
+  const tr = document.createElement('tr');
+  let cells = `<td class="cy-label">${row.label}</td>`;
+  row.months.forEach(cell => {
+    cells += `<td style="background:${cell.bg};color:${cell.color}">${cell.label}</td>`;
+  });
+  tr.innerHTML = cells;
+  tbl.appendChild(tr);
+});
+</script>
+</body>
+</html>
