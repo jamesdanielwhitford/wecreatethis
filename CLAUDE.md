@@ -13,6 +13,7 @@ This repository contains multiple offline-first web applications, each living in
 - **perfectday/** - Offline-first hiking map with lazy tile caching, GPS, compass, and sensor data. Uses MapLibre GL JS + OpenFreeMap. See [perfectday/CLAUDE.md](perfectday/CLAUDE.md) for details.
 - **starrynight/** - Skywatching conditions app (Starry Night). Cloud cover, moon phase, planet visibility, 7-day sky forecast. Uses Open-Meteo + SunCalc + AstronomyAPI. See [starrynight/CLAUDE.md](starrynight/CLAUDE.md) for details.
 - **voice-notes/** - Offline-first voice recording app with AI transcription via Mistral Voxtral. See [voice-notes/CLAUDE.md](voice-notes/CLAUDE.md) for details.
+- **blog/** - Blog with markdown-based posts and offline support.
 
 ## GitNotes Folder (Development Notes)
 
@@ -140,7 +141,8 @@ function normalizeUrl(url) {
 - **Beautiful Mind**: v10
 - **Pomodoro**: v1
 - **Perfect Day**: v1
-- **Homepage**: v18
+- **Homepage**: v19
+- **Blog**: v1
 - **Starry Night**: v1
 - **Voice Notes**: v9
 
