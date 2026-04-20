@@ -17,8 +17,6 @@ I am not making any claims about Anthropic training their models to perform wors
 
 But I am worried about this behaviour of flagging certain sources as unreliable for what seem like arbitrary reasons.
 
-It could also be a case of prompt poisoning at one of the research URLs.
-
 ## Claude has never heard of openclaw
 
 This makes sense: Claude's [training data has a cutoff of early 2025](https://www.anthropic.com/transparency), and openclaw wasn't released until 2026.
