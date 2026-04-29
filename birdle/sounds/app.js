@@ -1,34 +1,34 @@
-const XC_API_BASE = 'https://xeno-canto.org/api/3/recordings';
-const XC_API_KEY = '70dcd0d2a5397685bd48fbaa28d8a0b981694d4b';
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const INAT_API_BASE = 'https://api.inaturalist.org/v1';
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const LOW_RESULT_THRESHOLD = 10;
-
-const CONTINENTS = [
-  { id: 'africa',    label: 'Africa' },
-  { id: 'america',   label: 'Americas' },
-  { id: 'asia',      label: 'Asia' },
-  { id: 'australia', label: 'Australia' },
-  { id: 'europe',    label: 'Europe' },
-];
+const FETCH_COUNT = 100;
 
 const SoundsApp = {
   locationLabel: '',
-  locationQuery: null,
-  locationCacheKey: null,
-  fallbackQuery: null,
-  fallbackCacheKey: null,
-  fallbackLabel: '',
+  placeId: null,
+  cacheKey: null,
+  parentPlaceId: null,
+  parentCacheKey: null,
+  parentLabel: '',
 
   deck: [],
   currentIndex: 0,
   currentRecording: null,
 
+  _pendingDeck: null,
+
   init() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'pack') {
+      this.bindRetry();
+      this.bindDeckComplete();
+      this.loadPackDeck();
+      return;
+    }
     this.bindLocationPanel();
     this.bindFallback();
     this.bindRetry();
     this.bindDeckComplete();
-    this.loadCountries();
     this.showPhase('area-select');
   },
 
@@ -45,103 +45,77 @@ const SoundsApp = {
   },
 
   // ---------------------------------------------------------------------------
-  // Country/State location panel
+  // Location search panel
   // ---------------------------------------------------------------------------
 
-  async loadCountries() {
-    const countrySelect = document.getElementById('country-select');
-    const startBtn = document.getElementById('location-start-btn');
-
-    try {
-      const countries = await EBird.getCountries();
-      if (countries && countries.length) {
-        countrySelect.innerHTML = '<option value="">Select Country\u2026</option>' +
-          countries.map(c => `<option value="${c.code}" data-name="${c.name}">${c.name}</option>`).join('');
-      } else {
-        countrySelect.innerHTML = '<option value="">Could not load countries</option>';
-      }
-    } catch (e) {
-      countrySelect.innerHTML = '<option value="">Could not load countries</option>';
-    }
-  },
-
-  async loadStates(countryCode) {
-    const stateSelect = document.getElementById('state-select');
-    stateSelect.innerHTML = '<option value="">Loading\u2026</option>';
-    stateSelect.disabled = true;
-
-    try {
-      const states = await EBird.getStates(countryCode);
-      if (states && states.length) {
-        stateSelect.innerHTML = '<option value="">Entire Country</option>' +
-          states.map(s => `<option value="${s.code}" data-name="${s.name}">${s.name}</option>`).join('');
-        stateSelect.disabled = false;
-      } else {
-        stateSelect.innerHTML = '<option value="">No states available</option>';
-      }
-    } catch (e) {
-      stateSelect.innerHTML = '<option value="">Could not load states</option>';
-    }
-  },
-
   bindLocationPanel() {
-    const countrySelect = document.getElementById('country-select');
-    const stateSelect = document.getElementById('state-select');
+    const searchInput = document.getElementById('place-search');
+    const resultsEl = document.getElementById('place-results');
     const startBtn = document.getElementById('location-start-btn');
+    let searchTimeout = null;
 
-    countrySelect.addEventListener('change', async () => {
-      const code = countrySelect.value;
-      startBtn.disabled = !code;
-      if (code) {
-        await this.loadStates(code);
-      } else {
-        stateSelect.innerHTML = '<option value="">Select State / Province (optional)</option>';
-        stateSelect.disabled = true;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      const q = searchInput.value.trim();
+      if (q.length < 2) {
+        resultsEl.style.display = 'none';
+        resultsEl.innerHTML = '';
+        startBtn.disabled = true;
+        this.placeId = null;
+        return;
       }
+      searchTimeout = setTimeout(() => this.searchPlaces(q), 300);
     });
 
     startBtn.addEventListener('click', () => {
-      const countryCode = countrySelect.value;
-      if (!countryCode) return;
-
-      const countryOption = countrySelect.options[countrySelect.selectedIndex];
-      const countryName = countryOption.dataset.name || countryOption.text;
-
-      const stateCode = stateSelect.value;
-      const stateOption = stateCode ? stateSelect.options[stateSelect.selectedIndex] : null;
-      const stateName = stateOption ? (stateOption.dataset.name || stateOption.text) : null;
-
-      if (stateCode && stateName) {
-        this.locationQuery = `cnt:"${countryName}" loc:"${stateName}"`;
-        this.locationCacheKey = stateCode;
-        this.locationLabel = `${stateName}, ${countryName}`;
-        this.fallbackQuery = `cnt:"${countryName}"`;
-        this.fallbackCacheKey = countryCode;
-        this.fallbackLabel = countryName;
-      } else {
-        this.locationQuery = `cnt:"${countryName}"`;
-        this.locationCacheKey = countryCode;
-        this.locationLabel = countryName;
-        const cont = this.continentFromCountryCode(countryCode);
-        this.fallbackQuery = `area:${cont.id}`;
-        this.fallbackCacheKey = cont.id;
-        this.fallbackLabel = cont.label;
-      }
-
+      if (!this.placeId) return;
       this.loadDeck();
     });
   },
 
-  continentFromCountryCode(code) {
-    const africaCodes = new Set(['ZA','NG','KE','ET','GH','TZ','UG','ZW','MZ','ZM','BW','NA','AO','CM','CI','SN','TN','MA','EG','DZ','LY','SD','SO','RW','BI','MW','LS','SZ','GM','GN','SL','LR','TG','BJ','NE','BF','ML','TD','CF','CD','CG','GA','GQ','ST','CV','MR','DJ','ER','KM','SC','MG','MU','RE','YT']);
-    const europeCodes = new Set(['GB','FR','DE','IT','ES','PT','NL','BE','CH','AT','PL','CZ','SK','HU','RO','BG','HR','SI','RS','BA','ME','MK','AL','GR','CY','MT','IE','IS','NO','SE','FI','DK','EE','LV','LT','BY','UA','MD','RU','LU','LI','MC','SM','VA','AD']);
-    const asiaCodes = new Set(['CN','JP','IN','ID','PK','BD','PH','VN','TH','MM','KR','KP','TW','HK','MO','MN','KZ','UZ','TM','TJ','KG','AF','IR','IQ','SY','LB','JO','IL','PS','SA','AE','OM','YE','KW','BH','QA','TR','AZ','GE','AM','NP','BT','LK','MV','SG','MY','BN','TL']);
-    const australiaCodes = new Set(['AU','NZ','PG','FJ','SB','VU','WS','TO','KI','TV','NR','PW','FM','MH','CK','NU','TK','AS','GU','MP','PF','NC','WF']);
-    if (africaCodes.has(code)) return CONTINENTS.find(c => c.id === 'africa');
-    if (europeCodes.has(code)) return CONTINENTS.find(c => c.id === 'europe');
-    if (asiaCodes.has(code)) return CONTINENTS.find(c => c.id === 'asia');
-    if (australiaCodes.has(code)) return CONTINENTS.find(c => c.id === 'australia');
-    return CONTINENTS.find(c => c.id === 'america');
+  async searchPlaces(q) {
+    const resultsEl = document.getElementById('place-results');
+    const startBtn = document.getElementById('location-start-btn');
+
+    resultsEl.innerHTML = '<div class="place-result-item" style="color:#999;">Searching...</div>';
+    resultsEl.style.display = 'block';
+
+    try {
+      const url = `${INAT_API_BASE}/places/autocomplete?q=${encodeURIComponent(q)}&per_page=8`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Search failed');
+      const data = await res.json();
+
+      const places = (data.results || []).filter(p => p.name);
+
+      if (!places.length) {
+        resultsEl.innerHTML = '<div class="place-result-item" style="color:#999;">No places found</div>';
+        return;
+      }
+
+      resultsEl.innerHTML = places.map(p =>
+        `<div class="place-result-item" data-id="${p.id}" data-name="${p.display_name || p.name}" data-parent="${p.ancestor_place_ids ? p.ancestor_place_ids[p.ancestor_place_ids.length - 2] || '' : ''}" data-parent-name="">${p.display_name || p.name}</div>`
+      ).join('');
+
+      resultsEl.querySelectorAll('.place-result-item[data-id]').forEach(item => {
+        item.addEventListener('click', () => {
+          this.placeId = parseInt(item.dataset.id);
+          this.cacheKey = `inat-place-${this.placeId}`;
+          this.locationLabel = item.dataset.name;
+
+          const parentId = item.dataset.parent ? parseInt(item.dataset.parent) : null;
+          this.parentPlaceId = parentId || null;
+          this.parentCacheKey = parentId ? `inat-place-${parentId}` : null;
+          this.parentLabel = '';
+
+          document.getElementById('place-search').value = item.dataset.name;
+          resultsEl.style.display = 'none';
+          startBtn.disabled = false;
+        });
+      });
+    } catch (e) {
+      resultsEl.innerHTML = '<div class="place-result-item" style="color:#999;">Search failed, try again</div>';
+    }
   },
 
   // ---------------------------------------------------------------------------
@@ -149,14 +123,18 @@ const SoundsApp = {
   // ---------------------------------------------------------------------------
 
   bindFallback() {
-    document.getElementById('fallback-broaden-btn').addEventListener('click', () => {
+    document.getElementById('fallback-broaden-btn').addEventListener('click', async () => {
       document.getElementById('fallback-warning').style.display = 'none';
-      this.locationQuery = this.fallbackQuery;
-      this.locationCacheKey = this.fallbackCacheKey;
-      this.locationLabel = this.fallbackLabel;
-      this.fallbackQuery = null;
-      this.fallbackCacheKey = null;
-      this.fallbackLabel = '';
+      if (!this.parentPlaceId) {
+        this.showError('No broader area available. Try a different location.');
+        return;
+      }
+      this.placeId = this.parentPlaceId;
+      this.cacheKey = this.parentCacheKey;
+      this.locationLabel = this.parentLabel;
+      this.parentPlaceId = null;
+      this.parentCacheKey = null;
+      this.parentLabel = '';
       this.loadDeck();
     });
 
@@ -178,9 +156,11 @@ const SoundsApp = {
     const msg = count === 0
       ? `No recordings found for ${label}.`
       : `Only ${count} recording${count === 1 ? '' : 's'} found for ${label}.`;
+    const broadenText = fallbackLabel ? `Broaden to ${fallbackLabel}` : 'Try broader area';
     document.getElementById('fallback-message').textContent =
-      `${msg} Try broadening to ${fallbackLabel}?`;
-    document.getElementById('fallback-broaden-btn').textContent = `Broaden to ${fallbackLabel}`;
+      `${msg}${fallbackLabel ? ` Try broadening to ${fallbackLabel}?` : ''}`;
+    document.getElementById('fallback-broaden-btn').textContent = broadenText;
+    document.getElementById('fallback-broaden-btn').style.display = fallbackLabel ? '' : 'none';
     document.getElementById('fallback-use-btn').textContent =
       count > 0 ? `Use these ${count}` : 'Go back';
     document.getElementById('fallback-warning').style.display = 'block';
@@ -193,14 +173,16 @@ const SoundsApp = {
   async loadDeck() {
     this.showPhase('loading');
     document.getElementById('loading-message').textContent =
-      `Loading recordings for ${this.locationLabel}\u2026`;
+      `Loading recordings for ${this.locationLabel}…`;
 
     try {
-      const recordings = await this.fetchRecordings(this.locationCacheKey, this.locationQuery);
+      const recordings = await this.fetchRecordings(this.cacheKey, this.placeId);
 
-      if (recordings.length < LOW_RESULT_THRESHOLD && this.fallbackQuery) {
+      if (recordings.length < LOW_RESULT_THRESHOLD && this.parentPlaceId) {
         this.showPhase('area-select');
-        this.showFallbackWarning(recordings.length, this.locationLabel, this.fallbackLabel, recordings);
+        const parentLabel = await this.getParentPlaceName(this.parentPlaceId);
+        this.parentLabel = parentLabel;
+        this.showFallbackWarning(recordings.length, this.locationLabel, parentLabel, recordings);
         return;
       }
 
@@ -218,35 +200,160 @@ const SoundsApp = {
     }
   },
 
-  async fetchRecordings(cacheKey, xcQuery) {
+  async getParentPlaceName(placeId) {
+    try {
+      const res = await fetch(`${INAT_API_BASE}/places/${placeId}`);
+      if (!res.ok) return 'broader area';
+      const data = await res.json();
+      return data.results?.[0]?.display_name || data.results?.[0]?.name || 'broader area';
+    } catch (e) {
+      return 'broader area';
+    }
+  },
+
+  async fetchRecordings(cacheKey, placeId) {
     const cached = await BirdDB.getSoundsCache(cacheKey);
     if (cached && (Date.now() - cached.cachedAt) < CACHE_TTL_MS) {
       console.log('[Sounds] Using cached recordings for:', cacheKey);
       return cached.recordings;
     }
 
-    const query = `type:song q:">C" ${xcQuery}`;
-    const url = `${XC_API_BASE}?query=${encodeURIComponent(query)}&per_page=100&key=${XC_API_KEY}`;
+    // Get total count first, then pick a random page
+    const countUrl = `${INAT_API_BASE}/observations?taxon_id=3&sounds=true&quality_grade=research&place_id=${placeId}&per_page=1`;
+    const countRes = await fetch(countUrl);
+    if (!countRes.ok) throw new Error(`API error ${countRes.status}`);
+    const countData = await countRes.json();
+    const total = countData.total_results || 0;
 
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`API error ${response.status}`);
-    const data = await response.json();
+    if (total === 0) return [];
 
-    if (!data.recordings || data.recordings.length === 0) return [];
+    // iNaturalist caps offset at 10,000 results (page * per_page <= 10000)
+    const maxPage = Math.min(Math.floor(total / FETCH_COUNT), Math.floor(10000 / FETCH_COUNT) - 1) || 1;
+    const page = Math.floor(Math.random() * maxPage) + 1;
 
-    const normalized = data.recordings.map(r => ({
-      id: r.id,
-      en: r.en,
-      gen: r.gen,
-      sp: r.sp,
-      rec: r.rec,
-      lic: r.lic ? (r.lic.startsWith('//') ? 'https:' + r.lic : r.lic) : '',
-      url: r.url ? (r.url.startsWith('//') ? 'https:' + r.url : r.url) : '',
-      audioUrl: r.file ? (r.file.startsWith('//') ? 'https:' + r.file : r.file) : ''
-    })).filter(r => r.audioUrl);
+    const url = `${INAT_API_BASE}/observations?taxon_id=3&sounds=true&quality_grade=research&place_id=${placeId}&per_page=${FETCH_COUNT}&page=${page}&order_by=created_at&order=desc`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+    const data = await res.json();
+
+    const normalized = [];
+    for (const obs of (data.results || [])) {
+      const taxon = obs.taxon || {};
+      const sounds = obs.sounds || [];
+      for (const sound of sounds) {
+        if (!sound.file_url) continue;
+        normalized.push({
+          id: `${obs.id}-${sound.id}`,
+          en: taxon.preferred_common_name || taxon.name || '',
+          gen: taxon.name ? taxon.name.split(' ')[0] : '',
+          sp: taxon.name ? taxon.name.split(' ').slice(1).join(' ') : '',
+          rec: obs.user?.login || 'Unknown',
+          lic: sound.license_code || '',
+          url: obs.uri || `https://www.inaturalist.org/observations/${obs.id}`,
+          audioUrl: sound.file_url
+        });
+      }
+    }
 
     await BirdDB.setSoundsCache(cacheKey, normalized);
     return normalized;
+  },
+
+  // ---------------------------------------------------------------------------
+  // Pack mode (custom species set)
+  // ---------------------------------------------------------------------------
+
+  async loadPackDeck() {
+    const raw = localStorage.getItem('sounds-pack');
+    if (!raw) {
+      this.showError('No sound set found. Go back and build one.');
+      document.getElementById('error-change-area-btn').textContent = 'Build a Set';
+      document.getElementById('error-change-area-btn').onclick = () => {
+        window.location.href = 'pack';
+      };
+      return;
+    }
+
+    let species;
+    try {
+      species = JSON.parse(raw);
+    } catch (e) {
+      this.showError('Could not read sound set. Please rebuild it.');
+      return;
+    }
+
+    this.locationLabel = `${species.length} bird set`;
+    this.showPhase('loading');
+    document.getElementById('loading-message').textContent =
+      `Loading sounds for ${species.length} bird${species.length === 1 ? '' : 's'}…`;
+
+    try {
+      const recordings = await this.fetchPackRecordings(species);
+      if (recordings.length === 0) {
+        this.showError('No recordings found for your selected birds. Try a different set.');
+        return;
+      }
+      this.deck = this.shuffle(recordings);
+      this.currentIndex = 0;
+
+      // Override "Change Region" to go back to pack builder
+      document.getElementById('change-area-btn').textContent = 'Change Set';
+      document.getElementById('change-area-btn').onclick = () => {
+        window.location.href = 'pack';
+      };
+
+      this.showCard();
+    } catch (err) {
+      console.error('[Sounds] loadPackDeck error:', err);
+      this.showError('Could not load recordings. Check your connection and try again.');
+    }
+  },
+
+  async fetchPackRecordings(species) {
+    const SOUNDS_PER_SPECIES = 5;
+    const all = [];
+
+    for (const bird of species) {
+      const cacheKey = `inat-species-${bird.speciesCode}`;
+      const cached = await BirdDB.getSoundsCache(cacheKey);
+      if (cached && (Date.now() - cached.cachedAt) < CACHE_TTL_MS) {
+        all.push(...cached.recordings);
+        continue;
+      }
+
+      try {
+        const name = encodeURIComponent(bird.sciName || bird.comName);
+        const url = `${INAT_API_BASE}/observations?taxon_name=${name}&sounds=true&quality_grade=research&per_page=${SOUNDS_PER_SPECIES}&order_by=votes&order=desc`;
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const data = await res.json();
+
+        const normalized = [];
+        for (const obs of (data.results || [])) {
+          const taxon = obs.taxon || {};
+          for (const sound of (obs.sounds || [])) {
+            if (!sound.file_url) continue;
+            normalized.push({
+              id: `${obs.id}-${sound.id}`,
+              en: taxon.preferred_common_name || bird.comName || taxon.name || '',
+              gen: (taxon.name || bird.sciName || '').split(' ')[0] || '',
+              sp: (taxon.name || bird.sciName || '').split(' ').slice(1).join(' ') || '',
+              rec: obs.user?.login || 'Unknown',
+              lic: sound.license_code || '',
+              url: obs.uri || `https://www.inaturalist.org/observations/${obs.id}`,
+              audioUrl: sound.file_url
+            });
+          }
+        }
+
+        await BirdDB.setSoundsCache(cacheKey, normalized);
+        all.push(...normalized);
+      } catch (e) {
+        console.warn('[Sounds] Failed to fetch for:', bird.comName, e);
+      }
+    }
+
+    return all;
   },
 
   // ---------------------------------------------------------------------------
@@ -268,7 +375,7 @@ const SoundsApp = {
     audio.load();
 
     const playBtn = document.getElementById('play-btn');
-    playBtn.textContent = '\u25B6 Play Sound';
+    playBtn.textContent = '▶ Play Sound';
     playBtn.onclick = () => this.toggleAudio();
 
     document.getElementById('reveal-btn').onclick = () => this.revealCard();
@@ -283,12 +390,12 @@ const SoundsApp = {
 
     if (audio.paused) {
       audio.play().catch(err => console.warn('[Sounds] Audio play failed:', err));
-      playBtn.textContent = '\u23F9 Stop';
-      audio.onended = () => { playBtn.textContent = '\u25B6 Play Again'; };
+      playBtn.textContent = '⏹ Stop';
+      audio.onended = () => { playBtn.textContent = '▶ Play Again'; };
     } else {
       audio.pause();
       audio.currentTime = 0;
-      playBtn.textContent = '\u25B6 Play Sound';
+      playBtn.textContent = '▶ Play Sound';
     }
   },
 
@@ -302,10 +409,11 @@ const SoundsApp = {
     document.getElementById('attr-recordist').textContent = rec.rec || 'Unknown';
 
     const licenseEl = document.getElementById('attr-license');
-    licenseEl.textContent = this.parseLicenseCode(rec.lic);
-    licenseEl.href = rec.lic || '#';
+    licenseEl.textContent = this.formatLicense(rec.lic);
+    licenseEl.href = rec.lic ? `https://creativecommons.org/licenses/${rec.lic}/` : '#';
 
-    document.getElementById('attr-xclink').href = rec.url || 'https://xeno-canto.org';
+    document.getElementById('attr-xclink').href = rec.url || 'https://www.inaturalist.org';
+    document.getElementById('attr-xclink').textContent = 'iNaturalist';
 
     document.getElementById('replay-btn').onclick = () => {
       const audio = document.getElementById('bird-audio');
@@ -357,7 +465,7 @@ const SoundsApp = {
 
   bindRetry() {
     document.getElementById('retry-btn').addEventListener('click', () => {
-      if (this.locationQuery) {
+      if (this.placeId) {
         this.loadDeck();
       } else {
         this.showPhase('area-select');
@@ -377,11 +485,9 @@ const SoundsApp = {
   // Utilities
   // ---------------------------------------------------------------------------
 
-  parseLicenseCode(licUrl) {
-    if (!licUrl) return '';
-    const match = licUrl.match(/\/licenses\/([^/]+)\/([^/]+)/);
-    if (!match) return '';
-    return `CC ${match[1].toUpperCase()} ${match[2]}`;
+  formatLicense(code) {
+    if (!code) return '';
+    return 'CC ' + code.toUpperCase().replace(/-/g, ' ');
   },
 
   shuffle(arr) {
