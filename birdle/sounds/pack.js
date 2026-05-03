@@ -83,12 +83,10 @@ const PackApp = {
   },
 
   async loadAndGo() {
-    const statusEl = document.getElementById('load-status');
     const startBtn = document.getElementById('start-btn');
 
     startBtn.disabled = true;
-    statusEl.style.display = 'block';
-    statusEl.textContent = 'Finding birds in this area...';
+    startBtn.textContent = 'Finding birds in this area...';
     this.showError('');
 
     try {
@@ -96,38 +94,40 @@ const PackApp = {
 
       if (candidates.length === 0) {
         this.showError('No bird sightings found in this area for the past 30 days. Try a different location.');
-        statusEl.style.display = 'none';
         startBtn.disabled = false;
+        startBtn.textContent = 'Load Bird Sounds →';
         return;
       }
 
-      statusEl.textContent = `Checking sounds for ${candidates.length} species...`;
+      startBtn.textContent = `Checking sounds for ${candidates.length} species...`;
 
       const withSounds = await this.filterToSoundSpecies(candidates, (done, total) => {
-        statusEl.textContent = `Checking sounds… ${done}/${total}`;
+        startBtn.textContent = `Checking sounds… ${done}/${total}`;
       });
 
       if (withSounds.length === 0) {
         this.showError('No sound recordings found for birds in this area. Try a different location.');
-        statusEl.style.display = 'none';
         startBtn.disabled = false;
+        startBtn.textContent = 'Load Bird Sounds →';
         return;
       }
 
-      statusEl.textContent = `Found ${withSounds.length} birds with sounds.`;
+      startBtn.textContent = `Found ${withSounds.length} birds. Loading…`;
 
-      localStorage.setItem('sounds-pack', JSON.stringify(withSounds));
-      localStorage.setItem('sounds-pack-location', JSON.stringify({
+      const name = this.defaultPackName(this.pickedLat, this.pickedLng);
+      const pack = await BirdDB.createSoundPack({
+        name,
         lat: this.pickedLat,
-        lng: this.pickedLng
-      }));
+        lng: this.pickedLng,
+        species: withSounds
+      });
 
-      window.location.href = 'pack-view';
+      window.location.href = `pack-view?id=${pack.id}`;
     } catch (err) {
       console.error('[PackApp] Error:', err);
       this.showError('Could not load birds. Check your connection and try again.');
-      statusEl.style.display = 'none';
       startBtn.disabled = false;
+      startBtn.textContent = 'Load Bird Sounds →';
     }
   },
 
@@ -184,6 +184,11 @@ const PackApp = {
     }
 
     return results;
+  },
+
+  defaultPackName(lat, lng) {
+    const date = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    return `${lat.toFixed(2)}, ${lng.toFixed(2)} · ${date}`;
   },
 
   showError(msg) {
