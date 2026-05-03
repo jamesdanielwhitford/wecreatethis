@@ -1,38 +1,32 @@
 const INAT_API_BASE_PV = 'https://api.inaturalist.org/v1';
 
 const PackViewApp = {
-  species: [],
+  pack: null,
   currentAudio: null,
   currentBtn: null,
 
-  init() {
+  async init() {
     App.checkVersionAndReload();
 
-    const raw = localStorage.getItem('sounds-pack');
-    if (!raw) {
+    const params = new URLSearchParams(window.location.search);
+    const id = parseInt(params.get('id'));
+
+    if (!id) {
       document.getElementById('empty-msg').style.display = 'block';
       return;
     }
 
-    try {
-      this.species = JSON.parse(raw);
-    } catch (e) {
+    this.pack = await BirdDB.getSoundPack(id);
+
+    if (!this.pack || !this.pack.species || this.pack.species.length === 0) {
       document.getElementById('empty-msg').style.display = 'block';
       return;
     }
 
-    if (this.species.length === 0) {
-      document.getElementById('empty-msg').style.display = 'block';
-      return;
-    }
-
-    const loc = (() => {
-      try { return JSON.parse(localStorage.getItem('sounds-pack-location')); } catch { return null; }
-    })();
-    if (loc) {
-      document.getElementById('location-label').textContent =
-        `${this.species.length} species within 50 km of ${loc.lat.toFixed(3)}, ${loc.lng.toFixed(3)} · last 30 days`;
-    }
+    document.title = `${this.pack.name} - Bird Sounds`;
+    document.getElementById('pack-title').textContent = this.pack.name;
+    document.getElementById('location-label').textContent =
+      `${this.pack.species.length} species within 50 km · last 30 days`;
 
     this.render();
   },
@@ -40,7 +34,7 @@ const PackViewApp = {
   render() {
     const list = document.getElementById('sounds-list');
 
-    list.innerHTML = this.species.map((s, i) => `
+    list.innerHTML = this.pack.species.map((s, i) => `
       <li class="sound-item" data-index="${i}">
         <div class="sound-thumb loading" data-name="${this.escHtml(s.comName)}" data-sci="${this.escHtml(s.sciName)}"></div>
         <div class="sound-info">
@@ -60,7 +54,6 @@ const PackViewApp = {
   },
 
   async toggleSound(index, btn) {
-    // Stop currently playing audio
     if (this.currentAudio) {
       this.currentAudio.pause();
       this.currentAudio.src = '';
@@ -71,12 +64,10 @@ const PackViewApp = {
         prevBtn.classList.remove('playing');
         prevBtn.innerHTML = '&#9654;';
       }
-      // If tapping the same button, just stop
       if (prevBtn === btn) return;
     }
 
-    const bird = this.species[index];
-    // Use pre-fetched soundUrl if available, otherwise fall back to fetching
+    const bird = this.pack.species[index];
     const audioUrl = bird.soundUrl || await this.fetchSoundUrl(bird);
 
     if (!audioUrl) {
