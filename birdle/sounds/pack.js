@@ -1,5 +1,7 @@
 const INAT_API_BASE = 'https://api.inaturalist.org/v1';
 const RADIUS_KM = 50;
+const MAX_CANDIDATES = 60; // top N by frequency before sound-checking
+const SOUND_BATCH_SIZE = 10;
 
 const PackApp = {
   map: null,
@@ -90,18 +92,31 @@ const PackApp = {
     this.showError('');
 
     try {
-      const species = await this.fetchSpeciesByFrequency(this.pickedLat, this.pickedLng);
+      const candidates = await this.fetchSpeciesByFrequency(this.pickedLat, this.pickedLng);
 
-      if (species.length === 0) {
+      if (candidates.length === 0) {
         this.showError('No bird sightings found in this area for the past 30 days. Try a different location.');
         statusEl.style.display = 'none';
         startBtn.disabled = false;
         return;
       }
 
-      statusEl.textContent = `Found ${species.length} species. Loading sounds...`;
+      statusEl.textContent = `Checking sounds for ${candidates.length} species...`;
 
-      localStorage.setItem('sounds-pack', JSON.stringify(species));
+      const withSounds = await this.filterToSoundSpecies(candidates, (done, total) => {
+        statusEl.textContent = `Checking sounds… ${done}/${total}`;
+      });
+
+      if (withSounds.length === 0) {
+        this.showError('No sound recordings found for birds in this area. Try a different location.');
+        statusEl.style.display = 'none';
+        startBtn.disabled = false;
+        return;
+      }
+
+      statusEl.textContent = `Found ${withSounds.length} birds with sounds.`;
+
+      localStorage.setItem('sounds-pack', JSON.stringify(withSounds));
       localStorage.setItem('sounds-pack-location', JSON.stringify({
         lat: this.pickedLat,
         lng: this.pickedLng
@@ -123,7 +138,7 @@ const PackApp = {
     d1Date.setDate(d1Date.getDate() - 30);
     const d1 = d1Date.toISOString().slice(0, 10);
 
-    const url = `${INAT_API_BASE}/observations/species_counts?taxon_id=3&lat=${lat}&lng=${lng}&radius=${RADIUS_KM}&d1=${d1}&d2=${d2}&quality_grade=research&order_by=observation_count&order=desc&per_page=200`;
+    const url = `${INAT_API_BASE}/observations/species_counts?taxon_id=3&lat=${lat}&lng=${lng}&radius=${RADIUS_KM}&d1=${d1}&d2=${d2}&quality_grade=research&order_by=observation_count&order=desc&per_page=${MAX_CANDIDATES}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`iNaturalist API error ${res.status}`);
     const data = await res.json();
@@ -134,6 +149,41 @@ const PackApp = {
       sciName: r.taxon.name,
       count: r.count
     })).filter(s => s.comName);
+  },
+
+  async filterToSoundSpecies(candidates, onProgress) {
+    const results = [];
+    const total = candidates.length;
+    let done = 0;
+
+    for (let i = 0; i < candidates.length; i += SOUND_BATCH_SIZE) {
+      const batch = candidates.slice(i, i + SOUND_BATCH_SIZE);
+
+      const checks = await Promise.all(batch.map(async (bird) => {
+        const url = `${INAT_API_BASE}/observations?taxon_name=${encodeURIComponent(bird.sciName)}&sounds=true&quality_grade=research&per_page=1&order_by=votes&order=desc`;
+        try {
+          const res = await fetch(url);
+          if (!res.ok) return null;
+          const data = await res.json();
+          const obs = (data.results || [])[0];
+          if (!obs) return null;
+          const sound = (obs.sounds || [])[0];
+          if (!sound || !sound.file_url) return null;
+          return { ...bird, soundUrl: sound.file_url };
+        } catch {
+          return null;
+        }
+      }));
+
+      for (const result of checks) {
+        if (result) results.push(result);
+      }
+
+      done += batch.length;
+      onProgress(done, total);
+    }
+
+    return results;
   },
 
   showError(msg) {

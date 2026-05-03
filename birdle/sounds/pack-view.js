@@ -65,28 +65,21 @@ const PackViewApp = {
       this.currentAudio.pause();
       this.currentAudio.src = '';
       this.currentAudio = null;
-      if (this.currentBtn) {
-        this.currentBtn.classList.remove('playing');
-        this.currentBtn.innerHTML = '&#9654;';
+      const prevBtn = this.currentBtn;
+      this.currentBtn = null;
+      if (prevBtn) {
+        prevBtn.classList.remove('playing');
+        prevBtn.innerHTML = '&#9654;';
       }
       // If tapping the same button, just stop
-      if (this.currentBtn === btn) {
-        this.currentBtn = null;
-        return;
-      }
-      this.currentBtn = null;
+      if (prevBtn === btn) return;
     }
 
-    btn.classList.add('loading-audio');
-    btn.innerHTML = '&hellip;';
-
     const bird = this.species[index];
-    const audioUrl = await this.fetchSoundUrl(bird);
-
-    btn.classList.remove('loading-audio');
+    // Use pre-fetched soundUrl if available, otherwise fall back to fetching
+    const audioUrl = bird.soundUrl || await this.fetchSoundUrl(bird);
 
     if (!audioUrl) {
-      btn.innerHTML = '&#9654;';
       btn.title = 'No sound found';
       return;
     }
