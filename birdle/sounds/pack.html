@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#333">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Bird Sounds - Birdle</title>
+  <link rel="manifest" href="../manifest.json">
+  <link rel="apple-touch-icon" href="../icon-192.png">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    .intro {
+      padding: 20px 0 8px;
+      color: #555;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .map-wrap {
+      margin: 16px 0 0;
+    }
+    #sounds-map {
+      height: 260px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+    }
+    .map-hint {
+      font-size: 13px;
+      color: #999;
+      margin: 6px 0 12px;
+      text-align: center;
+    }
+    .gps-btn-row {
+      margin-bottom: 16px;
+    }
+    .gps-btn-row .btn {
+      width: 100%;
+      font-size: 15px;
+    }
+    #load-status {
+      padding: 16px 0;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      display: none;
+    }
+    #start-btn {
+      width: 100%;
+      font-size: 16px;
+      font-weight: 600;
+      display: none;
+    }
+    #error-msg {
+      margin: 16px 0;
+      padding: 12px 14px;
+      background: #fff0f0;
+      border: 1px solid #fcc;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #c00;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <nav class="game-navbar search-navbar">
+    <a href="index" class="back-btn">&larr; Back</a>
+    <span style="font-weight: bold; font-size: 16px; position: absolute; left: 50%; transform: translateX(-50%);">Bird Sounds</span>
+  </nav>
+
+  <p class="intro">Pick a spot on the map. We'll find birds spotted nearby in the last 30 days and load their sounds, sorted from most to least commonly seen.</p>
+
+  <div class="gps-btn-row">
+    <button id="gps-btn" class="btn">📍 Use My Location</button>
+  </div>
+
+  <div class="map-wrap">
+    <div id="sounds-map"></div>
+    <p class="map-hint">Tap the map to pick a location</p>
+  </div>
+
+  <div id="error-msg"></div>
+  <div id="load-status"></div>
+
+  <button id="start-btn" class="btn">Load Bird Sounds &rarr;</button>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../location.js"></script>
+  <script src="../db.js"></script>
+  <script src="../ebird.js"></script>
+  <script src="../app.js"></script>
+  <script src="pack.js"></script>
+  <script>
+    (async function () {
+      await BirdDB.init();
+      PackApp.init();
+    })();
+  </script>
+</body>
+</html>

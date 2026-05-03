@@ -136,7 +136,7 @@ function normalizeUrl(url) {
 - Consistent behavior across all apps
 
 ### Current Service Worker Versions
-- **Birdle**: v119
+- **Birdle**: v128
 - **Tarot**: v31
 - **Beautiful Mind**: v10
 - **Pomodoro**: v1

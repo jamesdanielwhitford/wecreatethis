@@ -2,7 +2,7 @@
 // Centralized bird caching system
 
 const DB_NAME = 'birdle-db';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 // Generate UUID for sync
 function generateSyncId() {
@@ -78,6 +78,11 @@ const BirdDB = {
           tripsStore.createIndex('endTime', 'endTime');
           tripsStore.createIndex('status', 'status');
           tripsStore.createIndex('createdAt', 'createdAt');
+        }
+
+        // Sounds cache store - cached Xeno-canto recording metadata per area
+        if (!db.objectStoreNames.contains('sounds_cache')) {
+          db.createObjectStore('sounds_cache', { keyPath: 'area' });
         }
       };
     });
@@ -956,6 +961,28 @@ const BirdDB = {
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction('bingo_games', 'readwrite');
       const request = tx.objectStore('bingo_games').delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  // ===== SOUNDS CACHE =====
+
+  async getSoundsCache(area) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('sounds_cache', 'readonly');
+      const request = tx.objectStore('sounds_cache').get(area);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async setSoundsCache(area, recordings) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('sounds_cache', 'readwrite');
+      const request = tx.objectStore('sounds_cache').put({ area, recordings, cachedAt: Date.now() });
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
