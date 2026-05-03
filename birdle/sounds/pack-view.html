@@ -111,13 +111,13 @@
 </head>
 <body>
   <nav class="game-navbar search-navbar">
-    <a href="pack" class="back-btn">&larr; Back</a>
-    <span style="font-weight: bold; font-size: 16px; position: absolute; left: 50%; transform: translateX(-50%);">Bird Sounds</span>
+    <a href="index" class="back-btn">&larr; Back</a>
+    <span id="pack-title" style="font-weight: bold; font-size: 16px; position: absolute; left: 50%; transform: translateX(-50%); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%;">Bird Sounds</span>
   </nav>
 
   <p id="location-label" class="location-label"></p>
 
-  <div id="empty-msg" style="display: none;">No birds found. <a href="pack">Try another location</a>.</div>
+  <div id="empty-msg" style="display: none;">Pack not found. <a href="index">Go back</a>.</div>
 
   <ul id="sounds-list" class="sounds-list"></ul>
 

@@ -2,7 +2,7 @@
 // Centralized bird caching system
 
 const DB_NAME = 'birdle-db';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 // Generate UUID for sync
 function generateSyncId() {
@@ -83,6 +83,12 @@ const BirdDB = {
         // Sounds cache store - cached Xeno-canto recording metadata per area
         if (!db.objectStoreNames.contains('sounds_cache')) {
           db.createObjectStore('sounds_cache', { keyPath: 'area' });
+        }
+
+        // Sound packs store - saved bird sound packs
+        if (!db.objectStoreNames.contains('sound_packs')) {
+          const packsStore = db.createObjectStore('sound_packs', { keyPath: 'id', autoIncrement: true });
+          packsStore.createIndex('createdAt', 'createdAt');
         }
       };
     });
@@ -983,6 +989,61 @@ const BirdDB = {
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction('sounds_cache', 'readwrite');
       const request = tx.objectStore('sounds_cache').put({ area, recordings, cachedAt: Date.now() });
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  // ===== SOUND PACKS =====
+
+  async createSoundPack(packData) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('sound_packs', 'readwrite');
+      const data = { ...packData, createdAt: Date.now() };
+      const request = tx.objectStore('sound_packs').add(data);
+      request.onsuccess = () => resolve({ ...data, id: request.result });
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async getSoundPack(id) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('sound_packs', 'readonly');
+      const request = tx.objectStore('sound_packs').get(id);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async getAllSoundPacks() {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('sound_packs', 'readonly');
+      const request = tx.objectStore('sound_packs').getAll();
+      request.onsuccess = () => resolve((request.result || []).sort((a, b) => b.createdAt - a.createdAt));
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async renameSoundPack(id, name) {
+    await this.ready();
+    const pack = await this.getSoundPack(id);
+    if (!pack) return;
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('sound_packs', 'readwrite');
+      const request = tx.objectStore('sound_packs').put({ ...pack, name });
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async deleteSoundPack(id) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('sound_packs', 'readwrite');
+      const request = tx.objectStore('sound_packs').delete(id);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
