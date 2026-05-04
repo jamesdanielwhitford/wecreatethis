@@ -1,7 +1,8 @@
-const CACHE_NAME = 'wecreatethis-v19';
+const CACHE_NAME = 'wecreatethis-v20';
 const ASSETS = [
   '/',
   '/index',
+  '/contact',
   '/styles.css',
   '/manifest.json',
   '/icon-192.png',
