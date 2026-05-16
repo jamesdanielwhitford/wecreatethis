@@ -1,4 +1,4 @@
-import { getItems, getItem, putItem } from './db.js';
+import { getItems, getItemBySlug, putItem } from './db.js';
 import { fetchItems, fetchItem } from './api.js';
 
 const feed = document.getElementById('feed');
@@ -11,7 +11,8 @@ let lowestId = null;
 let highestId = null;
 let loading = false;
 
-// Tracks intersection ratios per item so we update URL to the most-visible one
+// Tracks intersection ratios per item so we update URL to the most-visible one.
+// Keys are slugs (user-visible numbers), not internal DB ids.
 const visibilityMap = new Map();
 
 function dir(lang) {
@@ -38,6 +39,7 @@ function renderItem(item) {
   const article = document.createElement('article');
   article.className = 'item';
   article.dataset.id = item.id;
+  article.dataset.slug = item.slug;
 
   const figure = document.createElement('figure');
 
@@ -109,23 +111,23 @@ function observeItem(el) {
   urlObserver.observe(el);
 }
 
-// Tracks intersection ratio per item, updates URL to whichever is most visible
+// Tracks intersection ratio per item, updates URL to whichever is most visible.
+// Uses slug (user-visible number) in the URL, not the internal DB id.
 const urlObserver = new IntersectionObserver(entries => {
   for (const entry of entries) {
-    const id = entry.target.dataset.id;
+    const slug = entry.target.dataset.slug;
     if (entry.isIntersecting) {
-      visibilityMap.set(id, entry.intersectionRatio);
+      visibilityMap.set(slug, entry.intersectionRatio);
     } else {
-      visibilityMap.delete(id);
+      visibilityMap.delete(slug);
     }
   }
   if (visibilityMap.size === 0) return;
-  // Pick the item with the highest intersection ratio
-  let bestId = null, bestRatio = -1;
-  for (const [id, ratio] of visibilityMap) {
-    if (ratio > bestRatio) { bestRatio = ratio; bestId = id; }
+  let bestSlug = null, bestRatio = -1;
+  for (const [slug, ratio] of visibilityMap) {
+    if (ratio > bestRatio) { bestRatio = ratio; bestSlug = slug; }
   }
-  if (bestId) history.replaceState({ id: bestId }, '', `?item=${bestId}`);
+  if (bestSlug) history.replaceState({ slug: bestSlug }, '', `?item=${bestSlug}`);
 }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
 
 // Triggers loading more items when sentinel enters view
@@ -141,39 +143,38 @@ async function loadMore() {
     const el = renderItem(item);
     feed.insertBefore(el, sentinel);
     observeItem(el);
-    if (lowestId === null || item.id < lowestId) lowestId = item.id;
-    if (highestId === null || item.id > highestId) highestId = item.id;
+    if (lowestId === null || item.slug < lowestId) lowestId = item.slug;
+    if (highestId === null || item.slug > highestId) highestId = item.slug;
   }
   loading = false;
 }
 
 // Loads items newer than highestId and prepends them above the feed
-async function loadNewer(aboveId) {
-  const items = await getItems({ after: aboveId, limit: 20 });
+async function loadNewer(aboveSlug) {
+  const items = await getItems({ after: aboveSlug, limit: 20 });
   const firstChild = feed.firstChild;
   for (const item of [...items].reverse()) {
     const el = renderItem(item);
     feed.insertBefore(el, firstChild);
     observeItem(el);
-    if (highestId === null || item.id > highestId) highestId = item.id;
+    if (highestId === null || item.slug > highestId) highestId = item.slug;
   }
 }
 
 async function init() {
   const params = new URLSearchParams(location.search);
-  const targetId = params.get('item') ? Number(params.get('item')) : null;
+  const targetSlug = params.get('item') ? Number(params.get('item')) : null;
 
-  if (targetId) {
-    const item = await getItem(targetId);
+  if (targetSlug) {
+    const item = await getItemBySlug(targetSlug);
     if (item) {
       const el = renderItem(item);
       feed.insertBefore(el, sentinel);
       observeItem(el);
-      lowestId = item.id;
-      highestId = item.id;
+      lowestId = item.slug;
+      highestId = item.slug;
       el.scrollIntoView();
-      // Load older items below and newer items above
-      await Promise.all([loadMore(), loadNewer(item.id)]);
+      await Promise.all([loadMore(), loadNewer(item.slug)]);
     } else {
       await loadMore();
     }
@@ -193,15 +194,15 @@ async function syncFromApi() {
   for (const item of items) {
     await putItem(item);
     // Render if not already in the feed
-    if (!feed.querySelector(`[data-id="${item.id}"]`)) {
+    if (!feed.querySelector(`[data-slug="${item.slug}"]`)) {
       const el = renderItem(item);
-      // Insert in correct position (newest first = smallest DOM index)
+      // Insert in correct position (newest slug first)
       const existing = [...feed.querySelectorAll('.item')];
-      const after = existing.find(e => Number(e.dataset.id) < item.id);
+      const after = existing.find(e => Number(e.dataset.slug) < item.slug);
       feed.insertBefore(el, after || sentinel);
       observeItem(el);
-      if (lowestId === null || item.id < lowestId) lowestId = item.id;
-      if (highestId === null || item.id > highestId) highestId = item.id;
+      if (lowestId === null || item.slug < lowestId) lowestId = item.slug;
+      if (highestId === null || item.slug > highestId) highestId = item.slug;
     }
   }
 }

@@ -1,10 +1,11 @@
-import { getItems, putItem, deleteItem } from './db.js';
+import { getItems, putItem, deleteItemBySlug, getMaxSlug } from './db.js';
 
 const form = document.getElementById('upload-form');
 const fileInput = document.getElementById('file-input');
 const dropzone = document.getElementById('dropzone');
 const dropzoneLabel = document.getElementById('dropzone-label');
 const altGroup = document.getElementById('alt-group');
+const slugInput = document.getElementById('slug');
 const altInput = document.getElementById('alt');
 const capturedAt = document.getElementById('captured-at');
 const latInput = document.getElementById('lat');
@@ -16,10 +17,11 @@ const statusEl = document.getElementById('status');
 const itemList = document.getElementById('item-list');
 
 let selectedFile = null;
-let editingId = null;  // non-null when editing an existing item
+let editingSlug = null;  // non-null when editing an existing item
 
-// Set default datetime to now
+// Set default datetime to now and pre-fill next slug
 capturedAt.value = new Date().toISOString().slice(0, 16);
+getMaxSlug().then(max => { if (!slugInput.value) slugInput.value = max + 1; });
 
 // File selection
 fileInput.addEventListener('change', () => {
@@ -79,13 +81,15 @@ form.addEventListener('submit', async e => {
   e.preventDefault();
 
   const isVideo = selectedFile?.type.startsWith('video/');
+  const slug = parseInt(slugInput.value);
 
-  if (!editingId && !selectedFile) { setStatus('Choose a file first.'); return; }
-  if (!isVideo && !altInput.value.trim() && !editingId) { setStatus('Alt text is required for images.'); return; }
+  if (!editingSlug && !selectedFile) { setStatus('Choose a file first.'); return; }
+  if (!isVideo && !altInput.value.trim() && !editingSlug) { setStatus('Alt text is required for images.'); return; }
   if (!capturedAt.value) { setStatus('Capture date is required.'); return; }
+  if (!slug || slug < 1) { setStatus('Item number must be a positive integer.'); return; }
 
   submitBtn.disabled = true;
-  setStatus(editingId ? 'Saving...' : 'Adding...');
+  setStatus(editingSlug ? 'Saving...' : 'Adding...');
 
   try {
     let mediaUrl, mediaType, mediaMime, width, height;
@@ -100,7 +104,7 @@ form.addEventListener('submit', async e => {
     }
 
     const item = {
-      media_type: mediaType ?? (editingId ? undefined : 'image'),
+      slug,
       captured_at: capturedAt.value,
       lat: latInput.value ? parseFloat(latInput.value) : null,
       lng: lngInput.value ? parseFloat(lngInput.value) : null,
@@ -112,16 +116,16 @@ form.addEventListener('submit', async e => {
     if (selectedFile) {
       item.media_url = mediaUrl;
       item.media_mime = mediaMime;
+      item.media_type = mediaType;
       item.width = width;
       item.height = height;
     }
 
-    if (editingId) {
-      // Merge with existing item
-      const existing = await import('./db.js').then(m => m.getItem(editingId));
+    if (editingSlug) {
+      const existing = await import('./db.js').then(m => m.getItemBySlug(editingSlug));
       await putItem({ ...existing, ...item });
       setStatus('Saved.');
-      editingId = null;
+      editingSlug = null;
       submitBtn.textContent = 'Add item';
     } else {
       await putItem(item);
@@ -152,6 +156,7 @@ function resetForm() {
   captionInput.value = '';
   langInput.value = 'en';
   altGroup.style.display = '';
+  getMaxSlug().then(max => { slugInput.value = max + 1; });
 }
 
 function formatDatetime(iso) {
@@ -196,6 +201,7 @@ async function renderList() {
     const meta = document.createElement('div');
     meta.className = 'item-meta';
     meta.innerHTML = `
+      <span style="opacity:0.4;font-size:0.75rem">#${item.slug}</span>
       <span>${formatDatetime(item.captured_at)}</span>
       <span class="item-meta-coords">${formatCoords(item.lat, item.lng)}</span>
       ${item.caption ? `<span class="item-meta-caption" lang="${item.lang}" dir="${rtlDir(item.lang)}">${item.caption}</span>` : ''}
@@ -214,8 +220,8 @@ async function renderList() {
     delBtn.className = 'btn-small danger';
     delBtn.textContent = 'Delete';
     delBtn.addEventListener('click', async () => {
-      if (!confirm(`Delete item from ${formatDatetime(item.captured_at)}?`)) return;
-      await deleteItem(item.id);
+      if (!confirm(`Delete item #${item.slug}?`)) return;
+      await deleteItemBySlug(item.slug);
       await renderList();
     });
 
@@ -235,7 +241,8 @@ function rtlDir(lang) {
 }
 
 function startEdit(item) {
-  editingId = item.id;
+  editingSlug = item.slug;
+  slugInput.value = item.slug;
   capturedAt.value = item.captured_at.slice(0, 16);
   latInput.value = item.lat ?? '';
   lngInput.value = item.lng ?? '';
@@ -243,7 +250,7 @@ function startEdit(item) {
   langInput.value = item.lang ?? 'en';
   altInput.value = item.alt ?? '';
   submitBtn.textContent = 'Save changes';
-  setStatus(`Editing item #${item.id}`);
+  setStatus(`Editing item #${item.slug}`);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
