@@ -84,7 +84,7 @@ form.addEventListener('submit', async e => {
   const slug = parseInt(slugInput.value);
 
   if (!editingSlug && !selectedFile) { setStatus('Choose a file first.'); return; }
-  if (!isVideo && !altInput.value.trim() && !editingSlug) { setStatus('Alt text is required for images.'); return; }
+  if (!editingSlug && !isVideo && !altInput.value.trim()) { setStatus('Alt text is required for images.'); return; }
   if (!capturedAt.value) { setStatus('Capture date is required.'); return; }
   if (!slug || slug < 1) { setStatus('Item number must be a positive integer.'); return; }
 
@@ -249,6 +249,30 @@ function startEdit(item) {
   captionInput.value = item.caption ?? '';
   langInput.value = item.lang ?? 'en';
   altInput.value = item.alt ?? '';
+
+  // Show existing media in the dropzone so user can see it's retained
+  const old = dropzone.querySelector('.dropzone-preview');
+  if (old) old.remove();
+
+  const isVideo = item.media_type === 'video';
+  altGroup.style.display = isVideo ? 'none' : '';
+
+  let preview;
+  if (isVideo) {
+    preview = document.createElement('video');
+    preview.src = item.media_url;
+    preview.preload = 'metadata';
+    preview.muted = true;
+  } else {
+    preview = document.createElement('img');
+    preview.src = item.media_url;
+    preview.alt = item.alt || '';
+  }
+  preview.className = 'dropzone-preview';
+  dropzone.insertBefore(preview, dropzoneLabel);
+  dropzoneLabel.textContent = 'Current file — choose a new one to replace it';
+  dropzone.classList.add('has-file');
+
   submitBtn.textContent = 'Save changes';
   setStatus(`Editing item #${item.slug}`);
   window.scrollTo({ top: 0, behavior: 'smooth' });
