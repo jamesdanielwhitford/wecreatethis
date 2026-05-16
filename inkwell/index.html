@@ -142,6 +142,11 @@
     }
 
     #create-menu button:hover { background: color-mix(in srgb, CanvasText 6%, transparent); }
+
+    /* Drag reorder */
+    ul.node-list li[draggable] { cursor: grab; }
+    ul.node-list li.drag-over { outline: 2px solid color-mix(in srgb, CanvasText 40%, transparent); outline-offset: -2px; }
+    ul.node-list li.dragging { opacity: 0.4; }
   </style>
 </head>
 <body>

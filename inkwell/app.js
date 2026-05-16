@@ -54,10 +54,65 @@ function renderList(nodes) {
       <button class="action-btn" data-action="rename" data-id="${node.id}" aria-label="Rename">&#9998;</button>
       <button class="action-btn" data-action="delete" data-id="${node.id}" aria-label="Delete">&#10005;</button>`;
 
+    li.draggable = true;
     li.appendChild(a);
     li.appendChild(actions);
     ul.appendChild(li);
   }
+  attachDragHandlers(ul);
+}
+
+// Drag-and-drop reordering using HTML5 drag events
+let dragSrcId = null;
+
+function attachDragHandlers(ul) {
+  ul.addEventListener('dragstart', e => {
+    const li = e.target.closest('li[draggable]');
+    if (!li) return;
+    dragSrcId = li.dataset.id;
+    li.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  ul.addEventListener('dragend', e => {
+    const li = e.target.closest('li');
+    if (li) li.classList.remove('dragging');
+    ul.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  });
+
+  ul.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const li = e.target.closest('li[draggable]');
+    ul.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    if (li && li.dataset.id !== dragSrcId) li.classList.add('drag-over');
+  });
+
+  ul.addEventListener('drop', async e => {
+    e.preventDefault();
+    const targetLi = e.target.closest('li[draggable]');
+    ul.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    if (!targetLi || !dragSrcId || targetLi.dataset.id === dragSrcId) return;
+
+    // Reorder: collect current IDs from DOM, move src before or after target
+    const items = [...ul.querySelectorAll('li[data-id]')];
+    const ids = items.map(el => el.dataset.id);
+    const srcIdx = ids.indexOf(dragSrcId);
+    const tgtIdx = ids.indexOf(targetLi.dataset.id);
+    if (srcIdx === -1 || tgtIdx === -1) return;
+
+    ids.splice(srcIdx, 1);
+    const insertAt = tgtIdx > srcIdx ? tgtIdx : tgtIdx;
+    ids.splice(insertAt, 0, dragSrcId);
+
+    // Update position values in storage
+    for (let i = 0; i < ids.length; i++) {
+      const node = await storage.getNode(ids[i]);
+      if (node) await storage.putNode({ ...node, position: i });
+    }
+    dragSrcId = null;
+    await reload();
+  });
 }
 
 async function buildBreadcrumb(folderId) {
