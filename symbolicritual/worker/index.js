@@ -7,7 +7,12 @@ const CORS = {
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
+    headers: {
+      ...CORS,
+      'Content-Type': 'application/json',
+      // Cache read responses at the edge for 60s to reduce D1 reads
+      'Cache-Control': status === 200 ? 'public, max-age=60, stale-while-revalidate=300' : 'no-store',
+    },
   });
 }
 

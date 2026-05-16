@@ -226,8 +226,20 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Symbolic Ritual</h1>
+  <!-- Login gate — hidden once authenticated -->
+  <div id="login-screen" class="container" style="display:none;padding-top:40dvh;">
+    <form id="login-form" autocomplete="off">
+      <div class="form-group">
+        <label for="token-input">Access token</label>
+        <input type="password" id="token-input" placeholder="Enter token" autofocus>
+      </div>
+      <button type="submit" class="btn">Enter</button>
+      <p class="status" id="login-status"></p>
+    </form>
+  </div>
+
+  <div id="admin-screen" class="container" style="display:none;">
+    <h1>Symbolic Ritual <button id="logout-btn" style="font:inherit;font-size:0.7rem;background:none;border:none;color:inherit;opacity:0.3;cursor:pointer;margin-left:0.5rem;">sign out</button></h1>
 
     <form id="upload-form" autocomplete="off">
       <!-- Media -->
@@ -291,7 +303,7 @@
     <div class="item-list" id="item-list">
       <p class="empty">No items yet.</p>
     </div>
-  </div>
+  </div><!-- end admin-screen -->
 
   <script type="module" src="admin.js"></script>
   <script>

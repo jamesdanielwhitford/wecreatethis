@@ -1,44 +1,228 @@
-import { getItems, putItem, deleteItemBySlug, getMaxSlug } from './db.js';
+import { getItems, putItem, deleteItemBySlug, getMaxSlug, getItemBySlug } from './db.js';
 
-const form = document.getElementById('upload-form');
-const fileInput = document.getElementById('file-input');
-const dropzone = document.getElementById('dropzone');
-const dropzoneLabel = document.getElementById('dropzone-label');
-const altGroup = document.getElementById('alt-group');
-const slugInput = document.getElementById('slug');
-const altInput = document.getElementById('alt');
-const capturedAt = document.getElementById('captured-at');
-const latInput = document.getElementById('lat');
-const lngInput = document.getElementById('lng');
-const captionInput = document.getElementById('caption');
-const langInput = document.getElementById('lang');
-const submitBtn = document.getElementById('submit-btn');
-const statusEl = document.getElementById('status');
-const itemList = document.getElementById('item-list');
+const API_BASE = 'https://symbolic-ritual.workers.dev';
 
-let selectedFile = null;
-let editingSlug = null;  // non-null when editing an existing item
+// --- Auth gate ---
+const loginScreen = document.getElementById('login-screen');
+const adminScreen = document.getElementById('admin-screen');
+const loginForm = document.getElementById('login-form');
+const tokenInput = document.getElementById('token-input');
+const loginStatus = document.getElementById('login-status');
+const logoutBtn = document.getElementById('logout-btn');
 
-// Set default datetime to now and pre-fill next slug
-capturedAt.value = new Date().toISOString().slice(0, 16);
-getMaxSlug().then(max => { if (!slugInput.value) slugInput.value = max + 1; });
+function getToken() { return sessionStorage.getItem('sr-auth-token') || ''; }
 
-// File selection
-fileInput.addEventListener('change', () => {
-  const file = fileInput.files[0];
-  if (!file) return;
-  selectedFile = file;
-  showPreview(file);
+async function verifyToken(token) {
+  try {
+    const res = await fetch(`${API_BASE}/api/items/next-slug`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    return res.ok;
+  } catch {
+    // Worker not deployed yet — accept any non-empty token for local dev
+    return token.length > 0;
+  }
+}
+
+loginForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  const token = tokenInput.value.trim();
+  if (!token) return;
+  loginStatus.textContent = 'Checking...';
+  const ok = await verifyToken(token);
+  if (ok) {
+    sessionStorage.setItem('sr-auth-token', token);
+    loginStatus.textContent = '';
+    showAdmin();
+  } else {
+    loginStatus.textContent = 'Invalid token.';
+    tokenInput.value = '';
+    tokenInput.focus();
+  }
 });
 
-function showPreview(file) {
-  const isVideo = file.type.startsWith('video/');
-  altGroup.style.display = isVideo ? 'none' : '';
+logoutBtn.addEventListener('click', () => {
+  sessionStorage.removeItem('sr-auth-token');
+  adminScreen.style.display = 'none';
+  loginScreen.style.display = '';
+  tokenInput.value = '';
+  tokenInput.focus();
+});
 
-  // Remove old preview
+function showAdmin() {
+  loginScreen.style.display = 'none';
+  adminScreen.style.display = '';
+  setupForm();
+  renderList();
+}
+
+// Boot
+if (getToken()) {
+  showAdmin();
+} else {
+  loginScreen.style.display = '';
+}
+
+// --- Admin UI ---
+let selectedFile = null;
+let editingSlug = null;
+let formSetup = false;
+
+function setupForm() {
+  if (formSetup) return;
+  formSetup = true;
+
+  const form = document.getElementById('upload-form');
+  const fileInput = document.getElementById('file-input');
+  const dropzone = document.getElementById('dropzone');
+  const dropzoneLabel = document.getElementById('dropzone-label');
+  const altGroup = document.getElementById('alt-group');
+  const slugInput = document.getElementById('slug');
+  const altInput = document.getElementById('alt');
+  const capturedAt = document.getElementById('captured-at');
+  const latInput = document.getElementById('lat');
+  const lngInput = document.getElementById('lng');
+  const captionInput = document.getElementById('caption');
+  const langInput = document.getElementById('lang');
+  const submitBtn = document.getElementById('submit-btn');
+  const statusEl = document.getElementById('status');
+
+  capturedAt.value = new Date().toISOString().slice(0, 16);
+  getMaxSlug().then(max => { if (!slugInput.value) slugInput.value = max + 1; });
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    selectedFile = file;
+    showPreview(file, dropzone, dropzoneLabel, altGroup);
+  });
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const isVideo = selectedFile?.type.startsWith('video/');
+    const slug = parseInt(slugInput.value);
+
+    if (!editingSlug && !selectedFile) { statusEl.textContent = 'Choose a file first.'; return; }
+    if (!editingSlug && !isVideo && !altInput.value.trim()) { statusEl.textContent = 'Alt text is required for images.'; return; }
+    if (!capturedAt.value) { statusEl.textContent = 'Capture date is required.'; return; }
+    if (!slug || slug < 1) { statusEl.textContent = 'Item number must be a positive integer.'; return; }
+
+    submitBtn.disabled = true;
+    statusEl.textContent = editingSlug ? 'Saving...' : 'Adding...';
+
+    try {
+      let mediaUrl, mediaType, mediaMime, width, height;
+
+      if (selectedFile) {
+        mediaMime = selectedFile.type;
+        mediaType = selectedFile.type.startsWith('video/') ? 'video' : 'image';
+        mediaUrl = await readFileAsDataUrl(selectedFile);
+        const dims = await getImageDimensions(mediaUrl, selectedFile.type);
+        width = dims.width;
+        height = dims.height;
+      }
+
+      const item = {
+        slug,
+        captured_at: capturedAt.value,
+        lat: latInput.value ? parseFloat(latInput.value) : null,
+        lng: lngInput.value ? parseFloat(lngInput.value) : null,
+        caption: captionInput.value.trim() || null,
+        lang: langInput.value.trim() || 'en',
+        alt: altInput.value.trim() || '',
+      };
+
+      if (selectedFile) {
+        item.media_url = mediaUrl;
+        item.media_mime = mediaMime;
+        item.media_type = mediaType;
+        item.width = width;
+        item.height = height;
+      }
+
+      if (editingSlug) {
+        const existing = await getItemBySlug(editingSlug);
+        await putItem({ ...existing, ...item });
+        statusEl.textContent = 'Saved.';
+        editingSlug = null;
+        submitBtn.textContent = 'Add item';
+      } else {
+        await putItem(item);
+        statusEl.textContent = 'Added.';
+      }
+
+      resetForm(dropzone, dropzoneLabel, altGroup, altInput, capturedAt, latInput, lngInput, captionInput, langInput, slugInput);
+      await renderList();
+    } catch (err) {
+      statusEl.textContent = 'Error: ' + err.message;
+      console.error(err);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  // Expose startEdit so renderList can call it
+  window._startEdit = (item) => {
+    editingSlug = item.slug;
+    slugInput.value = item.slug;
+    capturedAt.value = item.captured_at.slice(0, 16);
+    latInput.value = item.lat ?? '';
+    lngInput.value = item.lng ?? '';
+    captionInput.value = item.caption ?? '';
+    langInput.value = item.lang ?? 'en';
+    altInput.value = item.alt ?? '';
+
+    const old = dropzone.querySelector('.dropzone-preview');
+    if (old) old.remove();
+    selectedFile = null;
+
+    const isVideo = item.media_type === 'video';
+    altGroup.style.display = isVideo ? 'none' : '';
+
+    let preview;
+    if (isVideo) {
+      preview = document.createElement('video');
+      preview.src = item.media_url;
+      preview.preload = 'metadata';
+      preview.muted = true;
+    } else {
+      preview = document.createElement('img');
+      preview.src = item.media_url;
+      preview.alt = item.alt || '';
+    }
+    preview.className = 'dropzone-preview';
+    dropzone.insertBefore(preview, dropzoneLabel);
+    dropzoneLabel.textContent = 'Current file — choose a new one to replace it';
+    dropzone.classList.add('has-file');
+
+    document.getElementById('submit-btn').textContent = 'Save changes';
+    statusEl.textContent = `Editing item #${item.slug}`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+}
+
+function resetForm(dropzone, dropzoneLabel, altGroup, altInput, capturedAt, latInput, lngInput, captionInput, langInput, slugInput) {
+  selectedFile = null;
+  document.getElementById('file-input').value = '';
   const old = dropzone.querySelector('.dropzone-preview');
   if (old) old.remove();
+  dropzoneLabel.textContent = 'Choose image or video';
+  dropzone.classList.remove('has-file');
+  altInput.value = '';
+  capturedAt.value = new Date().toISOString().slice(0, 16);
+  latInput.value = '';
+  lngInput.value = '';
+  captionInput.value = '';
+  langInput.value = 'en';
+  altGroup.style.display = '';
+  getMaxSlug().then(max => { slugInput.value = max + 1; });
+}
 
+function showPreview(file, dropzone, dropzoneLabel, altGroup) {
+  const isVideo = file.type.startsWith('video/');
+  altGroup.style.display = isVideo ? 'none' : '';
+  const old = dropzone.querySelector('.dropzone-preview');
+  if (old) old.remove();
   const url = URL.createObjectURL(file);
   let preview;
   if (isVideo) {
@@ -55,8 +239,6 @@ function showPreview(file) {
   dropzoneLabel.textContent = file.name;
   dropzone.classList.add('has-file');
 }
-
-function setStatus(msg) { statusEl.textContent = msg; }
 
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -77,88 +259,6 @@ function getImageDimensions(dataUrl, type) {
   });
 }
 
-form.addEventListener('submit', async e => {
-  e.preventDefault();
-
-  const isVideo = selectedFile?.type.startsWith('video/');
-  const slug = parseInt(slugInput.value);
-
-  if (!editingSlug && !selectedFile) { setStatus('Choose a file first.'); return; }
-  if (!editingSlug && !isVideo && !altInput.value.trim()) { setStatus('Alt text is required for images.'); return; }
-  if (!capturedAt.value) { setStatus('Capture date is required.'); return; }
-  if (!slug || slug < 1) { setStatus('Item number must be a positive integer.'); return; }
-
-  submitBtn.disabled = true;
-  setStatus(editingSlug ? 'Saving...' : 'Adding...');
-
-  try {
-    let mediaUrl, mediaType, mediaMime, width, height;
-
-    if (selectedFile) {
-      mediaMime = selectedFile.type;
-      mediaType = selectedFile.type.startsWith('video/') ? 'video' : 'image';
-      mediaUrl = await readFileAsDataUrl(selectedFile);
-      const dims = await getImageDimensions(mediaUrl, selectedFile.type);
-      width = dims.width;
-      height = dims.height;
-    }
-
-    const item = {
-      slug,
-      captured_at: capturedAt.value,
-      lat: latInput.value ? parseFloat(latInput.value) : null,
-      lng: lngInput.value ? parseFloat(lngInput.value) : null,
-      caption: captionInput.value.trim() || null,
-      lang: langInput.value.trim() || 'en',
-      alt: altInput.value.trim() || '',
-    };
-
-    if (selectedFile) {
-      item.media_url = mediaUrl;
-      item.media_mime = mediaMime;
-      item.media_type = mediaType;
-      item.width = width;
-      item.height = height;
-    }
-
-    if (editingSlug) {
-      const existing = await import('./db.js').then(m => m.getItemBySlug(editingSlug));
-      await putItem({ ...existing, ...item });
-      setStatus('Saved.');
-      editingSlug = null;
-      submitBtn.textContent = 'Add item';
-    } else {
-      await putItem(item);
-      setStatus('Added.');
-    }
-
-    resetForm();
-    await renderList();
-  } catch (err) {
-    setStatus('Error: ' + err.message);
-    console.error(err);
-  } finally {
-    submitBtn.disabled = false;
-  }
-});
-
-function resetForm() {
-  selectedFile = null;
-  fileInput.value = '';
-  const old = dropzone.querySelector('.dropzone-preview');
-  if (old) old.remove();
-  dropzoneLabel.textContent = 'Choose image or video';
-  dropzone.classList.remove('has-file');
-  altInput.value = '';
-  capturedAt.value = new Date().toISOString().slice(0, 16);
-  latInput.value = '';
-  lngInput.value = '';
-  captionInput.value = '';
-  langInput.value = 'en';
-  altGroup.style.display = '';
-  getMaxSlug().then(max => { slugInput.value = max + 1; });
-}
-
 function formatDatetime(iso) {
   const d = new Date(iso);
   if (isNaN(d)) return iso;
@@ -170,7 +270,13 @@ function formatCoords(lat, lng) {
   return `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`;
 }
 
+function rtlDir(lang) {
+  const rtl = ['ar','he','fa','ur','yi','dv','ps','sd'];
+  return rtl.some(l => (lang || 'en').startsWith(l)) ? 'rtl' : 'ltr';
+}
+
 async function renderList() {
+  const itemList = document.getElementById('item-list');
   const items = await getItems({ limit: 200 });
   itemList.innerHTML = '';
 
@@ -183,7 +289,6 @@ async function renderList() {
     const row = document.createElement('div');
     row.className = 'item-row';
 
-    // Thumbnail
     let thumb;
     if (item.media_type === 'video') {
       thumb = document.createElement('video');
@@ -197,7 +302,6 @@ async function renderList() {
     }
     thumb.className = 'item-thumb';
 
-    // Meta
     const meta = document.createElement('div');
     meta.className = 'item-meta';
     meta.innerHTML = `
@@ -207,14 +311,13 @@ async function renderList() {
       ${item.caption ? `<span class="item-meta-caption" lang="${item.lang}" dir="${rtlDir(item.lang)}">${item.caption}</span>` : ''}
     `;
 
-    // Actions
     const actions = document.createElement('div');
     actions.className = 'item-actions';
 
     const editBtn = document.createElement('button');
     editBtn.className = 'btn-small';
     editBtn.textContent = 'Edit';
-    editBtn.addEventListener('click', () => startEdit(item));
+    editBtn.addEventListener('click', () => window._startEdit(item));
 
     const delBtn = document.createElement('button');
     delBtn.className = 'btn-small danger';
@@ -227,55 +330,9 @@ async function renderList() {
 
     actions.appendChild(editBtn);
     actions.appendChild(delBtn);
-
     row.appendChild(thumb);
     row.appendChild(meta);
     row.appendChild(actions);
     itemList.appendChild(row);
   }
 }
-
-function rtlDir(lang) {
-  const rtl = ['ar','he','fa','ur','yi','dv','ps','sd'];
-  return rtl.some(l => (lang || 'en').startsWith(l)) ? 'rtl' : 'ltr';
-}
-
-function startEdit(item) {
-  editingSlug = item.slug;
-  slugInput.value = item.slug;
-  capturedAt.value = item.captured_at.slice(0, 16);
-  latInput.value = item.lat ?? '';
-  lngInput.value = item.lng ?? '';
-  captionInput.value = item.caption ?? '';
-  langInput.value = item.lang ?? 'en';
-  altInput.value = item.alt ?? '';
-
-  // Show existing media in the dropzone so user can see it's retained
-  const old = dropzone.querySelector('.dropzone-preview');
-  if (old) old.remove();
-
-  const isVideo = item.media_type === 'video';
-  altGroup.style.display = isVideo ? 'none' : '';
-
-  let preview;
-  if (isVideo) {
-    preview = document.createElement('video');
-    preview.src = item.media_url;
-    preview.preload = 'metadata';
-    preview.muted = true;
-  } else {
-    preview = document.createElement('img');
-    preview.src = item.media_url;
-    preview.alt = item.alt || '';
-  }
-  preview.className = 'dropzone-preview';
-  dropzone.insertBefore(preview, dropzoneLabel);
-  dropzoneLabel.textContent = 'Current file — choose a new one to replace it';
-  dropzone.classList.add('has-file');
-
-  submitBtn.textContent = 'Save changes';
-  setStatus(`Editing item #${item.slug}`);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-renderList();
