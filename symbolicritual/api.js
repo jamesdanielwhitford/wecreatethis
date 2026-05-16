@@ -56,11 +56,16 @@ export async function removeItem(id) {
   return handleResponse(res);
 }
 
-export async function getUploadUrl(filename, contentType) {
-  const res = await fetch(`${API_BASE}/api/upload`, {
+// Uploads a file to R2 via the Worker proxy. Returns { mediaUrl, key }.
+export async function uploadMedia(file) {
+  const filename = encodeURIComponent(file.name);
+  const res = await fetch(`${API_BASE}/api/upload?filename=${filename}`, {
     method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify({ filename, contentType }),
+    headers: {
+      'Authorization': `Bearer ${getToken()}`,
+      'Content-Type': file.type,
+    },
+    body: file,
   });
-  return handleResponse(res); // returns { uploadUrl, mediaUrl, key }
+  return handleResponse(res);
 }

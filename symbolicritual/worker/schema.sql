@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS items (
   media_url    TEXT    NOT NULL,
   media_type   TEXT    NOT NULL CHECK(media_type IN ('image','video')),
   media_mime   TEXT,
+  r2_key       TEXT,
   captured_at  TEXT    NOT NULL,
   lat          REAL,
   lng          REAL,
