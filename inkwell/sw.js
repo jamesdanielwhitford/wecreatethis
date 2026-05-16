@@ -1,4 +1,4 @@
-const CACHE_NAME = 'inkwell-v3';
+const CACHE_NAME = 'inkwell-v4';
 
 const ASSETS = [
   '/inkwell/',
@@ -11,6 +11,8 @@ const ASSETS = [
   '/inkwell/db.js',
   '/inkwell/settings.js',
   '/inkwell/api.js',
+  '/inkwell/voice',
+  '/inkwell/voice.js',
   '/inkwell/manifest.json',
 ];
 

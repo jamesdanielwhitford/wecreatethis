@@ -97,7 +97,9 @@ function showMenu() {
   menu.id = 'create-menu';
   menu.innerHTML = `
     <button data-create="folder">&#128193; New folder</button>
-    <button data-create="note">&#128196; New note</button>`;
+    <button data-create="note">&#128196; New note</button>
+    <button data-create="voice">&#127908; Voice note</button>
+    <button data-create="chat">&#129302; AI chat</button>`;
   document.body.appendChild(menu);
 
   // Position below the + button
@@ -113,6 +115,12 @@ function showMenu() {
     if (type === 'note') {
       const node = await storage.createNode({ type: 'note', title: '', body: '', parent_id: currentFolderId, source: 'typed' });
       location.href = `/inkwell/note?id=${node.id}`;
+    } else if (type === 'voice') {
+      const dest = currentFolderId ? `?parent=${currentFolderId}` : '';
+      location.href = `/inkwell/voice${dest}`;
+    } else if (type === 'chat') {
+      const dest = currentFolderId ? `?parent=${currentFolderId}` : '';
+      location.href = `/inkwell/chat${dest}`;
     } else {
       const title = prompt('Folder name:');
       if (!title) return;
