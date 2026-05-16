@@ -88,6 +88,60 @@
     .node-info { flex: 1; min-width: 0; }
     .node-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
     .node-meta { font-size: 0.75rem; color: color-mix(in srgb, CanvasText 50%, transparent); margin-top: 0.15rem; display: block; }
+
+    .node-actions {
+      display: flex;
+      gap: 0.25rem;
+      flex-shrink: 0;
+      padding-right: 0.25rem;
+    }
+
+    .action-btn {
+      font: inherit;
+      background: none;
+      border: none;
+      color: color-mix(in srgb, CanvasText 40%, transparent);
+      cursor: pointer;
+      padding: 0.25rem 0.4rem;
+      border-radius: 4px;
+      min-width: 36px;
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+    }
+
+    .action-btn:hover {
+      background: color-mix(in srgb, CanvasText 10%, transparent);
+      color: CanvasText;
+    }
+
+    #create-menu {
+      position: absolute;
+      background: Canvas;
+      border: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+      border-radius: 6px;
+      box-shadow: 0 4px 12px color-mix(in srgb, CanvasText 12%, transparent);
+      display: flex;
+      flex-direction: column;
+      min-width: 160px;
+      z-index: 100;
+      overflow: hidden;
+    }
+
+    #create-menu button {
+      font: inherit;
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      color: CanvasText;
+      touch-action: manipulation;
+    }
+
+    #create-menu button:hover { background: color-mix(in srgb, CanvasText 6%, transparent); }
   </style>
 </head>
 <body>

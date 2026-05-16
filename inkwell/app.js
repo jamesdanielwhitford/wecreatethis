@@ -1,7 +1,7 @@
 import * as storage from './storage.js';
 
 // Seed dev data once
-async function maybeeSeed() {
+async function maybeSeed() {
   if (localStorage.getItem('inkwell-seeded')) return;
   const work = await storage.createNode({ type: 'folder', title: 'Work', parent_id: null });
   const personal = await storage.createNode({ type: 'folder', title: 'Personal', parent_id: null });
@@ -12,13 +12,20 @@ async function maybeeSeed() {
   localStorage.setItem('inkwell-seeded', '1');
 }
 
+let currentFolderId = null;
+let currentNodes = [];
+
 function formatDate(iso) {
   if (!iso) return '';
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function renderList(nodes) {
+  currentNodes = nodes;
   const ul = document.getElementById('node-list');
   ul.innerHTML = '';
   if (!nodes.length) {
@@ -27,6 +34,8 @@ function renderList(nodes) {
   }
   for (const node of nodes) {
     const li = document.createElement('li');
+    li.dataset.id = node.id;
+
     const a = document.createElement('a');
     a.href = node.type === 'folder'
       ? `/inkwell/?folder=${node.id}`
@@ -37,19 +46,23 @@ function renderList(nodes) {
         <span class="node-title">${escHtml(node.title || 'Untitled')}</span>
         ${node.type === 'note' ? `<span class="node-meta">${formatDate(node.updated_at)}</span>` : ''}
       </span>`;
+
+    const actions = document.createElement('span');
+    actions.className = 'node-actions';
+    actions.innerHTML = `
+      <button class="action-btn" data-action="rename" data-id="${node.id}" aria-label="Rename">&#9998;</button>
+      <button class="action-btn" data-action="delete" data-id="${node.id}" aria-label="Delete">&#10005;</button>`;
+
     li.appendChild(a);
+    li.appendChild(actions);
     ul.appendChild(li);
   }
 }
 
-function escHtml(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 async function buildBreadcrumb(folderId) {
   const crumbs = [{ title: 'Inkwell', href: '/inkwell/' }];
-  let id = folderId;
   const chain = [];
+  let id = folderId;
   while (id) {
     const node = await storage.getNode(id);
     if (!node) break;
@@ -69,13 +82,85 @@ async function buildBreadcrumb(folderId) {
   if (h1) h1.textContent = chain.length ? chain[chain.length - 1].title : 'Inkwell';
 }
 
-async function init() {
-  await maybeeSeed();
-  const params = new URLSearchParams(location.search);
-  const folderId = params.get('folder') || null;
-  await buildBreadcrumb(folderId);
-  const nodes = await storage.getChildren(folderId);
+async function reload() {
+  const nodes = await storage.getChildren(currentFolderId);
   renderList(nodes);
+}
+
+// Creation menu
+function showMenu() {
+  const existing = document.getElementById('create-menu');
+  if (existing) { existing.remove(); return; }
+
+  const menu = document.createElement('div');
+  menu.id = 'create-menu';
+  menu.innerHTML = `
+    <button data-create="folder">&#128193; New folder</button>
+    <button data-create="note">&#128196; New note</button>`;
+  document.body.appendChild(menu);
+
+  // Position below the + button
+  const btn = document.getElementById('btn-new');
+  const rect = btn.getBoundingClientRect();
+  menu.style.top = `${rect.bottom + window.scrollY + 4}px`;
+  menu.style.right = `${document.documentElement.clientWidth - rect.right}px`;
+
+  menu.addEventListener('click', async e => {
+    const type = e.target.dataset.create;
+    if (!type) return;
+    menu.remove();
+    if (type === 'note') {
+      const node = await storage.createNode({ type: 'note', title: '', body: '', parent_id: currentFolderId, source: 'typed' });
+      location.href = `/inkwell/note?id=${node.id}`;
+    } else {
+      const title = prompt('Folder name:');
+      if (!title) return;
+      await storage.createNode({ type: 'folder', title: title.trim(), parent_id: currentFolderId });
+      reload();
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (!menu.contains(e.target) && e.target !== btn) menu.remove();
+  }, { once: true });
+}
+
+async function handleAction(action, id) {
+  if (action === 'rename') {
+    const node = await storage.getNode(id);
+    if (!node) return;
+    const title = prompt('Rename:', node.title);
+    if (title === null) return;
+    await storage.putNode({ ...node, title: title.trim() });
+    reload();
+  } else if (action === 'delete') {
+    const node = await storage.getNode(id);
+    if (!node) return;
+    const label = node.type === 'folder' ? 'folder and all its contents' : 'note';
+    if (!confirm(`Delete this ${label}?`)) return;
+    await storage.deleteNode(id);
+    reload();
+  }
+}
+
+async function init() {
+  await maybeSeed();
+  const params = new URLSearchParams(location.search);
+  currentFolderId = params.get('folder') || null;
+  await buildBreadcrumb(currentFolderId);
+  await reload();
+
+  document.getElementById('btn-new').addEventListener('click', e => {
+    e.stopPropagation();
+    showMenu();
+  });
+
+  document.getElementById('node-list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    e.preventDefault();
+    handleAction(btn.dataset.action, btn.dataset.id);
+  });
 }
 
 init();
