@@ -14,3 +14,7 @@ bucket_name = "symbolic-ritual-media"
 [vars]
 # AUTH_TOKEN is set as a secret via: npx wrangler secret put AUTH_TOKEN
 # Do not put the real token here.
+# R2_PUBLIC_URL is the public base URL for the R2 bucket.
+# Set this after enabling public access on the bucket in the Cloudflare dashboard.
+# Example: https://pub-abc123.r2.dev  or  https://media.yourdomain.com
+R2_PUBLIC_URL = "https://pub-25f015d2275645df9e510a68115aed04.r2.dev"

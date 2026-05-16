@@ -85,11 +85,12 @@ export default {
       if (!slug || !media_url || !media_type || !captured_at) return err('slug, media_url, media_type, captured_at required');
       if (!['image', 'video'].includes(media_type)) return err('media_type must be image or video');
 
+      const { r2_key } = body;
       const result = await env.DB.prepare(
-        `INSERT INTO items (slug, media_url, media_type, media_mime, captured_at, lat, lng, caption, lang, alt, width, height)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO items (slug, media_url, media_type, media_mime, r2_key, captured_at, lat, lng, caption, lang, alt, width, height)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          RETURNING *`
-      ).bind(slug, media_url, media_type, media_mime ?? null, captured_at, lat ?? null, lng ?? null, caption ?? null, lang ?? 'en', alt ?? '', width ?? null, height ?? null).first();
+      ).bind(slug, media_url, media_type, media_mime ?? null, r2_key ?? null, captured_at, lat ?? null, lng ?? null, caption ?? null, lang ?? 'en', alt ?? '', width ?? null, height ?? null).first();
 
       return json(result, 201);
     }
@@ -104,12 +105,19 @@ export default {
       const existing = await env.DB.prepare('SELECT * FROM items WHERE slug = ?').bind(slug).first();
       if (!existing) return err('Not found', 404);
 
-      const { media_url, media_type, media_mime, captured_at, lat, lng, caption, lang, alt, width, height } = body;
+      const { media_url, media_type, media_mime, r2_key, captured_at, lat, lng, caption, lang, alt, width, height } = body;
+
+      // If media is being replaced, delete the old R2 object
+      if (r2_key && existing.r2_key && r2_key !== existing.r2_key) {
+        await env.MEDIA.delete(existing.r2_key).catch(() => {});
+      }
+
       const result = await env.DB.prepare(
         `UPDATE items SET
            media_url   = ?,
            media_type  = ?,
            media_mime  = ?,
+           r2_key      = ?,
            captured_at = ?,
            lat         = ?,
            lng         = ?,
@@ -124,6 +132,7 @@ export default {
         media_url    ?? existing.media_url,
         media_type   ?? existing.media_type,
         media_mime   ?? existing.media_mime,
+        r2_key       !== undefined ? r2_key : existing.r2_key,
         captured_at  ?? existing.captured_at,
         lat          !== undefined ? lat    : existing.lat,
         lng          !== undefined ? lng    : existing.lng,
@@ -145,32 +154,31 @@ export default {
       const existing = await env.DB.prepare('SELECT * FROM items WHERE slug = ?').bind(slug).first();
       if (!existing) return err('Not found', 404);
 
-      // Delete from R2 if it's an R2 key (not a data URL or full external URL)
-      if (existing.media_url && !existing.media_url.startsWith('data:') && !existing.media_url.startsWith('http')) {
-        await env.MEDIA.delete(existing.media_url).catch(() => {});
+      // Delete from R2 using the stored key if present
+      if (existing.r2_key) {
+        await env.MEDIA.delete(existing.r2_key).catch(() => {});
       }
 
       await env.DB.prepare('DELETE FROM items WHERE slug = ?').bind(slug).run();
       return new Response(null, { status: 204, headers: CORS });
     }
 
-    // POST /api/upload — presigned R2 URL for direct browser upload
+    // POST /api/upload — proxy file upload to R2
+    // Body is the raw file bytes, content-type header must be set by client
+    // Query param: filename
     if (method === 'POST' && path === '/api/upload') {
       if (!authed(request, env)) return err('Unauthorized', 401);
-      const body = await request.json().catch(() => null);
-      if (!body?.filename || !body?.contentType) return err('filename and contentType required');
+      const filename = url.searchParams.get('filename');
+      const contentType = request.headers.get('Content-Type') || 'application/octet-stream';
+      if (!filename) return err('filename query param required');
 
-      const key = `media/${Date.now()}-${body.filename.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-      const uploadUrl = await env.MEDIA.createPresignedUrl(key, {
-        expiresIn: 3600,
-        httpMethod: 'PUT',
-        headers: { 'Content-Type': body.contentType },
-      }).catch(() => null);
+      const key = `media/${Date.now()}-${filename.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const blob = await request.arrayBuffer();
+      await env.MEDIA.put(key, blob, { httpMetadata: { contentType } });
 
-      if (!uploadUrl) return err('Could not generate upload URL', 500);
-
-      const mediaUrl = `https://media.symbolic-ritual.com/${key}`;
-      return json({ uploadUrl, mediaUrl, key });
+      // Public URL — requires R2 public bucket or custom domain set in Cloudflare dashboard
+      const mediaUrl = `${env.R2_PUBLIC_URL}/${key}`;
+      return json({ mediaUrl, key }, 201);
     }
 
     return err('Not found', 404);

@@ -1,4 +1,5 @@
 import { getItems, putItem, deleteItemBySlug, getMaxSlug, getItemBySlug } from './db.js';
+import { uploadMedia, createItem, updateItem, removeItem } from './api.js';
 
 const API_BASE = 'https://symbolic-ritual.james-052.workers.dev';
 
@@ -108,21 +109,25 @@ function setupForm() {
     if (!slug || slug < 1) { statusEl.textContent = 'Item number must be a positive integer.'; return; }
 
     submitBtn.disabled = true;
-    statusEl.textContent = editingSlug ? 'Saving...' : 'Adding...';
 
     try {
-      let mediaUrl, mediaType, mediaMime, width, height;
+      let mediaUrl, mediaType, mediaMime, r2_key, width, height;
 
       if (selectedFile) {
+        statusEl.textContent = 'Uploading media...';
         mediaMime = selectedFile.type;
         mediaType = selectedFile.type.startsWith('video/') ? 'video' : 'image';
-        mediaUrl = await readFileAsDataUrl(selectedFile);
-        const dims = await getImageDimensions(mediaUrl, selectedFile.type);
+        const dims = await getImageDimensions(selectedFile);
         width = dims.width;
         height = dims.height;
+        const uploaded = await uploadMedia(selectedFile);
+        mediaUrl = uploaded.mediaUrl;
+        r2_key = uploaded.key;
       }
 
-      const item = {
+      statusEl.textContent = editingSlug ? 'Saving...' : 'Adding...';
+
+      const payload = {
         slug,
         captured_at: capturedAt.value,
         lat: latInput.value ? parseFloat(latInput.value) : null,
@@ -130,26 +135,21 @@ function setupForm() {
         caption: captionInput.value.trim() || null,
         lang: langInput.value.trim() || 'en',
         alt: altInput.value.trim() || '',
+        ...(selectedFile && { media_url: mediaUrl, media_mime: mediaMime, media_type: mediaType, r2_key, width, height }),
       };
 
-      if (selectedFile) {
-        item.media_url = mediaUrl;
-        item.media_mime = mediaMime;
-        item.media_type = mediaType;
-        item.width = width;
-        item.height = height;
-      }
-
+      let savedItem;
       if (editingSlug) {
-        const existing = await getItemBySlug(editingSlug);
-        await putItem({ ...existing, ...item });
-        statusEl.textContent = 'Saved.';
+        savedItem = await updateItem(editingSlug, payload);
         editingSlug = null;
         submitBtn.textContent = 'Add item';
       } else {
-        await putItem(item);
-        statusEl.textContent = 'Added.';
+        savedItem = await createItem(payload);
       }
+
+      // Write to local IndexedDB cache
+      await putItem(savedItem);
+      statusEl.textContent = editingSlug === null ? 'Saved.' : 'Added.';
 
       resetForm(dropzone, dropzoneLabel, altGroup, altInput, capturedAt, latInput, lngInput, captionInput, langInput, slugInput);
       await renderList();
@@ -240,22 +240,15 @@ function showPreview(file, dropzone, dropzoneLabel, altGroup) {
   dropzone.classList.add('has-file');
 }
 
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
 
-function getImageDimensions(dataUrl, type) {
+function getImageDimensions(file) {
   return new Promise(resolve => {
-    if (type.startsWith('video/')) { resolve({ width: null, height: null }); return; }
+    if (file.type.startsWith('video/')) { resolve({ width: null, height: null }); return; }
+    const url = URL.createObjectURL(file);
     const img = new Image();
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => resolve({ width: null, height: null });
-    img.src = dataUrl;
+    img.onload = () => { resolve({ width: img.naturalWidth, height: img.naturalHeight }); URL.revokeObjectURL(url); };
+    img.onerror = () => { resolve({ width: null, height: null }); URL.revokeObjectURL(url); };
+    img.src = url;
   });
 }
 
@@ -324,6 +317,11 @@ async function renderList() {
     delBtn.textContent = 'Delete';
     delBtn.addEventListener('click', async () => {
       if (!confirm(`Delete item #${item.slug}?`)) return;
+      try {
+        await removeItem(item.slug);
+      } catch (e) {
+        console.warn('API delete failed, removing locally only:', e.message);
+      }
       await deleteItemBySlug(item.slug);
       await renderList();
     });
