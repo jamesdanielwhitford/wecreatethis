@@ -1,18 +1,19 @@
 import { getItems, getItemBySlug, putItem } from './db.js';
-import { fetchItems, fetchItem } from './api.js';
+import { fetchItems } from './api.js';
 
 const feed = document.getElementById('feed');
 const sentinel = document.getElementById('scroll-sentinel');
+const offlineBar = document.getElementById('offline-bar');
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const RTL_LANGS = ['ar','he','fa','ur','yi','dv','ps','sd'];
 
+let itemCount = 0;
 let lowestId = null;
 let highestId = null;
 let loading = false;
+let loadingEl = null;
 
-// Tracks intersection ratios per item so we update URL to the most-visible one.
-// Keys are slugs (user-visible numbers), not internal DB ids.
 const visibilityMap = new Map();
 
 function dir(lang) {
@@ -20,12 +21,11 @@ function dir(lang) {
 }
 
 function formatDatetime(iso) {
-  // iso is "YYYY-MM-DDTHH:MM" or full ISO string
   const d = new Date(iso);
   if (isNaN(d)) return iso;
-  const date = d.toLocaleDateString('en-CA'); // YYYY-MM-DD
+  const date = d.toLocaleDateString('en-CA');
   const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-  return `${date}  ${time}`;
+  return `${date}  ${time}`;
 }
 
 function formatCoords(lat, lng) {
@@ -35,7 +35,32 @@ function formatCoords(lat, lng) {
   return `${latStr}, ${lngStr}`;
 }
 
+function showLoading() {
+  if (loadingEl) return;
+  loadingEl = document.createElement('div');
+  loadingEl.className = 'loading-pulse';
+  loadingEl.setAttribute('aria-label', 'Loading');
+  loadingEl.setAttribute('role', 'status');
+  feed.insertBefore(loadingEl, sentinel);
+}
+
+function hideLoading() {
+  if (loadingEl) { loadingEl.remove(); loadingEl = null; }
+}
+
+function showEmpty() {
+  const msg = document.createElement('p');
+  msg.className = 'feed-message';
+  msg.textContent = 'Nothing here yet.';
+  feed.insertBefore(msg, sentinel);
+}
+
+function showOffline() { offlineBar.classList.add('visible'); }
+function hideOffline() { offlineBar.classList.remove('visible'); }
+
 function renderItem(item) {
+  const position = itemCount++;
+
   const article = document.createElement('article');
   article.className = 'item';
   article.dataset.id = item.id;
@@ -49,15 +74,16 @@ function renderItem(item) {
     media.className = 'item-media';
     media.controls = true;
     media.preload = 'metadata';
-    if (!reduceMotion) media.autoplay = false; // autoplay added in later stage when needed
     if (item.width) media.width = item.width;
     if (item.height) media.height = item.height;
-    const track = document.createElement('track');
-    track.kind = 'captions';
-    track.srclang = item.lang || 'en';
-    track.label = item.lang || 'en';
-    if (item.track_src) track.src = item.track_src;
-    media.appendChild(track);
+    if (item.track_src) {
+      const track = document.createElement('track');
+      track.kind = 'captions';
+      track.srclang = item.lang || 'en';
+      track.label = item.lang || 'en';
+      track.src = item.track_src;
+      media.appendChild(track);
+    }
     const source = document.createElement('source');
     source.src = item.media_url;
     source.type = item.media_mime || 'video/mp4';
@@ -69,11 +95,21 @@ function renderItem(item) {
     media.alt = item.alt || '';
     if (item.width) media.width = item.width;
     if (item.height) media.height = item.height;
-    media.loading = 'lazy';
+    media.loading = position === 0 ? 'eager' : 'lazy';
+    media.decoding = position === 0 ? 'sync' : 'async';
+
+    // Broken image fallback
+    media.onerror = () => {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'item-media-error';
+      placeholder.setAttribute('role', 'img');
+      placeholder.setAttribute('aria-label', item.alt || 'Image unavailable');
+      placeholder.textContent = item.alt || 'Image unavailable';
+      media.replaceWith(placeholder);
+    };
   }
 
   const figcaption = document.createElement('figcaption');
-
   const meta = document.createElement('div');
   meta.className = 'meta';
 
@@ -107,12 +143,8 @@ function renderItem(item) {
   return article;
 }
 
-function observeItem(el) {
-  urlObserver.observe(el);
-}
+function observeItem(el) { urlObserver.observe(el); }
 
-// Tracks intersection ratio per item, updates URL to whichever is most visible.
-// Uses slug (user-visible number) in the URL, not the internal DB id.
 const urlObserver = new IntersectionObserver(entries => {
   for (const entry of entries) {
     const slug = entry.target.dataset.slug;
@@ -130,7 +162,6 @@ const urlObserver = new IntersectionObserver(entries => {
   if (bestSlug) history.replaceState({ slug: bestSlug }, '', `?item=${bestSlug}`);
 }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
 
-// Triggers loading more items when sentinel enters view
 const sentinelObserver = new IntersectionObserver(entries => {
   if (entries[0].isIntersecting) loadMore();
 }, { rootMargin: '200px' });
@@ -149,7 +180,6 @@ async function loadMore() {
   loading = false;
 }
 
-// Loads items newer than highestId and prepends them above the feed
 async function loadNewer(aboveSlug) {
   const items = await getItems({ after: aboveSlug, limit: 20 });
   const firstChild = feed.firstChild;
@@ -162,12 +192,21 @@ async function loadNewer(aboveSlug) {
 }
 
 async function init() {
+  showLoading();
+
   const params = new URLSearchParams(location.search);
   const targetSlug = params.get('item') ? Number(params.get('item')) : null;
 
   if (targetSlug) {
-    const item = await getItemBySlug(targetSlug);
+    // Try local cache first, fall back to API sync which will populate it
+    let item = await getItemBySlug(targetSlug);
+    if (!item) {
+      // Not in local cache yet — sync from API first
+      await syncFromApi().catch(() => {});
+      item = await getItemBySlug(targetSlug);
+    }
     if (item) {
+      hideLoading();
       const el = renderItem(item);
       feed.insertBefore(el, sentinel);
       observeItem(el);
@@ -176,34 +215,46 @@ async function init() {
       el.scrollIntoView();
       await Promise.all([loadMore(), loadNewer(item.slug)]);
     } else {
+      // Slug not found anywhere — fall back to top of feed
+      hideLoading();
+      history.replaceState({}, '', location.pathname);
       await loadMore();
+      if (feed.querySelectorAll('.item').length === 0) showEmpty();
     }
   } else {
     await loadMore();
+    hideLoading();
+    if (feed.querySelectorAll('.item').length === 0) {
+      // Nothing in local cache — try API
+      await syncFromApi().catch(() => {});
+      if (feed.querySelectorAll('.item').length === 0) showEmpty();
+    }
   }
 
   sentinelObserver.observe(sentinel);
-
-  // Background sync from API — writes new items to IndexedDB and renders them
   syncFromApi().catch(() => {});
 }
 
 async function syncFromApi() {
-  const items = await fetchItems({ limit: 20 });
-  if (!items?.length) return;
-  for (const item of items) {
-    await putItem(item);
-    // Render if not already in the feed
-    if (!feed.querySelector(`[data-slug="${item.slug}"]`)) {
-      const el = renderItem(item);
-      // Insert in correct position (newest slug first)
-      const existing = [...feed.querySelectorAll('.item')];
-      const after = existing.find(e => Number(e.dataset.slug) < item.slug);
-      feed.insertBefore(el, after || sentinel);
-      observeItem(el);
-      if (lowestId === null || item.slug < lowestId) lowestId = item.slug;
-      if (highestId === null || item.slug > highestId) highestId = item.slug;
+  try {
+    const items = await fetchItems({ limit: 20 });
+    if (!items?.length) return;
+    hideOffline();
+    for (const item of items) {
+      await putItem(item);
+      if (!feed.querySelector(`[data-slug="${item.slug}"]`)) {
+        hideLoading();
+        const el = renderItem(item);
+        const existing = [...feed.querySelectorAll('.item')];
+        const insertBefore = existing.find(e => Number(e.dataset.slug) < item.slug);
+        feed.insertBefore(el, insertBefore || sentinel);
+        observeItem(el);
+        if (lowestId === null || item.slug < lowestId) lowestId = item.slug;
+        if (highestId === null || item.slug > highestId) highestId = item.slug;
+      }
     }
+  } catch {
+    showOffline();
   }
 }
 

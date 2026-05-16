@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -86,7 +86,7 @@
     .meta-datetime,
     .meta-coords {
       font-size: 0.8125rem;
-      opacity: 0.55;
+      opacity: 0.7;
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.01em;
     }
@@ -98,17 +98,85 @@
       max-width: 60ch;
     }
 
+    /* Metadata legibility */
+    .meta-datetime,
+    .meta-coords {
+      line-height: 1.5;
+    }
+
     /* Sentinel for infinite scroll — invisible */
     #scroll-sentinel {
       height: 1px;
       width: 100%;
     }
+
+    /* Loading pulse */
+    .loading-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.25;
+      margin: 40dvh auto;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.15; transform: scale(0.8); }
+      50%       { opacity: 0.45; transform: scale(1.2); }
+    }
+
+    /* Empty and offline states */
+    .feed-message {
+      margin: 40dvh auto;
+      font-size: 0.8125rem;
+      opacity: 0.35;
+      text-align: center;
+      padding: 0 1rem;
+    }
+
+    /* Offline indicator — fixed, unobtrusive */
+    #offline-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0.4rem 1rem;
+      font-size: 0.75rem;
+      opacity: 0.6;
+      text-align: center;
+      background: Canvas;
+      border-top: 1px solid currentColor;
+      display: none;
+    }
+
+    #offline-bar.visible { display: block; }
+
+    /* Broken image placeholder */
+    .item-media-error {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      max-height: 100dvh;
+      opacity: 0.15;
+      font-size: 0.8125rem;
+    }
+
+    /* Reduced motion: disable scroll-driven transitions */
+    @media (prefers-reduced-motion: reduce) {
+      * { scroll-behavior: auto !important; }
+      .loading-pulse { animation: none; opacity: 0.3; }
+    }
   </style>
 </head>
 <body>
-  <main id="feed">
-    <div id="scroll-sentinel"></div>
+  <a href="#feed" class="sr-only" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Skip to content</a>
+  <main id="feed" aria-label="Media feed">
+    <div id="scroll-sentinel" aria-hidden="true"></div>
   </main>
+  <div id="offline-bar" aria-live="polite">Offline — showing cached content</div>
   <script type="module" src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
