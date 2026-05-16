@@ -1,6 +1,36 @@
 import { getItems, putItem, deleteItemBySlug, getMaxSlug, getItemBySlug } from './db.js';
 import { uploadMedia, createItem, updateItem, removeItem } from './api.js';
 
+let exifr;
+async function loadExifr() {
+  if (exifr) return exifr;
+  const mod = await import('https://cdn.jsdelivr.net/npm/exifr/dist/mini.esm.js');
+  exifr = mod.default ?? mod;
+  return exifr;
+}
+
+async function extractExif(file) {
+  if (file.type.startsWith('video/')) return {};
+  try {
+    const lib = await loadExifr();
+    const data = await lib.parse(file, { gps: true, tiff: true, exif: true });
+    if (!data) return {};
+    const result = {};
+    // Datetime: prefer DateTimeOriginal, fall back to DateTimeDigitized
+    const dt = data.DateTimeOriginal ?? data.DateTimeDigitized ?? data.CreateDate;
+    if (dt instanceof Date && !isNaN(dt)) {
+      // datetime-local wants YYYY-MM-DDTHH:MM, local time
+      const pad = n => String(n).padStart(2, '0');
+      result.capturedAt = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+    }
+    if (data.latitude != null) result.lat = data.latitude;
+    if (data.longitude != null) result.lng = data.longitude;
+    return result;
+  } catch {
+    return {};
+  }
+}
+
 const API_BASE = 'https://symbolic-ritual.james-052.workers.dev';
 
 // --- Auth gate ---
@@ -91,11 +121,15 @@ function setupForm() {
   capturedAt.value = new Date().toISOString().slice(0, 16);
   getMaxSlug().then(max => { if (!slugInput.value) slugInput.value = max + 1; });
 
-  fileInput.addEventListener('change', () => {
+  fileInput.addEventListener('change', async () => {
     const file = fileInput.files[0];
     if (!file) return;
     selectedFile = file;
     showPreview(file, dropzone, dropzoneLabel, altGroup);
+    const exif = await extractExif(file);
+    if (exif.capturedAt && !editingSlug) capturedAt.value = exif.capturedAt;
+    if (exif.lat != null && !editingSlug) latInput.value = exif.lat;
+    if (exif.lng != null && !editingSlug) lngInput.value = exif.lng;
   });
 
   form.addEventListener('submit', async e => {
