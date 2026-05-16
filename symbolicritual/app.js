@@ -7,6 +7,8 @@ const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').match
 
 const RTL_LANGS = ['ar','he','fa','ur','yi','dv','ps','sd'];
 
+let itemCount = 0; // tracks render order so first image gets eager loading
+
 let lowestId = null;
 let highestId = null;
 let loading = false;
@@ -36,6 +38,8 @@ function formatCoords(lat, lng) {
 }
 
 function renderItem(item) {
+  const position = itemCount++;
+
   const article = document.createElement('article');
   article.className = 'item';
   article.dataset.id = item.id;
@@ -49,15 +53,17 @@ function renderItem(item) {
     media.className = 'item-media';
     media.controls = true;
     media.preload = 'metadata';
-    if (!reduceMotion) media.autoplay = false; // autoplay added in later stage when needed
     if (item.width) media.width = item.width;
     if (item.height) media.height = item.height;
-    const track = document.createElement('track');
-    track.kind = 'captions';
-    track.srclang = item.lang || 'en';
-    track.label = item.lang || 'en';
-    if (item.track_src) track.src = item.track_src;
-    media.appendChild(track);
+    // Only add track element if a captions file is available
+    if (item.track_src) {
+      const track = document.createElement('track');
+      track.kind = 'captions';
+      track.srclang = item.lang || 'en';
+      track.label = item.lang || 'en';
+      track.src = item.track_src;
+      media.appendChild(track);
+    }
     const source = document.createElement('source');
     source.src = item.media_url;
     source.type = item.media_mime || 'video/mp4';
@@ -69,7 +75,9 @@ function renderItem(item) {
     media.alt = item.alt || '';
     if (item.width) media.width = item.width;
     if (item.height) media.height = item.height;
-    media.loading = 'lazy';
+    // First image loads eagerly for LCP, rest lazy
+    media.loading = position === 0 ? 'eager' : 'lazy';
+    media.decoding = position === 0 ? 'sync' : 'async';
   }
 
   const figcaption = document.createElement('figcaption');
