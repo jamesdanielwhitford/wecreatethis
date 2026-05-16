@@ -108,6 +108,18 @@ function setupForm() {
     if (!capturedAt.value) { statusEl.textContent = 'Capture date is required.'; return; }
     if (!slug || slug < 1) { statusEl.textContent = 'Item number must be a positive integer.'; return; }
 
+    // Validate coordinates
+    const lat = latInput.value ? parseFloat(latInput.value) : null;
+    const lng = lngInput.value ? parseFloat(lngInput.value) : null;
+    if (lat !== null && (lat < -90 || lat > 90)) { statusEl.textContent = 'Latitude must be between -90 and 90.'; latInput.focus(); return; }
+    if (lng !== null && (lng < -180 || lng > 180)) { statusEl.textContent = 'Longitude must be between -180 and 180.'; lngInput.focus(); return; }
+
+    // Warn on slug conflict (only when adding, not editing)
+    if (!editingSlug) {
+      const existing = await getItemBySlug(slug);
+      if (existing) { statusEl.textContent = `Item #${slug} already exists. Choose a different number or edit the existing item.`; slugInput.focus(); return; }
+    }
+
     submitBtn.disabled = true;
 
     try {
@@ -130,8 +142,8 @@ function setupForm() {
       const payload = {
         slug,
         captured_at: capturedAt.value,
-        lat: latInput.value ? parseFloat(latInput.value) : null,
-        lng: lngInput.value ? parseFloat(lngInput.value) : null,
+        lat,
+        lng,
         caption: captionInput.value.trim() || null,
         lang: langInput.value.trim() || 'en',
         alt: altInput.value.trim() || '',
