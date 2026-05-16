@@ -1,6 +1,6 @@
 import { getItems, putItem, deleteItemBySlug, getMaxSlug, getItemBySlug } from './db.js';
 
-const API_BASE = 'https://symbolic-ritual.workers.dev';
+const API_BASE = 'https://symbolic-ritual.james-052.workers.dev';
 
 // --- Auth gate ---
 const loginScreen = document.getElementById('login-screen');

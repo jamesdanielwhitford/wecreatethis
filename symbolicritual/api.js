@@ -1,6 +1,6 @@
 // All network calls to the Cloudflare Worker go through this file.
 // Change API_BASE to point at a different backend without touching anything else.
-const API_BASE = 'https://symbolic-ritual.workers.dev';
+const API_BASE = 'https://symbolic-ritual.james-052.workers.dev';
 
 function getToken() {
   return sessionStorage.getItem('sr-auth-token') || '';
