@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Settings — Inkwell</title>
+  <link rel="manifest" href="/inkwell/manifest.json">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      font-size: 1rem;
+      background: Canvas;
+      color: CanvasText;
+      min-height: 100dvh;
+    }
+
+    header {
+      padding: 1rem 1.25rem 0.5rem;
+      border-bottom: 1px solid color-mix(in srgb, CanvasText 15%, transparent);
+    }
+
+    nav.breadcrumb { font-size: 0.85rem; color: color-mix(in srgb, CanvasText 55%, transparent); }
+    nav.breadcrumb a { color: inherit; text-decoration: none; }
+    nav.breadcrumb a:hover { text-decoration: underline; }
+    nav.breadcrumb span + span::before { content: " / "; }
+
+    .page { padding: 1.5rem 1.25rem; max-width: 480px; }
+
+    h1 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem; }
+
+    section { margin-bottom: 2rem; }
+
+    section h2 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: color-mix(in srgb, CanvasText 50%, transparent);
+      margin-bottom: 0.75rem;
+    }
+
+    .field { margin-bottom: 1rem; }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      margin-bottom: 0.3rem;
+      color: color-mix(in srgb, CanvasText 70%, transparent);
+    }
+
+    .key-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    input[type="password"], input[type="text"], input[type="password"].reveal {
+      flex: 1;
+      font: inherit;
+      font-size: 0.9rem;
+      padding: 0.5rem 0.6rem;
+      border: 1px solid color-mix(in srgb, CanvasText 25%, transparent);
+      border-radius: 4px;
+      background: Field;
+      color: FieldText;
+      min-height: 40px;
+    }
+
+    input:focus { outline: 2px solid color-mix(in srgb, CanvasText 40%, transparent); outline-offset: 1px; }
+
+    .btn {
+      font: inherit;
+      font-size: 0.85rem;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid color-mix(in srgb, CanvasText 25%, transparent);
+      border-radius: 4px;
+      background: Canvas;
+      color: CanvasText;
+      cursor: pointer;
+      min-height: 40px;
+      white-space: nowrap;
+      touch-action: manipulation;
+    }
+
+    .btn:hover { background: color-mix(in srgb, CanvasText 6%, transparent); }
+    .btn-save { border-color: CanvasText; }
+
+    .status-msg {
+      font-size: 0.8rem;
+      margin-top: 0.4rem;
+      color: color-mix(in srgb, CanvasText 55%, transparent);
+      min-height: 1.2em;
+    }
+
+    .btn-danger {
+      border-color: color-mix(in srgb, red 60%, transparent);
+      color: color-mix(in srgb, red 70%, CanvasText);
+    }
+
+    .btn-danger:hover { background: color-mix(in srgb, red 8%, transparent); }
+
+    #auth-section input[type="password"], #auth-section input[type="text"] {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav class="breadcrumb" aria-label="Location">
+    <span><a href="/inkwell/">Inkwell</a></span>
+    <span>Settings</span>
+  </nav>
+</header>
+
+<div class="page">
+  <h1>Settings</h1>
+
+  <section>
+    <h2>API Keys</h2>
+    <div class="field">
+      <label for="mistral-key">Mistral API key</label>
+      <div class="key-row">
+        <input type="password" id="mistral-key" autocomplete="off" placeholder="sk-...">
+        <button class="btn" id="toggle-mistral" type="button">Show</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="anthropic-key">Anthropic API key</label>
+      <div class="key-row">
+        <input type="password" id="anthropic-key" autocomplete="off" placeholder="sk-ant-...">
+        <button class="btn" id="toggle-anthropic" type="button">Show</button>
+      </div>
+    </div>
+    <button class="btn btn-save" id="save-keys">Save keys</button>
+    <p class="status-msg" id="keys-status"></p>
+  </section>
+
+  <section id="auth-section">
+    <h2>Admin</h2>
+    <div id="login-form">
+      <div class="field">
+        <label for="admin-token">Admin token</label>
+        <input type="password" id="admin-token" autocomplete="off" placeholder="Token">
+      </div>
+      <button class="btn" id="btn-login">Log in</button>
+      <p class="status-msg" id="login-status"></p>
+    </div>
+    <div id="logout-form" hidden>
+      <p class="status-msg" style="margin-bottom:0.75rem">Logged in as admin.</p>
+      <button class="btn btn-danger" id="btn-logout">Log out</button>
+    </div>
+  </section>
+</div>
+
+<script type="module" src="/inkwell/settings.js"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/inkwell/sw.js');</script>
+</body>
+</html>

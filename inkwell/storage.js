@@ -1,19 +1,18 @@
 // Thin adapter. Selects store.js (localStorage) or db.js (IndexedDB) based on auth.
-// db.js and api.js are added in Stage 6/7. For now always delegates to store.js.
+// All exported functions return Promises regardless of which backend is active.
 
 import * as store from './store.js';
+import * as db from './db.js';
 
-function isAuthed() {
+export function isAuthed() {
   return !!sessionStorage.getItem('inkwell-auth-token');
 }
 
-// These will conditionally import db.js once Stage 6 is built.
-// For now all paths go to store.js.
+function be() { return isAuthed() ? db : store; }
 
-export function getChildren(parentId) { return Promise.resolve(store.getChildren(parentId)); }
-export function getNode(id) { return Promise.resolve(store.getNode(id)); }
-export function putNode(node) { return Promise.resolve(store.putNode(node)); }
-export function deleteNode(id) { return Promise.resolve(store.deleteNode(id)); }
-export function getAllDescendants(id) { return Promise.resolve(store.getAllDescendants(id)); }
-export function createNode(data) { return Promise.resolve(store.createNode(data)); }
-export { isAuthed };
+export const getChildren = (parentId) => Promise.resolve(be().getChildren(parentId));
+export const getNode = (id) => Promise.resolve(be().getNode(id));
+export const putNode = (node) => Promise.resolve(be().putNode(node));
+export const deleteNode = (id) => Promise.resolve(be().deleteNode(id));
+export const getAllDescendants = (id) => Promise.resolve(be().getAllDescendants(id));
+export const createNode = (data) => Promise.resolve(be().createNode(data));
