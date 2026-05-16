@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
+  <title>Symbolic Ritual — Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 100%; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background-color: Canvas;
+      color: CanvasText;
+      color-scheme: light dark;
+      min-height: 100dvh;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1rem;
+      font-weight: 500;
+      opacity: 0.4;
+      margin-bottom: 2rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* Form */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      font-size: 0.75rem;
+      opacity: 0.5;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    input, textarea, select {
+      font-family: inherit;
+      font-size: 1rem;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid currentColor;
+      color: inherit;
+      padding: 0.4rem 0;
+      width: 100%;
+      opacity: 0.85;
+      border-radius: 0;
+      appearance: none;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      opacity: 1;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 4rem;
+    }
+
+    .coords-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    /* File drop zone */
+    .dropzone {
+      border: 1px dashed currentColor;
+      opacity: 0.4;
+      border-radius: 4px;
+      padding: 2rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: opacity 0.15s;
+      position: relative;
+    }
+
+    .dropzone.has-file {
+      opacity: 1;
+    }
+
+    .dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      border: none;
+      padding: 0;
+    }
+
+    .dropzone-preview {
+      max-width: 100%;
+      max-height: 240px;
+      display: block;
+      margin: 0 auto 0.75rem;
+      object-fit: contain;
+    }
+
+    .dropzone-label {
+      pointer-events: none;
+    }
+
+    /* Submit button */
+    .btn {
+      font-family: inherit;
+      font-size: 0.875rem;
+      background: CanvasText;
+      color: Canvas;
+      border: none;
+      padding: 0.65rem 1.5rem;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      margin-top: 0.5rem;
+      width: 100%;
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .status {
+      font-size: 0.8125rem;
+      margin-top: 0.75rem;
+      opacity: 0.6;
+      min-height: 1.2em;
+    }
+
+    /* Divider */
+    hr {
+      border: none;
+      border-top: 1px solid currentColor;
+      opacity: 0.1;
+      margin: 2.5rem 0;
+    }
+
+    /* Item list */
+    h2 {
+      font-size: 0.75rem;
+      font-weight: 500;
+      opacity: 0.4;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 1.5rem;
+    }
+
+    .item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .item-row {
+      display: grid;
+      grid-template-columns: 80px 1fr auto;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .item-thumb {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .item-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: 0.8125rem;
+    }
+
+    .item-meta-coords {
+      opacity: 0.45;
+      font-size: 0.75rem;
+    }
+
+    .item-meta-caption {
+      opacity: 0.7;
+      margin-top: 0.2rem;
+    }
+
+    .item-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .btn-small {
+      font-family: inherit;
+      font-size: 0.75rem;
+      background: none;
+      border: 1px solid currentColor;
+      color: inherit;
+      padding: 0.3rem 0.65rem;
+      cursor: pointer;
+      opacity: 0.5;
+      letter-spacing: 0.03em;
+    }
+
+    .btn-small:hover { opacity: 1; }
+    .btn-small.danger:hover { color: #c00; opacity: 1; border-color: #c00; }
+
+    .empty {
+      font-size: 0.875rem;
+      opacity: 0.35;
+    }
+  </style>
+</head>
+<body>
+  <!-- Login gate — hidden once authenticated -->
+  <div id="login-screen" class="container" style="display:none;padding-top:40dvh;">
+    <form id="login-form" autocomplete="off">
+      <div class="form-group">
+        <label for="token-input">Access token</label>
+        <input type="password" id="token-input" placeholder="Enter token" autofocus>
+      </div>
+      <button type="submit" class="btn">Enter</button>
+      <p class="status" id="login-status"></p>
+    </form>
+  </div>
+
+  <div id="admin-screen" class="container" style="display:none;">
+    <h1>Symbolic Ritual <button id="logout-btn" style="font:inherit;font-size:0.7rem;background:none;border:none;color:inherit;opacity:0.3;cursor:pointer;margin-left:0.5rem;">sign out</button></h1>
+
+    <form id="upload-form" autocomplete="off">
+      <!-- Media -->
+      <div class="form-group">
+        <label>Media</label>
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="file-input" accept="image/*,video/*" required>
+          <span class="dropzone-label" id="dropzone-label">Choose image or video</span>
+        </div>
+      </div>
+
+      <!-- Slug -->
+      <div class="form-group">
+        <label for="slug">Item number <span style="opacity:0.4">(?item= in URL)</span></label>
+        <input type="number" id="slug" min="1" step="1" required placeholder="e.g. 1">
+      </div>
+
+      <!-- Alt text -->
+      <div class="form-group" id="alt-group">
+        <label for="alt">Alt text <span style="opacity:0.4">(required for images)</span></label>
+        <input type="text" id="alt" placeholder="Describe what is in the image">
+      </div>
+
+      <!-- Captured at -->
+      <div class="form-group">
+        <label for="captured-at">Date and time of capture</label>
+        <input type="datetime-local" id="captured-at" required>
+      </div>
+
+      <!-- Coordinates -->
+      <div class="coords-row">
+        <div class="form-group">
+          <label for="lat">Latitude</label>
+          <input type="number" id="lat" step="any" min="-90" max="90" placeholder="e.g. -33.8688">
+        </div>
+        <div class="form-group">
+          <label for="lng">Longitude</label>
+          <input type="number" id="lng" step="any" min="-180" max="180" placeholder="e.g. 151.2093">
+        </div>
+      </div>
+
+      <!-- Caption -->
+      <div class="form-group">
+        <label for="caption">Caption <span style="opacity:0.4">(optional)</span></label>
+        <textarea id="caption" placeholder="Optional text shown below metadata"></textarea>
+      </div>
+
+      <!-- Language -->
+      <div class="form-group">
+        <label for="lang">Caption language</label>
+        <input type="text" id="lang" value="en" placeholder="BCP 47 tag, e.g. en, ar, fr, zh">
+      </div>
+
+      <button type="submit" class="btn" id="submit-btn">Add item</button>
+      <p class="status" id="status"></p>
+    </form>
+
+    <hr>
+
+    <h2>All items</h2>
+    <div class="item-list" id="item-list">
+      <p class="empty">No items yet.</p>
+    </div>
+  </div><!-- end admin-screen -->
+
+  <script type="module" src="admin.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/symbolicritual/sw.js');
+    }
+  </script>
+</body>
+</html>

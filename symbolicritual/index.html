@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Symbolic Ritual">
+  <title>Symbolic Ritual</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 100%;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background-color: Canvas;
+      color: CanvasText;
+      color-scheme: light dark;
+      min-height: 100dvh;
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Each blog item */
+    .item {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Quarter-screen gap between meta and next item */
+    .item + .item {
+      margin-top: 25dvh;
+    }
+
+    figure {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+    }
+
+    /* Media: fills screen up to natural dimensions, never exceeds viewport */
+    .item-media {
+      display: block;
+      max-width: 100%;
+      max-height: 100dvh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+    }
+
+    video.item-media {
+      background-color: #000;
+    }
+
+    /* Metadata sits directly below media */
+    figcaption {
+      width: 100%;
+      max-width: 640px;
+      padding: 0.75rem 1rem 0;
+    }
+
+    .meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .meta-datetime,
+    .meta-coords {
+      font-size: 0.8125rem;
+      opacity: 0.55;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.01em;
+    }
+
+    .meta-caption {
+      margin-top: 0.6rem;
+      font-size: 1rem;
+      line-height: 1.55;
+      max-width: 60ch;
+    }
+
+    /* Sentinel for infinite scroll — invisible */
+    #scroll-sentinel {
+      height: 1px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <main id="feed">
+    <div id="scroll-sentinel"></div>
+  </main>
+  <script type="module" src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/symbolicritual/sw.js');
+    }
+  </script>
+</body>
+</html>
