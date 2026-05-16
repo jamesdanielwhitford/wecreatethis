@@ -87,17 +87,17 @@ function showAdmin() {
   renderList();
 }
 
+// --- Admin UI ---
+let selectedFile = null;
+let editingSlug = null;
+let formSetup = false;
+
 // Boot
 if (getToken()) {
   showAdmin();
 } else {
   loginScreen.style.display = '';
 }
-
-// --- Admin UI ---
-let selectedFile = null;
-let editingSlug = null;
-let formSetup = false;
 
 function setupForm() {
   if (formSetup) return;
