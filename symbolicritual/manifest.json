@@ -8,6 +8,9 @@
   "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
+  "lang": "en",
+  "dir": "auto",
+  "categories": ["lifestyle", "photo"],
   "icons": [
     {
       "src": "/symbolicritual/icon-192.png",

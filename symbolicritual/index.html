@@ -110,5 +110,10 @@
     <div id="scroll-sentinel"></div>
   </main>
   <script type="module" src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/symbolicritual/sw.js');
+    }
+  </script>
 </body>
 </html>

@@ -288,5 +288,10 @@
   </div>
 
   <script type="module" src="admin.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/symbolicritual/sw.js');
+    }
+  </script>
 </body>
 </html>
