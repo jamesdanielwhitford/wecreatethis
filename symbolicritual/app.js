@@ -120,8 +120,12 @@ function renderItem(item) {
 
   const coords = formatCoords(item.lat, item.lng);
   if (coords) {
-    const co = document.createElement('span');
+    const co = document.createElement('a');
     co.className = 'meta-coords';
+    co.href = `https://www.openstreetmap.org/?mlat=${item.lat}&mlon=${item.lng}&zoom=15`;
+    co.target = '_blank';
+    co.rel = 'noopener noreferrer';
+    co.setAttribute('aria-label', `View location on OpenStreetMap (opens in new tab)`);
     co.textContent = coords;
     meta.appendChild(co);
   }
