@@ -1,4 +1,5 @@
 import * as storage from './storage.js';
+import { syncFromServer } from './storage.js';
 
 // Seed dev data once
 async function maybeSeed() {
@@ -144,7 +145,10 @@ async function handleAction(action, id) {
 }
 
 async function init() {
-  await maybeSeed();
+  // Only seed when unauthenticated
+  if (!storage.isAuthed()) await maybeSeed();
+  // Sync from server in background (no await — don't block render)
+  syncFromServer().then(() => reload()).catch(() => {});
   const params = new URLSearchParams(location.search);
   currentFolderId = params.get('folder') || null;
   await buildBreadcrumb(currentFolderId);

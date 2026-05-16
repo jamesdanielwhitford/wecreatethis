@@ -1,0 +1,8 @@
+name = "inkwell"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "inkwell"
+database_id = "<your-d1-id>"

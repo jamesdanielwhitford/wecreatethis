@@ -1,3 +1,5 @@
+import { syncFromServer } from './storage.js';
+
 const SETTINGS_KEY = 'inkwell-settings';
 
 export function getSettings() {
@@ -52,12 +54,17 @@ function init() {
   document.getElementById('btn-login').addEventListener('click', async () => {
     const token = document.getElementById('admin-token').value.trim();
     if (!token) return;
-    // In Stage 7, we'll verify token against the Worker.
-    // For now just store it and trigger a full sync placeholder.
     sessionStorage.setItem('inkwell-auth-token', token);
-    document.getElementById('login-form').hidden = true;
-    document.getElementById('logout-form').hidden = false;
-    document.getElementById('login-status').textContent = '';
+    document.getElementById('login-status').textContent = 'Syncing...';
+    try {
+      await syncFromServer();
+      document.getElementById('login-form').hidden = true;
+      document.getElementById('logout-form').hidden = false;
+      document.getElementById('login-status').textContent = '';
+    } catch {
+      document.getElementById('login-status').textContent = 'Sync failed. Check token.';
+      sessionStorage.removeItem('inkwell-auth-token');
+    }
   });
 
   document.getElementById('btn-logout').addEventListener('click', () => {
