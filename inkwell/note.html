@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meeting notes 14 May — Inkwell</title>
+  <link rel="manifest" href="/inkwell/manifest.json">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      font-size: 1rem;
+      background: Canvas;
+      color: CanvasText;
+      min-height: 100dvh;
+    }
+
+    header {
+      padding: 1rem 1.25rem 0.5rem;
+      border-bottom: 1px solid color-mix(in srgb, CanvasText 15%, transparent);
+    }
+
+    nav.breadcrumb {
+      font-size: 0.85rem;
+      color: color-mix(in srgb, CanvasText 55%, transparent);
+    }
+
+    nav.breadcrumb a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    nav.breadcrumb a:hover { text-decoration: underline; }
+
+    nav.breadcrumb span + span::before {
+      content: " / ";
+      display: inline;
+    }
+
+    .note-container {
+      padding: 1.5rem 1.25rem;
+      max-width: 680px;
+    }
+
+    .note-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 1.25rem;
+    }
+
+    .note-body {
+      font-size: 1rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      color: color-mix(in srgb, CanvasText 85%, transparent);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav class="breadcrumb" aria-label="Location">
+    <span><a href="/inkwell/">Inkwell</a></span>
+    <span><a href="/inkwell/?folder=abc">Work</a></span>
+    <span>Meeting notes 14 May</span>
+  </nav>
+</header>
+
+<div class="note-container">
+  <h1 class="note-title">Meeting notes 14 May</h1>
+  <div class="note-body">Discussed the quarterly targets with the team. Main points:
+
+- Revenue is on track for the first two months
+- Marketing needs to increase spend in June
+- Hiring: two open roles to close by end of month
+
+Next steps: follow up with Sarah on the budget, schedule a separate call with the product team.</div>
+</div>
+
+</body>
+</html>

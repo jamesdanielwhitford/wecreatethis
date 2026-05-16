@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inkwell</title>
+  <link rel="manifest" href="/inkwell/manifest.json">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      font-size: 1rem;
+      background: Canvas;
+      color: CanvasText;
+      min-height: 100dvh;
+    }
+
+    header {
+      padding: 1rem 1.25rem 0.5rem;
+      border-bottom: 1px solid color-mix(in srgb, CanvasText 15%, transparent);
+    }
+
+    nav.breadcrumb {
+      font-size: 0.85rem;
+      color: color-mix(in srgb, CanvasText 55%, transparent);
+    }
+
+    nav.breadcrumb a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    nav.breadcrumb a:hover { text-decoration: underline; }
+
+    nav.breadcrumb span + span::before {
+      content: " / ";
+      display: inline;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid color-mix(in srgb, CanvasText 10%, transparent);
+    }
+
+    .toolbar h1 {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .btn-new {
+      font: inherit;
+      font-size: 1.4rem;
+      line-height: 1;
+      background: none;
+      border: none;
+      color: CanvasText;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-new:hover { background: color-mix(in srgb, CanvasText 8%, transparent); }
+
+    ul.node-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    ul.node-list li {
+      border-bottom: 1px solid color-mix(in srgb, CanvasText 8%, transparent);
+    }
+
+    ul.node-list a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.875rem 1.25rem;
+      color: CanvasText;
+      text-decoration: none;
+      min-height: 44px;
+    }
+
+    ul.node-list a:hover { background: color-mix(in srgb, CanvasText 4%, transparent); }
+
+    .node-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      width: 1.5rem;
+      text-align: center;
+    }
+
+    .node-info { flex: 1; min-width: 0; }
+
+    .node-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .node-meta {
+      font-size: 0.75rem;
+      color: color-mix(in srgb, CanvasText 50%, transparent);
+      margin-top: 0.15rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav class="breadcrumb" aria-label="Location">
+    <span><a href="/inkwell/">Inkwell</a></span>
+    <span><a href="/inkwell/?folder=abc">Work</a></span>
+  </nav>
+</header>
+
+<div class="toolbar">
+  <h1>Work</h1>
+  <button class="btn-new" aria-label="New item">+</button>
+</div>
+
+<ul class="node-list" role="list">
+  <li>
+    <a href="/inkwell/?folder=def">
+      <span class="node-icon" aria-hidden="true">&#128193;</span>
+      <span class="node-info">
+        <span class="node-title">Projects</span>
+      </span>
+    </a>
+  </li>
+  <li>
+    <a href="/inkwell/?folder=ghi">
+      <span class="node-icon" aria-hidden="true">&#128193;</span>
+      <span class="node-info">
+        <span class="node-title">Archive</span>
+      </span>
+    </a>
+  </li>
+  <li>
+    <a href="/inkwell/note?id=001">
+      <span class="node-icon" aria-hidden="true">&#128196;</span>
+      <span class="node-info">
+        <span class="node-title">Meeting notes 14 May</span>
+        <span class="node-meta">16 May 2026</span>
+      </span>
+    </a>
+  </li>
+  <li>
+    <a href="/inkwell/note?id=002">
+      <span class="node-icon" aria-hidden="true">&#128196;</span>
+      <span class="node-info">
+        <span class="node-title">Ideas for the quarterly review</span>
+        <span class="node-meta">12 May 2026</span>
+      </span>
+    </a>
+  </li>
+</ul>
+
+</body>
+</html>

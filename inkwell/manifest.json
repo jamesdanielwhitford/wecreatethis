@@ -1,0 +1,9 @@
+{
+  "name": "Inkwell",
+  "short_name": "Inkwell",
+  "start_url": "/inkwell/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": []
+}
