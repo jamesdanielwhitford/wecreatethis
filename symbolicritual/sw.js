@@ -1,4 +1,4 @@
-const CACHE_NAME = 'symbolic-ritual-v1';
+const CACHE_NAME = 'symbolic-ritual-v2';
 const ASSETS = [
   '/symbolicritual/',
   '/symbolicritual/index',
@@ -9,6 +9,7 @@ const ASSETS = [
   '/symbolicritual/app.js',
   '/symbolicritual/admin.js',
   '/symbolicritual/db.js',
+  '/symbolicritual/api.js',
 ];
 
 function normalizeUrl(url, base = self.location.origin) {

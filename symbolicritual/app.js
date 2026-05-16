@@ -1,4 +1,5 @@
-import { getItems, getItem } from './db.js';
+import { getItems, getItem, putItem } from './db.js';
+import { fetchItems, fetchItem } from './api.js';
 
 const feed = document.getElementById('feed');
 const sentinel = document.getElementById('scroll-sentinel');
@@ -181,6 +182,28 @@ async function init() {
   }
 
   sentinelObserver.observe(sentinel);
+
+  // Background sync from API — writes new items to IndexedDB and renders them
+  syncFromApi().catch(() => {});
+}
+
+async function syncFromApi() {
+  const items = await fetchItems({ limit: 20 });
+  if (!items?.length) return;
+  for (const item of items) {
+    await putItem(item);
+    // Render if not already in the feed
+    if (!feed.querySelector(`[data-id="${item.id}"]`)) {
+      const el = renderItem(item);
+      // Insert in correct position (newest first = smallest DOM index)
+      const existing = [...feed.querySelectorAll('.item')];
+      const after = existing.find(e => Number(e.dataset.id) < item.id);
+      feed.insertBefore(el, after || sentinel);
+      observeItem(el);
+      if (lowestId === null || item.id < lowestId) lowestId = item.id;
+      if (highestId === null || item.id > highestId) highestId = item.id;
+    }
+  }
 }
 
 init();
