@@ -7,7 +7,11 @@ const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').match
 const RTL_LANGS = ['ar','he','fa','ur','yi','dv','ps','sd'];
 
 let lowestId = null;
+let highestId = null;
 let loading = false;
+
+// Tracks intersection ratios per item so we update URL to the most-visible one
+const visibilityMap = new Map();
 
 function dir(lang) {
   return RTL_LANGS.some(l => (lang || 'en').startsWith(l)) ? 'rtl' : 'ltr';
@@ -104,15 +108,24 @@ function observeItem(el) {
   urlObserver.observe(el);
 }
 
-// Updates URL when item crosses 50% of viewport
+// Tracks intersection ratio per item, updates URL to whichever is most visible
 const urlObserver = new IntersectionObserver(entries => {
   for (const entry of entries) {
+    const id = entry.target.dataset.id;
     if (entry.isIntersecting) {
-      const id = entry.target.dataset.id;
-      history.replaceState({ id }, '', `?item=${id}`);
+      visibilityMap.set(id, entry.intersectionRatio);
+    } else {
+      visibilityMap.delete(id);
     }
   }
-}, { threshold: 0.5 });
+  if (visibilityMap.size === 0) return;
+  // Pick the item with the highest intersection ratio
+  let bestId = null, bestRatio = -1;
+  for (const [id, ratio] of visibilityMap) {
+    if (ratio > bestRatio) { bestRatio = ratio; bestId = id; }
+  }
+  if (bestId) history.replaceState({ id: bestId }, '', `?item=${bestId}`);
+}, { threshold: [0, 0.25, 0.5, 0.75, 1] });
 
 // Triggers loading more items when sentinel enters view
 const sentinelObserver = new IntersectionObserver(entries => {
@@ -128,26 +141,41 @@ async function loadMore() {
     feed.insertBefore(el, sentinel);
     observeItem(el);
     if (lowestId === null || item.id < lowestId) lowestId = item.id;
+    if (highestId === null || item.id > highestId) highestId = item.id;
   }
   loading = false;
 }
 
+// Loads items newer than highestId and prepends them above the feed
+async function loadNewer(aboveId) {
+  const items = await getItems({ after: aboveId, limit: 20 });
+  const firstChild = feed.firstChild;
+  for (const item of [...items].reverse()) {
+    const el = renderItem(item);
+    feed.insertBefore(el, firstChild);
+    observeItem(el);
+    if (highestId === null || item.id > highestId) highestId = item.id;
+  }
+}
+
 async function init() {
   const params = new URLSearchParams(location.search);
-  const targetId = params.get('item');
+  const targetId = params.get('item') ? Number(params.get('item')) : null;
 
   if (targetId) {
-    // Load the target item first, scroll to it, then load the rest
-    const item = await getItem(Number(targetId));
+    const item = await getItem(targetId);
     if (item) {
       const el = renderItem(item);
       feed.insertBefore(el, sentinel);
       observeItem(el);
       lowestId = item.id;
+      highestId = item.id;
       el.scrollIntoView();
+      // Load older items below and newer items above
+      await Promise.all([loadMore(), loadNewer(item.id)]);
+    } else {
+      await loadMore();
     }
-    // Load items older than target below
-    await loadMore();
   } else {
     await loadMore();
   }

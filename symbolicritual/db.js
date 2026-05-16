@@ -19,24 +19,35 @@ function openDb() {
   });
 }
 
-// Returns items ordered newest first. Pass before=id to paginate.
-export async function getItems({ before = null, limit = 20 } = {}) {
+// Returns items ordered newest first. Pass before=id to page older, after=id to page newer.
+export async function getItems({ before = null, after = null, limit = 20 } = {}) {
   const d = await openDb();
   return new Promise((resolve, reject) => {
     const tx = d.transaction('items', 'readonly');
     const store = tx.objectStore('items');
     const results = [];
-    const req = store.openCursor(null, 'prev');
-    req.onsuccess = e => {
-      const cursor = e.target.result;
-      if (!cursor || results.length >= limit) { resolve(results); return; }
-      const item = cursor.value;
-      if (before === null || item.id < before) {
-        results.push(item);
-      }
-      cursor.continue();
-    };
-    req.onerror = () => reject(req.error);
+
+    if (after !== null) {
+      // Load items newer than after, ascending so we can reverse in caller
+      const req = store.openCursor(IDBKeyRange.lowerBound(after, true), 'next');
+      req.onsuccess = e => {
+        const cursor = e.target.result;
+        if (!cursor || results.length >= limit) { resolve(results); return; }
+        results.push(cursor.value);
+        cursor.continue();
+      };
+      req.onerror = () => reject(req.error);
+    } else {
+      const range = before !== null ? IDBKeyRange.upperBound(before, true) : null;
+      const req = store.openCursor(range, 'prev');
+      req.onsuccess = e => {
+        const cursor = e.target.result;
+        if (!cursor || results.length >= limit) { resolve(results); return; }
+        results.push(cursor.value);
+        cursor.continue();
+      };
+      req.onerror = () => reject(req.error);
+    }
   });
 }
 
