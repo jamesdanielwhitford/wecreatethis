@@ -48,6 +48,37 @@
       white-space: pre-wrap;
       color: color-mix(in srgb, CanvasText 85%, transparent);
     }
+
+    [contenteditable] {
+      outline: none;
+      border: none;
+      background: transparent;
+      cursor: text;
+      display: block;
+    }
+
+    [contenteditable]:focus {
+      background: color-mix(in srgb, CanvasText 3%, transparent);
+      border-radius: 3px;
+    }
+
+    [contenteditable]:empty::before {
+      content: attr(data-placeholder);
+      color: color-mix(in srgb, CanvasText 30%, transparent);
+      pointer-events: none;
+    }
+
+    .save-status {
+      position: fixed;
+      bottom: 1rem;
+      right: 1.25rem;
+      font-size: 0.75rem;
+      color: color-mix(in srgb, CanvasText 40%, transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .save-status.visible { opacity: 1; }
   </style>
 </head>
 <body>
@@ -57,9 +88,11 @@
 </header>
 
 <div class="note-container">
-  <h1 class="note-title" id="note-title"></h1>
-  <div class="note-body" id="note-body"></div>
+  <h1 class="note-title" id="note-title" contenteditable="true" data-placeholder="Untitled" spellcheck="true"></h1>
+  <div class="note-body" id="note-body" contenteditable="true" data-placeholder="Start writing..." spellcheck="true"></div>
 </div>
+
+<div class="save-status" id="save-status">Saved</div>
 
 <script type="module" src="/inkwell/note.js"></script>
 </body>

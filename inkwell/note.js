@@ -1,21 +1,32 @@
 import * as storage from './storage.js';
 
-async function init() {
-  const params = new URLSearchParams(location.search);
-  const id = params.get('id');
-  if (!id) { location.href = '/inkwell/'; return; }
+let currentNode = null;
+let saveTimer = null;
+const AUTOSAVE_DELAY = 800;
 
-  const node = await storage.getNode(id);
-  if (!node) { location.href = '/inkwell/'; return; }
+const titleEl = document.getElementById('note-title');
+const bodyEl = document.getElementById('note-body');
+const statusEl = document.getElementById('save-status');
 
-  document.title = `${node.title || 'Untitled'} — Inkwell`;
+async function save() {
+  if (!currentNode) return;
+  currentNode.title = titleEl.textContent.trim();
+  currentNode.body = bodyEl.textContent;
+  await storage.putNode(currentNode);
+  document.title = `${currentNode.title || 'Untitled'} — Inkwell`;
+  showStatus('Saved');
+}
 
-  // Breadcrumb
-  await buildBreadcrumb(node);
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, AUTOSAVE_DELAY);
+}
 
-  // Render title and body as static text (Stage 3 makes them editable)
-  document.getElementById('note-title').textContent = node.title || 'Untitled';
-  document.getElementById('note-body').textContent = node.body || '';
+function showStatus(msg) {
+  statusEl.textContent = msg;
+  statusEl.classList.add('visible');
+  clearTimeout(statusEl._hideTimer);
+  statusEl._hideTimer = setTimeout(() => statusEl.classList.remove('visible'), 1500);
 }
 
 async function buildBreadcrumb(node) {
@@ -32,7 +43,6 @@ async function buildBreadcrumb(node) {
     crumbs.push({ title: n.title, href: `/inkwell/?folder=${n.id}` });
   }
   crumbs.push({ title: node.title || 'Untitled' });
-
   const nav = document.getElementById('breadcrumb');
   nav.innerHTML = crumbs.map((c, i) =>
     i < crumbs.length - 1 && c.href
@@ -43,6 +53,34 @@ async function buildBreadcrumb(node) {
 
 function escHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+async function init() {
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  if (!id) { location.href = '/inkwell/'; return; }
+
+  const node = await storage.getNode(id);
+  if (!node) { location.href = '/inkwell/'; return; }
+  currentNode = node;
+
+  document.title = `${node.title || 'Untitled'} — Inkwell`;
+  await buildBreadcrumb(node);
+
+  titleEl.textContent = node.title || '';
+  bodyEl.textContent = node.body || '';
+
+  titleEl.addEventListener('input', scheduleSave);
+  bodyEl.addEventListener('input', scheduleSave);
+
+  // Cmd/Ctrl+S = immediate save
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+      e.preventDefault();
+      clearTimeout(saveTimer);
+      save();
+    }
+  });
 }
 
 init();
