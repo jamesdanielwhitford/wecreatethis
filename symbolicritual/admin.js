@@ -306,7 +306,9 @@ function formatDatetime(iso) {
 
 function formatCoords(lat, lng) {
   if (lat == null || lng == null) return '';
-  return `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`;
+  const label = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`;
+  const url = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=15`;
+  return `<a href="${url}" target="_blank" rel="noopener noreferrer" aria-label="View location on OpenStreetMap (opens in new tab)">${label}</a>`;
 }
 
 function rtlDir(lang) {
