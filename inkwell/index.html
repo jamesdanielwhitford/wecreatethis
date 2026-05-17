@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inkwell</title>
+  <link rel="manifest" href="/inkwell/manifest.json">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      font-size: 1rem;
+      background: Canvas;
+      color: CanvasText;
+      min-height: 100dvh;
+    }
+
+    header {
+      padding: 1rem 1.25rem 0.5rem;
+      border-bottom: 1px solid color-mix(in srgb, CanvasText 15%, transparent);
+    }
+
+    nav.breadcrumb {
+      font-size: 0.85rem;
+      color: color-mix(in srgb, CanvasText 55%, transparent);
+    }
+
+    nav.breadcrumb a { color: inherit; text-decoration: none; }
+    nav.breadcrumb a:hover { text-decoration: underline; }
+    nav.breadcrumb span + span::before { content: " / "; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid color-mix(in srgb, CanvasText 10%, transparent);
+    }
+
+    .toolbar h1 { font-size: 1rem; font-weight: 600; }
+
+    .btn-new {
+      font: inherit;
+      font-size: 1.4rem;
+      line-height: 1;
+      background: none;
+      border: none;
+      color: CanvasText;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-new:hover { background: color-mix(in srgb, CanvasText 8%, transparent); }
+
+    ul.node-list { list-style: none; }
+
+    ul.node-list li {
+      border-bottom: 1px solid color-mix(in srgb, CanvasText 8%, transparent);
+    }
+
+    ul.node-list li.empty {
+      padding: 1.5rem 1.25rem;
+      color: color-mix(in srgb, CanvasText 45%, transparent);
+      font-size: 0.9rem;
+    }
+
+    ul.node-list a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.875rem 1.25rem;
+      color: CanvasText;
+      text-decoration: none;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    ul.node-list a:hover { background: color-mix(in srgb, CanvasText 4%, transparent); }
+
+    .node-icon { font-size: 1.1rem; flex-shrink: 0; width: 1.5rem; text-align: center; }
+    .node-info { flex: 1; min-width: 0; }
+    .node-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    .node-meta { font-size: 0.75rem; color: color-mix(in srgb, CanvasText 50%, transparent); margin-top: 0.15rem; display: block; }
+
+    .node-actions {
+      display: flex;
+      gap: 0.25rem;
+      flex-shrink: 0;
+      padding-right: 0.25rem;
+    }
+
+    .action-btn {
+      font: inherit;
+      background: none;
+      border: none;
+      color: color-mix(in srgb, CanvasText 40%, transparent);
+      cursor: pointer;
+      padding: 0.25rem 0.4rem;
+      border-radius: 4px;
+      min-width: 36px;
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+    }
+
+    .action-btn:hover {
+      background: color-mix(in srgb, CanvasText 10%, transparent);
+      color: CanvasText;
+    }
+
+    #create-menu {
+      position: absolute;
+      background: Canvas;
+      border: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+      border-radius: 6px;
+      box-shadow: 0 4px 12px color-mix(in srgb, CanvasText 12%, transparent);
+      display: flex;
+      flex-direction: column;
+      min-width: 160px;
+      z-index: 100;
+      overflow: hidden;
+    }
+
+    #create-menu button {
+      font: inherit;
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      color: CanvasText;
+      touch-action: manipulation;
+    }
+
+    #create-menu button:hover { background: color-mix(in srgb, CanvasText 6%, transparent); }
+
+    /* Drag reorder */
+    ul.node-list li[draggable] { cursor: grab; }
+    ul.node-list li.drag-over { outline: 2px solid color-mix(in srgb, CanvasText 40%, transparent); outline-offset: -2px; }
+    ul.node-list li.dragging { opacity: 0.4; }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav class="breadcrumb" id="breadcrumb" aria-label="Location"></nav>
+</header>
+
+<div class="toolbar">
+  <h1 id="folder-title">Inkwell</h1>
+  <button class="btn-new" id="btn-new" aria-label="New item">+</button>
+</div>
+
+<ul class="node-list" id="node-list" role="list"></ul>
+
+<script type="module" src="/inkwell/app.js"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/inkwell/sw.js');</script>
+</body>
+</html>
