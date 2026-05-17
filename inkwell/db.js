@@ -25,9 +25,6 @@ export async function getChildren(parentId) {
   const d = await openDb();
   return new Promise((resolve, reject) => {
     const tx = d.transaction('nodes', 'readonly');
-    const index = tx.objectStore('nodes').index('parent_id');
-    const key = parentId === null ? IDBKeyRange.only(null) : IDBKeyRange.only(parentId);
-    // IDBKeyRange.only(null) doesn't work in all browsers — use getAll + filter
     const req = tx.objectStore('nodes').getAll();
     req.onsuccess = () => {
       const all = req.result;
