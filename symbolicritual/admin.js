@@ -92,6 +92,58 @@ let selectedFile = null;
 let editingSlug = null;
 let formSetup = false;
 
+function isBrowserPlayable(mimeType) {
+  const playable = ['video/mp4', 'video/webm', 'video/ogg'];
+  return playable.includes(mimeType);
+}
+
+function convertToWebM(file) {
+  return new Promise((resolve, reject) => {
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+      ? 'video/webm;codecs=vp9,opus'
+      : 'video/webm';
+
+    const url = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    video.src = url;
+    video.muted = true;
+    video.playsInline = true;
+
+    video.addEventListener('error', () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Could not load video for conversion'));
+    });
+
+    video.addEventListener('canplay', () => {
+      const stream = video.captureStream();
+      const recorder = new MediaRecorder(stream, { mimeType });
+      const chunks = [];
+
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => {
+        URL.revokeObjectURL(url);
+        const blob = new Blob(chunks, { type: mimeType });
+        const converted = new File([blob], file.name.replace(/\.[^.]+$/, '.webm'), { type: mimeType });
+        resolve(converted);
+      };
+      recorder.onerror = e => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Conversion failed: ' + e.error?.message));
+      };
+
+      recorder.start();
+      video.play().then(() => {
+        video.addEventListener('ended', () => recorder.stop());
+      }).catch(e => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Could not play video for conversion: ' + e.message));
+      });
+    }, { once: true });
+
+    video.load();
+  });
+}
+
 // Boot
 if (getToken()) {
   showAdmin();
@@ -124,8 +176,27 @@ function setupForm() {
   fileInput.addEventListener('change', async () => {
     const file = fileInput.files[0];
     if (!file) return;
-    selectedFile = file;
-    showPreview(file, dropzone, dropzoneLabel, altGroup);
+
+    const needsConversion = file.type.startsWith('video/') && !isBrowserPlayable(file.type);
+    if (needsConversion) {
+      statusEl.textContent = 'Converting video for browser compatibility...';
+      submitBtn.disabled = true;
+      dropzoneLabel.textContent = 'Converting...';
+      try {
+        statusEl.textContent = 'Converting video — this takes as long as the clip duration, please wait...';
+        selectedFile = await convertToWebM(file);
+        statusEl.textContent = 'Conversion complete.';
+      } catch (e) {
+        statusEl.textContent = 'Conversion failed: ' + e.message;
+        submitBtn.disabled = false;
+        return;
+      }
+      submitBtn.disabled = false;
+    } else {
+      selectedFile = file;
+    }
+
+    showPreview(selectedFile, dropzone, dropzoneLabel, altGroup);
     const exif = await extractExif(file);
     if (exif.capturedAt && !editingSlug) capturedAt.value = exif.capturedAt;
     if (exif.lat != null && !editingSlug) latInput.value = exif.lat;
