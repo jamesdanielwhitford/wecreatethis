@@ -229,12 +229,28 @@ function buildAiPanel() {
       const data = await anthropicChat(settings.anthropic_key, {
         model: ANTHROPIC_MODELS[getAiMode()],
         max_tokens: 2048,
-        system: 'You are a note editor. Apply the user\'s instruction to the note below. Return only the revised note body. No explanation, no preamble, no markdown code fences. Preserve the voice and structure unless the instruction asks you to change it.',
+        system: `You are a note editor. Apply the user's instruction to the note and return the revised note body. No explanation, no preamble, no markdown code fences.
+
+Before writing your output, classify the instruction:
+- NARROW: targets a specific word, phrase, sentence, or section (e.g. "fix the last paragraph", "change X to Y", "make the opening sentence shorter")
+- BROAD: calls for global changes across the whole note (e.g. "rewrite this more formally", "tighten the whole thing", "change the tone throughout")
+
+Write your classification inside <scope> tags, then write the revised note after </scope>.
+
+If NARROW:
+- Copy every part of the note that the instruction does not require changing, word for word, character for character.
+- Make only the changes the instruction requires. Do not improve, rephrase, or touch any sentence unless it is directly relevant to the instruction.
+- If you are unsure whether a sentence is in scope, leave it unchanged.
+
+If BROAD:
+- Rewrite freely, applying the instruction across the whole note.
+- Preserve the author's voice and core meaning unless the instruction asks you to change them.`,
         messages: [
           { role: 'user', content: `Note:\n${noteBody}\n\nInstruction: ${instruction}` },
         ],
       });
-      const revised = data.content?.[0]?.text || '';
+      const raw = data.content?.[0]?.text || '';
+      const revised = raw.replace(/<scope>[\s\S]*?<\/scope>\s*/i, '').trim();
       document.getElementById('ai-preview').textContent = revised;
       document.getElementById('ai-preview-area').style.display = 'block';
       document.getElementById('ai-status').textContent = '';
