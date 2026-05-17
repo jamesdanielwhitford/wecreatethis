@@ -1,7 +1,7 @@
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Api-Key, X-Mistral-Key, X-Anthropic-Key, Anthropic-Version',
 };
 
 function json(data, status = 200) {
@@ -139,6 +139,49 @@ export default {
       const id = pathname.slice('/api/nodes/'.length);
       await deleteWithDescendants(env.DB, id);
       return noContent();
+    }
+
+    // POST /api/proxy/anthropic — forwards to Anthropic Messages API
+    // API key comes from the browser in X-Anthropic-Key header, never stored here.
+    if (method === 'POST' && pathname === '/api/proxy/anthropic') {
+      const apiKey = req.headers.get('X-Anthropic-Key');
+      if (!apiKey) return err('Missing X-Anthropic-Key', 400);
+      const body = await req.text();
+      const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': req.headers.get('Anthropic-Version') || '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body,
+      });
+      const data = await upstream.text();
+      return new Response(data, {
+        status: upstream.status,
+        headers: { 'Content-Type': 'application/json', ...CORS },
+      });
+    }
+
+    // POST /api/proxy/mistral — forwards to Mistral transcription API
+    // API key comes from the browser in X-Mistral-Key header, never stored here.
+    if (method === 'POST' && pathname === '/api/proxy/mistral') {
+      const apiKey = req.headers.get('X-Mistral-Key');
+      if (!apiKey) return err('Missing X-Mistral-Key', 400);
+      const contentType = req.headers.get('Content-Type') || '';
+      const upstream = await fetch('https://api.mistral.ai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': contentType,
+        },
+        body: req.body,
+      });
+      const data = await upstream.text();
+      return new Response(data, {
+        status: upstream.status,
+        headers: { 'Content-Type': 'application/json', ...CORS },
+      });
     }
 
     return err('Not found', 404);

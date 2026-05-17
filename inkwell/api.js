@@ -52,3 +52,27 @@ export async function deleteNode(id) {
   });
   return handle(res);
 }
+
+// Proxy: forwards JSON body to Anthropic, attaches key server-side to avoid CORS.
+export async function anthropicChat(apiKey, payload) {
+  const res = await fetch(`${API_BASE}/api/proxy/anthropic`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Anthropic-Key': apiKey,
+      'Anthropic-Version': '2023-06-01',
+    },
+    body: JSON.stringify(payload),
+  });
+  return handle(res);
+}
+
+// Proxy: forwards FormData to Mistral transcription, attaches key server-side.
+export async function mistralTranscribe(apiKey, formData) {
+  const res = await fetch(`${API_BASE}/api/proxy/mistral`, {
+    method: 'POST',
+    headers: { 'X-Mistral-Key': apiKey },
+    body: formData,
+  });
+  return handle(res);
+}

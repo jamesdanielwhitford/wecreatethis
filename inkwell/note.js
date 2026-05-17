@@ -1,11 +1,9 @@
 import * as storage from './storage.js';
 import { getSettings } from './settings.js';
+import { mistralTranscribe, anthropicChat } from './api.js';
 
-const MISTRAL_ENDPOINT = 'https://api.mistral.ai/v1/audio/transcriptions';
 const MISTRAL_MODEL = 'voxtral-mini-latest';
-const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
-const ANTHROPIC_VERSION = '2023-06-01';
 
 let currentNode = null;
 let saveTimer = null;
@@ -110,13 +108,7 @@ async function transcribeAndAppend() {
   formData.append('file', blob, 'recording.webm');
   formData.append('model', MISTRAL_MODEL);
   try {
-    const res = await fetch(MISTRAL_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${settings.mistral_key}` },
-      body: formData,
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const data = await mistralTranscribe(settings.mistral_key, formData);
     const text = (data.text || '').trim();
     if (text) {
       const current = bodyEl.textContent;
@@ -209,24 +201,14 @@ function buildAiPanel() {
 
     const noteBody = bodyEl.textContent;
     try {
-      const res = await fetch(ANTHROPIC_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'x-api-key': settings.anthropic_key,
-          'anthropic-version': ANTHROPIC_VERSION,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: ANTHROPIC_MODEL,
-          max_tokens: 2048,
-          system: 'You are a note editor. Apply the user\'s instruction to the note below. Return only the revised note body. No explanation, no preamble, no markdown code fences. Preserve the voice and structure unless the instruction asks you to change it.',
-          messages: [
-            { role: 'user', content: `Note:\n${noteBody}\n\nInstruction: ${instruction}` },
-          ],
-        }),
+      const data = await anthropicChat(settings.anthropic_key, {
+        model: ANTHROPIC_MODEL,
+        max_tokens: 2048,
+        system: 'You are a note editor. Apply the user\'s instruction to the note below. Return only the revised note body. No explanation, no preamble, no markdown code fences. Preserve the voice and structure unless the instruction asks you to change it.',
+        messages: [
+          { role: 'user', content: `Note:\n${noteBody}\n\nInstruction: ${instruction}` },
+        ],
       });
-      if (!res.ok) throw new Error(`Anthropic API error ${res.status}`);
-      const data = await res.json();
       const revised = data.content?.[0]?.text || '';
       document.getElementById('ai-preview').textContent = revised;
       document.getElementById('ai-preview-area').style.display = 'block';

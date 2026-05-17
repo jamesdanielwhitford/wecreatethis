@@ -1,9 +1,8 @@
 import * as storage from './storage.js';
 import { getSettings } from './settings.js';
+import { anthropicChat } from './api.js';
 
-const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
-const ANTHROPIC_VERSION = '2023-06-01';
 
 const params = new URLSearchParams(location.search);
 const parentId = params.get('parent') || null;
@@ -57,21 +56,11 @@ async function sendMessage() {
   setStatus('Thinking...');
 
   try {
-    const res = await fetch(ANTHROPIC_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'x-api-key': settings.anthropic_key,
-        'anthropic-version': ANTHROPIC_VERSION,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 1024,
-        messages: history,
-      }),
+    const data = await anthropicChat(settings.anthropic_key, {
+      model: ANTHROPIC_MODEL,
+      max_tokens: 1024,
+      messages: history,
     });
-    if (!res.ok) throw new Error(`Anthropic API error ${res.status}`);
-    const data = await res.json();
     const reply = data.content?.[0]?.text || '';
     history.push({ role: 'assistant', content: reply });
     appendMessage('assistant', reply);
@@ -104,22 +93,12 @@ async function generateNote() {
   const transcript = history.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n\n');
 
   try {
-    const res = await fetch(ANTHROPIC_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'x-api-key': settings.anthropic_key,
-        'anthropic-version': ANTHROPIC_VERSION,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 2048,
-        system: "You are a note-writing assistant. The user has just had a conversation. Your job is to produce a clean, well-organised note capturing the key ideas from that conversation. Write in plain text, no markdown headers. Use short paragraphs. Output format: first line is the note title, blank line, then the note body. Nothing else.",
-        messages: [{ role: 'user', content: `Conversation:\n\n${transcript}` }],
-      }),
+    const data = await anthropicChat(settings.anthropic_key, {
+      model: ANTHROPIC_MODEL,
+      max_tokens: 2048,
+      system: "You are a note-writing assistant. The user has just had a conversation. Your job is to produce a clean, well-organised note capturing the key ideas from that conversation. Write in plain text, no markdown headers. Use short paragraphs. Output format: first line is the note title, blank line, then the note body. Nothing else.",
+      messages: [{ role: 'user', content: `Conversation:\n\n${transcript}` }],
     });
-    if (!res.ok) throw new Error(`Anthropic API error ${res.status}`);
-    const data = await res.json();
     const text = (data.content?.[0]?.text || '').trim();
     const lines = text.split('\n');
     generatedTitle = lines[0].trim();

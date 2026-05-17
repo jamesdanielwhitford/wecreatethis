@@ -1,7 +1,7 @@
 import * as storage from './storage.js';
 import { getSettings } from './settings.js';
+import { mistralTranscribe } from './api.js';
 
-const MISTRAL_ENDPOINT = 'https://api.mistral.ai/v1/audio/transcriptions';
 const MISTRAL_MODEL = 'voxtral-mini-latest';
 
 const params = new URLSearchParams(location.search);
@@ -83,13 +83,7 @@ async function handleStop() {
   formData.append('model', MISTRAL_MODEL);
 
   try {
-    const res = await fetch(MISTRAL_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${settings.mistral_key}` },
-      body: formData,
-    });
-    if (!res.ok) throw new Error(`Mistral API error ${res.status}`);
-    const data = await res.json();
+    const data = await mistralTranscribe(settings.mistral_key, formData);
     const text = data.text || '';
     transcriptArea.value = text;
     reviewSection.classList.add('visible');
