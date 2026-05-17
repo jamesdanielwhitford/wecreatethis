@@ -1,6 +1,9 @@
 # SSL certificates (mkcert)
 *.pem
 
+# Wrangler cache
+**/.wrangler/
+
 # Environment variables
 .env
 

@@ -105,15 +105,22 @@ export default {
       const existing = await env.DB.prepare('SELECT * FROM items WHERE slug = ?').bind(slug).first();
       if (!existing) return err('Not found', 404);
 
-      const { media_url, media_type, media_mime, r2_key, captured_at, lat, lng, caption, lang, alt, width, height } = body;
+      const { slug: newSlug, media_url, media_type, media_mime, r2_key, captured_at, lat, lng, caption, lang, alt, width, height } = body;
 
       // If media is being replaced, delete the old R2 object
       if (r2_key && existing.r2_key && r2_key !== existing.r2_key) {
         await env.MEDIA.delete(existing.r2_key).catch(() => {});
       }
 
+      // If slug is changing, check the new slug isn't already taken
+      if (newSlug && newSlug !== slug) {
+        const conflict = await env.DB.prepare('SELECT id FROM items WHERE slug = ?').bind(newSlug).first();
+        if (conflict) return err(`Slug ${newSlug} is already in use`, 409);
+      }
+
       const result = await env.DB.prepare(
         `UPDATE items SET
+           slug        = ?,
            media_url   = ?,
            media_type  = ?,
            media_mime  = ?,
@@ -129,6 +136,7 @@ export default {
          WHERE slug = ?
          RETURNING *`
       ).bind(
+        newSlug      ?? slug,
         media_url    ?? existing.media_url,
         media_type   ?? existing.media_type,
         media_mime   ?? existing.media_mime,
