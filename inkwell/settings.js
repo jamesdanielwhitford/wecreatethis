@@ -73,4 +73,4 @@ function init() {
   });
 }
 
-init();
+if (document.getElementById('mistral-key')) init();
