@@ -2,7 +2,13 @@ import * as storage from './storage.js';
 import { getSettings } from './settings.js';
 import { anthropicChat } from './api.js';
 
-const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
+const ANTHROPIC_MODELS = {
+  fast: 'claude-haiku-4-5-20251001',
+  smart: 'claude-sonnet-4-6',
+};
+
+function getAiMode() { return localStorage.getItem('inkwell-ai-mode') || 'fast'; }
+function setAiMode(mode) { localStorage.setItem('inkwell-ai-mode', mode); }
 
 const params = new URLSearchParams(location.search);
 const parentId = params.get('parent') || null;
@@ -17,6 +23,20 @@ const previewTitle = document.getElementById('preview-title');
 const previewBody = document.getElementById('preview-body');
 const btnAccept = document.getElementById('btn-accept');
 const btnReject = document.getElementById('btn-reject');
+const btnModeFast = document.getElementById('ai-mode-fast');
+const btnModeSmart = document.getElementById('ai-mode-smart');
+
+function updateModeButtons() {
+  const mode = getAiMode();
+  btnModeFast.style.background = mode === 'fast' ? 'CanvasText' : 'Canvas';
+  btnModeFast.style.color = mode === 'fast' ? 'Canvas' : 'CanvasText';
+  btnModeSmart.style.background = mode === 'smart' ? 'CanvasText' : 'Canvas';
+  btnModeSmart.style.color = mode === 'smart' ? 'Canvas' : 'CanvasText';
+}
+
+btnModeFast.addEventListener('click', () => { setAiMode('fast'); updateModeButtons(); });
+btnModeSmart.addEventListener('click', () => { setAiMode('smart'); updateModeButtons(); });
+updateModeButtons();
 
 // Conversation history for the API
 let history = [];
@@ -57,7 +77,7 @@ async function sendMessage() {
 
   try {
     const data = await anthropicChat(settings.anthropic_key, {
-      model: ANTHROPIC_MODEL,
+      model: ANTHROPIC_MODELS[getAiMode()],
       max_tokens: 1024,
       messages: history,
     });
@@ -94,7 +114,7 @@ async function generateNote() {
 
   try {
     const data = await anthropicChat(settings.anthropic_key, {
-      model: ANTHROPIC_MODEL,
+      model: ANTHROPIC_MODELS[getAiMode()],
       max_tokens: 2048,
       system: "You are a note-writing assistant. The user has just had a conversation. Your job is to produce a clean, well-organised note capturing the key ideas from that conversation. Write in plain text, no markdown headers. Use short paragraphs. Output format: first line is the note title, blank line, then the note body. Nothing else.",
       messages: [{ role: 'user', content: `Conversation:\n\n${transcript}` }],

@@ -3,7 +3,13 @@ import { getSettings } from './settings.js';
 import { mistralTranscribe, anthropicChat } from './api.js';
 
 const MISTRAL_MODEL = 'voxtral-mini-latest';
-const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
+const ANTHROPIC_MODELS = {
+  fast: 'claude-haiku-4-5-20251001',
+  smart: 'claude-sonnet-4-6',
+};
+
+function getAiMode() { return localStorage.getItem('inkwell-ai-mode') || 'fast'; }
+function setAiMode(mode) { localStorage.setItem('inkwell-ai-mode', mode); }
 
 let currentNode = null;
 let saveTimer = null;
@@ -142,8 +148,15 @@ function buildAiPanel() {
     max-height: 60dvh;
     overflow-y: auto;
   `;
+  const mode = getAiMode();
   panel.innerHTML = `
-    <p style="font-size:0.85rem;font-weight:600;margin-bottom:0.5rem;">AI edit</p>
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
+      <p style="font-size:0.85rem;font-weight:600;margin:0;">AI edit</p>
+      <div style="display:flex;border:1px solid color-mix(in srgb, CanvasText 25%, transparent);border-radius:4px;overflow:hidden;font-size:0.8rem;">
+        <button id="ai-mode-fast" style="font:inherit;font-size:0.8rem;padding:0.2rem 0.6rem;border:none;cursor:pointer;background:${mode==='fast'?'CanvasText':'Canvas'};color:${mode==='fast'?'Canvas':'CanvasText'};">Fast</button>
+        <button id="ai-mode-smart" style="font:inherit;font-size:0.8rem;padding:0.2rem 0.6rem;border:none;cursor:pointer;background:${mode==='smart'?'CanvasText':'Canvas'};color:${mode==='smart'?'Canvas':'CanvasText'};">Smart</button>
+      </div>
+    </div>
     <textarea id="ai-instruction" rows="2" placeholder="What would you like to change?" style="
       width:100%;font:inherit;font-size:0.9rem;padding:0.5rem;
       border:1px solid color-mix(in srgb, CanvasText 25%, transparent);
@@ -185,6 +198,18 @@ function buildAiPanel() {
   `;
   document.body.appendChild(panel);
 
+  function updateModeButtons(selected) {
+    const fast = document.getElementById('ai-mode-fast');
+    const smart = document.getElementById('ai-mode-smart');
+    fast.style.background = selected === 'fast' ? 'CanvasText' : 'Canvas';
+    fast.style.color = selected === 'fast' ? 'Canvas' : 'CanvasText';
+    smart.style.background = selected === 'smart' ? 'CanvasText' : 'Canvas';
+    smart.style.color = selected === 'smart' ? 'Canvas' : 'CanvasText';
+  }
+
+  document.getElementById('ai-mode-fast').addEventListener('click', () => { setAiMode('fast'); updateModeButtons('fast'); });
+  document.getElementById('ai-mode-smart').addEventListener('click', () => { setAiMode('smart'); updateModeButtons('smart'); });
+
   document.getElementById('ai-cancel').addEventListener('click', () => panel.remove());
 
   document.getElementById('ai-apply').addEventListener('click', async () => {
@@ -202,7 +227,7 @@ function buildAiPanel() {
     const noteBody = bodyEl.textContent;
     try {
       const data = await anthropicChat(settings.anthropic_key, {
-        model: ANTHROPIC_MODEL,
+        model: ANTHROPIC_MODELS[getAiMode()],
         max_tokens: 2048,
         system: 'You are a note editor. Apply the user\'s instruction to the note below. Return only the revised note body. No explanation, no preamble, no markdown code fences. Preserve the voice and structure unless the instruction asks you to change it.',
         messages: [
