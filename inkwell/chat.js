@@ -95,13 +95,22 @@ async function sendMessage() {
 }
 
 async function generateNote() {
-  if (!history.length) {
-    setStatus('Start a conversation first.');
-    return;
-  }
   const settings = getSettings();
   if (!settings.anthropic_key) {
     setStatus('No Anthropic key. Add one in Settings (/inkwell/settings).');
+    return;
+  }
+
+  const pendingText = inputEl.value.trim();
+  if (pendingText) {
+    inputEl.value = '';
+    inputEl.style.height = '';
+    appendMessage('user', pendingText);
+    history.push({ role: 'user', content: pendingText });
+  }
+
+  if (!history.length) {
+    setStatus('Start a conversation first.');
     return;
   }
 
