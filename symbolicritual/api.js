@@ -59,13 +59,16 @@ export async function removeItem(id) {
 // Uploads a file to R2 via the Worker proxy. Returns { mediaUrl, key }.
 export async function uploadMedia(file) {
   const filename = encodeURIComponent(file.name);
+  // Safari throws "Load failed" when fetch streams a File body directly.
+  // Reading into an ArrayBuffer first works around the bug.
+  const body = await file.arrayBuffer();
   const res = await fetch(`${API_BASE}/api/upload?filename=${filename}`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${getToken()}`,
       'Content-Type': file.type,
     },
-    body: file,
+    body,
   });
   return handleResponse(res);
 }

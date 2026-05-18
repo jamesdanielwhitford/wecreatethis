@@ -1,5 +1,5 @@
 // Cache for HTML/JS/CSS app shell — bumped on every release.
-const CACHE_NAME = 'symbolic-ritual-v15';
+const CACHE_NAME = 'symbolic-ritual-v16';
 // Cache for R2 media. Bumped only when we want to evict everything, otherwise
 // growth is bounded by a runtime LRU.
 const MEDIA_CACHE = 'symbolic-ritual-media-v1';
