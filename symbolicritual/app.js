@@ -180,6 +180,8 @@ function observeItem(el) {
   const figure = el.querySelector('figure');
   if (figure) itemResizeObserver.observe(figure);
   applyItemPadding(el);
+  const media = el.querySelector('img, video');
+  if (media) media.addEventListener('load', () => applyItemPadding(el), { once: true });
 }
 
 const urlObserver = new IntersectionObserver(entries => {
