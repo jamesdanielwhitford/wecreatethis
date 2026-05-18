@@ -1,6 +1,16 @@
 import { getItems, getItemBySlug, putItem } from './db.js';
 import { fetchItems } from './api.js';
 
+const MOCK_MODE = new URLSearchParams(location.search).has('mock');
+
+const MOCK_ITEMS = [
+  { id: 1, slug: 1, media_type: 'image', media_url: '/symbolicritual/test-assets/01-landscape.png', alt: 'Wide landscape, warm sand tones', captured_at: '2026-05-16T11:09', lat: -33.8688, lng: 151.2093, caption: 'The light arrived before the sound did.', lang: 'en', width: 1920, height: 1080 },
+  { id: 2, slug: 2, media_type: 'image', media_url: '/symbolicritual/test-assets/02-portrait.png', alt: 'Tall portrait, cool blue tones', captured_at: '2026-05-14T07:33', lat: 51.5074, lng: -0.1278, caption: null, lang: 'en', width: 1080, height: 1920 },
+  { id: 3, slug: 3, media_type: 'image', media_url: '/symbolicritual/test-assets/03-square.png', alt: 'Square frame, soft violet tones', captured_at: '2026-05-10T18:02', lat: 34.0522, lng: -118.2437, caption: 'الضوء وصل قبل أن يصل الصوت.', lang: 'ar', width: 1080, height: 1080 },
+  { id: 4, slug: 4, media_type: 'image', media_url: '/symbolicritual/test-assets/04-ultrawide.png', alt: 'Ultra-wide panoramic, muted green tones', captured_at: '2026-05-08T06:15', lat: 48.8566, lng: 2.3522, caption: 'Horizon as threshold.', lang: 'en', width: 2560, height: 800 },
+  { id: 5, slug: 5, media_type: 'image', media_url: '/symbolicritual/test-assets/05-tall.png', alt: 'Very tall narrow frame, terracotta tones', captured_at: '2026-05-05T14:45', lat: 40.7128, lng: -74.0060, caption: null, lang: 'en', width: 600, height: 1800 },
+];
+
 const feed = document.getElementById('feed');
 const sentinel = document.getElementById('scroll-sentinel');
 const offlineBar = document.getElementById('offline-bar');
@@ -147,7 +157,30 @@ function renderItem(item) {
   return article;
 }
 
-function observeItem(el) { urlObserver.observe(el); }
+const MIN_GAP = 32; // px — minimum breathing room above and below each item
+
+function applyItemPadding(el) {
+  const vh = window.innerHeight;
+  const figure = el.querySelector('figure');
+  const contentHeight = figure ? figure.getBoundingClientRect().height : el.getBoundingClientRect().height;
+  const pad = Math.max(MIN_GAP, (vh - contentHeight) / 2);
+  el.style.paddingTop = pad + 'px';
+  el.style.paddingBottom = pad + 'px';
+}
+
+const itemResizeObserver = new ResizeObserver(entries => {
+  for (const entry of entries) {
+    const item = entry.target.closest('.item');
+    if (item) applyItemPadding(item);
+  }
+});
+
+function observeItem(el) {
+  urlObserver.observe(el);
+  const figure = el.querySelector('figure');
+  if (figure) itemResizeObserver.observe(figure);
+  applyItemPadding(el);
+}
 
 const urlObserver = new IntersectionObserver(entries => {
   for (const entry of entries) {
@@ -173,7 +206,9 @@ const sentinelObserver = new IntersectionObserver(entries => {
 async function loadMore() {
   if (loading) return;
   loading = true;
-  const items = await getItems({ before: lowestId, limit: 20 });
+  const items = MOCK_MODE
+    ? MOCK_ITEMS.filter(i => lowestId === null || i.slug < lowestId).slice(0, 20)
+    : await getItems({ before: lowestId, limit: 20 });
   for (const item of items) {
     const el = renderItem(item);
     feed.insertBefore(el, sentinel);
@@ -236,7 +271,7 @@ async function init() {
   }
 
   sentinelObserver.observe(sentinel);
-  syncFromApi().catch(() => {});
+  if (!MOCK_MODE) syncFromApi().catch(() => {});
 }
 
 async function syncFromApi() {
@@ -261,5 +296,9 @@ async function syncFromApi() {
     showOffline();
   }
 }
+
+window.addEventListener('resize', () => {
+  for (const el of feed.querySelectorAll('.item')) applyItemPadding(el);
+});
 
 init();
