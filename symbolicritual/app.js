@@ -1,4 +1,4 @@
-import { getItems, getItemBySlug, putItem } from './db.js';
+import { getItems, getItemBySlug, putItems } from './db.js';
 import { fetchItems } from './api.js';
 
 const MOCK_MODE = new URLSearchParams(location.search).has('mock');
@@ -14,17 +14,18 @@ const MOCK_ITEMS = [
 const feed = document.getElementById('feed');
 const sentinel = document.getElementById('scroll-sentinel');
 const offlineBar = document.getElementById('offline-bar');
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const RTL_LANGS = ['ar','he','fa','ur','yi','dv','ps','sd'];
 
-let itemCount = 0;
-let lowestId = null;
-let highestId = null;
-let loading = false;
+let lowestSlug = null;
+let highestSlug = null;
+let loadingMore = false;
 let loadingEl = null;
+let currentUrlSlug = null;
+let urlUpdateScheduled = false;
 
-const visibilityMap = new Map();
+// O(1) check of whether a slug has already been rendered.
+const renderedSlugs = new Set();
 
 function dir(lang) {
   return RTL_LANGS.some(l => (lang || 'en').startsWith(l)) ? 'rtl' : 'ltr';
@@ -68,8 +69,12 @@ function showEmpty() {
 function showOffline() { offlineBar.classList.add('visible'); }
 function hideOffline() { offlineBar.classList.remove('visible'); }
 
+// Number of items rendered so far. First item gets eager+high priority.
+let renderIndex = 0;
+
 function renderItem(item) {
-  const position = itemCount++;
+  const isFirst = renderIndex === 0;
+  renderIndex++;
 
   const article = document.createElement('article');
   article.className = 'item';
@@ -84,6 +89,7 @@ function renderItem(item) {
     media.className = 'item-media';
     media.controls = true;
     media.preload = 'metadata';
+    media.playsInline = true;
     if (item.width) media.width = item.width;
     if (item.height) media.height = item.height;
     if (item.track_src) {
@@ -101,22 +107,28 @@ function renderItem(item) {
   } else {
     media = document.createElement('img');
     media.className = 'item-media';
-    media.src = item.media_url;
     media.alt = item.alt || '';
+    // width/height attributes give the browser an aspect ratio so it can reserve
+    // correctly-sized space before the bytes arrive. This eliminates layout shift.
     if (item.width) media.width = item.width;
     if (item.height) media.height = item.height;
-    media.loading = position === 0 ? 'eager' : 'lazy';
-    media.decoding = position === 0 ? 'sync' : 'async';
+    media.loading = isFirst ? 'eager' : 'lazy';
+    media.decoding = isFirst ? 'sync' : 'async';
+    media.fetchPriority = isFirst ? 'high' : 'low';
+    media.src = item.media_url;
 
-    // Broken image fallback
-    media.onerror = () => {
+    media.addEventListener('error', () => {
       const placeholder = document.createElement('div');
       placeholder.className = 'item-media-error';
       placeholder.setAttribute('role', 'img');
       placeholder.setAttribute('aria-label', item.alt || 'Image unavailable');
       placeholder.textContent = item.alt || 'Image unavailable';
+      // Preserve aspect ratio if we know it, otherwise the CSS default kicks in.
+      if (item.width && item.height) {
+        placeholder.style.aspectRatio = `${item.width} / ${item.height}`;
+      }
       media.replaceWith(placeholder);
-    };
+    }, { once: true });
   }
 
   const figcaption = document.createElement('figcaption');
@@ -135,7 +147,7 @@ function renderItem(item) {
     co.href = `https://www.openstreetmap.org/?mlat=${item.lat}&mlon=${item.lng}&zoom=15`;
     co.target = '_blank';
     co.rel = 'noopener noreferrer';
-    co.setAttribute('aria-label', `View location on OpenStreetMap (opens in new tab)`);
+    co.setAttribute('aria-label', 'View location on OpenStreetMap (opens in new tab)');
     co.textContent = coords;
     meta.appendChild(co);
   }
@@ -157,84 +169,97 @@ function renderItem(item) {
   return article;
 }
 
-const MIN_GAP = 32; // px — minimum breathing room above and below each item
-
-function applyItemPadding(el) {
-  const vh = window.innerHeight;
-  const figure = el.querySelector('figure');
-  const contentHeight = figure ? figure.getBoundingClientRect().height : el.getBoundingClientRect().height;
-  const pad = Math.max(MIN_GAP, (vh - contentHeight) / 2);
-  el.style.paddingTop = pad + 'px';
-  el.style.paddingBottom = pad + 'px';
-  el.style.opacity = '1';
-}
-
-const itemResizeObserver = new ResizeObserver(entries => {
+// Single IntersectionObserver tracks which item is currently centered in the
+// viewport. It uses a thin horizontal band at the middle of the viewport as the
+// root area — only the item crossing that band counts as "current". This avoids
+// the O(n) recomputation the previous visibilityMap approach required on every
+// callback.
+const urlObserver = new IntersectionObserver(entries => {
   for (const entry of entries) {
-    const item = entry.target.closest('.item');
-    if (item) applyItemPadding(item);
+    if (!entry.isIntersecting) continue;
+    const slug = entry.target.dataset.slug;
+    if (slug === currentUrlSlug) continue;
+    currentUrlSlug = slug;
+    if (!urlUpdateScheduled) {
+      urlUpdateScheduled = true;
+      requestAnimationFrame(() => {
+        urlUpdateScheduled = false;
+        history.replaceState({ slug: currentUrlSlug }, '', `?item=${currentUrlSlug}`);
+      });
+    }
   }
+}, {
+  // Band of ~2px at the vertical centre of the viewport. The item whose figure
+  // crosses this band is treated as the "current" one.
+  rootMargin: '-50% 0px -50% 0px',
+  threshold: 0,
+});
+
+// Prefetch observer: when an item is approaching the viewport (within 1.5 viewport
+// heights), upgrade its image's fetchPriority. Combined with native lazy-loading,
+// this gives smooth scrolling without flashing as items appear.
+const prefetchObserver = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (!entry.isIntersecting) continue;
+    const img = entry.target.querySelector('img.item-media');
+    if (img && img.fetchPriority === 'low') img.fetchPriority = 'high';
+    // Stop watching once we've boosted it.
+    prefetchObserver.unobserve(entry.target);
+  }
+}, {
+  rootMargin: '150% 0px 150% 0px',
+  threshold: 0,
 });
 
 function observeItem(el) {
   urlObserver.observe(el);
-  const figure = el.querySelector('figure');
-  if (figure) itemResizeObserver.observe(figure);
-  // Defer first measurement until after browser layout
-  requestAnimationFrame(() => applyItemPadding(el));
-  const media = el.querySelector('img, video');
-  if (media) {
-    media.addEventListener('load', () => applyItemPadding(el), { once: true });
-    media.addEventListener('loadedmetadata', () => applyItemPadding(el), { once: true });
-  }
+  prefetchObserver.observe(el);
 }
-
-const urlObserver = new IntersectionObserver(entries => {
-  for (const entry of entries) {
-    const slug = entry.target.dataset.slug;
-    if (entry.isIntersecting) {
-      visibilityMap.set(slug, entry.intersectionRatio);
-    } else {
-      visibilityMap.delete(slug);
-    }
-  }
-  if (visibilityMap.size === 0) return;
-  let bestSlug = null, bestRatio = -1;
-  for (const [slug, ratio] of visibilityMap) {
-    if (ratio > bestRatio) { bestRatio = ratio; bestSlug = slug; }
-  }
-  if (bestSlug) history.replaceState({ slug: bestSlug }, '', `?item=${bestSlug}`);
-}, { threshold: [0, 0.25, 0.5, 0.75, 1] });
 
 const sentinelObserver = new IntersectionObserver(entries => {
   if (entries[0].isIntersecting) loadMore();
-}, { rootMargin: '200px' });
+}, { rootMargin: '300% 0px' });
+
+function appendItem(item) {
+  if (renderedSlugs.has(item.slug)) return null;
+  const el = renderItem(item);
+  feed.insertBefore(el, sentinel);
+  renderedSlugs.add(item.slug);
+  observeItem(el);
+  if (lowestSlug === null || item.slug < lowestSlug) lowestSlug = item.slug;
+  if (highestSlug === null || item.slug > highestSlug) highestSlug = item.slug;
+  return el;
+}
+
+function prependItem(item) {
+  if (renderedSlugs.has(item.slug)) return null;
+  const el = renderItem(item);
+  feed.insertBefore(el, feed.firstChild);
+  renderedSlugs.add(item.slug);
+  observeItem(el);
+  if (lowestSlug === null || item.slug < lowestSlug) lowestSlug = item.slug;
+  if (highestSlug === null || item.slug > highestSlug) highestSlug = item.slug;
+  return el;
+}
 
 async function loadMore() {
-  if (loading) return;
-  loading = true;
-  const items = MOCK_MODE
-    ? MOCK_ITEMS.filter(i => lowestId === null || i.slug < lowestId).slice(0, 20)
-    : await getItems({ before: lowestId, limit: 20 });
-  for (const item of items) {
-    const el = renderItem(item);
-    feed.insertBefore(el, sentinel);
-    observeItem(el);
-    if (lowestId === null || item.slug < lowestId) lowestId = item.slug;
-    if (highestId === null || item.slug > highestId) highestId = item.slug;
+  if (loadingMore) return;
+  loadingMore = true;
+  try {
+    const items = MOCK_MODE
+      ? MOCK_ITEMS.filter(i => lowestSlug === null || i.slug < lowestSlug).slice(0, 20)
+      : await getItems({ before: lowestSlug, limit: 20 });
+    for (const item of items) appendItem(item);
+  } finally {
+    loadingMore = false;
   }
-  loading = false;
 }
 
 async function loadNewer(aboveSlug) {
   const items = await getItems({ after: aboveSlug, limit: 20 });
-  const firstChild = feed.firstChild;
-  for (const item of [...items].reverse()) {
-    const el = renderItem(item);
-    feed.insertBefore(el, firstChild);
-    observeItem(el);
-    if (highestId === null || item.slug > highestId) highestId = item.slug;
-  }
+  // getItems(after:) returns ascending; reverse to descending so prepending in order
+  // places the newest at the top of the feed.
+  for (const item of [...items].reverse()) prependItem(item);
 }
 
 async function init() {
@@ -244,24 +269,18 @@ async function init() {
   const targetSlug = params.get('item') ? Number(params.get('item')) : null;
 
   if (targetSlug) {
-    // Try local cache first, fall back to API sync which will populate it
     let item = await getItemBySlug(targetSlug);
     if (!item) {
-      // Not in local cache yet — sync from API first
+      // Not in local cache yet — sync from API first so the target item can be located.
       await syncFromApi().catch(() => {});
       item = await getItemBySlug(targetSlug);
     }
     if (item) {
       hideLoading();
-      const el = renderItem(item);
-      feed.insertBefore(el, sentinel);
-      observeItem(el);
-      lowestId = item.slug;
-      highestId = item.slug;
-      el.scrollIntoView();
+      const el = appendItem(item);
+      if (el) el.scrollIntoView();
       await Promise.all([loadMore(), loadNewer(item.slug)]);
     } else {
-      // Slug not found anywhere — fall back to top of feed
       hideLoading();
       history.replaceState({}, '', location.pathname);
       await loadMore();
@@ -271,7 +290,6 @@ async function init() {
     await loadMore();
     hideLoading();
     if (feed.querySelectorAll('.item').length === 0) {
-      // Nothing in local cache — try API
       await syncFromApi().catch(() => {});
       if (feed.querySelectorAll('.item').length === 0) showEmpty();
     }
@@ -282,30 +300,59 @@ async function init() {
 }
 
 async function syncFromApi() {
+  let items;
   try {
-    const items = await fetchItems({ limit: 20 });
-    if (!items?.length) return;
+    items = await fetchItems({ limit: 20 });
     hideOffline();
-    for (const item of items) {
-      await putItem(item);
-      if (!feed.querySelector(`[data-slug="${item.slug}"]`)) {
-        hideLoading();
-        const el = renderItem(item);
-        const existing = [...feed.querySelectorAll('.item')];
-        const insertBefore = existing.find(e => Number(e.dataset.slug) < item.slug);
-        feed.insertBefore(el, insertBefore || sentinel);
-        observeItem(el);
-        if (lowestId === null || item.slug < lowestId) lowestId = item.slug;
-        if (highestId === null || item.slug > highestId) highestId = item.slug;
-      }
-    }
   } catch {
     showOffline();
+    return;
+  }
+  if (!items?.length) return;
+
+  // Single IndexedDB transaction for all writes — N round trips become 1.
+  await putItems(items);
+
+  hideLoading();
+
+  // API returns newest-first (ORDER BY slug DESC). Split into three buckets so each
+  // is inserted in the right place with predictable DOM order.
+  const newer = [];
+  const older = [];
+  const middle = [];
+  for (const item of items) {
+    if (renderedSlugs.has(item.slug)) continue;
+    if (highestSlug === null || item.slug > highestSlug) newer.push(item);
+    else if (item.slug < lowestSlug) older.push(item);
+    else middle.push(item);
+  }
+
+  // Newer items: iterate ascending so each prepend lands beneath the previous,
+  // leaving the highest slug at the top of the feed.
+  for (const item of [...newer].reverse()) prependItem(item);
+
+  // Older items: API already gave us newest-first, which is the order we want
+  // when appending below existing items.
+  for (const item of older) appendItem(item);
+
+  // Middle items are unusual (would only happen if local cache was partially
+  // populated). Insert each before the first existing item with a smaller slug.
+  for (const item of middle) {
+    const el = renderItem(item);
+    let inserted = false;
+    for (const existing of feed.querySelectorAll('.item')) {
+      if (Number(existing.dataset.slug) < item.slug) {
+        feed.insertBefore(el, existing);
+        inserted = true;
+        break;
+      }
+    }
+    if (!inserted) feed.insertBefore(el, sentinel);
+    renderedSlugs.add(item.slug);
+    observeItem(el);
+    if (lowestSlug === null || item.slug < lowestSlug) lowestSlug = item.slug;
+    if (highestSlug === null || item.slug > highestSlug) highestSlug = item.slug;
   }
 }
-
-window.addEventListener('resize', () => {
-  for (const el of feed.querySelectorAll('.item')) applyItemPadding(el);
-});
 
 init();

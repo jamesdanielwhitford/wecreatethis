@@ -35,14 +35,20 @@
       align-items: center;
     }
 
-    /* Each blog item — vertical padding set by JS to isolate items in viewport */
+    /* Each blog item occupies its own viewport slot. CSS handles centering and the
+       minimum gap, so layout is stable from first paint — no JS measurement needed. */
     .item {
       width: 100%;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      opacity: 0;
-      transition: opacity 0.15s ease;
+      justify-content: center;
+      padding-block: 32px;
+      /* Skip rendering off-screen items. contain-intrinsic-size keeps the scrollbar
+         honest before content is rasterised. */
+      content-visibility: auto;
+      contain-intrinsic-size: auto 100dvh;
     }
 
     figure {
@@ -53,7 +59,9 @@
       margin: 0;
     }
 
-    /* Media: fills screen up to natural dimensions, never exceeds viewport */
+    /* Media: fills screen up to natural dimensions, never exceeds viewport.
+       width/height HTML attributes give the browser an aspect ratio so it reserves
+       correctly-sized space before the image bytes arrive — no layout shift on load. */
     .item-media {
       display: block;
       max-width: 100%;
@@ -121,6 +129,7 @@
       opacity: 0.25;
       margin: 40dvh auto;
       animation: pulse 1.2s ease-in-out infinite;
+      contain: layout style paint;
     }
 
     @keyframes pulse {
