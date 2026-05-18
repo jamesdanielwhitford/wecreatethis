@@ -41,7 +41,7 @@ const tokenInput = document.getElementById('token-input');
 const loginStatus = document.getElementById('login-status');
 const logoutBtn = document.getElementById('logout-btn');
 
-function getToken() { return sessionStorage.getItem('sr-auth-token') || ''; }
+function getToken() { return localStorage.getItem('sr-auth-token') || ''; }
 
 async function verifyToken(token) {
   try {
@@ -62,7 +62,7 @@ loginForm.addEventListener('submit', async e => {
   loginStatus.textContent = 'Checking...';
   const ok = await verifyToken(token);
   if (ok) {
-    sessionStorage.setItem('sr-auth-token', token);
+    localStorage.setItem('sr-auth-token', token);
     loginStatus.textContent = '';
     showAdmin();
   } else {
@@ -73,7 +73,7 @@ loginForm.addEventListener('submit', async e => {
 });
 
 logoutBtn.addEventListener('click', () => {
-  sessionStorage.removeItem('sr-auth-token');
+  localStorage.removeItem('sr-auth-token');
   adminScreen.style.display = 'none';
   loginScreen.style.display = '';
   tokenInput.value = '';
