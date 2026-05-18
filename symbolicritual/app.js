@@ -179,9 +179,13 @@ function observeItem(el) {
   urlObserver.observe(el);
   const figure = el.querySelector('figure');
   if (figure) itemResizeObserver.observe(figure);
-  applyItemPadding(el);
+  // Defer first measurement until after browser layout
+  requestAnimationFrame(() => applyItemPadding(el));
   const media = el.querySelector('img, video');
-  if (media) media.addEventListener('load', () => applyItemPadding(el), { once: true });
+  if (media) {
+    media.addEventListener('load', () => applyItemPadding(el), { once: true });
+    media.addEventListener('loadedmetadata', () => applyItemPadding(el), { once: true });
+  }
 }
 
 const urlObserver = new IntersectionObserver(entries => {
