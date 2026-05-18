@@ -166,7 +166,7 @@ function applyItemPadding(el) {
   const pad = Math.max(MIN_GAP, (vh - contentHeight) / 2);
   el.style.paddingTop = pad + 'px';
   el.style.paddingBottom = pad + 'px';
-  el.style.visibility = 'visible';
+  el.style.opacity = '1';
 }
 
 const itemResizeObserver = new ResizeObserver(entries => {
