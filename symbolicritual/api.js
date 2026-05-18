@@ -3,7 +3,7 @@
 const API_BASE = 'https://symbolic-ritual.james-052.workers.dev';
 
 function getToken() {
-  return sessionStorage.getItem('sr-auth-token') || '';
+  return localStorage.getItem('sr-auth-token') || '';
 }
 
 function authHeaders() {
