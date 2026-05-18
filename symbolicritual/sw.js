@@ -1,4 +1,4 @@
-const CACHE_NAME = 'symbolic-ritual-v9';
+const CACHE_NAME = 'symbolic-ritual-v10';
 const ASSETS = [
   '/symbolicritual/',
   '/symbolicritual/index',
