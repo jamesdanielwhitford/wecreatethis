@@ -27,6 +27,7 @@
       color: CanvasText;
       color-scheme: light dark;
       min-height: 100dvh;
+      scroll-snap-type: y proximity;
     }
 
     main {
@@ -44,6 +45,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      scroll-snap-align: start;
       /* Skip rendering off-screen items. contain-intrinsic-size keeps the scrollbar
          honest before content is rasterised. */
       content-visibility: auto;
