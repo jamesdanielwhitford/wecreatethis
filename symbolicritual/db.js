@@ -103,6 +103,20 @@ export async function putItem(item) {
   });
 }
 
+// Batch write — one transaction for N items instead of N transactions.
+export async function putItems(items) {
+  if (!items || items.length === 0) return;
+  const d = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = d.transaction('items', 'readwrite');
+    const store = tx.objectStore('items');
+    for (const item of items) store.put(item);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
 export async function deleteItem(id) {
   const d = await openDb();
   return new Promise((resolve, reject) => {
