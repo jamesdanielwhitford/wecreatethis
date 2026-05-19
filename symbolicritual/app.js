@@ -14,6 +14,27 @@ const MOCK_ITEMS = [
 const feed = document.getElementById('feed');
 const sentinel = document.getElementById('scroll-sentinel');
 const offlineBar = document.getElementById('offline-bar');
+const lightbox = document.getElementById('lightbox');
+let lightboxImg = null;
+
+function openLightbox(src, alt) {
+  if (!lightboxImg) {
+    lightboxImg = document.createElement('img');
+    lightbox.appendChild(lightboxImg);
+  }
+  lightboxImg.src = src;
+  lightboxImg.alt = alt || '';
+  lightbox.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  lightbox.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+lightbox.addEventListener('click', closeLightbox);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 
 const RTL_LANGS = ['ar','he','fa','ur','yi','dv','ps','sd'];
 
@@ -116,6 +137,8 @@ function renderItem(item) {
     media.decoding = isFirst ? 'sync' : 'async';
     media.fetchPriority = isFirst ? 'high' : 'low';
     media.src = item.media_url;
+
+    media.addEventListener('click', () => openLightbox(media.src, media.alt));
 
     media.addEventListener('error', () => {
       const placeholder = document.createElement('div');
