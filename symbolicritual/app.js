@@ -166,6 +166,7 @@ function renderItem(item) {
   figure.appendChild(media);
   figure.appendChild(figcaption);
   article.appendChild(figure);
+  article.__itemData = item;
   return article;
 }
 
@@ -289,14 +290,28 @@ async function init() {
   } else {
     await loadMore();
     hideLoading();
-    if (feed.querySelectorAll('.item').length === 0) {
-      await syncFromApi().catch(() => {});
-      if (feed.querySelectorAll('.item').length === 0) showEmpty();
-    }
   }
 
   sentinelObserver.observe(sentinel);
-  if (!MOCK_MODE) syncFromApi().catch(() => {});
+
+  if (!MOCK_MODE) {
+    await syncFromApi().catch(() => {});
+    if (feed.querySelectorAll('.item').length === 0) showEmpty();
+  }
+}
+
+const WATCHED_FIELDS = ['caption', 'alt', 'lat', 'lng', 'captured_at', 'media_url', 'media_type', 'lang', 'width', 'height'];
+
+function itemChanged(a, b) {
+  return WATCHED_FIELDS.some(f => a[f] !== b[f]);
+}
+
+function updateRenderedItem(item) {
+  const existing = feed.querySelector(`.item[data-slug="${item.slug}"]`);
+  if (!existing) return;
+  const fresh = renderItem(item);
+  feed.replaceChild(fresh, existing);
+  observeItem(fresh);
 }
 
 async function syncFromApi() {
@@ -310,7 +325,7 @@ async function syncFromApi() {
   }
   if (!items?.length) return;
 
-  // Single IndexedDB transaction for all writes — N round trips become 1.
+  // Single IndexedDB transaction for all writes.
   await putItems(items);
 
   hideLoading();
@@ -321,7 +336,14 @@ async function syncFromApi() {
   const older = [];
   const middle = [];
   for (const item of items) {
-    if (renderedSlugs.has(item.slug)) continue;
+    if (renderedSlugs.has(item.slug)) {
+      // Already rendered: re-render in place if any watched field changed.
+      const el = feed.querySelector(`.item[data-slug="${item.slug}"]`);
+      if (el && el.__itemData && itemChanged(el.__itemData, item)) {
+        updateRenderedItem(item);
+      }
+      continue;
+    }
     if (highestSlug === null || item.slug > highestSlug) newer.push(item);
     else if (item.slug < lowestSlug) older.push(item);
     else middle.push(item);
