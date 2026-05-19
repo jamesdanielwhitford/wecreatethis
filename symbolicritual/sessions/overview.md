@@ -10,10 +10,11 @@
 | 005 | 2026-05-18 | Fixed items invisible on Safari iOS (visibility vs opacity), fixed 401 auth bug in api.js still reading sessionStorage, deferred padding to rAF, fade-in on ready, bumped SW to v14. |
 | 006 | 2026-05-18 | Architecture optimisation pass: CSS-only layout (no JS measurement), `content-visibility: auto` virtualisation, SW now caches R2 media with LRU trim, batched IndexedDB sync, rAF-throttled URL observer, prefetch observer for fetchPriority. SW v15. Pushed to prod. |
 | 007 | 2026-05-18 | Fixed Safari upload TypeError (ArrayBuffer fix), diagnosed R2 DNS failure (ISP/carrier), iterated image sizing to max-height/max-width, removed snap scroll, added 12.5dvh margin between posts. SW v23. |
+| 008 | 2026-05-18 | Fixed mobile scroll stutter: replaced dvh with svh units, removed content-visibility auto. SW v24. |
 
 ## Current status
 
-Layout stable. Images use `max-width: 100%` + `max-height: 100dvh` — capped at viewport, natural size below that. Posts separated by `margin-bottom: 12.5dvh`. Safari upload bug fixed. R2 images loading correctly once DNS resolves (workaround: set DNS to 8.8.8.8). SW at v23, deployed.
+Layout stable. Images use `max-width: 100%` + `max-height: 100dvh` — capped at viewport, natural size below that. Posts separated by `margin-bottom: 12.5svh`. Mobile scroll stutter fixed (svh units, no content-visibility). SW at v24, deployed.
 
 ## Next session checklist
 
