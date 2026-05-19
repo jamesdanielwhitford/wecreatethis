@@ -171,6 +171,34 @@
       font-size: 0.8125rem;
     }
 
+    /* Lightbox overlay */
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-out;
+    }
+
+    #lightbox.open {
+      display: flex;
+    }
+
+    #lightbox img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    img.item-media {
+      cursor: zoom-in;
+    }
+
     /* Reduced motion: disable scroll-driven transitions */
     @media (prefers-reduced-motion: reduce) {
       * { scroll-behavior: auto !important; }
@@ -183,6 +211,7 @@
   <main id="feed" aria-label="Media feed">
     <div id="scroll-sentinel" aria-hidden="true"></div>
   </main>
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="Full screen image"></div>
   <div id="offline-bar" aria-live="polite">Offline — showing cached content</div>
   <script type="module" src="app.js"></script>
   <script>
