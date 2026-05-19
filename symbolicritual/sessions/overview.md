@@ -11,10 +11,11 @@
 | 006 | 2026-05-18 | Architecture optimisation pass: CSS-only layout (no JS measurement), `content-visibility: auto` virtualisation, SW now caches R2 media with LRU trim, batched IndexedDB sync, rAF-throttled URL observer, prefetch observer for fetchPriority. SW v15. Pushed to prod. |
 | 007 | 2026-05-18 | Fixed Safari upload TypeError (ArrayBuffer fix), diagnosed R2 DNS failure (ISP/carrier), iterated image sizing to max-height/max-width, removed snap scroll, added 12.5dvh margin between posts. SW v23. |
 | 008 | 2026-05-18 | Fixed mobile scroll stutter: replaced dvh with svh units, removed content-visibility auto. SW v24. |
+| 009 | 2026-05-19 | Fixed stale local cache (edited items now re-render on sync), reduced post gap to 10px, added image lightbox. SW v27. |
 
 ## Current status
 
-Layout stable. Images use `max-width: 100%` + `max-height: 100dvh` — capped at viewport, natural size below that. Posts separated by `margin-bottom: 12.5svh`. Mobile scroll stutter fixed (svh units, no content-visibility). SW at v24, deployed.
+Layout stable. SW at v27, deployed. Stale-cache bug fixed — `syncFromApi` now re-renders changed items in place on every load. Posts separated by 10px. Tap any image to open full-screen lightbox, tap to close.
 
 ## Next session checklist
 
