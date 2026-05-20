@@ -129,11 +129,11 @@ function beginTimer(secs) {
   showScreen('ready');
 }
 
-function startActiveTimer() {
+function startActiveTimer(player) {
   saveToHistory(totalSeconds);
   renderHistory();
 
-  activePlayer = 'bottom';
+  activePlayer = player;
   paused = false;
 
   updateTimerDisplay();
@@ -251,8 +251,8 @@ setupStartBtn.addEventListener('click', () => {
   beginTimer(total);
 });
 
-readyStartBtnTop.addEventListener('click', startActiveTimer);
-readyStartBtnBottom.addEventListener('click', startActiveTimer);
+readyStartBtnTop.addEventListener('click', () => startActiveTimer('top'));
+readyStartBtnBottom.addEventListener('click', () => startActiveTimer('bottom'));
 readyCancelBtn.addEventListener('click', cancelToSetup);
 
 timerCancelBtn.addEventListener('click', (e) => {
