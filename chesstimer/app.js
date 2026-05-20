@@ -201,7 +201,10 @@ function tick() {
 
   if (bottomRemaining === 0 || topRemaining === 0) {
     clearInterval(intervalId);
-    // Flash the expired player — just stop, UI reflects 0:00
+    intervalId = null;
+    const expiredPanel = bottomRemaining === 0 ? playerBottomPanel : playerTopPanel;
+    expiredPanel.classList.remove('active-player', 'inactive-player');
+    expiredPanel.classList.add('expired-player');
   }
 }
 
@@ -218,10 +221,9 @@ function updatePlayerStyles() {
 }
 
 function switchPlayer(tapped) {
-  // Only the active player's tap advances the turn
+  if (topRemaining === 0 || bottomRemaining === 0) return;
   if (tapped !== activePlayer) return;
   if (paused) {
-    // Resume on tap
     resumeTimer();
     return;
   }
