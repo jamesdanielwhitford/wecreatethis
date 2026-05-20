@@ -67,13 +67,41 @@
 
     .setup-header {
       padding: 56px 24px 24px;
-      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
     .setup-header h1 {
       font-size: 28px;
       font-weight: 700;
       color: var(--text-primary);
       letter-spacing: -0.5px;
+    }
+    .fullscreen-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: var(--grey-button);
+      color: #e0e0e0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: filter 0.08s;
+    }
+    .fullscreen-btn:active {
+      filter: brightness(0.8);
+    }
+    .fullscreen-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: #888;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .setup-section {
@@ -82,7 +110,7 @@
     .setup-section-title {
       font-size: 13px;
       font-weight: 600;
-      color: #888;
+      color: #e0e0e0;
       text-transform: uppercase;
       letter-spacing: 0.8px;
       margin-bottom: 12px;
@@ -158,7 +186,7 @@
     .drum-unit {
       font-size: 13px;
       font-weight: 500;
-      color: #888;
+      color: #e0e0e0;
       position: absolute;
       left: calc(50% + 28px);
       white-space: nowrap;
@@ -555,6 +583,12 @@
   <div id="setup-screen" class="screen active">
     <div class="setup-header">
       <h1>Chess Timers</h1>
+      <button class="fullscreen-btn" id="fullscreen-btn" title="Fullscreen">
+        <svg viewBox="0 0 24 24">
+          <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+          <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>
+      </button>
     </div>
 
     <div class="setup-section">
