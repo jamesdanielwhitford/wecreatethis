@@ -23,19 +23,22 @@ const setupStartBtn = document.getElementById('setup-start-btn');
 const timerList = document.getElementById('timer-list');
 const timerListEmpty = document.getElementById('timer-list-empty');
 
-const readyDisplayTime = document.getElementById('ready-display-time');
-const readyStartBtn = document.getElementById('ready-start-btn');
+const readyDisplayTimeTop = document.getElementById('ready-display-time-top');
+const readyDisplayTimeBottom = document.getElementById('ready-display-time-bottom');
+const readyStartBtnTop = document.getElementById('ready-start-btn-top');
+const readyStartBtnBottom = document.getElementById('ready-start-btn-bottom');
 const readyCancelBtn = document.getElementById('ready-cancel-btn');
 
 const playerTopPanel = document.getElementById('player-top-panel');
 const playerBottomPanel = document.getElementById('player-bottom-panel');
-const playerTopBtn = document.getElementById('player-top-btn');
-const playerBottomBtn = document.getElementById('player-bottom-btn');
 const playerTopTime = document.getElementById('player-top-time');
 const playerBottomTime = document.getElementById('player-bottom-time');
 const timerCancelBtn = document.getElementById('timer-cancel-btn');
 const pauseBtn = document.getElementById('pause-btn');
 const pausedOverlay = document.getElementById('paused-overlay');
+const exitModal = document.getElementById('exit-modal');
+const exitConfirmBtn = document.getElementById('exit-confirm-btn');
+const exitCancelBtn = document.getElementById('exit-cancel-btn');
 
 // ── Utilities ──
 
@@ -121,7 +124,8 @@ function beginTimer(secs) {
   bottomRemaining = secs;
   paused = false;
 
-  readyDisplayTime.textContent = formatTime(secs);
+  readyDisplayTimeTop.textContent = formatTime(secs);
+  readyDisplayTimeBottom.textContent = formatTime(secs);
   showScreen('ready');
 }
 
@@ -166,8 +170,10 @@ function updateTimerDisplay() {
 }
 
 function updatePlayerStyles() {
-  playerTopBtn.className = 'player-btn ' + (activePlayer === 'top' ? 'active-player' : 'inactive-player');
-  playerBottomBtn.className = 'player-btn ' + (activePlayer === 'bottom' ? 'active-player' : 'inactive-player');
+  playerTopPanel.classList.toggle('active-player', activePlayer === 'top');
+  playerTopPanel.classList.toggle('inactive-player', activePlayer !== 'top');
+  playerBottomPanel.classList.toggle('active-player', activePlayer === 'bottom');
+  playerBottomPanel.classList.toggle('inactive-player', activePlayer !== 'bottom');
 }
 
 function switchPlayer(tapped) {
@@ -198,6 +204,14 @@ function resumeTimer() {
   pausedOverlay.classList.remove('visible');
 }
 
+function showExitModal() {
+  exitModal.classList.add('visible');
+}
+
+function hideExitModal() {
+  exitModal.classList.remove('visible');
+}
+
 function cancelToSetup() {
   clearInterval(intervalId);
   paused = false;
@@ -205,6 +219,7 @@ function cancelToSetup() {
   pauseBtn.innerHTML = '&#9646;&#9646;';
   pauseBtn.classList.remove('resume-btn');
   pauseBtn.classList.add('action-btn', 'pause-btn');
+  hideExitModal();
   showScreen('setup');
 }
 
@@ -236,13 +251,17 @@ setupStartBtn.addEventListener('click', () => {
   beginTimer(total);
 });
 
-readyStartBtn.addEventListener('click', startActiveTimer);
+readyStartBtnTop.addEventListener('click', startActiveTimer);
+readyStartBtnBottom.addEventListener('click', startActiveTimer);
 readyCancelBtn.addEventListener('click', cancelToSetup);
 
 timerCancelBtn.addEventListener('click', (e) => {
   e.stopPropagation();
-  cancelToSetup();
+  showExitModal();
 });
+
+exitConfirmBtn.addEventListener('click', cancelToSetup);
+exitCancelBtn.addEventListener('click', hideExitModal);
 
 pauseBtn.addEventListener('click', (e) => {
   e.stopPropagation();
