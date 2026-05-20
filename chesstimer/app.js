@@ -10,6 +10,22 @@ let bottomRemaining = 0;
 let activePlayer = 'bottom'; // 'top' or 'bottom'
 let paused = false;
 let intervalId = null;
+let wakeLock = null;
+
+async function acquireWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+  } catch {}
+}
+
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && intervalId && !paused) acquireWakeLock();
+});
 
 // DOM refs
 const screens = {
@@ -164,6 +180,7 @@ function startActiveTimer(player) {
   updatePlayerStyles();
   showScreen('timer');
   startTick();
+  acquireWakeLock();
 }
 
 function startTick() {
@@ -218,6 +235,7 @@ function pauseTimer() {
   pauseBtn.classList.remove('pause-btn');
   pauseBtn.classList.add('action-btn', 'resume-btn');
   pausedOverlay.classList.add('visible');
+  releaseWakeLock();
 }
 
 function resumeTimer() {
@@ -226,6 +244,7 @@ function resumeTimer() {
   pauseBtn.classList.remove('resume-btn');
   pauseBtn.classList.add('action-btn', 'pause-btn');
   pausedOverlay.classList.remove('visible');
+  acquireWakeLock();
 }
 
 function showExitModal() {
@@ -240,6 +259,7 @@ function hideExitModal() {
 
 function cancelToSetup() {
   clearInterval(intervalId);
+  releaseWakeLock();
   paused = false;
   pausedOverlay.classList.remove('visible');
   pauseBtn.innerHTML = '';
