@@ -231,11 +231,12 @@ function makeDrum(colId, trackId, max, initial, label) {
   const col = document.getElementById(colId);
   const track = document.getElementById(trackId);
   const ITEM_H = 52;
+  const BUFFER = 10; // items rendered above and below centre
   let value = initial;
 
   function buildTrack() {
     track.innerHTML = '';
-    for (let i = -2; i <= 2; i++) {
+    for (let i = -BUFFER; i <= BUFFER; i++) {
       const div = document.createElement('div');
       div.className = 'drum-item' + (i === 0 ? ' selected' : '');
       const num = String((value + i + max + 1) % (max + 1)).padStart(max >= 10 ? 2 : 1, '0');
@@ -244,7 +245,7 @@ function makeDrum(colId, trackId, max, initial, label) {
         : num;
       track.appendChild(div);
     }
-    track.style.transform = `translateY(${-1 * ITEM_H}px)`;
+    track.style.transform = `translateY(${-(BUFFER - 1) * ITEM_H}px)`;
   }
 
   function setValue(v) {
@@ -269,7 +270,7 @@ function makeDrum(colId, trackId, max, initial, label) {
   function onMove(y) {
     if (!dragging) return;
     const dy = y - startY;
-    track.style.transform = `translateY(${-1 * ITEM_H + dy}px)`;
+    track.style.transform = `translateY(${-(BUFFER - 1) * ITEM_H + dy}px)`;
     accumulated = dy;
   }
 
