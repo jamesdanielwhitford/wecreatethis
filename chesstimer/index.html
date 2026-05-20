@@ -367,11 +367,12 @@
       background: #2a2a2a;
       border-radius: 20px;
       padding: 28px 24px 20px;
-      width: calc(100% - 48px);
-      max-width: 320px;
+      width: calc(50dvh);
+      max-width: 300px;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      transform: rotate(90deg);
     }
     .modal-title {
       font-size: 18px;
@@ -402,11 +403,9 @@
     .modal-btn-confirm {
       background: var(--red-light);
       color: var(--red-dark);
-      box-shadow: 0 3px 0 var(--red-dark);
     }
     .modal-btn-confirm:active {
-      transform: translateY(2px);
-      box-shadow: 0 1px 0 var(--red-dark);
+      filter: brightness(0.92);
     }
     .modal-btn-cancel {
       background: #3a3a3a;

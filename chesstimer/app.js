@@ -205,10 +205,12 @@ function resumeTimer() {
 }
 
 function showExitModal() {
+  paused = true;
   exitModal.classList.add('visible');
 }
 
 function hideExitModal() {
+  paused = false;
   exitModal.classList.remove('visible');
 }
 
