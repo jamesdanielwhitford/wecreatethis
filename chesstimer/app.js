@@ -287,13 +287,17 @@ function makeDrum(colId, trackId, max, initial, label) {
       const div = document.createElement('div');
       div.className = 'drum-item' + (i === 0 ? ' selected' : '');
       const num = String((value + i + max + 1) % (max + 1)).padStart(max >= 10 ? 2 : 1, '0');
-      div.innerHTML = i === 0
-        ? `${num}<span class="drum-unit">${label}</span>`
-        : num;
+      div.textContent = num;
       track.appendChild(div);
     }
     track.style.transform = `translateY(${-(BUFFER - 1) * ITEM_H}px)`;
   }
+
+  // Fixed label overlay on the column, centred vertically at the selected row
+  const labelEl = document.createElement('span');
+  labelEl.className = 'drum-unit';
+  labelEl.textContent = label;
+  col.appendChild(labelEl);
 
   function setValue(v) {
     value = ((v % (max + 1)) + max + 1) % (max + 1);
@@ -348,7 +352,7 @@ function saveDrumState() {
 }
 
 const savedDrum = loadDrumState();
-const drumHours   = makeDrum('drum-hours',   'drum-track-hours',   9,  savedDrum.h, 'hours');
+const drumHours   = makeDrum('drum-hours',   'drum-track-hours',   23, savedDrum.h, 'hr');
 const drumMinutes = makeDrum('drum-minutes', 'drum-track-minutes', 59, savedDrum.m, 'min');
 const drumSeconds = makeDrum('drum-seconds', 'drum-track-seconds', 59, savedDrum.s, 'sec');
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chesstimer-v5';
+const CACHE_NAME = 'chesstimer-v6';
 
 const ASSETS = [
   '/chesstimer/',
