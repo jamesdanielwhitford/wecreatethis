@@ -1,5 +1,6 @@
 const APP_VERSION = '1.0.0';
 const STORAGE_KEY = 'chesstimer-history';
+const DRUM_KEY = 'chesstimer-drum';
 const MAX_HISTORY = 10;
 
 // State
@@ -231,8 +232,9 @@ function makeDrum(colId, trackId, max, initial, label) {
   const col = document.getElementById(colId);
   const track = document.getElementById(trackId);
   const ITEM_H = 52;
-  const BUFFER = 10; // items rendered above and below centre
+  const BUFFER = 10;
   let value = initial;
+  const api = { getValue: () => value, setValue, onChange: null };
 
   function buildTrack() {
     track.innerHTML = '';
@@ -251,11 +253,11 @@ function makeDrum(colId, trackId, max, initial, label) {
   function setValue(v) {
     value = ((v % (max + 1)) + max + 1) % (max + 1);
     buildTrack();
+    if (api.onChange) api.onChange();
   }
 
   buildTrack();
 
-  // drag state
   let startY = 0;
   let dragging = false;
   let accumulated = 0;
@@ -289,12 +291,25 @@ function makeDrum(colId, trackId, max, initial, label) {
   col.addEventListener('touchmove', e => { onMove(e.touches[0].clientY); }, { passive: true });
   col.addEventListener('touchend', onEnd);
 
-  return { getValue: () => value, setValue };
+  return api;
 }
 
-const drumHours   = makeDrum('drum-hours',   'drum-track-hours',   9,  0,  'hours');
-const drumMinutes = makeDrum('drum-minutes', 'drum-track-minutes', 59, 5,  'min');
-const drumSeconds = makeDrum('drum-seconds', 'drum-track-seconds', 59, 0,  'sec');
+function loadDrumState() {
+  try { return JSON.parse(localStorage.getItem(DRUM_KEY)) || { h: 0, m: 5, s: 0 }; }
+  catch { return { h: 0, m: 5, s: 0 }; }
+}
+function saveDrumState() {
+  localStorage.setItem(DRUM_KEY, JSON.stringify({ h: drumHours.getValue(), m: drumMinutes.getValue(), s: drumSeconds.getValue() }));
+}
+
+const savedDrum = loadDrumState();
+const drumHours   = makeDrum('drum-hours',   'drum-track-hours',   9,  savedDrum.h, 'hours');
+const drumMinutes = makeDrum('drum-minutes', 'drum-track-minutes', 59, savedDrum.m, 'min');
+const drumSeconds = makeDrum('drum-seconds', 'drum-track-seconds', 59, savedDrum.s, 'sec');
+
+drumHours.onChange   = saveDrumState;
+drumMinutes.onChange = saveDrumState;
+drumSeconds.onChange = saveDrumState;
 
 // ── Event Listeners ──
 
