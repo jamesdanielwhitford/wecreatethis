@@ -212,6 +212,8 @@ function updateTimerDisplay() {
 }
 
 function updatePlayerStyles() {
+  playerTopPanel.classList.remove('expired-player');
+  playerBottomPanel.classList.remove('expired-player');
   playerTopPanel.classList.toggle('active-player', activePlayer === 'top');
   playerTopPanel.classList.toggle('inactive-player', activePlayer !== 'top');
   playerBottomPanel.classList.toggle('active-player', activePlayer === 'bottom');
