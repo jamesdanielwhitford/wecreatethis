@@ -113,6 +113,17 @@ function renderHistory() {
     tap.innerHTML = `<span class="timer-item-label">${formatTime(secs)}</span>`;
     tap.addEventListener('click', () => beginTimer(secs));
 
+    const actions = document.createElement('div');
+    actions.className = 'timer-item-actions';
+
+    const play = document.createElement('button');
+    play.className = 'timer-item-play';
+    play.innerHTML = '&#9654;';
+    play.addEventListener('click', (e) => {
+      e.stopPropagation();
+      beginTimer(secs);
+    });
+
     const del = document.createElement('button');
     del.className = 'timer-item-delete';
     del.innerHTML = '&#x2715;';
@@ -121,8 +132,10 @@ function renderHistory() {
       deleteFromHistory(secs);
     });
 
+    actions.appendChild(play);
+    actions.appendChild(del);
     item.appendChild(tap);
-    item.appendChild(del);
+    item.appendChild(actions);
     timerList.appendChild(item);
   });
 }
@@ -201,7 +214,7 @@ function switchPlayer(tapped) {
 
 function pauseTimer() {
   paused = true;
-  pauseBtn.innerHTML = '&#9654;';
+  pauseBtn.innerHTML = '';
   pauseBtn.classList.remove('pause-btn');
   pauseBtn.classList.add('action-btn', 'resume-btn');
   pausedOverlay.classList.add('visible');
@@ -209,7 +222,7 @@ function pauseTimer() {
 
 function resumeTimer() {
   paused = false;
-  pauseBtn.innerHTML = '&#9646;&#9646;';
+  pauseBtn.innerHTML = '';
   pauseBtn.classList.remove('resume-btn');
   pauseBtn.classList.add('action-btn', 'pause-btn');
   pausedOverlay.classList.remove('visible');
@@ -229,7 +242,7 @@ function cancelToSetup() {
   clearInterval(intervalId);
   paused = false;
   pausedOverlay.classList.remove('visible');
-  pauseBtn.innerHTML = '&#9646;&#9646;';
+  pauseBtn.innerHTML = '';
   pauseBtn.classList.remove('resume-btn');
   pauseBtn.classList.add('action-btn', 'pause-btn');
   hideExitModal();

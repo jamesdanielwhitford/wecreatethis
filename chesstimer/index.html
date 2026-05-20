@@ -225,10 +225,8 @@
     }
     .timer-item {
       display: flex;
-      align-items: center;
-      background: #2a2a2a;
-      border-radius: 14px;
-      overflow: hidden;
+      align-items: stretch;
+      gap: 8px;
     }
     .timer-item-tap {
       flex: 1;
@@ -237,6 +235,8 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      background: #2a2a2a;
+      border-radius: 14px;
     }
     .timer-item-tap:active {
       background: #333;
@@ -247,22 +247,39 @@
       color: var(--text-primary);
       font-variant-numeric: tabular-nums;
     }
+    .timer-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .timer-item-play,
     .timer-item-delete {
       width: 52px;
-      height: 100%;
-      min-height: 60px;
-      background: var(--red-light);
+      height: 52px;
+      border-radius: 50%;
       border: none;
-      color: var(--red-dark);
-      font-size: 20px;
+      font-size: 17px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      transition: filter 0.08s;
+    }
+    .timer-item-play {
+      background: var(--green-light);
+      color: var(--green-dark);
+    }
+    .timer-item-play:active {
+      filter: brightness(0.88);
+    }
+    .timer-item-delete {
+      background: var(--red-light);
+      color: var(--red-dark);
     }
     .timer-item-delete:active {
-      background: var(--red-dark);
+      filter: brightness(0.88);
     }
 
     /* ── READY SCREEN ── */
@@ -331,7 +348,7 @@
       width: 48px;
       height: 48px;
       border: none;
-      border-radius: 12px;
+      border-radius: 50%;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -351,10 +368,30 @@
     .pause-btn {
       background: var(--yellow-light);
       color: var(--yellow-dark);
+      gap: 5px;
+    }
+    .pause-btn::before,
+    .pause-btn::after {
+      content: '';
+      display: block;
+      width: 4px;
+      height: 16px;
+      border-radius: 2px;
+      background: var(--yellow-dark);
     }
     .resume-btn {
       background: var(--green-light);
-      color: #fff;
+      color: var(--green-dark);
+    }
+    .resume-btn::before {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 8px 0 8px 14px;
+      border-color: transparent transparent transparent var(--green-dark);
+      margin-left: 3px;
     }
 
     /* ── ACTIVE TIMER SCREEN ── */
@@ -568,7 +605,7 @@
 
     <div class="center-bar">
       <button class="action-btn cancel-btn" id="timer-cancel-btn" title="Cancel">&#x2715;</button>
-      <button class="action-btn pause-btn" id="pause-btn" title="Pause">&#9646;&#9646;</button>
+      <button class="action-btn pause-btn" id="pause-btn" title="Pause"></button>
     </div>
 
     <div class="paused-overlay" id="paused-overlay"></div>
