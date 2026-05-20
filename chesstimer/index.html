@@ -295,7 +295,7 @@
       height: 52px;
       border-radius: 50%;
       border: none;
-      font-size: 17px;
+      position: relative;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -307,12 +307,39 @@
       background: var(--green-light);
       color: var(--green-dark);
     }
+    .timer-item-play::before {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 7px 0 7px 12px;
+      border-color: transparent transparent transparent var(--green-dark);
+      margin-left: 3px;
+    }
     .timer-item-play:active {
       filter: brightness(0.88);
     }
     .timer-item-delete {
       background: var(--red-light);
       color: var(--red-dark);
+    }
+    .timer-item-delete::before,
+    .timer-item-delete::after {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--red-dark);
+      top: 50%;
+      left: 50%;
+    }
+    .timer-item-delete::before {
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+    .timer-item-delete::after {
+      transform: translate(-50%, -50%) rotate(-45deg);
     }
     .timer-item-delete:active {
       filter: brightness(0.88);
@@ -400,6 +427,24 @@
     .cancel-btn {
       background: var(--red-light);
       color: var(--red-dark);
+      position: relative;
+    }
+    .cancel-btn::before,
+    .cancel-btn::after {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--red-dark);
+      top: 50%;
+      left: 50%;
+    }
+    .cancel-btn::before {
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+    .cancel-btn::after {
+      transform: translate(-50%, -50%) rotate(-45deg);
     }
     .pause-btn {
       background: var(--yellow-light);
@@ -630,7 +675,7 @@
     </button>
 
     <div class="center-bar">
-      <button class="action-btn cancel-btn" id="ready-cancel-btn" title="Cancel">&#x2715;</button>
+      <button class="action-btn cancel-btn" id="ready-cancel-btn" title="Cancel"></button>
     </div>
 
     <button class="ready-half bottom" id="ready-start-btn-bottom">
@@ -646,7 +691,7 @@
     </div>
 
     <div class="center-bar">
-      <button class="action-btn cancel-btn" id="timer-cancel-btn" title="Cancel">&#x2715;</button>
+      <button class="action-btn cancel-btn" id="timer-cancel-btn" title="Cancel"></button>
       <button class="action-btn pause-btn" id="pause-btn" title="Pause"></button>
     </div>
 
