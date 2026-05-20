@@ -93,7 +93,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      background: #2a2a2a;
+      background: var(--background);
       border-radius: 16px;
       padding: 12px 12px;
       margin-bottom: 12px;
@@ -175,11 +175,11 @@
     }
     .drum-col::before {
       top: 0;
-      background: linear-gradient(to bottom, #2a2a2a, transparent);
+      background: linear-gradient(to bottom, #1E1E1E, transparent);
     }
     .drum-col::after {
       bottom: 0;
-      background: linear-gradient(to top, #2a2a2a, transparent);
+      background: linear-gradient(to top, #1E1E1E, transparent);
     }
 
     .time-separator {
@@ -503,8 +503,7 @@
     </div>
 
     <div class="setup-section">
-      <div class="setup-section-title">Set Time</div>
-      <div class="time-picker-row">
+<div class="time-picker-row">
         <div class="drum-col" id="drum-hours">
           <div class="drum-track" id="drum-track-hours"></div>
         </div>
