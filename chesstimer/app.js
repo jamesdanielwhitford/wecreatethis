@@ -93,10 +93,8 @@ function loadHistory() {
 
 function saveToHistory(seconds) {
   const history = loadHistory();
-  // Remove duplicate if already exists
   const filtered = history.filter(s => s !== seconds);
   filtered.unshift(seconds);
-  // Keep only most recent MAX_HISTORY
   const trimmed = filtered.slice(0, MAX_HISTORY);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
 }
@@ -271,65 +269,146 @@ function cancelToSetup() {
   showScreen('setup');
 }
 
-// ── Drum pickers ──
+// ── Drum Picker ──
 
 function makeDrum(colId, trackId, max, initial, label) {
   const col = document.getElementById(colId);
   const track = document.getElementById(trackId);
   const ITEM_H = 52;
-  const BUFFER = 10;
+  const COUNT = max + 1;
+  const LOOPS = 9; // render 9 full cycles so there's always content in any direction
+  const PAD = max >= 10 ? 2 : 1;
+  const LOOP_PX = COUNT * ITEM_H;
+  const TOTAL_PX = LOOPS * LOOP_PX;
   let value = initial;
   const api = { getValue: () => value, setValue, onChange: null };
 
+  // Build track once — LOOPS repetitions of all values
   function buildTrack() {
     track.innerHTML = '';
-    for (let i = -BUFFER; i <= BUFFER; i++) {
-      const div = document.createElement('div');
-      div.className = 'drum-item' + (i === 0 ? ' selected' : '');
-      const num = String((value + i + max + 1) % (max + 1)).padStart(max >= 10 ? 2 : 1, '0');
-      div.textContent = num;
-      track.appendChild(div);
+    for (let loop = 0; loop < LOOPS; loop++) {
+      for (let v = 0; v < COUNT; v++) {
+        const div = document.createElement('div');
+        div.className = 'drum-item';
+        div.textContent = String(v).padStart(PAD, '0');
+        track.appendChild(div);
+      }
     }
-    track.style.transform = `translateY(${-(BUFFER - 1) * ITEM_H}px)`;
   }
 
-  // Fixed label overlay on the column, centred vertically at the selected row
+  // The offset that centres `value` in the middle loop
+  function centreOffset() {
+    const midLoop = Math.floor(LOOPS / 2);
+    return -((midLoop * COUNT + value) * ITEM_H) + ITEM_H;
+  }
+
+  // Wrap offset to stay within the rendered range (avoid dead ends)
+  function wrapOffset(off) {
+    while (off > centreOffset() + LOOP_PX * 2) off -= LOOP_PX;
+    while (off < centreOffset() - LOOP_PX * 2) off += LOOP_PX;
+    return off;
+  }
+
+  function valueFromOffset(off) {
+    const items = Math.round((-off + ITEM_H) / ITEM_H);
+    return ((items % COUNT) + COUNT) % COUNT;
+  }
+
+  function applyOffset(off) {
+    track.style.transform = `translateY(${off}px)`;
+  }
+
+  function updateSelected(v) {
+    track.querySelectorAll('.drum-item').forEach((el, i) => {
+      el.classList.toggle('selected', i % COUNT === v);
+    });
+  }
+
+  function setValue(v) {
+    value = ((v % COUNT) + COUNT) % COUNT;
+    currentOffset = centreOffset();
+    applyOffset(currentOffset);
+    updateSelected(value);
+    if (api.onChange) api.onChange();
+  }
+
+  buildTrack();
+  let currentOffset = centreOffset();
+  applyOffset(currentOffset);
+  updateSelected(value);
+
+  // Fixed label overlay
   const labelEl = document.createElement('span');
   labelEl.className = 'drum-unit';
   labelEl.textContent = label;
   col.appendChild(labelEl);
 
-  function setValue(v) {
-    value = ((v % (max + 1)) + max + 1) % (max + 1);
-    buildTrack();
-    if (api.onChange) api.onChange();
-  }
-
-  buildTrack();
-
   let startY = 0;
+  let lastY = 0;
+  let lastT = 0;
+  let velocity = 0;
   let dragging = false;
-  let accumulated = 0;
+  let rafId = null;
 
   function onStart(y) {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     startY = y;
+    lastY = y;
+    lastT = Date.now();
+    velocity = 0;
     dragging = true;
-    accumulated = 0;
     track.style.transition = 'none';
   }
 
   function onMove(y) {
     if (!dragging) return;
-    const dy = y - startY;
-    track.style.transform = `translateY(${-(BUFFER - 1) * ITEM_H + dy}px)`;
-    accumulated = dy;
+    const now = Date.now();
+    const dt = now - lastT || 1;
+    const dy = y - lastY;
+    velocity = dy / dt;
+    lastY = y;
+    lastT = now;
+    currentOffset = wrapOffset(currentOffset + dy);
+    applyOffset(currentOffset);
+    const v = valueFromOffset(currentOffset);
+    if (v !== value) { value = v; updateSelected(value); }
+  }
+
+  function snapToNearest() {
+    const snapped = Math.round((-currentOffset + ITEM_H) / ITEM_H) * ITEM_H - ITEM_H;
+    currentOffset = wrapOffset(-snapped);
+    applyOffset(currentOffset);
+    value = valueFromOffset(currentOffset);
+    updateSelected(value);
+    if (api.onChange) api.onChange();
   }
 
   function onEnd() {
     if (!dragging) return;
     dragging = false;
-    const steps = -Math.round(accumulated / ITEM_H);
-    setValue(value + steps);
+    const FRICTION = 0.92;
+    const MIN_VEL = 0.04;
+    let vel = velocity * 16;
+
+    function coast() {
+      vel *= FRICTION;
+      currentOffset = wrapOffset(currentOffset + vel);
+      applyOffset(currentOffset);
+      const v = valueFromOffset(currentOffset);
+      if (v !== value) { value = v; updateSelected(value); }
+      if (Math.abs(vel) > MIN_VEL) {
+        rafId = requestAnimationFrame(coast);
+      } else {
+        rafId = null;
+        snapToNearest();
+      }
+    }
+
+    if (Math.abs(vel) > MIN_VEL) {
+      rafId = requestAnimationFrame(coast);
+    } else {
+      snapToNearest();
+    }
   }
 
   col.addEventListener('mousedown', e => onStart(e.clientY));
@@ -409,8 +488,8 @@ playerBottomPanel.addEventListener('click', () => {
 // ── Fullscreen ──
 const fullscreenBtn = document.getElementById('fullscreen-btn');
 
-const ICON_ENTER = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`;
-const ICON_EXIT  = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>`;
+const ICON_ENTER = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`;
+const ICON_EXIT  = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>`;
 
 const fullscreenSupported = document.documentElement.requestFullscreen !== undefined;
 if (!fullscreenSupported) {
