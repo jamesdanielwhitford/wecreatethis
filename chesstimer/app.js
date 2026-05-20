@@ -134,7 +134,7 @@ function renderHistory() {
 
     const play = document.createElement('button');
     play.className = 'timer-item-play';
-    play.innerHTML = '&#9654;';
+    play.innerHTML = '';
     play.addEventListener('click', (e) => {
       e.stopPropagation();
       beginTimer(secs);
@@ -142,7 +142,7 @@ function renderHistory() {
 
     const del = document.createElement('button');
     del.className = 'timer-item-delete';
-    del.innerHTML = '&#x2715;';
+    del.innerHTML = '';
     del.addEventListener('click', (e) => {
       e.stopPropagation();
       deleteFromHistory(secs);
