@@ -194,10 +194,14 @@
     .drum-unit {
       font-size: 13px;
       font-weight: 500;
-      color: #e0e0e0;
+      color: #888;
       position: absolute;
-      left: calc(50% + 28px);
+      left: calc(50% + 22px);
+      top: 50%;
+      transform: translateY(-50%);
       white-space: nowrap;
+      pointer-events: none;
+      z-index: 4;
     }
 
     /* fade top and bottom */
