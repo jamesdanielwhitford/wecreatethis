@@ -17,6 +17,7 @@ const screens = {
   timer: document.getElementById('timer-screen'),
 };
 
+const hoursInput = document.getElementById('hours-input');
 const minutesInput = document.getElementById('minutes-input');
 const secondsInput = document.getElementById('seconds-input');
 const setupStartBtn = document.getElementById('setup-start-btn');
@@ -41,8 +42,12 @@ const exitModal = document.getElementById('exit-modal');
 // ── Utilities ──
 
 function formatTime(secs) {
-  const m = Math.floor(secs / 60);
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
   const s = secs % 60;
+  if (h > 0) {
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
@@ -232,21 +237,25 @@ function clampInput(input, min, max) {
   input.value = val;
 }
 
-minutesInput.addEventListener('blur', () => clampInput(minutesInput, 0, 99));
+hoursInput.addEventListener('blur', () => clampInput(hoursInput, 0, 9));
+minutesInput.addEventListener('blur', () => clampInput(minutesInput, 0, 59));
 secondsInput.addEventListener('blur', () => clampInput(secondsInput, 0, 59));
 
 // Select all on focus for easy replacement
+hoursInput.addEventListener('focus', () => hoursInput.select());
 minutesInput.addEventListener('focus', () => minutesInput.select());
 secondsInput.addEventListener('focus', () => secondsInput.select());
 
 // ── Event Listeners ──
 
 setupStartBtn.addEventListener('click', () => {
-  clampInput(minutesInput, 0, 99);
+  clampInput(hoursInput, 0, 9);
+  clampInput(minutesInput, 0, 59);
   clampInput(secondsInput, 0, 59);
+  const hrs = parseInt(hoursInput.value, 10) || 0;
   const mins = parseInt(minutesInput.value, 10) || 0;
   const secs = parseInt(secondsInput.value, 10) || 0;
-  const total = mins * 60 + secs;
+  const total = hrs * 3600 + mins * 60 + secs;
   if (total === 0) return;
   beginTimer(total);
 });
