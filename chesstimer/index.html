@@ -15,6 +15,7 @@
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
+      font-family: inherit;
     }
 
     :root {
@@ -279,8 +280,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-direction: column;
-      gap: 6px;
+      position: relative;
       transition: filter 0.08s;
     }
     .ready-half:active {
@@ -295,13 +295,15 @@
     }
 
     .ready-start-time {
-      font-size: 80px;
+      font-size: 84px;
       font-weight: 700;
       color: #fff;
       font-variant-numeric: tabular-nums;
       letter-spacing: -3px;
     }
     .ready-start-label {
+      position: absolute;
+      bottom: 28px;
       font-size: 15px;
       font-weight: 600;
       color: rgba(255,255,255,0.8);
