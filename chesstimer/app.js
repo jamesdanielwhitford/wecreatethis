@@ -37,8 +37,6 @@ const timerCancelBtn = document.getElementById('timer-cancel-btn');
 const pauseBtn = document.getElementById('pause-btn');
 const pausedOverlay = document.getElementById('paused-overlay');
 const exitModal = document.getElementById('exit-modal');
-const exitConfirmBtn = document.getElementById('exit-confirm-btn');
-const exitCancelBtn = document.getElementById('exit-cancel-btn');
 
 // ── Utilities ──
 
@@ -262,8 +260,8 @@ timerCancelBtn.addEventListener('click', (e) => {
   showExitModal();
 });
 
-exitConfirmBtn.addEventListener('click', cancelToSetup);
-exitCancelBtn.addEventListener('click', hideExitModal);
+document.querySelectorAll('.exit-confirm-btn').forEach(btn => btn.addEventListener('click', cancelToSetup));
+document.querySelectorAll('.exit-cancel-btn').forEach(btn => btn.addEventListener('click', hideExitModal));
 
 pauseBtn.addEventListener('click', (e) => {
   e.stopPropagation();

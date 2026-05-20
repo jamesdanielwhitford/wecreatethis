@@ -145,12 +145,10 @@
       font-size: 20px;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 3px 0 #994f00;
-      transition: transform 0.08s, box-shadow 0.08s;
+      transition: filter 0.08s;
     }
     .start-btn:active {
-      transform: translateY(2px);
-      box-shadow: 0 1px 0 #994f00;
+      filter: brightness(0.88);
     }
 
     /* Previous timers list */
@@ -357,22 +355,30 @@
       background: rgba(0,0,0,0.6);
       z-index: 100;
       display: none;
-      align-items: center;
-      justify-content: center;
+      flex-direction: column;
     }
     .modal-backdrop.visible {
       display: flex;
     }
+    .modal-half {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+    }
+    .modal-half.top {
+      transform: rotate(180deg);
+    }
     .modal {
       background: #2a2a2a;
       border-radius: 20px;
-      padding: 28px 24px 20px;
-      width: calc(50dvh);
-      max-width: 300px;
+      padding: 24px 20px 18px;
+      width: 100%;
+      max-width: 320px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      transform: rotate(90deg);
     }
     .modal-title {
       font-size: 18px;
@@ -498,12 +504,24 @@
 
   <!-- ── EXIT CONFIRM MODAL ── -->
   <div class="modal-backdrop" id="exit-modal">
-    <div class="modal">
-      <div class="modal-title">End Game?</div>
-      <div class="modal-body">The current timer will be lost.</div>
-      <div class="modal-actions">
-        <button class="modal-btn modal-btn-confirm" id="exit-confirm-btn">End Game</button>
-        <button class="modal-btn modal-btn-cancel" id="exit-cancel-btn">Keep Playing</button>
+    <div class="modal-half top">
+      <div class="modal">
+        <div class="modal-title">End Game?</div>
+        <div class="modal-body">The current timer will be lost.</div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-confirm exit-confirm-btn">End Game</button>
+          <button class="modal-btn modal-btn-cancel exit-cancel-btn">Keep Playing</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-half bottom">
+      <div class="modal">
+        <div class="modal-title">End Game?</div>
+        <div class="modal-body">The current timer will be lost.</div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-confirm exit-confirm-btn">End Game</button>
+          <button class="modal-btn modal-btn-cancel exit-cancel-btn">Keep Playing</button>
+        </div>
       </div>
     </div>
   </div>
