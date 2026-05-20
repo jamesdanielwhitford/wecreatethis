@@ -17,9 +17,6 @@ const screens = {
   timer: document.getElementById('timer-screen'),
 };
 
-const hoursInput = document.getElementById('hours-input');
-const minutesInput = document.getElementById('minutes-input');
-const secondsInput = document.getElementById('seconds-input');
 const setupStartBtn = document.getElementById('setup-start-btn');
 const timerList = document.getElementById('timer-list');
 const timerListEmpty = document.getElementById('timer-list-empty');
@@ -228,34 +225,80 @@ function cancelToSetup() {
   showScreen('setup');
 }
 
-// ── Input normalization ──
+// ── Drum pickers ──
 
-function clampInput(input, min, max) {
-  let val = parseInt(input.value, 10);
-  if (isNaN(val) || val < min) val = min;
-  if (val > max) val = max;
-  input.value = val;
+function makeDrum(colId, trackId, max, initial, label) {
+  const col = document.getElementById(colId);
+  const track = document.getElementById(trackId);
+  const ITEM_H = 52;
+  let value = initial;
+
+  function buildTrack() {
+    track.innerHTML = '';
+    for (let i = -2; i <= 2; i++) {
+      const div = document.createElement('div');
+      div.className = 'drum-item' + (i === 0 ? ' selected' : '');
+      const num = String((value + i + max + 1) % (max + 1)).padStart(max >= 10 ? 2 : 1, '0');
+      div.innerHTML = i === 0
+        ? `${num}<span class="drum-unit">${label}</span>`
+        : num;
+      track.appendChild(div);
+    }
+    track.style.transform = `translateY(${-1 * ITEM_H}px)`;
+  }
+
+  function setValue(v) {
+    value = ((v % (max + 1)) + max + 1) % (max + 1);
+    buildTrack();
+  }
+
+  buildTrack();
+
+  // drag state
+  let startY = 0;
+  let dragging = false;
+  let accumulated = 0;
+
+  function onStart(y) {
+    startY = y;
+    dragging = true;
+    accumulated = 0;
+    track.style.transition = 'none';
+  }
+
+  function onMove(y) {
+    if (!dragging) return;
+    const dy = y - startY;
+    track.style.transform = `translateY(${-1 * ITEM_H + dy}px)`;
+    accumulated = dy;
+  }
+
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    const steps = -Math.round(accumulated / ITEM_H);
+    setValue(value + steps);
+  }
+
+  col.addEventListener('mousedown', e => onStart(e.clientY));
+  window.addEventListener('mousemove', e => { if (dragging) onMove(e.clientY); });
+  window.addEventListener('mouseup', onEnd);
+
+  col.addEventListener('touchstart', e => onStart(e.touches[0].clientY), { passive: true });
+  col.addEventListener('touchmove', e => { onMove(e.touches[0].clientY); }, { passive: true });
+  col.addEventListener('touchend', onEnd);
+
+  return { getValue: () => value, setValue };
 }
 
-hoursInput.addEventListener('blur', () => clampInput(hoursInput, 0, 9));
-minutesInput.addEventListener('blur', () => clampInput(minutesInput, 0, 59));
-secondsInput.addEventListener('blur', () => clampInput(secondsInput, 0, 59));
-
-// Select all on focus for easy replacement
-hoursInput.addEventListener('focus', () => hoursInput.select());
-minutesInput.addEventListener('focus', () => minutesInput.select());
-secondsInput.addEventListener('focus', () => secondsInput.select());
+const drumHours   = makeDrum('drum-hours',   'drum-track-hours',   9,  0,  'hours');
+const drumMinutes = makeDrum('drum-minutes', 'drum-track-minutes', 59, 5,  'min');
+const drumSeconds = makeDrum('drum-seconds', 'drum-track-seconds', 59, 0,  'sec');
 
 // ── Event Listeners ──
 
 setupStartBtn.addEventListener('click', () => {
-  clampInput(hoursInput, 0, 9);
-  clampInput(minutesInput, 0, 59);
-  clampInput(secondsInput, 0, 59);
-  const hrs = parseInt(hoursInput.value, 10) || 0;
-  const mins = parseInt(minutesInput.value, 10) || 0;
-  const secs = parseInt(secondsInput.value, 10) || 0;
-  const total = hrs * 3600 + mins * 60 + secs;
+  const total = drumHours.getValue() * 3600 + drumMinutes.getValue() * 60 + drumSeconds.getValue();
   if (total === 0) return;
   beginTimer(total);
 });

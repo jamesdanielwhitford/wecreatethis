@@ -88,75 +88,110 @@
       padding-left: 4px;
     }
 
-    /* Time picker */
+    /* Time picker drum roll */
     .time-picker-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 4px;
       background: #2a2a2a;
       border-radius: 16px;
-      padding: 16px;
+      padding: 12px 12px;
       margin-bottom: 12px;
+      position: relative;
     }
-    .time-unit {
+
+    /* selection highlight bar */
+    .time-picker-row::after {
+      content: '';
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 52px;
+      background: #3a3a3a;
+      border-radius: 10px;
+      pointer-events: none;
+    }
+
+    .drum-col {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 0;
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      height: 156px; /* 3 items × 52px */
+      cursor: ns-resize;
+      touch-action: none;
     }
-    .time-unit label {
-      font-size: 11px;
-      color: #888;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .time-unit input {
-      width: 100%;
-      background: #3a3a3a;
-      border: none;
-      border-radius: 10px;
-      color: var(--text-primary);
-      font-size: 28px;
-      font-weight: 700;
-      text-align: center;
-      padding: 12px 0;
-      font-variant-numeric: tabular-nums;
-      -webkit-appearance: none;
-      appearance: none;
-      outline: none;
-    }
-    .time-unit input::-webkit-inner-spin-button,
-    .time-unit input::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      appearance: none;
-      margin: 0;
-    }
-    .time-unit input[type=number] {
-      -moz-appearance: textfield;
-    }
-    .time-unit input:focus {
-      background: #444;
-    }
-    .time-separator {
-      align-self: center;
-      margin-top: 18px;
+
+    .drum-track {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 5px;
+      width: 100%;
+      will-change: transform;
+    }
+
+    .drum-item {
+      height: 52px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      font-size: 28px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #555;
       flex-shrink: 0;
+      transition: color 0.15s;
     }
-    .time-separator::before,
-    .time-separator::after {
+    .drum-item.selected {
+      color: var(--text-primary);
+    }
+
+    .drum-unit {
+      font-size: 13px;
+      font-weight: 500;
+      color: #888;
+      position: absolute;
+      left: calc(50% + 28px);
+      white-space: nowrap;
+    }
+
+    /* fade top and bottom */
+    .drum-col::before,
+    .drum-col::after {
       content: '';
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: #888;
+      position: absolute;
+      left: 0; right: 0;
+      height: 52px;
+      pointer-events: none;
+      z-index: 2;
     }
-    .time-separator-unused {
-      font-size: 0;
+    .drum-col::before {
+      top: 0;
+      background: linear-gradient(to bottom, #2a2a2a, transparent);
+    }
+    .drum-col::after {
+      bottom: 0;
+      background: linear-gradient(to top, #2a2a2a, transparent);
+    }
+
+    .time-separator {
+      align-self: center;
+      flex-shrink: 0;
+      z-index: 3;
+      margin-bottom: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #666;
+      text-transform: lowercase;
+      letter-spacing: 0.3px;
     }
 
     .start-btn {
@@ -470,19 +505,14 @@
     <div class="setup-section">
       <div class="setup-section-title">Set Time</div>
       <div class="time-picker-row">
-        <div class="time-unit">
-          <label>hr</label>
-          <input type="number" id="hours-input" min="0" max="9" value="0" inputmode="numeric">
+        <div class="drum-col" id="drum-hours">
+          <div class="drum-track" id="drum-track-hours"></div>
         </div>
-        <div class="time-separator"></div>
-        <div class="time-unit">
-          <label>min</label>
-          <input type="number" id="minutes-input" min="0" max="59" value="5" inputmode="numeric">
+        <div class="drum-col" id="drum-minutes">
+          <div class="drum-track" id="drum-track-minutes"></div>
         </div>
-        <div class="time-separator"></div>
-        <div class="time-unit">
-          <label>sec</label>
-          <input type="number" id="seconds-input" min="0" max="59" value="0" inputmode="numeric">
+        <div class="drum-col" id="drum-seconds">
+          <div class="drum-track" id="drum-track-seconds"></div>
         </div>
       </div>
       <button class="start-btn" id="setup-start-btn">Start</button>
