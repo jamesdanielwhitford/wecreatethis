@@ -300,10 +300,12 @@
       color: #fff;
       font-variant-numeric: tabular-nums;
       letter-spacing: -3px;
+      display: flex;
+      align-items: center;
     }
     .ready-start-label {
       position: absolute;
-      bottom: 28px;
+      top: calc(50% + 44px);
       font-size: 15px;
       font-weight: 600;
       color: rgba(255,255,255,0.8);
@@ -391,6 +393,20 @@
       color: #fff;
       font-variant-numeric: tabular-nums;
       letter-spacing: -3px;
+      display: flex;
+      align-items: center;
+    }
+
+    .time-colon {
+      display: inline-block;
+      position: relative;
+      top: -6px;
+      letter-spacing: 0;
+      margin: 0 1px;
+    }
+
+    .time-seg {
+      display: inline-block;
     }
 
     /* cancel sits at the left corner, pause at the right */

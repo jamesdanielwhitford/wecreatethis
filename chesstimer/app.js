@@ -49,6 +49,16 @@ function formatTime(secs) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+function formatTimeHTML(secs) {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  if (h > 0) {
+    return `<span class="time-seg">${h}</span><span class="time-colon">:</span><span class="time-seg">${String(m).padStart(2, '0')}</span><span class="time-colon">:</span><span class="time-seg">${String(s).padStart(2, '0')}</span>`;
+  }
+  return `<span class="time-seg">${m}</span><span class="time-colon">:</span><span class="time-seg">${String(s).padStart(2, '0')}</span>`;
+}
+
 function showScreen(name) {
   Object.entries(screens).forEach(([key, el]) => {
     el.classList.toggle('active', key === name);
@@ -125,8 +135,8 @@ function beginTimer(secs) {
   bottomRemaining = secs;
   paused = false;
 
-  readyDisplayTimeTop.textContent = formatTime(secs);
-  readyDisplayTimeBottom.textContent = formatTime(secs);
+  readyDisplayTimeTop.innerHTML = formatTimeHTML(secs);
+  readyDisplayTimeBottom.innerHTML = formatTimeHTML(secs);
   showScreen('ready');
 }
 
@@ -166,8 +176,8 @@ function tick() {
 }
 
 function updateTimerDisplay() {
-  playerTopTime.textContent = formatTime(topRemaining);
-  playerBottomTime.textContent = formatTime(bottomRemaining);
+  playerTopTime.innerHTML = formatTimeHTML(topRemaining);
+  playerBottomTime.innerHTML = formatTimeHTML(bottomRemaining);
 }
 
 function updatePlayerStyles() {
