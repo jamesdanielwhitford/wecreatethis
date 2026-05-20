@@ -174,6 +174,7 @@ function startActiveTimer(player) {
   activePlayer = player;
   paused = false;
 
+  pauseBtn.style.visibility = 'visible';
   updateTimerDisplay();
   updatePlayerStyles();
   showScreen('timer');
@@ -203,6 +204,7 @@ function tick() {
     const expiredPanel = bottomRemaining === 0 ? playerBottomPanel : playerTopPanel;
     expiredPanel.classList.remove('active-player', 'inactive-player');
     expiredPanel.classList.add('expired-player');
+    pauseBtn.style.visibility = 'hidden';
   }
 }
 
@@ -212,6 +214,8 @@ function updateTimerDisplay() {
 }
 
 function updatePlayerStyles() {
+  playerTopPanel.classList.remove('expired-player');
+  playerBottomPanel.classList.remove('expired-player');
   playerTopPanel.classList.toggle('active-player', activePlayer === 'top');
   playerTopPanel.classList.toggle('inactive-player', activePlayer !== 'top');
   playerBottomPanel.classList.toggle('active-player', activePlayer === 'bottom');
