@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chesstimer-v8';
+const CACHE_NAME = 'chesstimer-v9';
 
 const ASSETS = [
   '/chesstimer/',
@@ -7,6 +7,9 @@ const ASSETS = [
   '/chesstimer/manifest.json',
   '/chesstimer/icon-192.png',
   '/chesstimer/icon-512.png',
+  '/chesstimer/Blip.wav',
+  '/chesstimer/Nope.wav',
+  '/chesstimer/Check.wav',
 ];
 
 function normalizeUrl(url) {
