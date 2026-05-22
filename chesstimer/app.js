@@ -3,6 +3,34 @@ const STORAGE_KEY = 'chesstimer-history';
 const DRUM_KEY = 'chesstimer-drum';
 const MAX_HISTORY = 10;
 
+// ── Audio ──
+
+const SOUND_KEY = 'chesstimer-sound';
+let soundEnabled = localStorage.getItem(SOUND_KEY) === 'on';
+
+const sounds = {
+  blip:  new Audio('/chesstimer/Blip.wav'),
+  nope:  new Audio('/chesstimer/Nope.wav'),
+  check: new Audio('/chesstimer/Check.wav'),
+};
+
+function playSound(name) {
+  if (!soundEnabled) return;
+  const snd = sounds[name];
+  if (!snd) return;
+  snd.currentTime = 0;
+  snd.play().catch(() => {});
+}
+
+function playExpired() {
+  playSound('blip');
+  setTimeout(() => playSound('blip'), 160);
+  setTimeout(() => playSound('blip'), 320);
+}
+
+const ICON_SOUND_ON = `<svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+const ICON_SOUND_OFF = `<svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`;
+
 // State
 let totalSeconds = 0;
 let topRemaining = 0;
@@ -50,6 +78,7 @@ const playerTopTime = document.getElementById('player-top-time');
 const playerBottomTime = document.getElementById('player-bottom-time');
 const timerCancelBtn = document.getElementById('timer-cancel-btn');
 const pauseBtn = document.getElementById('pause-btn');
+const soundBtn = document.getElementById('sound-btn');
 const pausedOverlay = document.getElementById('paused-overlay');
 const exitModal = document.getElementById('exit-modal');
 
@@ -198,6 +227,8 @@ function tick() {
 
   updateTimerDisplay();
 
+  const activeRemaining = activePlayer === 'bottom' ? bottomRemaining : topRemaining;
+
   if (bottomRemaining === 0 || topRemaining === 0) {
     clearInterval(intervalId);
     intervalId = null;
@@ -205,6 +236,9 @@ function tick() {
     expiredPanel.classList.remove('active-player', 'inactive-player');
     expiredPanel.classList.add('expired-player');
     pauseBtn.style.visibility = 'hidden';
+    playExpired();
+  } else if (activeRemaining <= 3 && activeRemaining > 0) {
+    playSound('blip');
   }
 }
 
@@ -223,12 +257,16 @@ function updatePlayerStyles() {
 }
 
 function switchPlayer(tapped) {
-  if (topRemaining === 0 || bottomRemaining === 0) return;
+  if (topRemaining === 0 || bottomRemaining === 0) {
+    playSound('nope');
+    return;
+  }
   if (tapped !== activePlayer) return;
   if (paused) {
     resumeTimer();
     return;
   }
+  playSound('check');
   activePlayer = activePlayer === 'bottom' ? 'top' : 'bottom';
   updatePlayerStyles();
 }
@@ -512,5 +550,21 @@ if (!fullscreenSupported) {
   });
 }
 
+// ── Sound toggle ──
+
+function updateSoundBtn() {
+  soundBtn.innerHTML = soundEnabled ? ICON_SOUND_ON : ICON_SOUND_OFF;
+  soundBtn.classList.toggle('sound-on', soundEnabled);
+  soundBtn.classList.toggle('sound-off', !soundEnabled);
+}
+
+soundBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  soundEnabled = !soundEnabled;
+  localStorage.setItem(SOUND_KEY, soundEnabled ? 'on' : 'off');
+  updateSoundBtn();
+});
+
 // ── Init ──
+updateSoundBtn();
 renderHistory();

@@ -479,6 +479,22 @@
       margin-left: 3px;
     }
 
+    .sound-btn {
+      background: var(--grey-button);
+    }
+    .sound-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .sound-btn.sound-off {
+      background: #2a2a2a;
+    }
+
     /* ── ACTIVE TIMER SCREEN ── */
     #timer-screen {
       position: relative;
@@ -699,6 +715,7 @@
 
     <div class="center-bar">
       <button class="action-btn cancel-btn" id="timer-cancel-btn" title="Cancel"></button>
+      <button class="action-btn sound-btn sound-on" id="sound-btn" title="Toggle sound"></button>
       <button class="action-btn pause-btn" id="pause-btn" title="Pause"></button>
     </div>
 
