@@ -8,18 +8,42 @@ const MAX_HISTORY = 10;
 const SOUND_KEY = 'chesstimer-sound';
 let soundEnabled = localStorage.getItem(SOUND_KEY) === 'on';
 
-const sounds = {
-  blip:  new Audio('/chesstimer/Blip.wav'),
-  nope:  new Audio('/chesstimer/Nope.wav'),
-  check: new Audio('/chesstimer/Check.wav'),
-};
+let audioCtx = null;
+const audioBuffers = {};
+
+function getAudioContext() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+async function loadSounds() {
+  const files = { blip: 'Blip.wav', nope: 'Nope.wav', check: 'Check.wav' };
+  await Promise.all(Object.entries(files).map(async ([name, file]) => {
+    try {
+      const res = await fetch(`/chesstimer/${file}`);
+      const buf = await res.arrayBuffer();
+      audioBuffers[name] = await getAudioContext().decodeAudioData(buf);
+    } catch {}
+  }));
+}
+
+loadSounds();
+
+// iOS requires AudioContext to be resumed after a user gesture
+function unlockAudio() {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
 
 function playSound(name) {
   if (!soundEnabled) return;
-  const snd = sounds[name];
-  if (!snd) return;
-  snd.currentTime = 0;
-  snd.play().catch(() => {});
+  const buf = audioBuffers[name];
+  if (!buf) return;
+  const ctx = getAudioContext();
+  if (ctx.state === 'suspended') ctx.resume();
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(ctx.destination);
+  src.start(0);
 }
 
 function playExpired() {
@@ -489,8 +513,8 @@ setupStartBtn.addEventListener('click', () => {
   beginTimer(total);
 });
 
-readyStartBtnTop.addEventListener('click', () => startActiveTimer('top'));
-readyStartBtnBottom.addEventListener('click', () => startActiveTimer('bottom'));
+readyStartBtnTop.addEventListener('click', () => { unlockAudio(); startActiveTimer('top'); });
+readyStartBtnBottom.addEventListener('click', () => { unlockAudio(); startActiveTimer('bottom'); });
 readyCancelBtn.addEventListener('click', cancelToSetup);
 
 timerCancelBtn.addEventListener('click', (e) => {
