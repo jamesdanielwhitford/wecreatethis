@@ -1,4 +1,4 @@
-const CACHE_NAME = 'starrynight-v1';
+const CACHE_NAME = 'starrynight-v2';
 
 const ASSETS = [
   '/starrynight/',
