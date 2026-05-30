@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>Voice Notes — Admin</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface2: #16213e;
+      --accent: #7c3aed;
+      --accent-light: #a855f7;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border: rgba(255,255,255,0.08);
+      --danger: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .login-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .login-logo h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .login-logo .badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-light);
+      background: rgba(168,85,247,0.15);
+      border: 1px solid rgba(168,85,247,0.3);
+      border-radius: 5px;
+      padding: 2px 7px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 13px;
+      color: var(--text);
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    input:focus { outline: none; border-color: var(--accent); }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 4px;
+    }
+
+    .btn:hover:not(:disabled) { opacity: 0.85; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .error-msg {
+      font-size: 0.82rem;
+      color: var(--danger);
+      margin-top: 12px;
+      text-align: center;
+      min-height: 1.2em;
+    }
+
+    .remember-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .remember-row input[type=checkbox] {
+      width: auto;
+      margin-bottom: 0;
+      accent-color: var(--accent);
+    }
+
+    .remember-row label {
+      font-size: 0.82rem;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--text-muted);
+      margin-bottom: 0;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="2" width="6" height="12" rx="3"/>
+        <path d="M5 10a7 7 0 0 0 14 0"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+        <line x1="8" y1="22" x2="16" y2="22"/>
+      </svg>
+      <h1>Voice Notes</h1>
+      <span class="badge">Admin</span>
+    </div>
+
+    <form id="loginForm">
+      <label for="usernameInput">Username</label>
+      <input type="text" id="usernameInput" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="admin">
+
+      <label for="passwordInput">Password</label>
+      <input type="password" id="passwordInput" autocomplete="current-password" placeholder="••••••••">
+
+      <div class="remember-row">
+        <input type="checkbox" id="rememberMe" checked>
+        <label for="rememberMe">Stay signed in on this device</label>
+      </div>
+
+      <button class="btn" type="submit" id="loginBtn">Sign in</button>
+      <div class="error-msg" id="errorMsg"></div>
+    </form>
+  </div>
+
+  <script type="module">
+    import { verifyCredentials } from './api.js';
+
+    const CREDS_KEY = 'vn-admin-creds';
+
+    function getStoredCreds() {
+      try { return JSON.parse(localStorage.getItem(CREDS_KEY) || 'null'); }
+      catch { return null; }
+    }
+
+    function storeCreds(username, password) {
+      localStorage.setItem(CREDS_KEY, JSON.stringify({ username, password }));
+    }
+
+    function clearStoredCreds() {
+      localStorage.removeItem(CREDS_KEY);
+    }
+
+    function setToken(username, password) {
+      sessionStorage.setItem('vn-auth-token', btoa(`${username}:${password}`));
+    }
+
+    async function tryLogin(username, password, remember) {
+      const btn = document.getElementById('loginBtn');
+      const errEl = document.getElementById('errorMsg');
+      btn.disabled = true;
+      btn.textContent = 'Checking...';
+      errEl.textContent = '';
+
+      try {
+        const ok = await verifyCredentials(username, password);
+        if (ok) {
+          setToken(username, password);
+          if (remember) storeCreds(username, password);
+          else clearStoredCreds();
+          window.location.href = '/voice-notes/';
+        } else {
+          errEl.textContent = 'Incorrect username or password.';
+          document.getElementById('passwordInput').value = '';
+          document.getElementById('passwordInput').focus();
+        }
+      } catch (e) {
+        errEl.textContent = 'Could not reach server: ' + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign in';
+      }
+    }
+
+    // Auto-login if credentials are cached
+    const stored = getStoredCreds();
+    if (stored) {
+      // Silently verify cached creds and redirect if still valid
+      verifyCredentials(stored.username, stored.password)
+        .then(ok => {
+          if (ok) {
+            setToken(stored.username, stored.password);
+            window.location.href = '/voice-notes/';
+          } else {
+            clearStoredCreds();
+          }
+        })
+        .catch(() => {
+          // Network error — still set token from cache and go (worker may be down)
+          setToken(stored.username, stored.password);
+          window.location.href = '/voice-notes/';
+        });
+
+      // Pre-fill username while verification is in-flight
+      document.getElementById('usernameInput').value = stored.username;
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const username = document.getElementById('usernameInput').value.trim();
+      const password = document.getElementById('passwordInput').value;
+      const remember = document.getElementById('rememberMe').checked;
+      if (!username || !password) return;
+      tryLogin(username, password, remember);
+    });
+  </script>
+</body>
+</html>

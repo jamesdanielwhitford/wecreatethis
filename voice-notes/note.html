@@ -71,6 +71,22 @@
       white-space: nowrap;
     }
 
+    .navbar-actions { display: flex; gap: 6px; margin-left: auto; }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .icon-btn:hover { color: var(--text); background: var(--border); }
+
     .container {
       max-width: 640px;
       margin: 0 auto;
@@ -80,10 +96,21 @@
     .note-meta {
       font-size: 0.78rem;
       color: var(--text-muted);
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
-    /* Transcript section */
+    .meta-pill {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.72rem;
+    }
+
     .section-label {
       font-size: 0.7rem;
       font-weight: 600;
@@ -93,28 +120,51 @@
       margin-bottom: 10px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
 
+    .save-indicator {
+      font-size: 0.7rem;
+      color: var(--success);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .save-indicator.show { opacity: 1; }
+
+    /* Editable transcript */
     .transcript-body {
       font-size: 0.95rem;
       line-height: 1.75;
       color: var(--text);
       word-break: break-word;
       white-space: pre-wrap;
+      outline: none;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 10px 12px;
+      transition: border-color 0.2s, background 0.2s;
+      min-height: 60px;
     }
 
-    .transcript-pending {
-      font-size: 0.88rem;
+    .transcript-body:focus {
+      border-color: var(--accent);
+      background: var(--surface2);
+    }
+
+    .transcript-body:hover:not(:focus) {
+      border-color: var(--border);
+    }
+
+    .edit-hint {
+      font-size: 0.72rem;
       color: var(--text-muted);
-      font-style: italic;
+      margin-top: 6px;
+      opacity: 0.7;
     }
 
-    .transcript-error {
-      font-size: 0.85rem;
-      color: var(--warning);
-      word-break: break-word;
-    }
+    .transcript-pending { font-size: 0.88rem; color: var(--text-muted); font-style: italic; }
+    .transcript-error { font-size: 0.85rem; color: var(--warning); word-break: break-word; }
 
     .spinner {
       display: inline-block;
@@ -129,12 +179,12 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Actions row */
+    /* Actions */
     .actions-row {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-top: 20px;
+      margin-top: 24px;
       padding-top: 16px;
       border-top: 1px solid var(--border);
     }
@@ -157,11 +207,10 @@
     .btn:hover { color: var(--text); background: var(--border); border-color: rgba(255,255,255,0.15); }
     .btn:active { transform: scale(0.97); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
     .btn-success:hover { color: var(--success); background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); }
-    .btn-danger:hover { color: var(--danger); background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+    .btn-danger:hover  { color: var(--danger);  background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.3); }
+    .btn-warn:hover    { color: var(--warning);  background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); }
 
-    /* Toast */
     .toast {
       position: fixed;
       bottom: 24px;
@@ -201,33 +250,35 @@
       </svg>
     </a>
     <div class="navbar-title" id="navTitle">Voice Note</div>
+    <div class="navbar-actions" id="navActions"></div>
   </nav>
 
   <div class="toast" id="toast"></div>
-
   <div class="container" id="content"></div>
 
-  <script>
-    const STORAGE_KEY = 'voice-notes-v1';
+  <script type="module">
+    import { getNote, putNote, deleteNote, getAudioBlob, deleteAudioBlob } from './db.js';
+    import { updateNote as remoteUpdateNote, removeNote as remoteRemoveNote } from './api.js';
+
+    const MODEL = 'voxtral-mini-latest';
+    const MISTRAL_ENDPOINT = 'https://api.mistral.ai/v1/audio/transcriptions';
 
     const SVG = {
-      copy:  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
-      trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+      copy:    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+      refresh: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
+      trash:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+      mic:     `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>`,
     };
 
-    function loadNotes() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-      catch { return []; }
-    }
-
-    function saveNotes(notes) { localStorage.setItem(STORAGE_KEY, JSON.stringify(notes)); }
+    function isAdmin() { return !!sessionStorage.getItem('vn-auth-token'); }
+    function getApiKey() { return localStorage.getItem('voice-notes-mistral-key') || ''; }
 
     function showToast(msg, duration = 2200) {
       const t = document.getElementById('toast');
       t.textContent = msg;
       t.classList.add('show');
-      clearTimeout(t._timeout);
-      t._timeout = setTimeout(() => t.classList.remove('show'), duration);
+      clearTimeout(t._tid);
+      t._tid = setTimeout(() => t.classList.remove('show'), duration);
     }
 
     function formatDate(iso) {
@@ -241,81 +292,11 @@
       return d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' at ' + time;
     }
 
-    // --- Render ---
-    function render() {
-      const params = new URLSearchParams(location.search);
-      const id = params.get('id');
-      const notes = loadNotes();
-      const note = notes.find(n => n.id === id);
-      const content = document.getElementById('content');
-
-      if (!note) {
-        content.innerHTML = `<div class="not-found"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>Note not found.</p></div>`;
-        return;
-      }
-
-      document.getElementById('navTitle').textContent = formatDate(note.createdAt);
-      content.innerHTML = '';
-
-      // Meta
-      const meta = document.createElement('div');
-      meta.className = 'note-meta';
-      meta.textContent = formatDate(note.createdAt);
-      content.appendChild(meta);
-
-      // Transcript
-      const tsLabel = document.createElement('div');
-      tsLabel.className = 'section-label';
-
-      const tsWrap = document.createElement('div');
-
-      if (note.transcriptStatus === 'transcribing') {
-        tsLabel.innerHTML = '<div class="spinner"></div> Transcribing...';
-        const p = document.createElement('div');
-        p.className = 'transcript-pending';
-        p.textContent = 'Processing your voice note...';
-        tsWrap.appendChild(tsLabel);
-        tsWrap.appendChild(p);
-      } else if (note.transcriptStatus === 'done' && note.transcript) {
-        tsLabel.textContent = 'Transcript';
-        const body = document.createElement('div');
-        body.className = 'transcript-body';
-        body.textContent = note.transcript;
-        tsWrap.appendChild(tsLabel);
-        tsWrap.appendChild(body);
-      } else if (note.transcriptStatus === 'error') {
-        tsLabel.textContent = 'Transcript';
-        const err = document.createElement('div');
-        err.className = 'transcript-error';
-        err.textContent = `Transcription failed: ${note.transcriptError || 'Unknown error'}`;
-        tsWrap.appendChild(tsLabel);
-        tsWrap.appendChild(err);
-      } else {
-        tsLabel.textContent = 'Transcript';
-        const p = document.createElement('div');
-        p.className = 'transcript-pending';
-        p.textContent = 'No transcript available.';
-        tsWrap.appendChild(tsLabel);
-        tsWrap.appendChild(p);
-      }
-
-      content.appendChild(tsWrap);
-
-      // Actions
-      const actionsRow = document.createElement('div');
-      actionsRow.className = 'actions-row';
-
-      if (note.transcript) {
-        const copyBtn = makeBtn('Copy text', SVG.copy, 'btn-success', () => {
-          navigator.clipboard.writeText(note.transcript).then(() => showToast('Copied'));
-        });
-        actionsRow.appendChild(copyBtn);
-      }
-
-      const delBtn = makeBtn('Delete note', SVG.trash, 'btn-danger', () => deleteNote(note.id));
-      actionsRow.appendChild(delBtn);
-
-      content.appendChild(actionsRow);
+    function formatDuration(secs) {
+      if (!secs) return null;
+      const m = Math.floor(secs / 60);
+      const s = secs % 60;
+      return m > 0 ? `${m}m ${s}s` : `${s}s`;
     }
 
     function makeBtn(label, iconHtml, extraClass, onClick) {
@@ -326,12 +307,176 @@
       return btn;
     }
 
-    function deleteNote(noteId) {
-      if (!confirm('Delete this note?')) return;
-      const notes = loadNotes();
-      const updated = notes.filter(n => n.id !== noteId);
-      saveNotes(updated);
-      window.location.href = '/voice-notes/';
+    async function transcribeBlob(blob, mimeType) {
+      const key = getApiKey();
+      if (!key) return null;
+      const ext = mimeType.includes('webm') ? 'webm' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+      const fd = new FormData();
+      fd.append('file', blob, `rec.${ext}`);
+      fd.append('model', MODEL);
+      const res = await fetch(MISTRAL_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}` },
+        body: fd,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return data.text || null;
+    }
+
+    async function render() {
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+      const note = await getNote(id);
+      const content = document.getElementById('content');
+
+      if (!note) {
+        content.innerHTML = `<div class="not-found"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>Note not found.</p></div>`;
+        return;
+      }
+
+      document.getElementById('navTitle').textContent = formatDate(note.createdAt);
+
+      // Meta row
+      const meta = document.createElement('div');
+      meta.className = 'note-meta';
+      meta.textContent = formatDate(note.createdAt);
+      const dur = formatDuration(note.duration);
+      if (dur) {
+        const pill = document.createElement('span');
+        pill.className = 'meta-pill';
+        pill.textContent = dur;
+        meta.appendChild(pill);
+      }
+      if (note.isRemote) {
+        const pill = document.createElement('span');
+        pill.className = 'meta-pill';
+        pill.textContent = 'Remote';
+        meta.appendChild(pill);
+      }
+      content.appendChild(meta);
+
+      // Transcript section
+      const tsLabel = document.createElement('div');
+      tsLabel.className = 'section-label';
+
+      const saveIndicator = document.createElement('span');
+      saveIndicator.className = 'save-indicator';
+      saveIndicator.textContent = 'Saved';
+
+      const tsWrap = document.createElement('div');
+
+      if (note.transcriptStatus === 'transcribing') {
+        tsLabel.innerHTML = '<div class="spinner"></div> Transcribing...';
+        tsWrap.appendChild(tsLabel);
+        tsWrap.appendChild(Object.assign(document.createElement('div'), { className: 'transcript-pending', textContent: 'Processing your voice note...' }));
+      } else if (note.transcriptStatus === 'done' && note.transcript) {
+        tsLabel.innerHTML = 'Transcript';
+        tsLabel.appendChild(saveIndicator);
+
+        const body = document.createElement('div');
+        body.className = 'transcript-body';
+        body.contentEditable = 'true';
+        body.setAttribute('role', 'textbox');
+        body.setAttribute('aria-multiline', 'true');
+        body.setAttribute('aria-label', 'Transcript text, editable');
+        body.textContent = note.transcript;
+        body.spellcheck = true;
+
+        const hint = document.createElement('div');
+        hint.className = 'edit-hint';
+        hint.textContent = 'Tap to edit transcript';
+
+        let saveTimeout = null;
+        body.addEventListener('input', () => {
+          clearTimeout(saveTimeout);
+          saveTimeout = setTimeout(async () => {
+            note.transcript = body.textContent.trim();
+            await putNote(note);
+            if (isAdmin()) {
+              try { await remoteUpdateNote(note.id, { transcript: note.transcript }); } catch {}
+            }
+            saveIndicator.classList.add('show');
+            setTimeout(() => saveIndicator.classList.remove('show'), 1800);
+          }, 800);
+        });
+
+        body.addEventListener('focus', () => { hint.style.display = 'none'; });
+        body.addEventListener('blur', () => { hint.style.display = ''; });
+
+        tsWrap.appendChild(tsLabel);
+        tsWrap.appendChild(body);
+        tsWrap.appendChild(hint);
+      } else if (note.transcriptStatus === 'error') {
+        tsLabel.textContent = 'Transcript';
+        tsWrap.appendChild(tsLabel);
+        tsWrap.appendChild(Object.assign(document.createElement('div'), { className: 'transcript-error', textContent: `Transcription failed: ${note.transcriptError || 'Unknown error'}` }));
+      } else {
+        tsLabel.textContent = 'Transcript';
+        tsWrap.appendChild(tsLabel);
+        tsWrap.appendChild(Object.assign(document.createElement('div'), { className: 'transcript-pending', textContent: 'No transcript available.' }));
+      }
+
+      content.appendChild(tsWrap);
+
+      // Actions row
+      const actionsRow = document.createElement('div');
+      actionsRow.className = 'actions-row';
+
+      if (note.transcript) {
+        actionsRow.appendChild(makeBtn('Copy text', SVG.copy, 'btn-success', () => {
+          navigator.clipboard.writeText(note.transcript).then(() => showToast('Copied'));
+        }));
+      }
+
+      // Retranscribe button — only if audio exists
+      const stored = await getAudioBlob(note.id);
+      if (stored && getApiKey()) {
+        const reBtn = makeBtn('Retranscribe', SVG.refresh, '', async () => {
+          reBtn.disabled = true;
+          reBtn.textContent = 'Transcribing...';
+          try {
+            const blob = stored.blob instanceof Blob ? stored.blob : new Blob([stored.blob], { type: stored.mimeType });
+            const text = await transcribeBlob(blob, stored.mimeType);
+            if (!text) throw new Error('No text returned');
+            note.transcript = text;
+            note.transcriptStatus = 'done';
+            note.transcriptError = null;
+            await putNote(note);
+            if (isAdmin()) {
+              try { await remoteUpdateNote(note.id, { transcript: text, transcript_status: 'done', transcript_error: null }); } catch {}
+            }
+            showToast('Retranscribed');
+            render(); // re-render with new text
+          } catch (e) {
+            showToast('Failed: ' + e.message);
+            reBtn.disabled = false;
+            reBtn.innerHTML = `${SVG.refresh} Retranscribe`;
+          }
+        });
+        actionsRow.appendChild(reBtn);
+
+        // Delete audio only (keep text)
+        if (note.transcript) {
+          actionsRow.appendChild(makeBtn('Delete audio', SVG.mic, 'btn-warn', async () => {
+            if (!confirm('Delete the audio recording? The transcript text will be kept.')) return;
+            await deleteAudioBlob(note.id);
+            showToast('Audio deleted');
+            render();
+          }));
+        }
+      }
+
+      // Delete note entirely
+      actionsRow.appendChild(makeBtn('Delete note', SVG.trash, 'btn-danger', async () => {
+        if (!confirm('Delete this note permanently?')) return;
+        await deleteNote(note.id);
+        await deleteAudioBlob(note.id);
+        if (isAdmin()) { try { await remoteRemoveNote(note.id); } catch {} }
+        window.location.href = '/voice-notes/';
+      }));
+
+      content.appendChild(actionsRow);
     }
 
     render();

@@ -1,11 +1,14 @@
-const CACHE_NAME = 'voice-notes-v10';
+const CACHE_NAME = 'voice-notes-v13';
 const ASSETS = [
   '/voice-notes/',
   '/voice-notes/index',
+  '/voice-notes/note',
+  '/voice-notes/admin',
   '/voice-notes/manifest.json',
   '/voice-notes/icon-192.png',
   '/voice-notes/icon-512.png',
-  '/voice-notes/note',
+  '/voice-notes/db.js',
+  '/voice-notes/api.js',
 ];
 
 function normalizeUrl(url, base = self.location.origin) {
@@ -46,6 +49,10 @@ async function matchCache(request) {
 }
 
 self.addEventListener('fetch', (event) => {
+  // Don't intercept API calls or Mistral requests
+  const url = new URL(event.request.url);
+  if (url.hostname !== self.location.hostname) return;
+
   event.respondWith(
     matchCache(event.request).then(async (cached) => {
       const networkPromise = fetch(event.request).then(async (res) => {

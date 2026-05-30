@@ -57,7 +57,19 @@
       letter-spacing: 0.02em;
     }
 
-    .navbar-actions { display: flex; gap: 8px; }
+    .navbar-actions { display: flex; gap: 8px; align-items: center; }
+
+    .admin-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-light);
+      background: rgba(168,85,247,0.15);
+      border: 1px solid rgba(168,85,247,0.3);
+      border-radius: 5px;
+      padding: 2px 7px;
+    }
 
     .icon-btn {
       background: none;
@@ -79,7 +91,6 @@
       padding: 12px;
     }
 
-    /* Modal */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -120,7 +131,6 @@
       color: var(--text);
       font-size: 0.9rem;
       margin-bottom: 12px;
-      font-family: monospace;
     }
 
     .modal input:focus { outline: none; border-color: var(--accent); }
@@ -150,12 +160,11 @@
 
     .btn-primary:hover:not(:disabled) { opacity: 0.85; }
 
-    /* Record section */
     .record-section {
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 28px 16px;
+      padding: 28px 16px 16px;
       gap: 14px;
     }
 
@@ -172,6 +181,7 @@
       background: var(--record-red);
       box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4);
       overflow: hidden;
+      flex-shrink: 0;
     }
 
     .record-btn.recording { animation: pulse 1.5s infinite; }
@@ -243,7 +253,6 @@
     .empty-state svg { opacity: 0.35; margin-bottom: 12px; }
     .empty-state p { font-size: 0.88rem; }
 
-    /* Note card */
     .note-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -254,6 +263,7 @@
     }
 
     .note-card:hover { border-color: rgba(255,255,255,0.15); }
+    .note-card.remote { border-left: 2px solid rgba(168,85,247,0.4); }
 
     .note-header {
       display: flex;
@@ -299,17 +309,13 @@
 
     .note-action-btn span { display: none; }
 
-    @media (min-width: 480px) {
-      .note-action-btn span { display: inline; }
-    }
+    @media (min-width: 480px) { .note-action-btn span { display: inline; } }
 
     .note-action-btn svg { flex-shrink: 0; }
-
     .note-action-btn:hover { color: var(--text); background: var(--border); border-color: rgba(255,255,255,0.15); }
     .note-action-btn.danger:hover { color: var(--danger); background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
     .note-action-btn.success:hover { color: var(--success); background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); }
 
-    /* Transcript */
     .note-transcript {
       padding: 8px 12px 12px;
       border-top: 1px solid var(--border);
@@ -349,17 +355,8 @@
 
     .read-more-link:hover { text-decoration: underline; }
 
-    .transcript-pending {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      font-style: italic;
-    }
-
-    .transcript-error {
-      font-size: 0.8rem;
-      color: var(--warning);
-      word-break: break-word;
-    }
+    .transcript-pending { font-size: 0.82rem; color: var(--text-muted); font-style: italic; }
+    .transcript-error { font-size: 0.8rem; color: var(--warning); word-break: break-word; }
 
     .spinner {
       display: inline-block;
@@ -374,7 +371,6 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Toast */
     .toast {
       position: fixed;
       bottom: 24px;
@@ -398,7 +394,6 @@
 
     .note-divider { height: 1px; background: var(--border); }
 
-    /* No API key banner */
     .no-key-banner {
       background: rgba(245,158,11,0.1);
       border: 1px solid rgba(245,158,11,0.3);
@@ -425,11 +420,23 @@
       text-decoration: underline;
       padding: 0;
     }
+
+    .sync-banner {
+      background: rgba(168,85,247,0.08);
+      border: 1px solid rgba(168,85,247,0.2);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Navbar -->
   <nav class="navbar">
     <div class="navbar-title">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -441,7 +448,8 @@
       Voice Notes
     </div>
     <div class="navbar-actions">
-      <button class="icon-btn" id="settingsBtn" title="API Key Settings" aria-label="Settings">
+      <span class="admin-badge" id="adminBadge" style="display:none">Admin</span>
+      <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"/>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -460,11 +468,9 @@
     </div>
   </div>
 
-  <!-- Toast -->
   <div class="toast" id="toast"></div>
 
   <div class="container">
-    <!-- No key banner -->
     <div class="no-key-banner" id="noKeyBanner" style="display:none">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
@@ -474,7 +480,11 @@
       <span>No API key set. <button id="bannerKeyBtn">Add your Mistral API key</button> to enable transcription.</span>
     </div>
 
-    <!-- Record section -->
+    <div class="sync-banner" id="syncBanner" style="display:none">
+      <div class="spinner"></div>
+      <span id="syncStatus">Syncing with remote...</span>
+    </div>
+
     <div class="record-section">
       <div class="record-timer" id="recordTimer"></div>
       <button class="record-btn" id="recordBtn" title="Record voice note" aria-label="Start recording">
@@ -488,9 +498,9 @@
         </div>
       </button>
       <div class="record-status" id="recordStatus">Tap to record</div>
+
     </div>
 
-    <!-- Notes list -->
     <div class="notes-header">
       <h2>Notes</h2>
       <span class="notes-count" id="notesCount">0</span>
@@ -499,103 +509,57 @@
     <div id="notesList"></div>
   </div>
 
-  <script>
-    const STORAGE_KEY = 'voice-notes-v1';
+  <script type="module">
+    import { getNotes, putNote, putNotes, deleteNote, saveAudioBlob, getAudioBlob, deleteAudioBlob } from './db.js';
+    import { fetchNotes, pushNote, updateNote as apiUpdateNote, removeNote } from './api.js';
+
     const API_KEY_STORAGE = 'voice-notes-mistral-key';
     const MODEL = 'voxtral-mini-latest';
-    const ENDPOINT = 'https://api.mistral.ai/v1/audio/transcriptions';
+    const MISTRAL_ENDPOINT = 'https://api.mistral.ai/v1/audio/transcriptions';
 
     const SVG = {
-      mic: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>`,
-      stop: `<svg width="22" height="22" viewBox="0 0 24 24" fill="white" stroke="none"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>`,
+      mic:     `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>`,
+      stop:    `<svg width="22" height="22" viewBox="0 0 24 24" fill="white" stroke="none"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>`,
       copy:    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
       refresh: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
       trash:   `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
-      micLg: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>`,
+      micLg:   `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>`,
     };
 
-    const APP_VERSION = 'v3';
-    console.log(`Voice Notes ${APP_VERSION}`);
-
+    // --- State ---
     let notes = [];
     let isRecording = false;
     let mediaRecorder = null;
-    let audioChunks = [];
     let timerInterval = null;
     let timerSeconds = 0;
+    let wakeLock = null;
+    let allChunks = [];
 
-    // --- IndexedDB audio fallback store ---
-    let audioDB = null;
+    // --- Auth ---
+    function isAdmin() { return !!sessionStorage.getItem('vn-auth-token'); }
 
-    function openAudioDB() {
-      return new Promise((resolve, reject) => {
-        const req = indexedDB.open('voice-notes-audio', 1);
-        req.onupgradeneeded = e => e.target.result.createObjectStore('blobs', { keyPath: 'id' });
-        req.onsuccess = e => { audioDB = e.target.result; resolve(audioDB); };
-        req.onerror = () => reject(req.error);
-      });
-    }
-
-    async function saveAudioBlob(noteId, blob, mimeType) {
-      const db = audioDB || await openAudioDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction('blobs', 'readwrite');
-        tx.objectStore('blobs').put({ id: noteId, blob, mimeType });
-        tx.oncomplete = resolve;
-        tx.onerror = () => reject(tx.error);
-      });
-    }
-
-    async function getAudioBlob(noteId) {
-      const db = audioDB || await openAudioDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction('blobs', 'readonly');
-        const req = tx.objectStore('blobs').get(noteId);
-        req.onsuccess = () => resolve(req.result || null);
-        req.onerror = () => reject(req.error);
-      });
-    }
-
-    async function deleteAudioBlob(noteId) {
-      const db = audioDB || await openAudioDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction('blobs', 'readwrite');
-        tx.objectStore('blobs').delete(noteId);
-        tx.oncomplete = resolve;
-        tx.onerror = () => reject(tx.error);
-      });
-    }
-
-    // --- Notes store ---
-    function loadNotes() {
-      try { notes = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-      catch { notes = []; }
-    }
-
-    function saveNotes() { localStorage.setItem(STORAGE_KEY, JSON.stringify(notes)); }
+    // --- API key ---
     function getApiKey() { return localStorage.getItem(API_KEY_STORAGE) || ''; }
-    function saveApiKey(key) { localStorage.setItem(API_KEY_STORAGE, key.trim()); }
+    function saveApiKey(k) { localStorage.setItem(API_KEY_STORAGE, k.trim()); }
 
+    // --- Toast ---
     function showToast(msg, duration = 2200) {
       const t = document.getElementById('toast');
       t.textContent = msg;
       t.classList.add('show');
-      clearTimeout(t._timeout);
-      t._timeout = setTimeout(() => t.classList.remove('show'), duration);
+      clearTimeout(t._tid);
+      t._tid = setTimeout(() => t.classList.remove('show'), duration);
     }
 
-    function formatTime(secs) {
-      const m = String(Math.floor(secs / 60)).padStart(2, '0');
-      const s = String(secs % 60).padStart(2, '0');
-      return `${m}:${s}`;
-    }
-
+    // --- Timer ---
     function startTimer() {
       timerSeconds = 0;
       document.getElementById('recordTimer').textContent = '00:00';
       timerInterval = setInterval(() => {
         timerSeconds++;
-        document.getElementById('recordTimer').textContent = formatTime(timerSeconds);
+        const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+        const s = String(timerSeconds % 60).padStart(2, '0');
+        document.getElementById('recordTimer').textContent = `${m}:${s}`;
       }, 1000);
     }
 
@@ -605,53 +569,135 @@
       document.getElementById('recordTimer').textContent = '';
     }
 
-    function setRecordIcon(which) {
-      document.getElementById('recordBtnIcon').innerHTML = SVG[which];
+    // --- Wake lock ---
+    async function acquireWakeLock() {
+      if (!('wakeLock' in navigator)) return;
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { wakeLock = null; });
+      } catch {}
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) { wakeLock.release(); wakeLock = null; }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (isRecording && document.visibilityState === 'visible') acquireWakeLock();
+    });
+
+    // --- Transcription ---
+    async function transcribeBlob(blob, mimeType) {
+      const key = getApiKey();
+      if (!key || blob.size < 500) return null;
+      const ext = mimeType.includes('webm') ? 'webm'
+        : mimeType.includes('ogg') ? 'ogg'
+        : mimeType.includes('mp4') ? 'mp4' : 'webm';
+      const fd = new FormData();
+      fd.append('file', blob, `rec.${ext}`);
+      fd.append('model', MODEL);
+      try {
+        const res = await fetch(MISTRAL_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${key}` },
+          body: fd,
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.text || null;
+      } catch {
+        return null;
+      }
+    }
+
+    // --- Recording ---
+    function setRecordingUI(active, statusText) {
+      const btn = document.getElementById('recordBtn');
+      const statusEl = document.getElementById('recordStatus');
+      if (active) {
+        btn.classList.add('recording');
+        document.getElementById('recordBtnIcon').innerHTML = SVG.stop;
+        statusEl.classList.add('recording');
+      } else {
+        btn.classList.remove('recording');
+        document.getElementById('recordBtnIcon').innerHTML = SVG.mic;
+        statusEl.classList.remove('recording');
+      }
+      statusEl.textContent = statusText;
     }
 
     async function startRecording() {
-      if (!getApiKey()) {
-        showToast('Add your API key first');
-        openModal();
-        return;
-      }
+      if (!getApiKey()) { showToast('Add your API key first'); openApiModal(); return; }
 
       let stream;
       try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
       catch { showToast('Microphone access denied'); return; }
 
-      audioChunks = [];
-      const options = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      allChunks = [];
+
+      const opts = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? { mimeType: 'audio/webm;codecs=opus' }
         : MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : {};
 
-      mediaRecorder = new MediaRecorder(stream, options);
-      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-      mediaRecorder.onstop = () => { stream.getTracks().forEach(t => t.stop()); handleRecordingDone(); };
-      mediaRecorder.start(100);
+      mediaRecorder = new MediaRecorder(stream, opts);
 
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) allChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        onRecordingDone();
+      };
+
+      // If the mic is lost mid-recording (e.g. cable pulled, OS mutes it)
+      mediaRecorder.onerror = () => {
+        if (isRecording) micDropped();
+      };
+
+      stream.getTracks().forEach(track => {
+        track.addEventListener('ended', () => {
+          if (isRecording) micDropped();
+        });
+      });
+
+      mediaRecorder.start(1000);
       isRecording = true;
-      document.getElementById('recordBtn').classList.add('recording');
-      setRecordIcon('stop');
-      document.getElementById('recordStatus').textContent = 'Recording... tap to stop';
-      document.getElementById('recordStatus').classList.add('recording');
+
+      setRecordingUI(true, 'Recording... tap to stop');
       startTimer();
+      await acquireWakeLock();
+    }
+
+    function micDropped() {
+      isRecording = false;
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try { mediaRecorder.stop(); } catch {}
+      }
+      stopTimer();
+      releaseWakeLock();
+      setRecordingUI(false, 'Mic disconnected');
+      showToast('Microphone lost — recording stopped');
+      setTimeout(() => {
+        document.getElementById('recordStatus').textContent = 'Tap to record';
+      }, 3000);
     }
 
     function stopRecording() {
       if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
       isRecording = false;
-      document.getElementById('recordBtn').classList.remove('recording');
-      setRecordIcon('mic');
-      document.getElementById('recordStatus').textContent = 'Tap to record';
-      document.getElementById('recordStatus').classList.remove('recording');
+      setRecordingUI(false, 'Transcribing...');
       stopTimer();
+      releaseWakeLock();
     }
 
-    async function handleRecordingDone() {
+    async function onRecordingDone() {
       const mimeType = mediaRecorder.mimeType || 'audio/webm';
-      const blob = new Blob(audioChunks, { type: mimeType });
+      const fullBlob = new Blob(allChunks, { type: mimeType });
+      const savedChunks = allChunks;
+      allChunks = [];
 
+      // Save note immediately as pending so it appears in the list
       const note = {
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
@@ -663,58 +709,74 @@
       };
 
       notes.unshift(note);
-      saveNotes();
+      await putNote(note);
+      if (fullBlob.size > 0) await saveAudioBlob(note.id, fullBlob, mimeType);
       renderNotes();
+      document.getElementById('recordStatus').textContent = 'Tap to record';
 
-      // Keep blob in IndexedDB until transcription succeeds
-      await saveAudioBlob(note.id, blob, mimeType);
+      // Transcribe after saving
+      const text = fullBlob.size >= 500 ? await transcribeBlob(fullBlob, mimeType) : null;
+      note.transcript = text || null;
+      note.transcriptStatus = text ? 'done' : 'error';
+      note.transcriptError = text ? null : 'No transcript received';
+      await putNote(note);
+      updateNoteInDOM(note.id);
 
-      transcribeInChunks(note.id, blob);
+      if (isAdmin()) syncNoteUp(note);
     }
 
-    async function transcribeInChunks(noteId, blob) {
-      const note = notes.find(n => n.id === noteId);
-      if (!note) return;
-
-      const apiKey = getApiKey();
-      if (!apiKey) return;
-
-      const ext = note.audioMime.includes('webm') ? 'webm'
-        : note.audioMime.includes('ogg') ? 'ogg'
-        : note.audioMime.includes('mp4') ? 'mp4' : 'webm';
-
-      const formData = new FormData();
-      formData.append('file', blob, `recording.${ext}`);
-      formData.append('model', MODEL);
-
+    // --- Remote sync ---
+    async function syncNoteUp(note) {
       try {
-        const res = await fetch(ENDPOINT, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${apiKey}` },
-          body: formData,
+        await pushNote({
+          id: note.id,
+          created_at: note.createdAt,
+          transcript: note.transcript,
+          transcript_status: note.transcriptStatus,
+          transcript_error: note.transcriptError,
+          duration: note.duration,
+          audio_mime: note.audioMime,
         });
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || `HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        note.transcript = data.text || null;
-        note.transcriptStatus = data.text ? 'done' : 'error';
-        note.transcriptError = data.text ? null : 'No transcript received';
-        if (note.transcriptStatus === 'done') deleteAudioBlob(noteId);
-        saveNotes();
-        updateNoteInDOM(noteId);
-
       } catch (e) {
-        note.transcriptStatus = 'error';
-        note.transcriptError = e.message;
-        saveNotes();
-        updateNoteInDOM(noteId);
+        console.warn('Push failed:', e.message);
       }
     }
 
+    async function syncFromRemote() {
+      if (!isAdmin()) return;
+      const banner = document.getElementById('syncBanner');
+      const statusEl = document.getElementById('syncStatus');
+      banner.style.display = 'flex';
+      statusEl.textContent = 'Syncing with remote...';
+
+      try {
+        const remote = await fetchNotes();
+        if (!remote || remote.length === 0) { banner.style.display = 'none'; return; }
+
+        const normalized = remote.map(r => ({
+          id: r.id,
+          createdAt: r.created_at,
+          transcript: r.transcript,
+          transcriptStatus: r.transcript_status || 'done',
+          transcriptError: r.transcript_error || null,
+          duration: r.duration || null,
+          audioMime: r.audio_mime || null,
+          isRemote: true,
+        }));
+
+        await putNotes(normalized);
+        notes = await getNotes();
+        renderNotes();
+
+        statusEl.textContent = `Synced ${remote.length} remote note${remote.length !== 1 ? 's' : ''}`;
+        setTimeout(() => { banner.style.display = 'none'; }, 2500);
+      } catch (e) {
+        statusEl.textContent = 'Sync failed: ' + e.message;
+        setTimeout(() => { banner.style.display = 'none'; }, 3000);
+      }
+    }
+
+    // --- Note rendering ---
     function formatDate(iso) {
       const d = new Date(iso);
       const now = new Date();
@@ -726,12 +788,19 @@
       return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + time;
     }
 
+    function makeActionBtn(label, iconHtml, type, onClick) {
+      const btn = document.createElement('button');
+      btn.className = `note-action-btn${type ? ' ' + type : ''}`;
+      btn.innerHTML = `${iconHtml}<span>${label}</span>`;
+      btn.addEventListener('click', onClick);
+      return btn;
+    }
+
     function buildNoteCard(note) {
       const card = document.createElement('div');
-      card.className = 'note-card';
+      card.className = 'note-card' + (note.isRemote ? ' remote' : '');
       card.dataset.id = note.id;
 
-      // Header
       const header = document.createElement('div');
       header.className = 'note-header';
 
@@ -748,77 +817,47 @@
         }));
       }
 
-      actions.appendChild(makeActionBtn('Delete', SVG.trash, 'danger', () => deleteNote(note.id)));
+      actions.appendChild(makeActionBtn('Delete', SVG.trash, 'danger', () => deleteNoteHandler(note.id)));
 
       header.appendChild(dateEl);
       header.appendChild(actions);
       card.appendChild(header);
+      card.appendChild(Object.assign(document.createElement('div'), { className: 'note-divider' }));
 
-      const divider = document.createElement('div');
-      divider.className = 'note-divider';
-      card.appendChild(divider);
-
-      // Transcript
       const ts = document.createElement('div');
       ts.className = 'note-transcript';
-
       const label = document.createElement('div');
       label.className = 'transcript-label';
 
       if (note.transcriptStatus === 'transcribing') {
         label.innerHTML = '<div class="spinner"></div> Transcribing...';
-        const p = document.createElement('div');
-        p.className = 'transcript-pending';
-        p.textContent = 'Processing your voice note...';
         ts.appendChild(label);
-        ts.appendChild(p);
+        ts.appendChild(Object.assign(document.createElement('div'), { className: 'transcript-pending', textContent: 'Processing your voice note...' }));
       } else if (note.transcriptStatus === 'done' && note.transcript) {
         label.textContent = 'Transcript';
-        const text = document.createElement('div');
-        text.className = 'transcript-text';
-        text.textContent = note.transcript;
+        const text = Object.assign(document.createElement('div'), { className: 'transcript-text', textContent: note.transcript });
+        const more = Object.assign(document.createElement('a'), { className: 'read-more-link', href: `note?id=${note.id}`, textContent: 'Read more' });
         ts.appendChild(label);
         ts.appendChild(text);
-        const readMore = document.createElement('a');
-        readMore.className = 'read-more-link';
-        readMore.href = `note?id=${note.id}`;
-        readMore.textContent = 'Read more';
-        ts.appendChild(readMore);
+        ts.appendChild(more);
       } else if (note.transcriptStatus === 'error') {
         label.textContent = 'Transcript';
-        const err = document.createElement('div');
-        err.className = 'transcript-error';
-        err.textContent = `Transcription failed: ${note.transcriptError || 'Unknown error'}`;
         ts.appendChild(label);
-        ts.appendChild(err);
-        // Show retry button if we still have the audio blob
+        ts.appendChild(Object.assign(document.createElement('div'), { className: 'transcript-error', textContent: `Transcription failed: ${note.transcriptError || 'Unknown error'}` }));
         getAudioBlob(note.id).then(stored => {
           if (stored) {
             const retryBtn = makeActionBtn('Retry', SVG.refresh, '', () => retryTranscribe(note.id));
-            // Insert before the existing delete button in actions
-            const actionsEl = card.querySelector('.note-actions');
-            if (actionsEl) actionsEl.insertBefore(retryBtn, actionsEl.firstChild);
+            actions.insertBefore(retryBtn, actions.firstChild);
           }
         });
       } else {
         label.textContent = 'Transcript';
-        const p = document.createElement('div');
-        p.className = 'transcript-pending';
-        p.textContent = 'No transcript available.';
         ts.appendChild(label);
-        ts.appendChild(p);
+        ts.appendChild(Object.assign(document.createElement('div'), { className: 'transcript-pending', textContent: 'No transcript available.' }));
       }
 
       card.appendChild(ts);
       return card;
-    }
-
-    function makeActionBtn(label, iconHtml, type, onClick) {
-      const btn = document.createElement('button');
-      btn.className = `note-action-btn${type ? ' ' + type : ''}`;
-      btn.innerHTML = `${iconHtml}<span>${label}</span>`;
-      btn.addEventListener('click', onClick);
-      return btn;
     }
 
     function renderNotes() {
@@ -834,15 +873,14 @@
         return;
       }
 
-      notes.forEach(note => list.appendChild(buildNoteCard(note)));
+      notes.forEach(n => list.appendChild(buildNoteCard(n)));
     }
 
     function updateNoteInDOM(noteId) {
       const note = notes.find(n => n.id === noteId);
       if (!note) return;
-      const existing = document.querySelector(`.note-card[data-id="${noteId}"]`);
-      if (!existing) { renderNotes(); return; }
-      existing.replaceWith(buildNoteCard(note));
+      const el = document.querySelector(`.note-card[data-id="${noteId}"]`);
+      if (el) el.replaceWith(buildNoteCard(note)); else renderNotes();
     }
 
     async function retryTranscribe(noteId) {
@@ -853,60 +891,78 @@
       note.transcriptStatus = 'transcribing';
       note.transcriptError = null;
       note.transcript = null;
-      saveNotes();
-      updateNoteInDOM(note.id);
+      await putNote(note);
+      updateNoteInDOM(noteId);
       const blob = stored.blob instanceof Blob ? stored.blob : new Blob([stored.blob], { type: stored.mimeType });
-      transcribeInChunks(noteId, blob);
+      const text = await transcribeBlob(blob, stored.mimeType);
+      note.transcript = text || null;
+      note.transcriptStatus = text ? 'done' : 'error';
+      note.transcriptError = text ? null : 'Transcription failed';
+      if (text) await deleteAudioBlob(noteId);
+      await putNote(note);
+      updateNoteInDOM(noteId);
+      if (isAdmin()) syncNoteUp(note);
     }
 
-    function deleteNote(noteId) {
+    async function deleteNoteHandler(noteId) {
       if (!confirm('Delete this note?')) return;
       notes = notes.filter(n => n.id !== noteId);
-      saveNotes();
-      deleteAudioBlob(noteId);
+      await deleteNote(noteId);
+      await deleteAudioBlob(noteId);
       document.getElementById('notesCount').textContent = notes.length;
       const card = document.querySelector(`.note-card[data-id="${noteId}"]`);
       if (card) card.remove();
       if (notes.length === 0) renderNotes();
       showToast('Note deleted');
+      if (isAdmin()) { try { await removeNote(noteId); } catch {} }
     }
 
-    function checkApiKeyBanner() {
-      const banner = document.getElementById('noKeyBanner');
-      banner.style.display = getApiKey() ? 'none' : 'flex';
+    // --- API key modal ---
+    function openApiModal() {
+      document.getElementById('apiKeyInput').value = getApiKey();
+      document.getElementById('apiModal').classList.remove('hidden');
     }
 
-    // Modal
-    document.getElementById('settingsBtn').addEventListener('click', openModal);
-    document.getElementById('bannerKeyBtn').addEventListener('click', openModal);
+    function closeApiModal() { document.getElementById('apiModal').classList.add('hidden'); }
+
+    document.getElementById('settingsBtn').addEventListener('click', openApiModal);
+    document.getElementById('bannerKeyBtn').addEventListener('click', openApiModal);
     document.getElementById('apiModal').addEventListener('click', e => {
-      if (e.target === document.getElementById('apiModal')) closeModal();
+      if (e.target === document.getElementById('apiModal')) closeApiModal();
     });
     document.getElementById('saveKeyBtn').addEventListener('click', () => {
       const key = document.getElementById('apiKeyInput').value.trim();
       if (!key) { showToast('Please enter your API key'); return; }
       saveApiKey(key);
-      closeModal();
+      closeApiModal();
       showToast('API key saved');
-      checkApiKeyBanner();
+      document.getElementById('noKeyBanner').style.display = 'none';
     });
-
-    function openModal() {
-      document.getElementById('apiKeyInput').value = getApiKey();
-      document.getElementById('apiModal').classList.remove('hidden');
-    }
-
-    function closeModal() { document.getElementById('apiModal').classList.add('hidden'); }
 
     document.getElementById('recordBtn').addEventListener('click', () => {
       if (isRecording) stopRecording(); else startRecording();
     });
 
-    // Init
-    openAudioDB().catch(() => {}); // warm up DB connection
-    loadNotes();
-    renderNotes();
-    checkApiKeyBanner();
+    // --- Init ---
+    (async () => {
+      notes = await getNotes();
+
+      // One-time migration from old localStorage format
+      try {
+        const old = JSON.parse(localStorage.getItem('voice-notes-v1') || '[]');
+        if (old.length > 0) {
+          for (const n of old) await putNote(n);
+          notes = await getNotes();
+          localStorage.removeItem('voice-notes-v1');
+        }
+      } catch {}
+
+      renderNotes();
+      document.getElementById('noKeyBanner').style.display = getApiKey() ? 'none' : 'flex';
+      document.getElementById('adminBadge').style.display = isAdmin() ? 'inline' : 'none';
+
+      if (isAdmin()) syncFromRemote();
+    })();
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/voice-notes/sw.js', { scope: '/voice-notes/' });

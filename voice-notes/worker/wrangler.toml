@@ -1,0 +1,12 @@
+name = "voice-notes"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "voice-notes"
+database_id = "3dc51e08-b627-4f02-98eb-481b4f36a497"
+
+[vars]
+# AUTH_USERNAME and AUTH_PASSWORD set via: npx wrangler secret put AUTH_USERNAME / AUTH_PASSWORD
+# Do not put real credentials here.
