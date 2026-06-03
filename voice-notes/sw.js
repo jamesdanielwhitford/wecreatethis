@@ -1,4 +1,4 @@
-const CACHE_NAME = 'voice-notes-v13';
+const CACHE_NAME = 'voice-notes-v14';
 const ASSETS = [
   '/voice-notes/',
   '/voice-notes/index',

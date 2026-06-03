@@ -511,7 +511,7 @@
 
   <script type="module">
     import { getNotes, putNote, putNotes, deleteNote, saveAudioBlob, getAudioBlob, deleteAudioBlob } from './db.js';
-    import { fetchNotes, pushNote, updateNote as apiUpdateNote, removeNote } from './api.js';
+    import { fetchNotes, pushNote, updateNote as apiUpdateNote, removeNote, verifyCredentials } from './api.js';
 
     const API_KEY_STORAGE = 'voice-notes-mistral-key';
     const MODEL = 'voxtral-mini-latest';
@@ -536,7 +536,29 @@
     let allChunks = [];
 
     // --- Auth ---
+    const CREDS_KEY = 'vn-admin-creds';
     function isAdmin() { return !!sessionStorage.getItem('vn-auth-token'); }
+
+    function setToken(username, password) {
+      sessionStorage.setItem('vn-auth-token', btoa(`${username}:${password}`));
+    }
+
+    async function autoLogin() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(CREDS_KEY) || 'null');
+        if (!stored) return;
+        const ok = await verifyCredentials(stored.username, stored.password);
+        if (ok) {
+          setToken(stored.username, stored.password);
+        } else {
+          localStorage.removeItem(CREDS_KEY);
+        }
+      } catch {
+        // Network down — set token from cache anyway so offline admin works
+        const stored = JSON.parse(localStorage.getItem(CREDS_KEY) || 'null');
+        if (stored) setToken(stored.username, stored.password);
+      }
+    }
 
     // --- API key ---
     function getApiKey() { return localStorage.getItem(API_KEY_STORAGE) || ''; }
@@ -945,6 +967,8 @@
 
     // --- Init ---
     (async () => {
+      await autoLogin();
+
       notes = await getNotes();
 
       // One-time migration from old localStorage format
