@@ -144,7 +144,7 @@ function normalizeUrl(url) {
 - **Homepage**: v19
 - **Blog**: v1
 - **Starry Night**: v1
-- **Voice Notes**: v13
+- **Voice Notes**: v14
 
 ### Version Management
 - Service worker cache format: `projectname-vN`
