@@ -1,8 +1,8 @@
 // Service worker for the Tower of Hanoi benchmark.
-// App shell is cached for offline use (manual play works offline);
-// the live API and MCP endpoint are always network-only.
+// Caches the app shell; the live API, MCP endpoint, and share pages are
+// always network-only.
 
-const CACHE = "towersofhanoi-v1";
+const CACHE = "towersofhanoi-v2";
 const SHELL = [
   "/towersofhanoi/",
   "/towersofhanoi/index.html",
@@ -38,8 +38,12 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
-  // Live data and the MCP endpoint must never be cached.
-  if (url.pathname.startsWith("/towersofhanoi/api/") || url.pathname === "/towersofhanoi/mcp") {
+  // Live data, the MCP endpoint, and share pages must never be cached here.
+  if (
+    url.pathname.startsWith("/towersofhanoi/api/") ||
+    url.pathname.startsWith("/towersofhanoi/r/") ||
+    url.pathname === "/towersofhanoi/mcp"
+  ) {
     return;
   }
   if (event.request.method !== "GET") return;

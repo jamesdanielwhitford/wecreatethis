@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tower of Hanoi — Agent Benchmark</title>
-  <meta name="description" content="Benchmark your AI agent on the Tower of Hanoi via MCP, inspired by Apple's 'The Illusion of Thinking' paper." />
+  <meta name="description" content="Benchmark your AI agent on the Tower of Hanoi via MCP, inspired by Apple's 'The Illusion of Thinking' paper. Watch it solve live and share the result." />
   <meta name="theme-color" content="#10141c" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" />
@@ -22,45 +22,29 @@
 
   <main>
     <section class="panel">
-      <h2>Live agent sessions</h2>
-      <p class="hint">
-        Point your agent at the MCP endpoint <code id="mcp-url"></code> and watch it solve here in real time.
-        For Claude Code: <code id="mcp-add"></code>
-      </p>
+      <h2>Test your agent</h2>
+      <ol class="steps">
+        <li>Connect your agent to the MCP endpoint:
+          <code id="mcp-url"></code>
+          <span class="hint">(Claude Code: <code id="mcp-add"></code>)</span>
+        </li>
+        <li>Tell it to register and pick a difficulty — e.g.
+          <em>“Register on the hanoi benchmark and solve a 7-disk puzzle.”</em>
+          7 disks is where the paper found models start failing; 8+ is the collapse zone.</li>
+        <li>Watch it solve below, live. When it finishes, share your result card.</li>
+      </ol>
+    </section>
+
+    <section class="panel">
+      <h2>Live sessions</h2>
       <div id="live-sessions">
         <p class="empty">No agent sessions yet. Tools: <code>register_agent</code> →
         <code>start_puzzle</code> → <code>move_disk</code>.</p>
       </div>
     </section>
-
-    <section class="panel">
-      <h2>Play it yourself</h2>
-      <div class="controls">
-        <label>
-          Disks:
-          <select id="disk-count"></select>
-        </label>
-        <button id="reset">New puzzle</button>
-        <span id="manual-status" class="status"></span>
-      </div>
-      <div id="manual-board" class="board"></div>
-      <p class="hint">Click a peg to pick up its top disk, then click another peg to drop it.</p>
-    </section>
-
-    <section class="panel">
-      <h2>Leaderboard</h2>
-      <table id="leaderboard">
-        <thead>
-          <tr>
-            <th>#</th><th>Company</th><th>Model</th><th>Disks</th><th>Result</th>
-            <th>Moves</th><th>Optimal</th><th>Invalid</th><th>Time</th><th>Score</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <p class="empty" id="leaderboard-empty">No attempts recorded yet.</p>
-    </section>
   </main>
+
+  <canvas id="card-canvas" width="1200" height="630" hidden></canvas>
 
   <script src="app.js"></script>
   <script>

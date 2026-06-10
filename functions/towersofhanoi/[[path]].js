@@ -1,15 +1,18 @@
 // Tower of Hanoi agent benchmark — serverless backend.
 //
 // Routes (relative to /towersofhanoi):
-//   POST /mcp              MCP server (Streamable HTTP, stateless JSON-RPC)
-//   GET  /api/games        live sessions for the web UI
-//   GET  /api/leaderboard  ranked results
+//   POST /mcp           MCP server (Streamable HTTP, stateless JSON-RPC)
+//   GET  /api/games     recent sessions for the live view
+//   POST /api/share     store a result share (card PNG is rendered in the browser)
+//   GET  /r/<id>        share page with Open Graph tags for link previews
+//   GET  /r/<id>.png    the share card image
 //
 // State lives in the HANOI KV namespace:
-//   agent:<id>  registered agent
-//   game:<id>   one puzzle session (rewritten on every move)
-//   recent      ids of the latest sessions (written once per game)
-//   results     finished attempts (written once per finish)
+//   agent:<id>     registered agent
+//   game:<id>      one puzzle session (rewritten on every move)
+//   recent         ids of the latest sessions (written once per game)
+//   share:<id>     share metadata
+//   shareimg:<id>  share card PNG bytes
 
 // ---------- game engine ----------
 
@@ -74,9 +77,7 @@ const newId = () => crypto.randomUUID().replaceAll("-", "").slice(0, 16);
 function scoreGame(game) {
   const p = game.puzzle;
   const efficiency = p.moveCount > 0 ? p.optimalMoves / p.moveCount : 0;
-  const solved = game.status === "solved";
   return {
-    puzzleId: game.puzzleId,
     company: game.company,
     model: game.model,
     numDisks: p.numDisks,
@@ -84,12 +85,11 @@ function scoreGame(game) {
     moveCount: p.moveCount,
     optimalMoves: p.optimalMoves,
     invalidAttempts: p.invalidAttempts,
-    efficiency: Math.round(efficiency * 1000) / 1000,
     durationMs: (game.finishedAt ?? Date.now()) - game.startedAt,
-    score: solved
-      ? Math.max(0, Math.round(1000 * p.numDisks * efficiency - 5 * p.invalidAttempts))
-      : 0,
-    finishedAt: game.finishedAt,
+    score:
+      game.status === "solved"
+        ? Math.max(0, Math.round(1000 * p.numDisks * efficiency - 5 * p.invalidAttempts))
+        : 0,
   };
 }
 
@@ -97,19 +97,6 @@ async function finishGame(env, game, status) {
   game.status = status;
   game.finishedAt = Date.now();
   await kvPut(env, `game:${game.puzzleId}`, game);
-  const results = (await kvGet(env, "results")) ?? [];
-  results.push(scoreGame(game));
-  await kvPut(env, "results", results);
-}
-
-function rankResults(results) {
-  return [...results].sort(
-    (a, b) =>
-      (b.status === "solved") - (a.status === "solved") ||
-      b.numDisks - a.numDisks ||
-      b.score - a.score ||
-      a.durationMs - b.durationMs
-  );
 }
 
 // ---------- MCP tools ----------
@@ -176,17 +163,12 @@ const TOOLS = [
   },
   {
     name: "give_up",
-    description: "Concede the current puzzle. The attempt is recorded on the leaderboard as unsolved.",
+    description: "Concede the current puzzle. The attempt is recorded as unsolved.",
     inputSchema: {
       type: "object",
       properties: { puzzle_id: { type: "string", description: "The puzzle_id from start_puzzle" } },
       required: ["puzzle_id"],
     },
-  },
-  {
-    name: "get_leaderboard",
-    description: "See all recorded benchmark attempts, ranked.",
-    inputSchema: { type: "object", properties: {} },
   },
 ];
 
@@ -196,13 +178,19 @@ const gameSummary = (game) => ({
   state: game.puzzle,
 });
 
+const cleanName = (v) =>
+  String(v ?? "")
+    .replace(/[\x00-\x1f\x7f]/g, "")
+    .trim()
+    .slice(0, 60);
+
 async function callTool(env, name, args) {
   switch (name) {
     case "register_agent": {
       const agent = {
         agentId: newId(),
-        company: String(args.company ?? "").trim(),
-        model: String(args.model ?? "").trim(),
+        company: cleanName(args.company),
+        model: cleanName(args.model),
         registeredAt: Date.now(),
       };
       if (!agent.company || !agent.model) throw new Error("company and model are required.");
@@ -229,11 +217,12 @@ async function callTool(env, name, args) {
         status: "in_progress",
         startedAt: Date.now(),
         finishedAt: null,
+        shareId: null,
       };
       await kvPut(env, `game:${game.puzzleId}`, game);
       const recent = (await kvGet(env, "recent")) ?? [];
       recent.unshift(game.puzzleId);
-      await kvPut(env, "recent", recent.slice(0, 20));
+      await kvPut(env, "recent", recent.slice(0, 12));
       return {
         rules: RULES,
         goal: `Move all ${disks} disks from peg A to peg C. Optimal solution: ${game.puzzle.optimalMoves} moves.`,
@@ -254,7 +243,7 @@ async function callTool(env, name, args) {
       }
       const payload = { move_valid: ok, ...(error ? { error } : {}), ...gameSummary(game) };
       if (game.status === "solved") {
-        payload.message = `Solved! ${game.puzzle.moveCount} moves (optimal ${game.puzzle.optimalMoves}), ${game.puzzle.invalidAttempts} invalid attempts. Score: ${scoreGame(game).score}.`;
+        payload.message = `Solved! ${game.puzzle.moveCount} moves (optimal ${game.puzzle.optimalMoves}), ${game.puzzle.invalidAttempts} invalid attempts. Score: ${scoreGame(game).score}. The human can share this result from the web page.`;
       }
       return payload;
     }
@@ -269,8 +258,6 @@ async function callTool(env, name, args) {
       if (game.status === "in_progress") await finishGame(env, game, "gave_up");
       return gameSummary(game);
     }
-    case "get_leaderboard":
-      return rankResults((await kvGet(env, "results")) ?? []);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -308,7 +295,7 @@ async function handleMcp(request, env) {
             ? requested
             : SUPPORTED_PROTOCOL_VERSIONS[0],
           capabilities: { tools: {} },
-          serverInfo: { name: "towers-of-hanoi-benchmark", version: "1.0.0" },
+          serverInfo: { name: "towers-of-hanoi-benchmark", version: "2.0.0" },
         });
       }
       case "ping":
@@ -331,6 +318,105 @@ async function handleMcp(request, env) {
   }
 }
 
+// ---------- sharing ----------
+
+const MAX_IMAGE_BYTES = 400_000;
+
+// The browser renders the result card to a canvas and posts it here as a PNG
+// data URL; we keep the bytes so link-preview scrapers have a real image URL.
+async function handleShareCreate(request, env, origin) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+  const game = await kvGet(env, `game:${body.puzzle_id}`);
+  if (!game) return json({ error: "Unknown puzzle_id" }, 404);
+  if (game.status === "in_progress") return json({ error: "Puzzle is not finished yet" }, 400);
+
+  if (game.shareId) {
+    return json({ url: `${origin}/towersofhanoi/r/${game.shareId}` });
+  }
+
+  const prefix = "data:image/png;base64,";
+  if (typeof body.image !== "string" || !body.image.startsWith(prefix)) {
+    return json({ error: "image must be a PNG data URL" }, 400);
+  }
+  let bytes;
+  try {
+    bytes = Uint8Array.from(atob(body.image.slice(prefix.length)), (c) => c.charCodeAt(0));
+  } catch {
+    return json({ error: "Invalid base64 image" }, 400);
+  }
+  if (bytes.length === 0 || bytes.length > MAX_IMAGE_BYTES) {
+    return json({ error: "Image too large" }, 400);
+  }
+
+  const shareId = newId();
+  // Metadata is taken from the recorded game, not the client, so a share
+  // can't claim a different score than the agent actually earned.
+  await env.HANOI.put(`shareimg:${shareId}`, bytes.buffer);
+  await kvPut(env, `share:${shareId}`, { ...scoreGame(game), createdAt: Date.now() });
+  game.shareId = shareId;
+  await kvPut(env, `game:${game.puzzleId}`, game);
+  return json({ url: `${origin}/towersofhanoi/r/${shareId}` });
+}
+
+const escapeHtml = (s) =>
+  String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function sharePage(share, shareId, origin) {
+  const solved = share.status === "solved";
+  const who = `${share.company} — ${share.model}`;
+  const title = solved
+    ? `${who} solved the ${share.numDisks}-disk Tower of Hanoi`
+    : `${who} failed the ${share.numDisks}-disk Tower of Hanoi`;
+  const desc = solved
+    ? `Score ${share.score}: ${share.moveCount} moves (optimal ${share.optimalMoves}), ${share.invalidAttempts} invalid attempts. Can your agent beat it?`
+    : `Gave up after ${share.moveCount} moves (optimal ${share.optimalMoves}). Can your agent do better?`;
+  const img = `${origin}/towersofhanoi/r/${shareId}.png`;
+  const url = `${origin}/towersofhanoi/r/${shareId}`;
+  const t = escapeHtml(title);
+  const d = escapeHtml(desc);
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>${t}</title>
+<meta name="description" content="${d}" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="${t}" />
+<meta property="og:description" content="${d}" />
+<meta property="og:image" content="${img}" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:url" content="${url}" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="${t}" />
+<meta name="twitter:description" content="${d}" />
+<meta name="twitter:image" content="${img}" />
+<meta name="theme-color" content="#10141c" />
+<style>
+  body { margin:0; background:#10141c; color:#e8ecf4; font-family:system-ui,-apple-system,sans-serif;
+         display:flex; flex-direction:column; align-items:center; gap:1.2rem; padding:2rem 1rem; text-align:center; }
+  img { max-width:min(680px,100%); border-radius:14px; box-shadow:0 8px 40px rgba(0,0,0,.5); }
+  h1 { font-size:1.25rem; margin:0; max-width:680px; }
+  a.cta { background:#5eb1ff; color:#10141c; font-weight:700; text-decoration:none;
+          padding:.7rem 1.4rem; border-radius:10px; }
+  p { color:#8b94a8; margin:0; }
+</style>
+</head>
+<body>
+<h1>${t}</h1>
+<img src="${img}" alt="Benchmark result card" />
+<p>${d}</p>
+<a class="cta" href="/towersofhanoi/">Test your own agent →</a>
+</body>
+</html>`;
+}
+
 // ---------- HTTP plumbing ----------
 
 const CORS = {
@@ -348,18 +434,15 @@ const json = (body, status = 200) =>
 export async function onRequest(context) {
   const { request, env, params } = context;
   const route = (params.path ?? []).join("/");
+  const origin = new URL(request.url).origin;
 
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
   if (route === "mcp") return handleMcp(request, env);
 
-  if (route === "api/leaderboard") {
-    return json(rankResults((await kvGet(env, "results")) ?? []));
-  }
-
   if (route === "api/games") {
     const recent = (await kvGet(env, "recent")) ?? [];
-    const games = await Promise.all(recent.slice(0, 8).map((id) => kvGet(env, `game:${id}`)));
+    const games = await Promise.all(recent.slice(0, 6).map((id) => kvGet(env, `game:${id}`)));
     return json(
       games
         .filter(Boolean)
@@ -370,9 +453,30 @@ export async function onRequest(context) {
           status: g.status,
           startedAt: g.startedAt,
           finishedAt: g.finishedAt,
+          shareId: g.shareId ?? null,
           state: g.puzzle,
         }))
     );
+  }
+
+  if (route === "api/share" && request.method === "POST") {
+    return handleShareCreate(request, env, origin);
+  }
+
+  if (route.startsWith("r/")) {
+    const rest = route.slice(2);
+    if (rest.endsWith(".png")) {
+      const img = await env.HANOI.get(`shareimg:${rest.slice(0, -4)}`, "arrayBuffer");
+      if (!img) return new Response("Not found", { status: 404 });
+      return new Response(img, {
+        headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=31536000, immutable" },
+      });
+    }
+    const share = await kvGet(env, `share:${rest}`);
+    if (!share) return new Response("Share not found", { status: 404 });
+    return new Response(sharePage(share, rest, origin), {
+      headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=3600" },
+    });
   }
 
   // Anything else under /towersofhanoi falls through to the static files.
