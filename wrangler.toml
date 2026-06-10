@@ -1,20 +1,4 @@
 # Cloudflare Pages config for the wecreatethis project.
-# kv_namespaces must be repeated under env.production / env.preview because
-# those keys are non-inheritable in Pages config.
 name = "wecreatethis"
 pages_build_output_dir = "."
 compatibility_date = "2025-12-16"
-
-[[kv_namespaces]]
-binding = "HANOI"
-id = "b3b6221c8e964f1a871cc97bb6516ccd"
-
-[env.production]
-[[env.production.kv_namespaces]]
-binding = "HANOI"
-id = "b3b6221c8e964f1a871cc97bb6516ccd"
-
-[env.preview]
-[[env.preview.kv_namespaces]]
-binding = "HANOI"
-id = "b3b6221c8e964f1a871cc97bb6516ccd"
