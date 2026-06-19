@@ -1,10 +1,10 @@
 const POSTS = [
   {
-    slug: 'claude-is-skeptical-about-openclaw',
-    title: 'Claude is skeptical about Openclaw',
-    date: '2026-04-19',
+    slug: 'how-to-write-sick-loops-in-claude-code',
+    title: 'How to write (sick) loops in Claude Code',
+    date: '2026-06-19',
     author: 'James Daniel Whitford',
-    description: 'I asked Claude Code to research Openclaw. It spawned a subagent, got back detailed results, and then flagged them as unreliable and hallucinated before I could read them.',
+    description: 'Boris Cherny, creator of Claude Code, says his job is now to write loops that prompt Claude autonomously. Here is how to do it, from simple CI watching to a full multi-model agent loop that clones a website using a browser.',
   },
 ];
 
