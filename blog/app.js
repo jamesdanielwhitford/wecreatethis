@@ -53,6 +53,33 @@ function renderMarkdown(md) {
   // Links
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 
+  // Blockquotes — must run before paragraphs
+  html = html.replace(/((?:^> .+\n?)+)/gm, block => {
+    const inner = block.trim().split('\n').map(l => l.replace(/^> /, '')).join('\n');
+    return `<blockquote>${renderMarkdown(inner)}</blockquote>`;
+  });
+
+  // Tables
+  html = html.replace(/((?:^\|.+\|\n?)+)/gm, block => {
+    const rows = block.trim().split('\n');
+    const sepIdx = rows.findIndex(r => /^\|[-| :]+\|$/.test(r.trim()));
+    let tableHtml = '<table>';
+    rows.forEach((row, i) => {
+      if (i === sepIdx) return;
+      const cells = row.split('|').slice(1, -1).map(c => c.trim());
+      const tag = (sepIdx === -1 ? i === 0 : i < sepIdx) ? 'th' : 'td';
+      tableHtml += '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
+    });
+    tableHtml += '</table>';
+    return tableHtml;
+  });
+
+  // Ordered lists
+  html = html.replace(/((?:^\d+\. .+\n?)+)/gm, block => {
+    const items = block.trim().split('\n').map(l => `<li>${l.replace(/^\d+\. /, '')}</li>`).join('');
+    return `<ol>${items}</ol>`;
+  });
+
   // Unordered lists
   html = html.replace(/((?:^- .+\n?)+)/gm, block => {
     const items = block.trim().split('\n').map(l => `<li>${l.replace(/^- /, '')}</li>`).join('');
@@ -60,7 +87,7 @@ function renderMarkdown(md) {
   });
 
   // Paragraphs — wrap sequences of non-block lines
-  html = html.replace(/^(?!<[hulo\/%]|%%)(.*\S.*)$/gm, '<p>$1</p>');
+  html = html.replace(/^(?!<[hbuolt\/%]|%%)(.*\S.*)$/gm, '<p>$1</p>');
 
   // Restore code blocks
   codeBlocks.forEach((block, idx) => {
