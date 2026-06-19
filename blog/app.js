@@ -54,8 +54,9 @@ function renderMarkdown(md) {
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 
   // Blockquotes — must run before paragraphs
-  html = html.replace(/((?:^> .+\n?)+)/gm, block => {
-    const inner = block.trim().split('\n').map(l => l.replace(/^> /, '')).join('\n');
+  // Match contiguous lines starting with > (with or without trailing space/content)
+  html = html.replace(/((?:^>.*\n?)+)/gm, block => {
+    const inner = block.trim().split('\n').map(l => l.replace(/^> ?/, '')).join('\n');
     return `<blockquote>${renderMarkdown(inner)}</blockquote>`;
   });
 
