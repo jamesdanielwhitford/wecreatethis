@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Type Matchup Reference</title>
+<style>
+  :root {
+    --blue:#3b82f6; --bg:#0f1419; --panel:#1a2029; --panel2:#232b36;
+    --text:#e5e9f0; --muted:#8b95a5;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.4; }
+  header { padding:20px 24px 14px; border-bottom:1px solid #2a323d; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  h1 { margin:0; font-size:21px; }
+  .sub { color:var(--muted); font-size:13px; margin-top:4px; }
+  .back { color:var(--muted); text-decoration:none; font-size:13px; font-weight:600; white-space:nowrap; }
+  .back:hover { color:var(--text); }
+  .wrap { max-width:1000px; margin:0 auto; padding:22px 24px 60px; }
+
+  /* Selection bar */
+  .selbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:var(--panel); border-radius:12px; padding:14px 16px; }
+  .selbar .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; }
+  #selected { display:flex; gap:8px; flex-wrap:wrap; }
+  .clearsel { background:var(--panel2); color:var(--muted); border:none; border-radius:8px; padding:7px 12px; font-size:12px; font-weight:600; cursor:pointer; margin-left:auto; }
+  .clearsel:hover { color:#ef4444; }
+  .hint { color:var(--muted); font-size:13px; margin:14px 2px 8px; }
+
+  /* Type pills */
+  .chooser { display:flex; flex-wrap:wrap; gap:8px; }
+  .tpill {
+    padding:6px 13px; border-radius:22px; font-size:12px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.03em; cursor:pointer; border:2px solid transparent; background:var(--panel2);
+    color:var(--muted); opacity:.7;
+  }
+  .tpill:hover { opacity:1; }
+  .tpill.on { background:var(--tc); color:#fff; border-color:rgba(255,255,255,.35); opacity:1; }
+  .tpill.big { font-size:14px; padding:8px 16px; }
+  .tpill.sm { cursor:default; opacity:1; background:var(--tc); color:#fff; display:inline-flex; align-items:center; gap:6px; }
+  .tpill.sm b { background:rgba(0,0,0,.28); padding:1px 7px; border-radius:5px; font-variant-numeric:tabular-nums; }
+  .muted { color:var(--muted); font-size:14px; }
+
+  /* Detail */
+  #detail { margin-top:22px; }
+  .combo { font-size:16px; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .dsec { background:var(--panel); border-radius:12px; padding:14px 16px; margin-bottom:12px; border-left:5px solid; }
+  .dsec.weak    { border-color:#ef4444; }
+  .dsec.resist  { border-color:#22c55e; }
+  .dsec.immune  { border-color:#14532d; }
+  .dsec.neutral { border-color:#6b7280; }
+  .dsec h3 { margin:0 0 10px; font-size:13px; text-transform:uppercase; letter-spacing:.04em; }
+  .dsec.weak h3    { color:#fca5a5; }
+  .dsec.resist h3  { color:#86efac; }
+  .dsec.immune h3  { color:#9ae6b4; }
+  .dsec.neutral h3 { color:#cbd5e1; }
+  .drow { display:flex; flex-wrap:wrap; gap:8px; }
+  .empty { color:var(--muted); padding:30px; text-align:center; }
+  .note { color:var(--muted); font-size:12px; margin-top:18px; }
+  @media (max-width:720px){
+    header { padding:16px 14px 12px; flex-wrap:wrap; gap:8px; }
+    h1 { font-size:18px; }
+    .sub { font-size:12px; }
+    .wrap { padding:16px 14px 50px; }
+    .selbar { padding:12px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>📊 Type Matchup Reference</h1>
+    <div class="sub">Pick one or two types to see what that (combined) typing resists, is weak to, and is immune to — on defense.</div>
+  </div>
+  <a class="back" href="index.html">← Back to calculator</a>
+</header>
+
+<div class="wrap">
+  <div class="selbar">
+    <span class="lbl">Defending&nbsp;type(s)</span>
+    <div id="selected"></div>
+    <button class="clearsel" id="clearsel" style="display:none">Clear</button>
+  </div>
+  <div class="hint">Click a type below to add it (up to two, for a dual-type combo). Click a selected type to remove it.</div>
+  <div class="chooser" id="chooser"></div>
+  <div id="detail"></div>
+</div>
+
+<script src="logic.js"></script>
+<script>
+let selected = [];
+
+function buildChooser(){
+  document.getElementById("chooser").innerHTML = TYPES.map(t =>
+    `<button class="tpill" data-type="${t}" style="--tc:${TYPE_COLORS[t]}">${t}</button>`).join("");
+}
+
+function renderSelected(){
+  const el = document.getElementById("selected");
+  el.innerHTML = selected.length
+    ? selected.map(t => `<button class="tpill big on" data-type="${t}" style="--tc:${TYPE_COLORS[t]}">${t} ✕</button>`).join("")
+    : `<span class="muted">none yet — pick a type below</span>`;
+  document.querySelectorAll("#chooser .tpill").forEach(b =>
+    b.classList.toggle("on", selected.includes(b.dataset.type)));
+  document.getElementById("clearsel").style.display = selected.length ? "" : "none";
+}
+
+function renderDetail(){
+  const el = document.getElementById("detail");
+  if(selected.length === 0){
+    el.innerHTML = `<div class="empty">Select a type to see its resistances and weaknesses.</div>`;
+    return;
+  }
+  // defensive multiplier of each attacking type against the selected (1- or 2-) type combo
+  const groups = {};
+  for(const atk of TYPES){
+    const m = typeMult(atk, selected);
+    (groups[m] = groups[m] || []).push(atk);
+  }
+  const pill = t => `<span class="tpill sm" style="--tc:${TYPE_COLORS[t]}">${t} <b>${fmtMult(typeMult(t, selected))}</b></span>`;
+  const section = (title, cls, mults) => {
+    const types = mults.flatMap(m => groups[m] || []);
+    if(types.length === 0) return "";
+    return `<div class="dsec ${cls}"><h3>${title}</h3><div class="drow">${types.map(pill).join("")}</div></div>`;
+  };
+  el.innerHTML = `
+    <div class="combo">Defending as
+      ${selected.map(t => `<span class="tpill sm" style="--tc:${TYPE_COLORS[t]}">${t}</span>`).join("")}</div>
+    ${section("🔴 Weak to — takes extra damage", "weak", [4, 2])}
+    ${section("🟢 Resists — takes less damage", "resist", [0.25, 0.5])}
+    ${section("⚪ Immune — takes no damage", "immune", [0])}
+    ${section("➖ Neutral", "neutral", [1])}
+    <div class="note">Damage is shown from the attacking type's point of view. For two types the multipliers
+      are multiplied together (e.g. a ½× and a 2× cancel to neutral; a 2× and 2× stack to 4×; any 0× immunity wins).</div>`;
+}
+
+function toggleType(t){
+  if(selected.includes(t)) selected = selected.filter(x => x !== t);
+  else { selected.push(t); if(selected.length > 2) selected.shift(); }
+  renderAll();
+}
+function renderAll(){ renderSelected(); renderDetail(); }
+
+document.getElementById("chooser").addEventListener("click", e => {
+  const b = e.target.closest(".tpill"); if(b) toggleType(b.dataset.type);
+});
+document.getElementById("selected").addEventListener("click", e => {
+  const b = e.target.closest(".tpill"); if(b){ selected = selected.filter(t => t !== b.dataset.type); renderAll(); }
+});
+document.getElementById("clearsel").addEventListener("click", () => { selected = []; renderAll(); });
+
+buildChooser();
+renderAll();
+</script>
+</body>
+</html>
