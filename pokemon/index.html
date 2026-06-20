@@ -46,7 +46,36 @@
 
   /* Team builders */
   .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media (max-width: 720px){ .teams { grid-template-columns: 1fr; } }
+  .team-tabs { display: none; }   /* shown only on mobile */
+
+  @media (max-width: 720px){
+    .teams { grid-template-columns: 1fr; gap: 0; }
+    /* tabbed pickers: show one team at a time */
+    .team-tabs { display: flex; gap: 6px; background: var(--panel); border-radius: 12px; padding: 5px; margin-bottom: 14px; }
+    .team-tabs button {
+      flex: 1; background: transparent; border: none; border-radius: 9px; padding: 11px;
+      font-size: 15px; font-weight: 700; color: var(--muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .team-tabs button.active { color: #fff; }
+    .team-tabs button[data-teamtab="you"].active { background: var(--blue); }
+    .team-tabs button[data-teamtab="opp"].active { background: var(--red); }
+    .teams.show-you .team-card.opp { display: none; }
+    .teams.show-opp .team-card.you { display: none; }
+
+    /* general mobile tightening */
+    .wrap { padding: 16px 14px 50px; }
+    header { padding: 16px 14px 12px; flex-wrap: wrap; }
+    h1 { font-size: 18px; }
+    .sub { font-size: 12px; }
+    .typechart-btn { padding: 8px 12px; font-size: 13px; }
+    .speedrow .label { width: 132px; font-size: 13px; }
+    .mcard { flex-direction: column; }
+    .mcard-self { width: 100%; flex-direction: row; justify-content: flex-start; text-align: left;
+                  border-right: none; border-bottom: 1px solid #2a323d; padding-right: 0; padding-bottom: 10px; }
+    #stats-body { overflow-x: auto; }
+    .stats-table { min-width: 520px; }
+  }
   .team-card { background: var(--panel); border-radius: 12px; padding: 16px; border-top: 4px solid; }
   .team-card.you { border-color: var(--blue); }
   .team-card.opp { border-color: var(--red); }
@@ -354,7 +383,12 @@
 </header>
 
 <div class="wrap">
-  <div class="teams">
+  <div class="team-tabs" id="team-tabs">
+    <button data-teamtab="you" class="active"><span class="dot blue"></span> Your Team</button>
+    <button data-teamtab="opp"><span class="dot red"></span> Opponent</button>
+  </div>
+
+  <div class="teams show-you" id="teams">
     <div class="team-card you">
       <div class="team-head">
         <h2><span class="dot blue"></span> Your Team</h2>
@@ -1131,6 +1165,17 @@ document.querySelectorAll(".loadteam-menu").forEach(menu => menu.addEventListene
 document.addEventListener("click", closeLoadMenus);
 loadSaved();
 renderSavedTeams();
+
+/* ---------- Mobile team tabs (show one picker at a time) ---------- */
+const teamsEl = document.getElementById("teams");
+document.querySelectorAll("#team-tabs button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#team-tabs button").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    teamsEl.classList.remove("show-you", "show-opp");
+    teamsEl.classList.add("show-" + b.dataset.teamtab);
+  });
+});
 
 /* ---------- Type filter pills ---------- */
 function buildTypeFilter(){
