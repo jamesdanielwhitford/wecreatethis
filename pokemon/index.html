@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pokémon Team Battle Calculator</title>
+<style>
+  :root {
+    --blue: #3b82f6;
+    --blue-dim: #1e3a5f;
+    --red: #ef4444;
+    --red-dim: #5f1e1e;
+    --bg: #0f1419;
+    --panel: #1a2029;
+    --panel2: #232b36;
+    --text: #e5e9f0;
+    --muted: #8b95a5;
+    --weak: #ef4444;
+    --neutral: #6b7280;
+    --resist: #22c55e;
+    --immune: #14532d;
+    --sprite: 52px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.4;
+  }
+  header {
+    padding: 20px 24px 12px;
+    border-bottom: 1px solid #2a323d;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .typechart-btn {
+    background: var(--panel2); color: var(--text); border: 1px solid #3a4453;
+    border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 14px;
+    text-decoration: none; white-space: nowrap; flex-shrink: 0;
+  }
+  .typechart-btn:hover { background: var(--blue); border-color: var(--blue); }
+  h1 { margin: 0; font-size: 22px; }
+  .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 20px 24px 60px; }
+
+  /* Team builders */
+  .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px){ .teams { grid-template-columns: 1fr; } }
+  .team-card { background: var(--panel); border-radius: 12px; padding: 16px; border-top: 4px solid; }
+  .team-card.you { border-color: var(--blue); }
+  .team-card.opp { border-color: var(--red); }
+  .team-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  .team-card h2 { margin: 0; font-size: 16px; display:flex; align-items:center; gap:8px; }
+  .loadwrap { position:relative; }
+  .loadteam-btn {
+    background:var(--panel2); border:1px solid #3a4453; border-radius:8px; padding:6px 11px;
+    font-size:12px; font-weight:600; color:var(--text); cursor:pointer; white-space:nowrap;
+  }
+  .loadteam-btn:hover { border-color:var(--blue); }
+  .loadteam-menu {
+    position:absolute; top:calc(100% + 4px); right:0; z-index:70; background:var(--panel2);
+    border:1px solid #3a4453; border-radius:10px; min-width:250px; max-height:340px; overflow-y:auto;
+    box-shadow:0 12px 30px rgba(0,0,0,.5); display:none; padding:6px;
+  }
+  .loadteam-menu.open { display:block; }
+  .lmenu-item { display:flex; align-items:center; gap:8px; padding:7px 8px; border-radius:8px; cursor:pointer; }
+  .lmenu-item:hover { background:var(--blue-dim); }
+  .lmenu-item .lname { font-weight:600; flex:1; min-width:0; }
+  .lmenu-thumbs { display:flex; gap:2px; }
+  .lmenu-thumbs img { width:26px; height:26px; image-rendering:pixelated; }
+  .lmenu-del { background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:2px 5px; border-radius:6px; }
+  .lmenu-del:hover { color:var(--red); }
+  .lmenu-empty { color:var(--muted); font-size:13px; padding:10px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display:inline-block; }
+  .dot.blue { background: var(--blue); }
+  .dot.red { background: var(--red); }
+  .addrow { display: flex; gap: 8px; }
+  .ac { position: relative; flex: 1; }
+  input[type=text] {
+    width: 100%; padding: 9px 11px; border-radius: 8px; border: 1px solid #353f4d;
+    background: var(--panel2); color: var(--text); font-size: 14px;
+  }
+  input[type=text]:focus { outline: none; border-color: var(--blue); }
+  .ac-list {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60;
+    background: var(--panel2); border: 1px solid #3a4453; border-radius: 10px;
+    max-height: 320px; overflow-y: auto; box-shadow: 0 12px 30px rgba(0,0,0,.5);
+    display: none;
+  }
+  .ac-list.open { display: block; }
+  .ac-item {
+    display: flex; align-items: center; gap: 10px; padding: 6px 10px; cursor: pointer;
+  }
+  .ac-item img { width: var(--sprite); height: var(--sprite); image-rendering: pixelated; flex-shrink: 0; }
+  .ac-item .ac-name { font-weight: 600; text-transform: capitalize; flex: 1; }
+  .ac-item .ac-id { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .ac-item.active, .ac-item:hover { background: var(--blue-dim); }
+  .ac-empty { padding: 10px 12px; color: var(--muted); font-size: 13px; }
+  button {
+    cursor: pointer; border: none; border-radius: 8px; padding: 9px 14px;
+    background: var(--panel2); color: var(--text); font-size: 14px; font-weight: 600;
+  }
+  button:hover { filter: brightness(1.2); }
+  button.add.you { background: var(--blue); }
+  button.add.opp { background: var(--red); }
+  .members { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .member {
+    display: flex; align-items: center; gap: 10px; background: var(--panel2);
+    border-radius: 8px; padding: 6px 8px; cursor: pointer; border: 1px solid transparent;
+  }
+  .member:hover { border-color: #3a4453; }
+  .member img { width: var(--sprite); height: var(--sprite); image-rendering: pixelated; flex-shrink: 0; }
+  .member .nm { font-weight: 600; text-transform: capitalize; flex: 1; }
+  .member .x { background: transparent; color: var(--muted); padding: 2px 8px; font-size: 18px; }
+  .member .x:hover { color: var(--red); }
+  .member.dim { opacity: .4; }
+  .mtoggle {
+    width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; padding: 0;
+    border: 2px solid #475569; background: transparent; color: #fff;
+    font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center;
+  }
+  .mtoggle.on { background: var(--blue); border-color: var(--blue); }
+  .typetag {
+    font-size: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: .04em;
+    padding: 2px 7px; border-radius: 4px; color: #fff;
+  }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 8px; }
+
+  /* Save / clear under each picker */
+  .teamsave { display: flex; gap: 8px; margin-top: 12px; }
+  .teamsave input {
+    flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #353f4d;
+    background: var(--panel2); color: var(--text); font-size: 13px; min-width: 0;
+  }
+  .teamsave input:focus { outline: none; border-color: var(--blue); }
+  .savebtn, .clearbtn {
+    border: none; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 600;
+    cursor: pointer; color: var(--text); white-space: nowrap;
+  }
+  .savebtn { background: var(--blue-dim); }
+  .savebtn:hover { background: var(--blue); }
+  .clearbtn { background: var(--panel2); color: var(--muted); }
+  .clearbtn:hover { color: var(--red); }
+
+  /* Saved-teams library */
+  .savedteams { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 4px; }
+  .saved-card {
+    display: flex; align-items: center; gap: 12px; background: var(--panel);
+    border-radius: 10px; padding: 8px 12px; flex-wrap: wrap;
+  }
+  .saved-card .sname { font-weight: 700; min-width: 90px; }
+  .saved-thumbs { display: flex; gap: 3px; flex-wrap: wrap; }
+  .saved-thumbs img { width: 34px; height: 34px; image-rendering: pixelated; }
+  .saved-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .savedbtn { border: none; border-radius: 7px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; color: #fff; }
+  .savedbtn.blue { background: var(--blue); }
+  .savedbtn.red { background: var(--red); }
+  .savedbtn.del { background: var(--panel2); color: var(--muted); }
+  .savedbtn.del:hover { color: var(--red); }
+  .err { color: var(--red); font-size: 13px; margin-top: 8px; min-height: 16px; }
+
+  /* Type filter bar */
+  .filterbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .typefilter { display: flex; flex-wrap: wrap; gap: 7px; }
+  .tfpill {
+    padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .03em; cursor: pointer;
+    border: 2px solid transparent; background: var(--panel2); color: var(--muted); opacity: .65;
+  }
+  .tfpill:hover { opacity: 1; }
+  .tfpill.on { background: var(--tc); color: #fff; border-color: rgba(255,255,255,.35); opacity: 1; }
+  .tfclear { background: var(--panel2); color: var(--muted); font-size: 12px; padding: 6px 12px; }
+  .tfclear:hover { color: var(--red); }
+
+  /* Tabs */
+  nav.tabs { display: flex; gap: 6px; margin: 22px 0 18px; flex-wrap: wrap; }
+  nav.tabs button { background: var(--panel); padding: 10px 16px; }
+  nav.tabs button.active { background: var(--blue); }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Speed view */
+  .speedrow { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .speedrow .label { width: 200px; display:flex; align-items:center; gap:8px; text-transform: capitalize; font-weight: 600; }
+  .speedrow img { width: var(--sprite); height: var(--sprite); image-rendering: pixelated; flex-shrink: 0; }
+  .bar { height: 22px; border-radius: 5px; min-width: 2px; }
+  .bar.you { background: var(--blue); }
+  .bar.opp { background: var(--red); }
+  .speedrow .val { width: 42px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+
+  /* Matchup controls */
+  .controls { display:flex; align-items:flex-start; gap:22px; margin-bottom:8px; flex-wrap:wrap; }
+  .ctrl { display:flex; flex-direction:column; gap:5px; }
+  .ctrl-label { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; }
+  .toggle { display:flex; background: var(--panel); border-radius:8px; overflow:hidden; }
+  .toggle button { background: transparent; padding:8px 12px; display:flex; align-items:center; gap:6px; }
+  .toggle button.active { background: var(--blue); }
+  .miniimg { width: var(--sprite); height: var(--sprite); image-rendering: pixelated; vertical-align: middle; }
+
+  /* Matchup cards */
+  #matchup-body { display:flex; flex-direction:column; gap:12px; margin-top:14px; }
+  .mcard {
+    display:flex; gap:16px; background:var(--panel); border-radius:12px; padding:14px 16px;
+    border-left:5px solid var(--blue);
+  }
+  .mcard.opp-side { border-left-color:var(--red); }
+  .mcard-self {
+    width:160px; flex-shrink:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; text-align:center; gap:6px; border-right:1px solid #2a323d; padding-right:12px;
+  }
+  .mcard-self img { width:var(--sprite); height:var(--sprite); image-rendering:pixelated; }
+  .mcard-self .nm { font-weight:700; text-transform:capitalize; font-size:15px; }
+  .mcard-self .tt { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; }
+  .mcard-groups { flex:1; display:flex; flex-direction:column; gap:9px; min-width:0; }
+  .mgroup-title { font-size:11px; text-transform:uppercase; letter-spacing:.04em; font-weight:700; margin-bottom:5px; display:flex; align-items:center; gap:6px; }
+  .mgroup.strong .mgroup-title { color:#4ade80; }
+  .mgroup.neutral .mgroup-title { color:#9ca3af; }
+  .mgroup.weak .mgroup-title { color:#f87171; }
+  .mchips { display:flex; flex-wrap:wrap; gap:7px; }
+  .mchip {
+    display:inline-flex; align-items:center; gap:8px; padding:4px 12px 4px 5px;
+    border-radius:32px; font-size:14px; font-weight:600; text-transform:capitalize;
+    background:var(--panel2); border:1px solid transparent;
+  }
+  .mchip img { width:var(--sprite); height:var(--sprite); image-rendering:pixelated; }
+  .mchip.strong { background:rgba(34,197,94,.13); border-color:rgba(34,197,94,.4); }
+  .mchip.neutral { background:rgba(156,163,175,.12); border-color:rgba(156,163,175,.3); }
+  .mchip.weak { background:rgba(239,68,68,.13); border-color:rgba(239,68,68,.45); }
+  .mult {
+    font-variant-numeric:tabular-nums; font-weight:800; font-size:12px; padding:1px 6px;
+    border-radius:5px; margin-left:2px;
+  }
+  .mchip.strong .mult { background:#16a34a; color:#eafff0; }
+  .mchip.neutral .mult { background:#4b5563; color:#fff; }
+  .mchip.weak .mult { background:#dc2626; color:#fff; }
+  .mnone { color:var(--muted); font-size:12px; font-style:italic; }
+
+  /* Counter picker */
+  .active-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+  .actchip {
+    display:inline-flex; align-items:center; gap:8px; padding:5px 14px 5px 6px; cursor:pointer;
+    background:var(--panel); border:2px solid #2a323d; border-radius:30px; color:var(--text);
+    font-weight:600; text-transform:capitalize; font-size:14px;
+  }
+  .actchip img { width:var(--sprite); height:var(--sprite); image-rendering:pixelated; }
+  .actchip:hover { border-color:#475569; }
+  .actchip.sel { border-color:var(--red); background:var(--red-dim); }
+  #counter-body { display:flex; flex-direction:column; gap:10px; }
+  .ccard {
+    display:flex; align-items:center; gap:14px; background:var(--panel); border-radius:12px;
+    padding:12px 16px; border-left:5px solid var(--blue);
+  }
+  .ccard.opp-side { border-left-color:var(--red); }
+  .crank { width:34px; flex-shrink:0; font-size:18px; font-weight:800; color:var(--muted); text-align:center; }
+  .cimg { width:calc(var(--sprite) + 8px); height:calc(var(--sprite) + 8px); image-rendering:pixelated; flex-shrink:0; }
+  .cmain { flex:1; min-width:0; }
+  .cname { font-weight:700; text-transform:capitalize; font-size:16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .cchips { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+  .cchip { font-size:12px; font-weight:600; padding:3px 9px; border-radius:6px; background:var(--panel2); }
+  .cchip.good { background:rgba(34,197,94,.16); color:#86efac; }
+  .cchip.bad  { background:rgba(239,68,68,.16); color:#fca5a5; }
+  .cchip.neu  { background:rgba(156,163,175,.15); color:#cbd5e1; }
+  .crating { width:118px; flex-shrink:0; text-align:center; border-radius:10px; padding:8px 6px; }
+  .crating .rlabel { font-weight:800; font-size:14px; }
+  .crating .rscore { font-size:12px; opacity:.85; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .crating.excellent { background:#14532d; color:#86efac; }
+  .crating.strong    { background:#155e54; color:#99f6e4; }
+  .crating.decent    { background:#1e3a5f; color:#bfdbfe; }
+  .crating.even      { background:#3a3f4b; color:#cbd5e1; }
+  .crating.avoid     { background:#5f1e1e; color:#fecaca; }
+  @media (max-width: 720px){
+    .ccard { flex-wrap:wrap; }
+    .crating { width:100%; }
+  }
+
+  /* Best lineups */
+  .edge-banner {
+    text-align:center; padding:14px; border-radius:12px; margin:18px 0; font-size:15px; font-weight:700;
+  }
+  .edge-banner.you  { background:#14532d; color:#bbf7d0; }
+  .edge-banner.them { background:#5f1e1e; color:#fecaca; }
+  .edge-banner.even { background:#3a3f4b; color:#e2e8f0; }
+  .edge-banner small { display:block; font-weight:500; opacity:.8; margin-top:3px; font-size:12px; }
+  .lineups { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width: 720px){ .lineups { grid-template-columns:1fr; } }
+  .lineup-col { background:var(--panel); border-radius:12px; padding:14px 16px; border-top:4px solid; }
+  .lineup-col.you { border-color:var(--blue); }
+  .lineup-col.them { border-color:var(--red); }
+  .lineup-col h3 { margin:0 0 12px; font-size:15px; display:flex; align-items:center; gap:8px; }
+  .pick { display:flex; align-items:center; gap:12px; padding:8px 6px; border-bottom:1px solid #232b36; }
+  .pick:last-child { border-bottom:none; }
+  .prank { width:28px; font-weight:800; color:var(--muted); text-align:center; flex-shrink:0; }
+  .pick img { width:var(--sprite); height:var(--sprite); image-rendering:pixelated; flex-shrink:0; }
+  .pmain { flex:1; min-width:0; }
+  .pname { font-weight:700; text-transform:capitalize; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .plabel { font-size:11px; font-weight:700; padding:2px 8px; border-radius:5px; flex-shrink:0; }
+  .plabel.excellent { background:#14532d; color:#86efac; }
+  .plabel.strong    { background:#155e54; color:#99f6e4; }
+  .plabel.decent    { background:#1e3a5f; color:#bfdbfe; }
+  .plabel.even      { background:#3a3f4b; color:#cbd5e1; }
+  .plabel.avoid     { background:#5f1e1e; color:#fecaca; }
+
+  /* Paired ordering */
+  .pairhead {
+    display:grid; grid-template-columns:1fr auto 1fr; gap:12px; padding:0 16px 6px;
+    color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.03em;
+  }
+  .pairhead span:nth-child(1) { text-align:left; }
+  .pairhead span:nth-child(2) { text-align:center; }
+  .pairhead span:nth-child(3) { text-align:right; }
+  .pairhead .dot { vertical-align:middle; }
+  .pairrow {
+    display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px;
+    background:var(--panel); border-radius:12px; padding:12px 16px; margin-bottom:10px;
+  }
+  .pside { display:flex; align-items:center; gap:10px; min-width:0; }
+  .pside.right { justify-content:flex-end; }
+  .pside img { width:var(--sprite); height:var(--sprite); image-rendering:pixelated; flex-shrink:0; border-radius:8px; }
+  .pside.you img  { box-shadow:0 0 0 2px var(--blue); }
+  .pside.them img { box-shadow:0 0 0 2px var(--red); }
+  .pside .pname { font-weight:700; text-transform:capitalize; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .pside.right .pname { justify-content:flex-end; }
+  .slot { font-weight:800; color:var(--muted); flex-shrink:0; }
+  .pvs { display:flex; flex-direction:column; align-items:center; gap:6px; min-width:120px; }
+  .pvs-chips { display:flex; gap:4px; flex-wrap:wrap; justify-content:center; }
+  @media (max-width: 720px){
+    .pairhead { display:none; }
+    .pairrow { grid-template-columns:1fr; }
+    .pside.right { justify-content:flex-start; }
+    .pside.right .pname { justify-content:flex-start; }
+  }
+
+  /* Stats table */
+  .stats-table th { cursor: pointer; }
+  .stats-table th:hover { color: var(--text); }
+  .stats-table tr.you td:first-child { border-left: 3px solid var(--blue); }
+  .stats-table tr.opp td:first-child { border-left: 3px solid var(--red); }
+  .stats-table td { text-align: right; font-variant-numeric: tabular-nums; }
+  .stats-table td:first-child { text-align: left; text-transform: capitalize; font-weight:600; }
+  .stats-table tr:nth-child(even) { background: rgba(255,255,255,.02); }
+
+  .empty { color: var(--muted); padding: 30px; text-align:center; }
+  .loading { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="head-left">
+    <h1>⚔️ Pokémon Team Battle Calculator</h1>
+    <div class="sub">Build two teams, then compare speed tiers and type matchups. Data from PokéAPI.</div>
+  </div>
+  <a class="typechart-btn" href="types.html" target="_blank" rel="noopener">📊 Type Chart ↗</a>
+</header>
+
+<div class="wrap">
+  <div class="teams">
+    <div class="team-card you">
+      <div class="team-head">
+        <h2><span class="dot blue"></span> Your Team</h2>
+        <div class="loadwrap">
+          <button class="loadteam-btn" data-team="you">📁 Load team ▾</button>
+          <div class="loadteam-menu" id="loadmenu-you"></div>
+        </div>
+      </div>
+      <div class="addrow">
+        <div class="ac">
+          <input type="text" id="input-you" placeholder="Type a name, e.g. charizard" autocomplete="off" />
+          <div class="ac-list" id="ac-you"></div>
+        </div>
+        <button class="add you" data-team="you">Add</button>
+      </div>
+      <div class="err" id="err-you"></div>
+      <div class="members" id="members-you"></div>
+      <div class="teamsave">
+        <input type="text" id="teamname-you" placeholder="Team name (optional)" autocomplete="off" />
+        <button class="savebtn" data-team="you">💾 Save</button>
+        <button class="clearbtn" data-team="you">🗑 Clear</button>
+      </div>
+    </div>
+    <div class="team-card opp">
+      <div class="team-head">
+        <h2><span class="dot red"></span> Opponent Team</h2>
+        <div class="loadwrap">
+          <button class="loadteam-btn" data-team="opp">📁 Load team ▾</button>
+          <div class="loadteam-menu" id="loadmenu-opp"></div>
+        </div>
+      </div>
+      <div class="addrow">
+        <div class="ac">
+          <input type="text" id="input-opp" placeholder="Type a name, e.g. blastoise" autocomplete="off" />
+          <div class="ac-list" id="ac-opp"></div>
+        </div>
+        <button class="add opp" data-team="opp">Add</button>
+      </div>
+      <div class="err" id="err-opp"></div>
+      <div class="members" id="members-opp"></div>
+      <div class="teamsave">
+        <input type="text" id="teamname-opp" placeholder="Team name (optional)" autocomplete="off" />
+        <button class="savebtn" data-team="opp">💾 Save</button>
+        <button class="clearbtn" data-team="opp">🗑 Clear</button>
+      </div>
+    </div>
+  </div>
+  <div class="hint" id="listhint">Loading Pokémon list…</div>
+
+  <div class="filterbar">
+    <span class="ctrl-label">Filter picker by type</span>
+    <div class="typefilter" id="typefilter"></div>
+    <button class="tfclear" id="tfclear" style="display:none">Clear ✕</button>
+  </div>
+
+  <nav class="tabs">
+    <button data-view="speed" class="active">⚡ Speed Tiers</button>
+    <button data-view="matchup">🛡️ Type Matchups</button>
+    <button data-view="counter">🎯 Counter Picker</button>
+    <button data-view="lineup">🏆 Best Lineups</button>
+    <button data-view="stats">📊 Base Stats</button>
+  </nav>
+
+  <section class="view active" id="view-speed">
+    <div id="speed-body"><div class="empty">Add Pokémon to both teams to see speed tiers.</div></div>
+  </section>
+
+  <section class="view" id="view-matchup">
+    <div class="controls">
+      <div class="ctrl">
+        <span class="ctrl-label">Your team</span>
+        <div class="toggle" id="tg-side">
+          <button data-side="you" class="active"><span class="dot blue"></span> Blue</button>
+          <button data-side="opp"><span class="dot red"></span> Red</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <span class="ctrl-label">Lens</span>
+        <div class="toggle" id="tg-mode">
+          <button data-mode="atk" class="active">⚔️ Offense</button>
+          <button data-mode="def">🛡️ Defense</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <span class="ctrl-label">Show</span>
+        <div class="toggle" id="tg-show">
+          <button data-show="all" class="active">All</button>
+          <button data-show="strong">🟢 Strong</button>
+          <button data-show="neutral">⚪ Neutral</button>
+          <button data-show="weak">🔴 Weak</button>
+        </div>
+      </div>
+    </div>
+    <div class="hint" id="matchup-explain"></div>
+    <div id="matchup-body"><div class="empty">Add Pokémon to both teams to see type matchups.</div></div>
+  </section>
+
+  <section class="view" id="view-counter">
+    <div class="controls">
+      <div class="ctrl">
+        <span class="ctrl-label">Your team</span>
+        <div class="toggle" id="cg-side">
+          <button data-side="you" class="active"><span class="dot blue"></span> Blue</button>
+          <button data-side="opp"><span class="dot red"></span> Red</button>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-label" style="margin:14px 0 8px">Who's in on the opponent's side?</div>
+    <div id="counter-active" class="active-row"></div>
+    <div id="counter-body"><div class="empty">Add Pokémon to both teams, then pick the opponent's active Pokémon.</div></div>
+  </section>
+
+  <section class="view" id="view-lineup">
+    <div class="controls">
+      <div class="ctrl">
+        <span class="ctrl-label">Your team</span>
+        <div class="toggle" id="lg-side">
+          <button data-side="you" class="active"><span class="dot blue"></span> Blue</button>
+          <button data-side="opp"><span class="dot red"></span> Red</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <span class="ctrl-label">Lineup size</span>
+        <div class="toggle" id="lg-size">
+          <button data-size="1">1</button>
+          <button data-size="2">2</button>
+          <button data-size="3" class="active">3</button>
+          <button data-size="4">4</button>
+          <button data-size="5">5</button>
+          <button data-size="6">6</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <span class="ctrl-label">Ordering</span>
+        <div class="toggle" id="lg-order">
+          <button data-order="avg" class="active">Average</button>
+          <button data-order="paired">Paired</button>
+        </div>
+      </div>
+    </div>
+    <div id="lineup-body"><div class="empty">Add Pokémon to both teams to see the best lineups.</div></div>
+  </section>
+
+  <section class="view" id="view-stats">
+    <div id="stats-body"><div class="empty">Add Pokémon to see a base-stat comparison.</div></div>
+  </section>
+</div>
+
+<script src="logic.js"></script>
+<script>
+/* Type chart, TYPE_COLORS, typeMult, bestStabMult, classify and fmtMult
+   live in logic.js (shared with tests.html). */
+
+/* ---------- State ---------- */
+const teams = { you: [], opp: [] };
+const cache = new Map();
+let allMons = [];   // [{name, id, sprite}] for the picker
+
+function spriteUrl(id){
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+}
+
+/* ---------- Data fetching ---------- */
+async function loadNameList(){
+  try {
+    const res = await fetch("https://pokeapi.co/api/v2/pokemon?limit=100000&offset=0");
+    const data = await res.json();
+    allMons = data.results.map(r => {
+      const m = r.url.match(/\/pokemon\/(\d+)\/?$/);
+      const id = m ? parseInt(m[1], 10) : 0;
+      return { name: r.name, id, sprite: spriteUrl(id) };
+    });
+    document.getElementById("listhint").textContent = allMons.length + " Pokémon available. Type a name to search.";
+  } catch(e){
+    document.getElementById("listhint").textContent = "Could not load Pokémon list (offline?). You can still type exact names.";
+  }
+}
+async function fetchPokemon(name){
+  const key = name.trim().toLowerCase().replace(/\s+/g,"-");
+  if(cache.has(key)) return cache.get(key);
+  const res = await fetch("https://pokeapi.co/api/v2/pokemon/" + key);
+  if(!res.ok) throw new Error("not found");
+  const d = await res.json();
+  const stats = {};
+  for(const s of d.stats) stats[s.stat.name] = s.base_stat;
+  const obj = {
+    name: d.name,
+    types: d.types.map(t => t.type.name),
+    stats: {
+      hp: stats["hp"], attack: stats["attack"], defense: stats["defense"],
+      "special-attack": stats["special-attack"], "special-defense": stats["special-defense"],
+      speed: stats["speed"]
+    },
+    sprite: d.sprites.front_default || d.sprites.other?.["official-artwork"]?.front_default || ""
+  };
+  cache.set(key, obj);
+  return obj;
+}
+
+/* ---------- Add / remove ---------- */
+async function addToTeam(team){
+  const input = document.getElementById("input-" + team);
+  const errEl = document.getElementById("err-" + team);
+  const name = input.value.trim();
+  errEl.textContent = "";
+  if(!name) return;
+  if(teams[team].some(p => p.name === name.toLowerCase().replace(/\s+/g,"-"))){
+    errEl.textContent = "Already on this team."; return;
+  }
+  errEl.textContent = "Loading…";
+  try {
+    const p = await fetchPokemon(name);
+    teams[team].push({ ...p, active: false });
+    input.value = "";
+    errEl.textContent = "";
+    renderMembers(team);
+    renderAll();
+  } catch(e){
+    errEl.textContent = `"${name}" not found. Check spelling.`;
+  }
+}
+function removeFromTeam(team, name){
+  teams[team] = teams[team].filter(p => p.name !== name);
+  renderMembers(team);
+  renderAll();
+}
+function toggleMember(team, name){
+  const p = teams[team].find(x => x.name === name);
+  if(p){ p.active = !p.active; renderMembers(team); renderAll(); }
+}
+
+/* Which members of a team are "in use":
+   if any are toggled on, only those; otherwise the whole team. */
+function usedTeam(side){
+  const t = teams[side];
+  const on = t.filter(p => p.active);
+  return on.length ? on : t;
+}
+
+/* Type filter for the picker dropdown (does NOT affect built teams). */
+const typeFilter = new Set();   // selected types (empty = no filter)
+let typeNameSet = null;         // Set of Pokémon names allowed by the filter (null = all)
+const typePokeCache = new Map(); // type -> Set(names), fetched on demand
+
+/* ---------- Rendering: team members ---------- */
+function typeTags(types){
+  return types.map(t => `<span class="typetag" style="background:${TYPE_COLORS[t]||'#777'}">${t}</span>`).join(" ");
+}
+function renderMembers(team){
+  const el = document.getElementById("members-" + team);
+  if(teams[team].length === 0){ el.innerHTML = ""; return; }
+  const anyOn = teams[team].some(p => p.active);
+  el.innerHTML = teams[team].map(p => `
+    <div class="member ${anyOn && !p.active ? "dim" : ""}" data-team="${team}" data-name="${p.name}" title="Click to toggle include">
+      <button class="mtoggle ${p.active ? "on" : ""}" data-team="${team}" data-name="${p.name}">${p.active ? "✓" : ""}</button>
+      <img src="${p.sprite}" alt="${p.name}" onerror="this.style.visibility='hidden'"/>
+      <span class="nm">${p.name}</span>
+      ${typeTags(p.types)}
+      <button class="x" title="Remove" data-team="${team}" data-name="${p.name}">×</button>
+    </div>`).join("");
+}
+
+/* ---------- Speed view ---------- */
+function renderSpeed(){
+  const body = document.getElementById("speed-body");
+  const all = [
+    ...usedTeam("you").map(p => ({...p, side:"you"})),
+    ...usedTeam("opp").map(p => ({...p, side:"opp"}))
+  ];
+  if(all.length === 0){ body.innerHTML = `<div class="empty">Add Pokémon to both teams to see speed tiers.</div>`; return; }
+  all.sort((a,b) => b.stats.speed - a.stats.speed);
+  const max = all[0].stats.speed || 1;
+  body.innerHTML = all.map(p => {
+    const w = Math.max(2, (p.stats.speed / max) * 100);
+    return `<div class="speedrow">
+      <div class="label"><img src="${p.sprite}" onerror="this.style.visibility='hidden'"/>${p.name}</div>
+      <div class="bar ${p.side}" style="width:${w}%"></div>
+      <div class="val">${p.stats.speed}</div>
+    </div>`;
+  }).join("");
+}
+
+/* ---------- Matchup view ---------- */
+let mSide = "you";   // which team is "yours": "you" (blue) or "opp" (red)
+let mMode = "atk";   // "atk" = offense (you attack them), "def" = defense (they attack you)
+let mShow = "all";   // "all" | "strong" | "neutral" | "weak"
+
+/* For one of my Pokémon vs one opponent, return {mult, bucket}.
+   bucket: "strong" = advantage for me, "weak" = disadvantage, "neutral" = even.
+   Green/strong always means GOOD for my team in both lenses. */
+function matchupVerdict(mine, opp){
+  if(mMode === "atk"){
+    // I attack them with my STAB. Super-effective = advantage.
+    const mult = bestStabMult(mine.types, opp.types);
+    const bucket = mult > 1 ? "strong" : (mult < 1 ? "weak" : "neutral");
+    return { mult, bucket };
+  } else {
+    // They attack me with their STAB. I resist = advantage; they're super-effective = disadvantage.
+    const mult = bestStabMult(opp.types, mine.types);
+    const bucket = mult < 1 ? "strong" : (mult > 1 ? "weak" : "neutral");
+    return { mult, bucket };
+  }
+}
+
+function renderMatchup(){
+  const body = document.getElementById("matchup-body");
+  const explain = document.getElementById("matchup-explain");
+
+  const mine = usedTeam(mSide);
+  const opp  = usedTeam(mSide === "you" ? "opp" : "you");
+
+  if(mine.length === 0 || opp.length === 0){
+    body.innerHTML = `<div class="empty">Add Pokémon to both teams to see type matchups.</div>`;
+    explain.textContent = "";
+    return;
+  }
+
+  const youAreBlue = mSide === "you";
+  explain.innerHTML = mMode === "atk"
+    ? `<b>Offense:</b> for each of your ${youAreBlue?"blue":"red"} Pokémon, the opponents you hit. 🟢 Strong = your move is super-effective · 🔴 Weak = they resist you.`
+    : `<b>Defense:</b> for each of your ${youAreBlue?"blue":"red"} Pokémon, how the opponents hit you. 🟢 Strong = you resist their attacks · 🔴 Weak = they hit you super-effectively.`;
+
+  const groupTitles = mMode === "atk"
+    ? { strong:"🟢 Super-effective against", neutral:"⚪ Neutral against", weak:"🔴 Resisted by" }
+    : { strong:"🟢 Resistant to", neutral:"⚪ Neutral to", weak:"🔴 Weak to" };
+
+  const order = ["strong","neutral","weak"];
+  const shownGroups = mShow === "all" ? order : [mShow];
+
+  let html = "";
+  for(const m of mine){
+    // bucket opponents
+    const buckets = { strong:[], neutral:[], weak:[] };
+    for(const o of opp){
+      const v = matchupVerdict(m, o);
+      buckets[v.bucket].push({ o, mult: v.mult });
+    }
+    let groupsHtml = "";
+    for(const g of shownGroups){
+      const list = buckets[g];
+      let chips;
+      if(list.length === 0){
+        chips = `<span class="mnone">none</span>`;
+      } else {
+        chips = list.map(({o, mult}) => `
+          <span class="mchip ${g}">
+            <img src="${o.sprite}" onerror="this.style.visibility='hidden'"/>
+            ${o.name}<span class="mult">${fmtMult(mult)}</span>
+          </span>`).join("");
+      }
+      groupsHtml += `<div class="mgroup ${g}">
+        <div class="mgroup-title">${groupTitles[g]}</div>
+        <div class="mchips">${chips}</div>
+      </div>`;
+    }
+    html += `<div class="mcard ${youAreBlue ? "" : "opp-side"}">
+      <div class="mcard-self">
+        <img src="${m.sprite}" onerror="this.style.visibility='hidden'"/>
+        <span class="nm">${m.name}</span>
+        <span class="tt">${typeTags(m.types)}</span>
+      </div>
+      <div class="mcard-groups">${groupsHtml}</div>
+    </div>`;
+  }
+  body.innerHTML = html;
+}
+
+/* ---------- Counter picker ---------- */
+let cSide = "you";        // which team is "yours"
+let cActiveName = null;   // selected opponent active Pokémon
+
+function renderCounter(){
+  const body = document.getElementById("counter-body");
+  const activeRow = document.getElementById("counter-active");
+
+  const mine = usedTeam(cSide);
+  const opp  = usedTeam(cSide === "you" ? "opp" : "you");
+
+  if(mine.length === 0 || opp.length === 0){
+    activeRow.innerHTML = "";
+    body.innerHTML = `<div class="empty">Add Pokémon to both teams, then pick the opponent's active Pokémon.</div>`;
+    return;
+  }
+  if(!opp.some(p => p.name === cActiveName)) cActiveName = opp[0].name;
+  const active = opp.find(p => p.name === cActiveName);
+
+  activeRow.innerHTML = opp.map(o => `
+    <button class="actchip ${o.name === cActiveName ? "sel" : ""}" data-name="${o.name}">
+      <img src="${o.sprite}" onerror="this.style.visibility='hidden'"/>
+      <span>${o.name}</span>
+    </button>`).join("");
+
+  const ranked = mine.map(m => ({ m, ...counterScore(m, active) }))
+                     .sort((a, b) => b.score - a.score);
+
+  let cards = "";
+  ranked.forEach((r, i) => {
+    const lab = counterLabel(r.score);
+    const offCls = r.off > 1 ? "good" : (r.off < 1 ? "bad" : "neu");
+    const defCls = r.def < 1 ? "good" : (r.def > 1 ? "bad" : "neu");
+    const spdCls = r.faster ? "good" : (r.tie ? "neu" : "bad");
+    const spdText = r.faster ? `Outspeeds (+${r.speedDiff})` : (r.tie ? "Speed tie" : `Slower (${r.speedDiff})`);
+    cards += `<div class="ccard ${cSide === "you" ? "" : "opp-side"}">
+      <div class="crank">#${i + 1}</div>
+      <img class="cimg" src="${r.m.sprite}" onerror="this.style.visibility='hidden'"/>
+      <div class="cmain">
+        <div class="cname">${r.m.name} ${typeTags(r.m.types)}</div>
+        <div class="cchips">
+          <span class="cchip ${offCls}">⚔️ You hit ${fmtMult(r.off)}</span>
+          <span class="cchip ${defCls}">🛡️ Take ${fmtMult(r.def)}</span>
+          <span class="cchip ${spdCls}">⚡ ${spdText}</span>
+          <span class="cchip neu">💥 Atk ${r.atk}</span>
+        </div>
+      </div>
+      <div class="crating ${lab.cls}">
+        <div class="rlabel">${lab.text}</div>
+        <div class="rscore">${r.score.toFixed(1)}</div>
+      </div>
+    </div>`;
+  });
+  body.innerHTML = `<div class="hint" style="margin:4px 0 12px">Best switch-ins against <b style="text-transform:capitalize">${active.name}</b>, ranked by type matchup, speed and stats.</div>` + cards;
+}
+
+/* ---------- Best lineups ---------- */
+let lSide = "you";
+let lSize = 3;
+let lOrder = "avg";   // "avg" = best on average vs the group; "paired" = best answer per slot
+
+/* shared: banner classes/text for an edge value */
+function edgeBanner(edge, myLabel, themLabel){
+  if(edge >= 1)       return { cls: "you",  text: `✅ ${myLabel}` };
+  if(edge <= -1)      return { cls: "them", text: `⚠️ ${themLabel}` };
+  return { cls: "even", text: `⚖️ Roughly even matchup` };
+}
+
+function renderLineups(){
+  const body = document.getElementById("lineup-body");
+  const myFull  = usedTeam(lSide);
+  const oppFull = usedTeam(lSide === "you" ? "opp" : "you");
+  if(myFull.length === 0 || oppFull.length === 0){
+    body.innerHTML = `<div class="empty">Add Pokémon to both teams to see the best lineups.</div>`;
+    return;
+  }
+  if(lOrder === "paired"){ renderLineupsPaired(body, myFull, oppFull); return; }
+
+  const { oppLikely, myBest, edge } = bestLineups(myFull, oppFull, lSize);
+
+  let cls, text;
+  if(edge >= 1)       { cls = "you";  text = `✅ Your best ${myBest.length} are favored`; }
+  else if(edge <= -1) { cls = "them"; text = `⚠️ Their likely ${oppLikely.length} look favored`; }
+  else                { cls = "even"; text = `⚖️ Roughly even matchup`; }
+
+  const youBlue = lSide === "you";
+  const col = (title, picks, colCls) => `
+    <div class="lineup-col ${colCls}">
+      <h3>${title}</h3>
+      ${picks.map((p, i) => {
+        const lab = counterLabel(p.avg);
+        return `<div class="pick">
+          <div class="prank">#${i + 1}</div>
+          <img src="${p.mon.sprite}" onerror="this.style.visibility='hidden'"/>
+          <div class="pmain"><div class="pname">${p.mon.name} ${typeTags(p.mon.types)}</div></div>
+          <span class="plabel ${lab.cls}">${lab.text} ${p.avg >= 0 ? "+" : ""}${p.avg.toFixed(1)}</span>
+        </div>`;
+      }).join("")}
+    </div>`;
+
+  body.innerHTML = `
+    <div class="edge-banner ${cls}">${text}
+      <small>Average matchup edge of your lineup vs their predicted lineup: ${edge >= 0 ? "+" : ""}${edge.toFixed(1)}</small>
+    </div>
+    <div class="lineups">
+      ${col(`<span class="dot ${youBlue ? "blue" : "red"}"></span> Your best ${myBest.length} <span style="color:var(--muted);font-weight:500;font-size:12px">(vs their likely picks)</span>`, myBest, youBlue ? "you" : "them")}
+      ${col(`<span class="dot ${youBlue ? "red" : "blue"}"></span> Opponent's likely ${oppLikely.length} <span style="color:var(--muted);font-weight:500;font-size:12px">(vs your full team)</span>`, oppLikely, youBlue ? "them" : "you")}
+    </div>`;
+}
+
+function renderLineupsPaired(body, myFull, oppFull){
+  const { pairs, edge } = pairedLineups(myFull, oppFull, lSize);
+  const youBlue = lSide === "you";
+  const b = edgeBanner(edge, "Your answers are favored", "Their picks look favored");
+
+  const rows = pairs.map((p, i) => {
+    const d = p.detail;
+    const lab = p.mine ? counterLabel(p.score) : { text: "—", cls: "even" };
+    let chips = "";
+    if(d){
+      const offCls = d.off > 1 ? "good" : (d.off < 1 ? "bad" : "neu");
+      const defCls = d.def < 1 ? "good" : (d.def > 1 ? "bad" : "neu");
+      const spdCls = d.faster ? "good" : (d.tie ? "neu" : "bad");
+      const spdText = d.faster ? `+${d.speedDiff}` : (d.tie ? "tie" : `${d.speedDiff}`);
+      chips = `<div class="pvs-chips">
+        <span class="cchip ${offCls}">⚔️ ${fmtMult(d.off)}</span>
+        <span class="cchip ${defCls}">🛡️ ${fmtMult(d.def)}</span>
+        <span class="cchip ${spdCls}">⚡ ${spdText}</span>
+      </div>`;
+    }
+    const myBlock = p.mine
+      ? `<img src="${p.mine.sprite}" onerror="this.style.visibility='hidden'"/>
+         <div class="pname">${p.mine.name} ${typeTags(p.mine.types)}</div>`
+      : `<span class="mnone">no counter left</span>`;
+    return `<div class="pairrow">
+      <div class="pside ${youBlue ? "you" : "them"}">${myBlock}</div>
+      <div class="pvs">
+        <span class="plabel ${lab.cls}">${lab.text}${p.mine ? ` ${p.score >= 0 ? "+" : ""}${p.score.toFixed(1)}` : ""}</span>
+        ${chips}
+      </div>
+      <div class="pside ${youBlue ? "them" : "you"} right">
+        <span class="slot">#${i + 1}</span>
+        <div class="pname">${p.opp.name} ${typeTags(p.opp.types)}</div>
+        <img src="${p.opp.sprite}" onerror="this.style.visibility='hidden'"/>
+      </div>
+    </div>`;
+  }).join("");
+
+  body.innerHTML = `
+    <div class="edge-banner ${b.cls}">${b.text}
+      <small>Their picks are ordered strongest-first; your best available answer is assigned to each (no Pokémon reused).</small>
+    </div>
+    <div class="pairhead">
+      <span><span class="dot ${youBlue ? "blue" : "red"}"></span> Your answer</span>
+      <span>matchup</span>
+      <span>Their pick, by threat <span class="dot ${youBlue ? "red" : "blue"}"></span></span>
+    </div>
+    ${rows}`;
+}
+
+/* ---------- Stats table ---------- */
+let sortKey = "speed", sortDir = -1;
+const STAT_COLS = [
+  ["name","Pokémon"],["hp","HP"],["attack","Atk"],["defense","Def"],
+  ["special-attack","SpA"],["special-defense","SpD"],["speed","Spe"],["total","Total"]
+];
+function statTotal(p){ return Object.values(p.stats).reduce((a,b)=>a+b,0); }
+function renderStats(){
+  const body = document.getElementById("stats-body");
+  const all = [
+    ...usedTeam("you").map(p => ({...p, side:"you"})),
+    ...usedTeam("opp").map(p => ({...p, side:"opp"}))
+  ];
+  if(all.length === 0){ body.innerHTML = `<div class="empty">Add Pokémon to see a base-stat comparison.</div>`; return; }
+  all.sort((a,b) => {
+    let av, bv;
+    if(sortKey === "name"){ av = a.name; bv = b.name; return sortDir * av.localeCompare(bv); }
+    if(sortKey === "total"){ av = statTotal(a); bv = statTotal(b); }
+    else { av = a.stats[sortKey]; bv = b.stats[sortKey]; }
+    return sortDir * (av - bv);
+  });
+  let html = `<table class="stats-table"><thead><tr>`;
+  for(const [k,lbl] of STAT_COLS){
+    const arrow = sortKey===k ? (sortDir===-1?" ▼":" ▲") : "";
+    html += `<th data-key="${k}">${lbl}${arrow}</th>`;
+  }
+  html += `</tr></thead><tbody>`;
+  for(const p of all){
+    html += `<tr class="${p.side}">
+      <td><img class="miniimg" src="${p.sprite}" onerror="this.style.visibility='hidden'"/> ${p.name}</td>
+      <td>${p.stats.hp}</td><td>${p.stats.attack}</td><td>${p.stats.defense}</td>
+      <td>${p.stats["special-attack"]}</td><td>${p.stats["special-defense"]}</td><td>${p.stats.speed}</td>
+      <td><b>${statTotal(p)}</b></td>
+    </tr>`;
+  }
+  html += `</tbody></table>`;
+  body.innerHTML = html;
+}
+
+/* ---------- Render all active views ---------- */
+function renderAll(){ renderSpeed(); renderMatchup(); renderCounter(); renderLineups(); renderStats(); }
+
+/* ---------- Events ---------- */
+document.querySelectorAll("button.add").forEach(b =>
+  b.addEventListener("click", () => addToTeam(b.dataset.team)));
+/* ---------- Custom autocomplete picker (sprites + type-to-search) ---------- */
+function setupAutocomplete(team){
+  const input = document.getElementById("input-" + team);
+  const listEl = document.getElementById("ac-" + team);
+  let matches = [];
+  let active = -1;
+
+  function close(){ listEl.classList.remove("open"); listEl.innerHTML = ""; active = -1; matches = []; }
+
+  function render(){
+    const q = input.value.trim().toLowerCase();
+    if(!q && !typeNameSet){ close(); return; }   // nothing typed and no type filter
+    const starts = [], contains = [];
+    for(const m of allMons){
+      if(typeNameSet && !typeNameSet.has(m.name)) continue;   // type filter
+      if(!q) contains.push(m);                                // browsing by type
+      else if(m.name.startsWith(q)) starts.push(m);
+      else if(m.name.includes(q)) contains.push(m);
+    }
+    matches = starts.concat(contains).slice(0, 50);
+    if(matches.length === 0){
+      listEl.innerHTML = `<div class="ac-empty">No Pokémon match${q ? ` “${q}”` : " the selected types"}.</div>`;
+      listEl.classList.add("open"); active = -1; return;
+    }
+    active = 0;
+    listEl.innerHTML = matches.map((m, i) => `
+      <div class="ac-item ${i === 0 ? "active" : ""}" data-i="${i}">
+        <img src="${m.sprite}" onerror="this.style.visibility='hidden'"/>
+        <span class="ac-name">${m.name.replace(/-/g, " ")}</span>
+        <span class="ac-id">#${m.id}</span>
+      </div>`).join("");
+    listEl.classList.add("open");
+  }
+
+  function setActive(i){
+    const items = listEl.querySelectorAll(".ac-item");
+    if(items.length === 0) return;
+    active = (i + items.length) % items.length;
+    items.forEach((el, idx) => el.classList.toggle("active", idx === active));
+    items[active].scrollIntoView({ block: "nearest" });
+  }
+
+  function pick(i){
+    const m = matches[i];
+    if(!m) return;
+    input.value = m.name;
+    close();
+    addToTeam(team);
+  }
+
+  input.addEventListener("input", render);
+  input.addEventListener("focus", () => { if(input.value.trim() || typeNameSet) render(); });
+  input.addEventListener("keydown", e => {
+    const open = listEl.classList.contains("open");
+    if(e.key === "ArrowDown"){ e.preventDefault(); open ? setActive(active + 1) : render(); }
+    else if(e.key === "ArrowUp"){ e.preventDefault(); setActive(active - 1); }
+    else if(e.key === "Enter"){
+      e.preventDefault();
+      if(open && active >= 0 && matches[active]) pick(active);
+      else addToTeam(team);
+    }
+    else if(e.key === "Escape"){ close(); }
+  });
+  // mousedown (not click) so selection fires before the input's blur closes the list
+  listEl.addEventListener("mousedown", e => {
+    const item = e.target.closest(".ac-item");
+    if(item){ e.preventDefault(); pick(parseInt(item.dataset.i, 10)); }
+  });
+  input.addEventListener("blur", () => setTimeout(close, 120));
+}
+setupAutocomplete("you");
+setupAutocomplete("opp");
+document.addEventListener("click", e => {
+  if(e.target.classList.contains("x")){ removeFromTeam(e.target.dataset.team, e.target.dataset.name); return; }
+  const member = e.target.closest(".member");
+  if(member && member.dataset.name) toggleMember(member.dataset.team, member.dataset.name);
+});
+document.querySelectorAll("nav.tabs button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("nav.tabs button").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById("view-" + b.dataset.view).classList.add("active");
+  });
+});
+function wireToggle(id, onPick, render){
+  const tg = document.getElementById(id);
+  tg.querySelectorAll("button").forEach(b => {
+    b.addEventListener("click", () => {
+      tg.querySelectorAll("button").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      onPick(b.dataset);
+      (render || renderMatchup)();
+    });
+  });
+}
+wireToggle("tg-side", d => { mSide = d.side; });
+wireToggle("tg-mode", d => { mMode = d.mode; });
+wireToggle("tg-show", d => { mShow = d.show; });
+wireToggle("cg-side", d => { cSide = d.side; cActiveName = null; }, renderCounter);
+wireToggle("lg-side", d => { lSide = d.side; }, renderLineups);
+wireToggle("lg-size", d => { lSize = parseInt(d.size, 10); }, renderLineups);
+wireToggle("lg-order", d => { lOrder = d.order; }, renderLineups);
+
+document.getElementById("counter-active").addEventListener("click", e => {
+  const b = e.target.closest(".actchip");
+  if(b){ cActiveName = b.dataset.name; renderCounter(); }
+});
+document.addEventListener("click", e => {
+  if(e.target.closest(".stats-table th")){
+    const k = e.target.closest("th").dataset.key;
+    if(sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = k==="name" ? 1 : -1; }
+    renderStats();
+  }
+});
+
+/* ---------- Saved teams (persisted in localStorage) ---------- */
+let savedTeams = [];
+let savedSeq = 0;
+const SAVED_KEY = "pokecalc.savedTeams.v1";
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+function loadSaved(){
+  try {
+    const raw = localStorage.getItem(SAVED_KEY);
+    if(raw){ const d = JSON.parse(raw); savedTeams = d.teams || []; savedSeq = d.seq || 0; }
+  } catch(e){ savedTeams = []; savedSeq = 0; }
+}
+function persistSaved(){
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify({ seq: savedSeq, teams: savedTeams })); } catch(e){}
+}
+/* Save always creates a NEW snapshot — loading then editing then saving makes a new team. */
+function saveTeam(side){
+  if(teams[side].length === 0){
+    document.getElementById("err-" + side).textContent = "Add Pokémon before saving.";
+    return;
+  }
+  const input = document.getElementById("teamname-" + side);
+  let name = input.value.trim();
+  if(!name) name = `Team ${++savedSeq}`;
+  const mons = teams[side].map(m => ({ name:m.name, id:m.id, sprite:m.sprite, types:[...m.types], stats:{...m.stats} }));
+  savedTeams.push({ id: Date.now() + "-" + Math.random().toString(36).slice(2,7), name, mons });
+  input.value = "";
+  persistSaved();
+  renderSavedTeams();
+}
+function clearTeam(side){
+  teams[side] = [];
+  document.getElementById("teamname-" + side).value = "";
+  document.getElementById("err-" + side).textContent = "";
+  renderMembers(side);
+  renderAll();
+}
+/* Loading deep-copies the snapshot, so later edits never mutate the saved team. */
+function loadSavedTeam(side, id){
+  const t = savedTeams.find(x => x.id === id);
+  if(!t) return;
+  teams[side] = t.mons.map(m => ({ name:m.name, id:m.id, sprite:m.sprite, types:[...m.types], stats:{...m.stats}, active:false }));
+  renderMembers(side);
+  renderAll();
+}
+function deleteSavedTeam(id){
+  savedTeams = savedTeams.filter(x => x.id !== id);
+  persistSaved();
+  renderSavedTeams();
+}
+function renderSavedTeams(){
+  ["you", "opp"].forEach(side => {
+    const menu = document.getElementById("loadmenu-" + side);
+    if(savedTeams.length === 0){
+      menu.innerHTML = `<div class="lmenu-empty">No saved teams yet — build a team and hit Save.</div>`;
+      return;
+    }
+    menu.innerHTML = savedTeams.map(t => `
+      <div class="lmenu-item" data-load="${side}" data-id="${t.id}">
+        <span class="lname">${escapeHtml(t.name)}</span>
+        <span class="lmenu-thumbs">${t.mons.map(m => `<img src="${m.sprite}" onerror="this.style.visibility='hidden'"/>`).join("")}</span>
+        <button class="lmenu-del" data-del="${t.id}" title="Delete team">🗑</button>
+      </div>`).join("");
+  });
+}
+function closeLoadMenus(){ document.querySelectorAll(".loadteam-menu").forEach(m => m.classList.remove("open")); }
+
+document.querySelectorAll(".savebtn").forEach(b => b.addEventListener("click", () => saveTeam(b.dataset.team)));
+document.querySelectorAll(".clearbtn").forEach(b => b.addEventListener("click", () => clearTeam(b.dataset.team)));
+document.querySelectorAll(".loadteam-btn").forEach(b => b.addEventListener("click", e => {
+  e.stopPropagation();
+  const menu = document.getElementById("loadmenu-" + b.dataset.team);
+  const open = menu.classList.contains("open");
+  closeLoadMenus();
+  if(!open) menu.classList.add("open");
+}));
+document.querySelectorAll(".loadteam-menu").forEach(menu => menu.addEventListener("click", e => {
+  e.stopPropagation();
+  const del = e.target.closest(".lmenu-del");
+  if(del){ deleteSavedTeam(del.dataset.del); return; }   // delete; keep menu open
+  const item = e.target.closest(".lmenu-item");
+  if(item){ loadSavedTeam(item.dataset.load, item.dataset.id); closeLoadMenus(); }
+}));
+document.addEventListener("click", closeLoadMenus);
+loadSaved();
+renderSavedTeams();
+
+/* ---------- Type filter pills ---------- */
+function buildTypeFilter(){
+  document.getElementById("typefilter").innerHTML = TYPES.map(t =>
+    `<button class="tfpill" data-type="${t}" style="--tc:${TYPE_COLORS[t]}">${t}</button>`).join("");
+}
+function refreshTypeFilter(){
+  document.querySelectorAll("#typefilter .tfpill").forEach(b =>
+    b.classList.toggle("on", typeFilter.has(b.dataset.type)));
+  document.getElementById("tfclear").style.display = typeFilter.size ? "" : "none";
+}
+async function fetchTypeNames(type){
+  if(typePokeCache.has(type)) return typePokeCache.get(type);
+  const res = await fetch("https://pokeapi.co/api/v2/type/" + type);
+  const data = await res.json();
+  const set = new Set(data.pokemon.map(p => p.pokemon.name));
+  typePokeCache.set(type, set);
+  return set;
+}
+async function updateTypeNameSet(){
+  if(typeFilter.size === 0){ typeNameSet = null; reRenderOpenPicker(); return; }
+  const sets = await Promise.all([...typeFilter].map(fetchTypeNames));
+  const union = new Set();
+  sets.forEach(s => s.forEach(n => union.add(n)));
+  typeNameSet = union;
+  reRenderOpenPicker();
+}
+function reRenderOpenPicker(){
+  // if a search box is focused, refresh its dropdown to reflect the new filter
+  ["you", "opp"].forEach(t => {
+    const inp = document.getElementById("input-" + t);
+    if(document.activeElement === inp) inp.dispatchEvent(new Event("input"));
+  });
+}
+function applyTypeFilterChange(){
+  refreshTypeFilter();
+  updateTypeNameSet();
+}
+document.getElementById("typefilter").addEventListener("click", e => {
+  const b = e.target.closest(".tfpill");
+  if(!b) return;
+  const t = b.dataset.type;
+  typeFilter.has(t) ? typeFilter.delete(t) : typeFilter.add(t);
+  applyTypeFilterChange();
+});
+document.getElementById("tfclear").addEventListener("click", () => { typeFilter.clear(); applyTypeFilterChange(); });
+buildTypeFilter();
+
+loadNameList();
+</script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Battle Calculator — Test Suite</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; background:#0f1419; color:#e5e9f0; margin:0; padding:24px; }
+  h1 { font-size:20px; }
+  #summary { font-size:16px; font-weight:700; padding:12px 16px; border-radius:8px; margin:14px 0; }
+  #summary.pass { background:#14532d; color:#9ae6b4; }
+  #summary.fail { background:#5f1e1e; color:#fecaca; }
+  .group { margin:18px 0 6px; color:#8b95a5; text-transform:uppercase; font-size:12px; letter-spacing:.05em; }
+  .case { padding:4px 10px; border-radius:5px; margin:2px 0; font-size:13px; display:flex; gap:10px; }
+  .case.ok { background:rgba(34,197,94,.08); }
+  .case.bad { background:rgba(239,68,68,.16); }
+  .tag { font-weight:700; width:46px; }
+  .case.ok .tag { color:#22c55e; }
+  .case.bad .tag { color:#ef4444; }
+  .detail { color:#fca5a5; }
+</style>
+</head>
+<body>
+<h1>🧪 Pokémon Battle Calculator — Test Suite</h1>
+<div id="summary">Running…</div>
+<div id="results"></div>
+
+<script src="logic.js"></script>
+<script>
+let pass = 0, fail = 0;
+const results = document.getElementById("results");
+
+function group(name){
+  const d = document.createElement("div");
+  d.className = "group"; d.textContent = name;
+  results.appendChild(d);
+}
+function check(name, actual, expected){
+  const ok = JSON.stringify(actual) === JSON.stringify(expected);
+  ok ? pass++ : fail++;
+  const row = document.createElement("div");
+  row.className = "case " + (ok ? "ok" : "bad");
+  row.innerHTML = `<span class="tag">${ok ? "PASS" : "FAIL"}</span><span>${name}</span>` +
+    (ok ? "" : `<span class="detail">got ${JSON.stringify(actual)}, expected ${JSON.stringify(expected)}</span>`);
+  results.appendChild(row);
+}
+
+/* ---------------- single-type effectiveness ---------------- */
+group("typeMult — single defending type");
+check("fire vs grass = 2",            typeMult("fire", ["grass"]), 2);
+check("water vs fire = 2",            typeMult("water", ["fire"]), 2);
+check("grass vs water = 2",           typeMult("grass", ["water"]), 2);
+check("fire vs water = 0.5",          typeMult("fire", ["water"]), 0.5);
+check("normal vs normal = 1",         typeMult("normal", ["normal"]), 1);
+check("electric vs ground = 0 (immune)", typeMult("electric", ["ground"]), 0);
+check("ground vs flying = 0 (immune)",   typeMult("ground", ["flying"]), 0);
+check("normal vs ghost = 0 (immune)",    typeMult("normal", ["ghost"]), 0);
+check("ghost vs normal = 0 (immune)",    typeMult("ghost", ["normal"]), 0);
+check("dragon vs fairy = 0 (immune)",    typeMult("dragon", ["fairy"]), 0);
+check("poison vs steel = 0 (immune)",    typeMult("poison", ["steel"]), 0);
+check("psychic vs dark = 0 (immune)",    typeMult("psychic", ["dark"]), 0);
+
+/* ---------------- dual-type stacking ---------------- */
+group("typeMult — dual-type stacking");
+check("rock vs fire/flying = 4 (double weak)",  typeMult("rock", ["fire","flying"]), 4);
+check("ice vs dragon/flying = 4",               typeMult("ice", ["dragon","flying"]), 4);
+check("fire vs grass/steel = 4",                typeMult("fire", ["grass","steel"]), 4);
+check("grass vs fire/flying = 0.25 (double resist)", typeMult("grass", ["fire","flying"]), 0.25);
+check("water vs ground/steel = 2 (2x * 1x)",    typeMult("water", ["ground","steel"]), 2);
+check("ground vs flying/steel = 0 (immunity wins)", typeMult("ground", ["flying","steel"]), 0);
+check("fighting vs normal/ghost = 0 (immunity wins)", typeMult("fighting", ["normal","ghost"]), 0);
+
+/* ---------------- resist + weakness on the SAME Pokémon (the tricky case) ---------------- */
+group("typeMult — one type resists while the other is weak to the same attacker");
+// Surskit (Water/Bug) vs Fire: water resists (0.5) x bug weak (2) = 1 (neutral)
+check("fire vs water/bug = 1 (½ x 2 cancels to neutral)", typeMult("fire", ["water","bug"]), 1);
+// Venusaur (Grass/Poison) vs Poison: grass weak (2) x poison resist (0.5) = 1
+check("poison vs grass/poison = 1 (2 x ½ cancels)",       typeMult("poison", ["grass","poison"]), 1);
+// Gligar (Ground/Flying) vs Grass: ground weak (2) x flying resist (0.5) = 1
+check("grass vs ground/flying = 1 (2 x ½ cancels)",       typeMult("grass", ["ground","flying"]), 1);
+// And the famous opposite: Quagsire (Water/Ground) is DOUBLE weak to Grass (water & ground both weak)
+check("grass vs water/ground = 4 (Quagsire double weak)", typeMult("grass", ["water","ground"]), 4);
+// Scizor (Bug/Steel) vs Fire: bug weak (2) x steel weak (2) = 4 (stacks)
+check("fire vs bug/steel = 4 (2 x 2 stacks)",             typeMult("fire", ["bug","steel"]), 4);
+// Both resist: Dragon/Fire vs Fire = 0.5 x 0.5 = 0.25
+check("fire vs fire/dragon = 0.25 (½ x ½ stacks)",        typeMult("fire", ["fire","dragon"]), 0.25);
+// Immunity overrides a weakness: Water/Flying vs Ground = 2 x 0 = 0
+check("ground vs water/flying = 0 (immunity beats the 2x)", typeMult("ground", ["water","flying"]), 0);
+// Immunity overrides a weakness: Water/Ground vs Electric = 2 x 0 = 0
+check("electric vs water/ground = 0 (immunity beats the 2x)", typeMult("electric", ["water","ground"]), 0);
+
+/* ---------------- bestStabMult (worst case for defender) ---------------- */
+group("bestStabMult — picks the attacker's best STAB option");
+// Blastoise (water) attacking Charizard (fire/flying): water vs fire=2, vs flying=1 -> 2
+check("Blastoise vs Charizard = 2",   bestStabMult(["water"], ["fire","flying"]), 2);
+// Dragonite (dragon/flying) attacking Charizard (fire/flying): both 1 -> 1
+check("Dragonite vs Charizard = 1",   bestStabMult(["dragon","flying"], ["fire","flying"]), 1);
+// Ferrothorn (grass/steel) vs Charizard (fire/flying): grass->0.25, steel->0.5 -> best 0.5
+check("Ferrothorn vs Charizard = 0.5", bestStabMult(["grass","steel"], ["fire","flying"]), 0.5);
+// Charizard (fire/flying) attacking Ferrothorn (grass/steel): fire->4, flying->1 -> 4
+check("Charizard vs Ferrothorn = 4",  bestStabMult(["fire","flying"], ["grass","steel"]), 4);
+// Pikachu (electric) attacking Blastoise (water): 2
+check("Pikachu vs Blastoise = 2",     bestStabMult(["electric"], ["water"]), 2);
+// Excadrill (ground/steel) defending vs Blastoise (water): water vs ground=2, steel=1 -> 2
+check("Blastoise vs Excadrill = 2",   bestStabMult(["water"], ["ground","steel"]), 2);
+// Excadrill vs Dragonite (dragon/flying): dragon->0.5, flying->0.5 -> 0.5
+check("Dragonite vs Excadrill = 0.5", bestStabMult(["dragon","flying"], ["ground","steel"]), 0.5);
+
+/* ---------------- classify ---------------- */
+group("classify — bucket boundaries");
+check("0    -> immune",  classify(0), "immune");
+check("0.25 -> resist",  classify(0.25), "resist");
+check("0.5  -> resist",  classify(0.5), "resist");
+check("1    -> neutral", classify(1), "neutral");
+check("2    -> weak",    classify(2), "weak");
+check("4    -> weak",    classify(4), "weak");
+
+/* ---------------- fmtMult ---------------- */
+group("fmtMult — display strings");
+check("0    -> '0'",  fmtMult(0), "0");
+check("0.25 -> '¼×'", fmtMult(0.25), "¼×");
+check("0.5  -> '½×'", fmtMult(0.5), "½×");
+check("1    -> '1×'", fmtMult(1), "1×");
+check("2    -> '2×'", fmtMult(2), "2×");
+check("4    -> '4×'", fmtMult(4), "4×");
+
+/* ---------------- counter scoring ---------------- */
+group("multToScore — multiplier to symmetric score");
+check("0    -> -3", multToScore(0), -3);
+check("0.25 -> -2", multToScore(0.25), -2);
+check("0.5  -> -1", multToScore(0.5), -1);
+check("1    ->  0", multToScore(1), 0);
+check("2    -> +1", multToScore(2), 1);
+check("4    -> +2", multToScore(4), 2);
+
+group("counterLabel — score buckets");
+check("8  -> Excellent", counterLabel(8).text, "Excellent");
+check("5  -> Strong",    counterLabel(5).text, "Strong");
+check("2  -> Decent",    counterLabel(2).text, "Decent");
+check("-1 -> Even",      counterLabel(-1).text, "Even");
+check("-5 -> Avoid",     counterLabel(-5).text, "Avoid");
+
+group("counterScore — ranks good switch-ins above bad ones");
+const oppDragon  = { types:["dragon","flying"], stats:{hp:91,attack:134,defense:95,"special-attack":100,"special-defense":100,speed:80} };
+const iceAtk     = { types:["ice"],   stats:{hp:90,attack:130,defense:80,"special-attack":80,"special-defense":80,speed:110} }; // 4x, faster
+const steelWall  = { types:["steel"], stats:{hp:60,attack:50,defense:120,"special-attack":50,"special-defense":60,speed:40} };   // resists, weak attacker, slow
+check("ice attacker hits the dragon 4x", counterScore(iceAtk, oppDragon).off, 4);
+check("ice attacker outscores the passive steel wall", counterScore(iceAtk, oppDragon).score > counterScore(steelWall, oppDragon).score, true);
+check("ice attacker rates Strong or better", ["Excellent","Strong"].includes(counterLabel(counterScore(iceAtk, oppDragon).score).text), true);
+const slowIce = { types:["ice"], stats:{ ...iceAtk.stats, speed:10 } };
+check("faster variant outranks slower (speed is weighted)", counterScore(iceAtk, oppDragon).score > counterScore(slowIce, oppDragon).score, true);
+
+/* ---------------- best lineups ---------------- */
+group("rankAgainst / bestLineups — pick the strongest sub-team");
+const mon = (name, types, spd, atk) => ({ name, types,
+  stats:{ hp:80, attack:atk, defense:80, "special-attack":atk, "special-defense":80, speed:spd } });
+
+// My team: an ice attacker (great vs dragon/flying), a fighting mon, a frail normal mon.
+const myTeam = [
+  mon("frosty",  ["ice"],      110, 120),  // 4x vs dragon/flying, fast
+  mon("puncher", ["fighting"], 90,  110),
+  mon("blob",    ["normal"],   30,  50)
+];
+// Opponent: a dragon/flying, a steel wall, a slow grass mon.
+const oppTeam = [
+  mon("draco",  ["dragon","flying"], 80,  130),
+  mon("wally",  ["steel"],           40,  60),
+  mon("leafy",  ["grass"],           50,  70)
+];
+
+check("rankAgainst returns at most n picks", rankAgainst(myTeam, oppTeam, 2).length, 2);
+check("rankAgainst returns whole team when n exceeds size", rankAgainst(myTeam, oppTeam, 9).length, 3);
+check("best member vs the dragon team is the ice attacker", rankAgainst(myTeam, oppTeam, 1)[0].mon.name, "frosty");
+
+const lineups = bestLineups(myTeam, oppTeam, 2);
+check("bestLineups: my top pick is the ice attacker", lineups.myBestMons[0].name, "frosty");
+check("bestLineups: returns n picks per side", [lineups.myBest.length, lineups.oppLikely.length], [2, 2]);
+check("bestLineups: frail blob is NOT in my best 2", lineups.myBestMons.some(m => m.name === "blob"), false);
+check("bestLineups: edge is a finite number", Number.isFinite(lineups.edge), true);
+
+group("pairedLineups — best answer per opponent slot, no reuse");
+const pl = pairedLineups(myTeam, oppTeam, 3);
+check("one pair per opponent (n=3)", pl.pairs.length, 3);
+// opponents follow the strongest-first threat ranking (not a hardcoded name)
+const threatOrder = rankAgainst(oppTeam, myTeam, 3).map(x => x.mon.name);
+check("paired opponents follow the strongest-first threat order", pl.pairs.map(p => p.opp.name), threatOrder);
+// slot #1 is assigned my single best answer to THAT specific opponent
+const slot1opp = pl.pairs[0].opp;
+const bestForSlot1 = myTeam.slice().sort((a, b) => counterScore(b, slot1opp).score - counterScore(a, slot1opp).score)[0].name;
+check("slot #1 gets my best answer to that opponent", pl.pairs[0].mine.name, bestForSlot1);
+const pairedNames = pl.pairs.filter(p => p.mine).map(p => p.mine.name);
+check("no Pokémon assigned to two slots", pairedNames.length === new Set(pairedNames).size, true);
+check("every assigned pair carries a numeric score", pl.pairs.every(p => !p.mine || typeof p.score === "number"), true);
+// with fewer of my mons than opponents, later slots get no counter
+const pl2 = pairedLineups([myTeam[0]], oppTeam, 3);
+check("only one slot filled when I have one Pokémon", pl2.pairs.filter(p => p.mine).length, 1);
+check("remaining slots report no counter left", pl2.pairs[2].mine, null);
+
+/* ---------------- chart integrity ---------------- */
+group("CHART integrity — data sanity");
+check("18 types defined", TYPES.length, 18);
+check("CHART has a row for every type",
+  TYPES.every(t => CHART[t] !== undefined), true);
+(function(){
+  let allValid = true, badEntry = null;
+  for(const atk of Object.keys(CHART)){
+    if(!TYPES.includes(atk)){ allValid = false; badEntry = atk; break; }
+    for(const def of Object.keys(CHART[atk])){
+      if(!TYPES.includes(def)){ allValid = false; badEntry = atk+"->"+def; break; }
+      if(![0, 0.5, 2].includes(CHART[atk][def])){ allValid = false; badEntry = atk+"->"+def+"="+CHART[atk][def]; break; }
+    }
+    if(!allValid) break;
+  }
+  check("every entry uses a valid type and a value in {0, 0.5, 2}" + (badEntry?` (bad: ${badEntry})`:""), allValid, true);
+})();
+// Spot-check reciprocal correctness used by the UI: steel takes neutral water (common mistake)
+check("steel is NOT listed as resisting water (neutral)", CHART.water.steel, undefined);
+
+/* ---------------- summary ---------------- */
+const summary = document.getElementById("summary");
+summary.className = fail === 0 ? "pass" : "fail";
+summary.textContent = `${pass} passed, ${fail} failed — ${fail === 0 ? "ALL TESTS PASS ✅" : "SOME TESTS FAILED ❌"}`;
+console.log(`TEST RESULTS: ${pass} passed, ${fail} failed`);
+</script>
+</body>
+</html>
