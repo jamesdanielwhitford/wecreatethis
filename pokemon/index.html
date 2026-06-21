@@ -131,8 +131,6 @@
     background: var(--panel2); color: var(--text); font-size: 14px; font-weight: 600;
   }
   button:hover { filter: brightness(1.2); }
-  button.add.you { background: var(--blue); }
-  button.add.opp { background: var(--red); }
   .members { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
   .member {
     display: flex; align-items: center; gap: 10px; background: var(--panel2);
@@ -189,14 +187,41 @@
   .savedbtn.del:hover { color: var(--red); }
   .err { color: var(--red); font-size: 13px; margin-top: 8px; min-height: 16px; }
 
-  /* Type filter bar */
-  .filterbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  /* Type filter button + modal */
+  .filterbtn { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .filterbtn.you { background: var(--blue); color: #fff; }
+  .filterbtn.opp { background: var(--red); color: #fff; }
+  .filterclear { background: var(--panel2); color: var(--muted); padding: 9px 12px; }
+  .filterclear:hover { color: var(--red); }
+  .tfbadge {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px;
+    padding: 0 5px; border-radius: 9px; background: rgba(0,0,0,.28); color: #fff; font-size: 11px; font-weight: 800;
+  }
+
+  /* Type filter modal */
+  .tfmodal {
+    position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.6); padding: 16px;
+  }
+  .tfmodal[hidden] { display: none; }
+  .tfmodal-card {
+    background: var(--panel); border-radius: 14px; padding: 20px; width: 100%; max-width: 460px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.5);
+  }
+  .tfmodal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .tfmodal-close { background: transparent; color: var(--muted); font-size: 16px; padding: 4px 8px; }
+  .tfmodal-close:hover { color: var(--text); }
+  .tfmodal-hint { font-size: 12px; color: var(--muted); margin: 0 0 14px; }
+  .tfmodal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .tfdone { background: var(--blue); color: #fff; }
   .typefilter { display: flex; flex-wrap: wrap; gap: 7px; }
   .tfpill {
+    display: inline-flex; align-items: center; gap: 6px;
     padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
     text-transform: uppercase; letter-spacing: .03em; cursor: pointer;
     border: 2px solid transparent; background: var(--panel2); color: var(--muted); opacity: .65;
   }
+  .tfpill img { width: 15px; height: 15px; flex-shrink: 0; }
   .tfpill:hover { opacity: 1; }
   .tfpill.on { background: var(--tc); color: #fff; border-color: rgba(255,255,255,.35); opacity: 1; }
   .tfclear { background: var(--panel2); color: var(--muted); font-size: 12px; padding: 6px 12px; }
@@ -285,6 +310,7 @@
   .cimg { width:calc(var(--sprite) + 8px); height:calc(var(--sprite) + 8px); image-rendering:pixelated; flex-shrink:0; }
   .cmain { flex:1; min-width:0; }
   .cname { font-weight:700; text-transform:capitalize; font-size:16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .cnote { font-size:12px; font-weight:600; color:var(--muted); text-transform:none; }
   .cchips { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
   .cchip { font-size:12px; font-weight:600; padding:3px 9px; border-radius:6px; background:var(--panel2); }
   .cchip.good { background:rgba(34,197,94,.16); color:#86efac; }
@@ -402,7 +428,8 @@
           <input type="text" id="input-you" placeholder="Type a name, e.g. charizard" autocomplete="off" />
           <div class="ac-list" id="ac-you"></div>
         </div>
-        <button class="add you" data-team="you">Add</button>
+        <button class="filterbtn you" data-team="you">⚙ Filter<span class="tfbadge" data-team="you" style="display:none">0</span></button>
+        <button class="filterclear" data-team="you" title="Clear type filter" style="display:none">✕</button>
       </div>
       <div class="err" id="err-you"></div>
       <div class="members" id="members-you"></div>
@@ -425,7 +452,8 @@
           <input type="text" id="input-opp" placeholder="Type a name, e.g. blastoise" autocomplete="off" />
           <div class="ac-list" id="ac-opp"></div>
         </div>
-        <button class="add opp" data-team="opp">Add</button>
+        <button class="filterbtn opp" data-team="opp">⚙ Filter<span class="tfbadge" data-team="opp" style="display:none">0</span></button>
+        <button class="filterclear" data-team="opp" title="Clear type filter" style="display:none">✕</button>
       </div>
       <div class="err" id="err-opp"></div>
       <div class="members" id="members-opp"></div>
@@ -438,21 +466,30 @@
   </div>
   <div class="hint" id="listhint">Loading Pokémon list…</div>
 
-  <div class="filterbar">
-    <span class="ctrl-label">Filter picker by type</span>
-    <div class="typefilter" id="typefilter"></div>
-    <button class="tfclear" id="tfclear" style="display:none">Clear ✕</button>
+  <div class="tfmodal" id="tfmodal" hidden>
+    <div class="tfmodal-card">
+      <div class="tfmodal-head">
+        <span class="ctrl-label" id="tfmodal-title">Filter picker by type</span>
+        <button class="tfmodal-close" id="tfmodal-close" aria-label="Close">✕</button>
+      </div>
+      <p class="tfmodal-hint">Pick one type, or several to find Pokémon that have <strong>all</strong> selected types.</p>
+      <div class="typefilter" id="typefilter"></div>
+      <div class="tfmodal-actions">
+        <button class="tfclear" id="tfclear" style="display:none">Clear ✕</button>
+        <button class="tfdone" id="tfdone">Done</button>
+      </div>
+    </div>
   </div>
 
   <nav class="tabs">
-    <button data-view="speed" class="active">⚡ Speed Tiers</button>
-    <button data-view="matchup">🛡️ Type Matchups</button>
+    <button data-view="lineup" class="active">🏆 Best Lineups</button>
     <button data-view="counter">🎯 Counter Picker</button>
-    <button data-view="lineup">🏆 Best Lineups</button>
+    <button data-view="matchup">🛡️ Type Matchups</button>
+    <button data-view="speed">⚡ Speed Tiers</button>
     <button data-view="stats">📊 Base Stats</button>
   </nav>
 
-  <section class="view active" id="view-speed">
+  <section class="view" id="view-speed">
     <div id="speed-body"><div class="empty">Add Pokémon to both teams to see speed tiers.</div></div>
   </section>
 
@@ -495,13 +532,20 @@
           <button data-side="opp"><span class="dot red"></span> Red</button>
         </div>
       </div>
+      <div class="ctrl">
+        <span class="ctrl-label">Format</span>
+        <div class="toggle format-toggle" id="format-counter">
+          <button data-format="singles" class="active">Singles</button>
+          <button data-format="doubles">Doubles</button>
+        </div>
+      </div>
     </div>
-    <div class="ctrl-label" style="margin:14px 0 8px">Who's in on the opponent's side?</div>
+    <div class="ctrl-label" id="counter-active-label" style="margin:14px 0 8px">Who's in on the opponent's side?</div>
     <div id="counter-active" class="active-row"></div>
     <div id="counter-body"><div class="empty">Add Pokémon to both teams, then pick the opponent's active Pokémon.</div></div>
   </section>
 
-  <section class="view" id="view-lineup">
+  <section class="view active" id="view-lineup">
     <div class="controls">
       <div class="ctrl">
         <span class="ctrl-label">Your team</span>
@@ -511,14 +555,10 @@
         </div>
       </div>
       <div class="ctrl">
-        <span class="ctrl-label">Lineup size</span>
-        <div class="toggle" id="lg-size">
-          <button data-size="1">1</button>
-          <button data-size="2">2</button>
-          <button data-size="3" class="active">3</button>
-          <button data-size="4">4</button>
-          <button data-size="5">5</button>
-          <button data-size="6">6</button>
+        <span class="ctrl-label">Format</span>
+        <div class="toggle format-toggle" id="format-lineup">
+          <button data-format="singles" class="active">Singles (3)</button>
+          <button data-format="doubles">Doubles (4)</button>
         </div>
       </div>
       <div class="ctrl">
@@ -628,10 +668,12 @@ function usedTeam(side){
   return on.length ? on : t;
 }
 
-/* Type filter for the picker dropdown (does NOT affect built teams). */
-const typeFilter = new Set();   // selected types (empty = no filter)
-let typeNameSet = null;         // Set of Pokémon names allowed by the filter (null = all)
-const typePokeCache = new Map(); // type -> Set(names), fetched on demand
+/* Per-team type filter for the picker dropdown (does NOT affect built teams).
+   Each team keeps its own selection, persisted for the session. */
+const typeFilters = { you: new Set(), opp: new Set() }; // selected types per team
+const typeNameSets = { you: null, opp: null };          // allowed names per team (null = all)
+const typePokeCache = new Map(); // type -> Set(names), fetched on demand (shared)
+let currentFilterTeam = "you";   // which team the open modal is editing
 
 /* ---------- Rendering: team members ---------- */
 function typeTags(types){
@@ -758,7 +800,7 @@ function renderMatchup(){
 
 /* ---------- Counter picker ---------- */
 let cSide = "you";        // which team is "yours"
-let cActiveName = null;   // selected opponent active Pokémon
+let cActiveNames = [];    // selected opponent active Pokémon (1 in singles, up to 2 in doubles)
 
 function renderCounter(){
   const body = document.getElementById("counter-body");
@@ -772,50 +814,90 @@ function renderCounter(){
     body.innerHTML = `<div class="empty">Add Pokémon to both teams, then pick the opponent's active Pokémon.</div>`;
     return;
   }
-  if(!opp.some(p => p.name === cActiveName)) cActiveName = opp[0].name;
-  const active = opp.find(p => p.name === cActiveName);
+  const maxActive = format === "doubles" ? 2 : 1;
+  // keep selections valid against the current opponent set
+  cActiveNames = cActiveNames.filter(n => opp.some(p => p.name === n)).slice(0, maxActive);
+  if(cActiveNames.length === 0) cActiveNames = [opp[0].name];
+
+  document.getElementById("counter-active-label").textContent = format === "doubles"
+    ? "Who's in on the opponent's side? (pick up to two)"
+    : "Who's in on the opponent's side?";
 
   activeRow.innerHTML = opp.map(o => `
-    <button class="actchip ${o.name === cActiveName ? "sel" : ""}" data-name="${o.name}">
+    <button class="actchip ${cActiveNames.includes(o.name) ? "sel" : ""}" data-name="${o.name}">
       <img src="${o.sprite}" onerror="this.style.visibility='hidden'"/>
       <span>${o.name}</span>
     </button>`).join("");
 
-  const ranked = mine.map(m => ({ m, ...counterScore(m, active) }))
-                     .sort((a, b) => b.score - a.score);
+  const threats = cActiveNames.map(n => opp.find(p => p.name === n));
+  const sideCls = cSide === "you" ? "" : "opp-side";
+  let html = "";
 
-  let cards = "";
-  ranked.forEach((r, i) => {
-    const lab = counterLabel(r.score);
-    const offCls = r.off > 1 ? "good" : (r.off < 1 ? "bad" : "neu");
-    const defCls = r.def < 1 ? "good" : (r.def > 1 ? "bad" : "neu");
-    const spdCls = r.faster ? "good" : (r.tie ? "neu" : "bad");
-    const spdText = r.faster ? `Outspeeds (+${r.speedDiff})` : (r.tie ? "Speed tie" : `Slower (${r.speedDiff})`);
-    cards += `<div class="ccard ${cSide === "you" ? "" : "opp-side"}">
-      <div class="crank">#${i + 1}</div>
-      <img class="cimg" src="${r.m.sprite}" onerror="this.style.visibility='hidden'"/>
-      <div class="cmain">
-        <div class="cname">${r.m.name} ${typeTags(r.m.types)}</div>
-        <div class="cchips">
-          <span class="cchip ${offCls}">⚔️ You hit ${fmtMult(r.off)}</span>
-          <span class="cchip ${defCls}">🛡️ Take ${fmtMult(r.def)}</span>
-          <span class="cchip ${spdCls}">⚡ ${spdText}</span>
-          <span class="cchip neu">💥 Atk ${r.atk}</span>
-        </div>
-      </div>
-      <div class="crating ${lab.cls}">
-        <div class="rlabel">${lab.text}</div>
-        <div class="rscore">${r.score.toFixed(1)}</div>
-      </div>
-    </div>`;
+  // Best switch-ins against each selected threat (as in singles).
+  threats.forEach(t => {
+    html += `<div class="hint" style="margin:4px 0 12px">Best switch-ins against <b style="text-transform:capitalize">${t.name}</b>, ranked by type matchup, speed and stats.</div>`;
+    html += mine.map(m => ({ m, ...counterScore(m, t) }))
+                .sort((a, b) => b.score - a.score)
+                .map((r, i) => counterCardHTML(r.m, r, `#${i + 1}`, sideCls)).join("");
   });
-  body.innerHTML = `<div class="hint" style="margin:4px 0 12px">Best switch-ins against <b style="text-transform:capitalize">${active.name}</b>, ranked by type matchup, speed and stats.</div>` + cards;
+
+  // Doubles: the "perfect match-up" — best distinct pair to send against the duo.
+  if(format === "doubles"){
+    if(threats.length < 2){
+      html += `<div class="hint" style="margin:18px 0 12px">Pick a second opponent above to see the perfect duo match-up.</div>`;
+    } else {
+      const duo = bestDuoVsPair(mine, threats[0], threats[1]);
+      if(duo){
+        html += `<div class="hint" style="margin:18px 0 12px">🤝 <b>Perfect match-up</b> — the best two of yours against
+          <b style="text-transform:capitalize">${threats[0].name}</b> + <b style="text-transform:capitalize">${threats[1].name}</b>
+          together (combined coverage, not just the two individually best).</div>`;
+        html += duo.assign.map(a =>
+          counterCardHTML(a.mine, a.detail, "🤝", sideCls, `answers <b style="text-transform:capitalize">${a.opp.name}</b>`)).join("");
+      } else {
+        html += `<div class="hint" style="margin:18px 0 12px">Add at least two Pokémon to your team to see the perfect duo.</div>`;
+      }
+    }
+  }
+
+  body.innerHTML = html;
+}
+
+/* Build one switch-in card. `rankText` fills the small rank badge; optional `note`
+   (e.g. which threat this member answers) shows as a muted tag on the name line. */
+function counterCardHTML(m, r, rankText, sideCls, note){
+  const lab = counterLabel(r.score);
+  const offCls = r.off > 1 ? "good" : (r.off < 1 ? "bad" : "neu");
+  const defCls = r.def < 1 ? "good" : (r.def > 1 ? "bad" : "neu");
+  const spdCls = r.faster ? "good" : (r.tie ? "neu" : "bad");
+  const spdText = r.faster ? `Outspeeds (+${r.speedDiff})` : (r.tie ? "Speed tie" : `Slower (${r.speedDiff})`);
+  const noteHTML = note ? ` <span class="cnote">${note}</span>` : "";
+  return `<div class="ccard ${sideCls}">
+    <div class="crank">${rankText}</div>
+    <img class="cimg" src="${m.sprite}" onerror="this.style.visibility='hidden'"/>
+    <div class="cmain">
+      <div class="cname">${m.name} ${typeTags(m.types)}${noteHTML}</div>
+      <div class="cchips">
+        <span class="cchip ${offCls}">⚔️ You hit ${fmtMult(r.off)}</span>
+        <span class="cchip ${defCls}">🛡️ Take ${fmtMult(r.def)}</span>
+        <span class="cchip ${spdCls}">⚡ ${spdText}</span>
+        <span class="cchip neu">💥 Atk ${r.atk}</span>
+      </div>
+    </div>
+    <div class="crating ${lab.cls}">
+      <div class="rlabel">${lab.text}</div>
+      <div class="rscore">${r.score.toFixed(1)}</div>
+    </div>
+  </div>`;
 }
 
 /* ---------- Best lineups ---------- */
 let lSide = "you";
-let lSize = 3;
 let lOrder = "avg";   // "avg" = best on average vs the group; "paired" = best answer per slot
+
+/* Battle format, shared by Counter Picker and Best Lineups.
+   singles = lineups of 3 / one active threat; doubles = lineups of 4 / two active threats. */
+let format = "singles";
+function lineupSize(){ return format === "doubles" ? 4 : 3; }
 
 /* shared: banner classes/text for an edge value */
 function edgeBanner(edge, myLabel, themLabel){
@@ -834,7 +916,7 @@ function renderLineups(){
   }
   if(lOrder === "paired"){ renderLineupsPaired(body, myFull, oppFull); return; }
 
-  const { oppLikely, myBest, edge } = bestLineups(myFull, oppFull, lSize);
+  const { oppLikely, myBest, edge } = bestLineups(myFull, oppFull, lineupSize());
 
   let cls, text;
   if(edge >= 1)       { cls = "you";  text = `✅ Your best ${myBest.length} are favored`; }
@@ -867,7 +949,7 @@ function renderLineups(){
 }
 
 function renderLineupsPaired(body, myFull, oppFull){
-  const { pairs, edge } = pairedLineups(myFull, oppFull, lSize);
+  const { pairs, edge } = pairedLineups(myFull, oppFull, lineupSize());
   const youBlue = lSide === "you";
   const b = edgeBanner(edge, "Your answers are favored", "Their picks look favored");
 
@@ -959,8 +1041,6 @@ function renderStats(){
 function renderAll(){ renderSpeed(); renderMatchup(); renderCounter(); renderLineups(); renderStats(); }
 
 /* ---------- Events ---------- */
-document.querySelectorAll("button.add").forEach(b =>
-  b.addEventListener("click", () => addToTeam(b.dataset.team)));
 /* ---------- Custom autocomplete picker (sprites + type-to-search) ---------- */
 function setupAutocomplete(team){
   const input = document.getElementById("input-" + team);
@@ -972,10 +1052,11 @@ function setupAutocomplete(team){
 
   function render(){
     const q = input.value.trim().toLowerCase();
-    if(!q && !typeNameSet){ close(); return; }   // nothing typed and no type filter
+    const nameSet = typeNameSets[team];
+    if(!q && !nameSet){ close(); return; }   // nothing typed and no type filter
     const starts = [], contains = [];
     for(const m of allMons){
-      if(typeNameSet && !typeNameSet.has(m.name)) continue;   // type filter
+      if(nameSet && !nameSet.has(m.name)) continue;   // type filter
       if(!q) contains.push(m);                                // browsing by type
       else if(m.name.startsWith(q)) starts.push(m);
       else if(m.name.includes(q)) contains.push(m);
@@ -1012,7 +1093,7 @@ function setupAutocomplete(team){
   }
 
   input.addEventListener("input", render);
-  input.addEventListener("focus", () => { if(input.value.trim() || typeNameSet) render(); });
+  input.addEventListener("focus", () => { if(input.value.trim() || typeNameSets[team]) render(); });
   input.addEventListener("keydown", e => {
     const open = listEl.classList.contains("open");
     if(e.key === "ArrowDown"){ e.preventDefault(); open ? setActive(active + 1) : render(); }
@@ -1060,14 +1141,39 @@ function wireToggle(id, onPick, render){
 wireToggle("tg-side", d => { mSide = d.side; });
 wireToggle("tg-mode", d => { mMode = d.mode; });
 wireToggle("tg-show", d => { mShow = d.show; });
-wireToggle("cg-side", d => { cSide = d.side; cActiveName = null; }, renderCounter);
+wireToggle("cg-side", d => { cSide = d.side; cActiveNames = []; }, renderCounter);
 wireToggle("lg-side", d => { lSide = d.side; }, renderLineups);
-wireToggle("lg-size", d => { lSize = parseInt(d.size, 10); }, renderLineups);
 wireToggle("lg-order", d => { lOrder = d.order; }, renderLineups);
+
+// Format toggle is shared across two button groups (counter + lineup); keep them in sync.
+function setFormat(fmt){
+  if(fmt === format) return;
+  format = fmt;
+  if(format === "singles") cActiveNames = cActiveNames.slice(0, 1); // drop the 2nd threat
+  document.querySelectorAll(".format-toggle button").forEach(b =>
+    b.classList.toggle("active", b.dataset.format === fmt));
+  renderCounter();
+  renderLineups();
+}
+document.querySelectorAll(".format-toggle").forEach(group =>
+  group.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if(b) setFormat(b.dataset.format);
+  }));
 
 document.getElementById("counter-active").addEventListener("click", e => {
   const b = e.target.closest(".actchip");
-  if(b){ cActiveName = b.dataset.name; renderCounter(); }
+  if(!b) return;
+  const name = b.dataset.name;
+  if(format === "doubles"){
+    // toggle membership, capped at two threats
+    if(cActiveNames.includes(name)) cActiveNames = cActiveNames.filter(n => n !== name);
+    else if(cActiveNames.length < 2) cActiveNames = [...cActiveNames, name];
+    else cActiveNames = [cActiveNames[1], name]; // replace the oldest when a third is picked
+  } else {
+    cActiveNames = [name];
+  }
+  renderCounter();
 });
 document.addEventListener("click", e => {
   if(e.target.closest(".stats-table th")){
@@ -1178,14 +1284,34 @@ document.querySelectorAll("#team-tabs button").forEach(b => {
 });
 
 /* ---------- Type filter pills ---------- */
+/* Official round type-symbol icon (Gen IX / Scarlet-Violet); TYPE_ID lives in logic.js. */
+function typeIcon(t){
+  const id = TYPE_ID[t];
+  if(!id) return "";
+  const url = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/${id}.png`;
+  return `<img src="${url}" alt="" onerror="this.remove()"/>`;
+}
 function buildTypeFilter(){
   document.getElementById("typefilter").innerHTML = TYPES.map(t =>
-    `<button class="tfpill" data-type="${t}" style="--tc:${TYPE_COLORS[t]}">${t}</button>`).join("");
+    `<button class="tfpill" data-type="${t}" style="--tc:${TYPE_COLORS[t]}">${typeIcon(t)}${t}</button>`).join("");
 }
+// Reflect a team's filter onto its Filter button badge + quick-clear button.
+function refreshFilterButtons(){
+  ["you", "opp"].forEach(t => {
+    const n = typeFilters[t].size;
+    const badge = document.querySelector(`.tfbadge[data-team="${t}"]`);
+    const clr = document.querySelector(`.filterclear[data-team="${t}"]`);
+    if(badge){ badge.textContent = n; badge.style.display = n ? "" : "none"; }
+    if(clr) clr.style.display = n ? "" : "none";
+  });
+}
+// Reflect the current team's filter onto the modal pills + clear button.
 function refreshTypeFilter(){
+  const filter = typeFilters[currentFilterTeam];
   document.querySelectorAll("#typefilter .tfpill").forEach(b =>
-    b.classList.toggle("on", typeFilter.has(b.dataset.type)));
-  document.getElementById("tfclear").style.display = typeFilter.size ? "" : "none";
+    b.classList.toggle("on", filter.has(b.dataset.type)));
+  document.getElementById("tfclear").style.display = filter.size ? "" : "none";
+  refreshFilterButtons();
 }
 async function fetchTypeNames(type){
   if(typePokeCache.has(type)) return typePokeCache.get(type);
@@ -1195,33 +1321,59 @@ async function fetchTypeNames(type){
   typePokeCache.set(type, set);
   return set;
 }
-async function updateTypeNameSet(){
-  if(typeFilter.size === 0){ typeNameSet = null; reRenderOpenPicker(); return; }
-  const sets = await Promise.all([...typeFilter].map(fetchTypeNames));
-  const union = new Set();
-  sets.forEach(s => s.forEach(n => union.add(n)));
-  typeNameSet = union;
-  reRenderOpenPicker();
+async function updateTypeNameSet(team){
+  const filter = typeFilters[team];
+  if(filter.size === 0){ typeNameSets[team] = null; reRenderOpenPicker(team); return; }
+  const sets = await Promise.all([...filter].map(fetchTypeNames));
+  // intersection: keep only names present in every selected type's set
+  const [first, ...rest] = sets;
+  typeNameSets[team] = new Set([...first].filter(n => rest.every(s => s.has(n))));
+  reRenderOpenPicker(team);
 }
-function reRenderOpenPicker(){
-  // if a search box is focused, refresh its dropdown to reflect the new filter
-  ["you", "opp"].forEach(t => {
-    const inp = document.getElementById("input-" + t);
-    if(document.activeElement === inp) inp.dispatchEvent(new Event("input"));
-  });
+function reRenderOpenPicker(team){
+  // if this team's search box is focused, refresh its dropdown to reflect the filter
+  const inp = document.getElementById("input-" + team);
+  if(document.activeElement === inp) inp.dispatchEvent(new Event("input"));
 }
 function applyTypeFilterChange(){
   refreshTypeFilter();
-  updateTypeNameSet();
+  updateTypeNameSet(currentFilterTeam);
+}
+function clearTeamFilter(team){
+  typeFilters[team].clear();
+  updateTypeNameSet(team);
+  if(team === currentFilterTeam) refreshTypeFilter();
+  else refreshFilterButtons();
 }
 document.getElementById("typefilter").addEventListener("click", e => {
   const b = e.target.closest(".tfpill");
   if(!b) return;
   const t = b.dataset.type;
-  typeFilter.has(t) ? typeFilter.delete(t) : typeFilter.add(t);
+  const filter = typeFilters[currentFilterTeam];
+  filter.has(t) ? filter.delete(t) : filter.add(t);
   applyTypeFilterChange();
 });
-document.getElementById("tfclear").addEventListener("click", () => { typeFilter.clear(); applyTypeFilterChange(); });
+document.getElementById("tfclear").addEventListener("click", () => clearTeamFilter(currentFilterTeam));
+
+/* ---------- Type filter modal open/close (per team) ---------- */
+const tfModal = document.getElementById("tfmodal");
+function openTypeModal(team){
+  currentFilterTeam = team;
+  document.getElementById("tfmodal-title").textContent =
+    (team === "you" ? "Filter Your Team" : "Filter Opponent") + " picker by type";
+  refreshTypeFilter();
+  tfModal.hidden = false;
+}
+function closeTypeModal(){ tfModal.hidden = true; }
+document.querySelectorAll(".filterbtn").forEach(b =>
+  b.addEventListener("click", () => openTypeModal(b.dataset.team)));
+document.querySelectorAll(".filterclear").forEach(b =>
+  b.addEventListener("click", () => clearTeamFilter(b.dataset.team)));
+document.getElementById("tfmodal-close").addEventListener("click", closeTypeModal);
+document.getElementById("tfdone").addEventListener("click", closeTypeModal);
+tfModal.addEventListener("click", e => { if(e.target === tfModal) closeTypeModal(); });
+document.addEventListener("keydown", e => { if(e.key === "Escape" && !tfModal.hidden) closeTypeModal(); });
+
 buildTypeFilter();
 
 loadNameList();

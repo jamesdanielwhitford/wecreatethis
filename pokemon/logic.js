@@ -34,6 +34,12 @@ const TYPE_COLORS = {
   dark:"#5a5366", steel:"#5a8ea1", fairy:"#ec8fe6"
 };
 
+/* PokéAPI type ids — used to build the official type-symbol icon URLs. */
+const TYPE_ID = {
+  normal:1, fighting:2, flying:3, poison:4, ground:5, rock:6, bug:7, ghost:8, steel:9,
+  fire:10, water:11, grass:12, electric:13, psychic:14, ice:15, dragon:16, dark:17, fairy:18
+};
+
 /* Multiplier of one attacking type onto a defender's (1- or 2-) type array. */
 function typeMult(atkType, defTypes){
   let m = 1;
@@ -173,11 +179,37 @@ function pairedLineups(myTeam, oppTeam, n){
   return { pairs, edge: counted ? total / counted : 0 };
 }
 
+/* Doubles "perfect matchup": pick the best DISTINCT pair from `myTeam` to send
+   against a threat duo (threatA, threatB). For each candidate pair we try both
+   assignments (who answers which threat) and keep the better one, so the result
+   maximizes combined coverage — which may differ from simply taking the two
+   Pokémon that are individually best against each threat.
+   Returns { score, assign: [{ mine, opp, detail }, ...] } or null if <2 mons. */
+function bestDuoVsPair(myTeam, threatA, threatB){
+  if(myTeam.length < 2) return null;
+  let best = null;
+  for(let i = 0; i < myTeam.length; i++){
+    for(let j = i + 1; j < myTeam.length; j++){
+      const a = myTeam[i], b = myTeam[j];
+      const aA = counterScore(a, threatA), aB = counterScore(a, threatB);
+      const bA = counterScore(b, threatA), bB = counterScore(b, threatB);
+      const s1 = aA.score + bB.score;   // a vs A, b vs B
+      const s2 = aB.score + bA.score;   // a vs B, b vs A
+      const score = Math.max(s1, s2);
+      const assign = s1 >= s2
+        ? [{ mine: a, opp: threatA, detail: aA }, { mine: b, opp: threatB, detail: bB }]
+        : [{ mine: a, opp: threatB, detail: aB }, { mine: b, opp: threatA, detail: bA }];
+      if(!best || score > best.score) best = { score, assign };
+    }
+  }
+  return best;
+}
+
 /* Export for Node-based test runners while staying a plain global script in the browser. */
 if(typeof module !== "undefined" && module.exports){
   module.exports = {
-    TYPES, CHART, TYPE_COLORS, typeMult, bestStabMult, classify, fmtMult,
+    TYPES, CHART, TYPE_COLORS, TYPE_ID, typeMult, bestStabMult, classify, fmtMult,
     clamp, multToScore, bestAtkStat, counterScore, counterLabel, COUNTER_WEIGHTS,
-    avgCounterScore, rankAgainst, bestLineups, pairedLineups
+    avgCounterScore, rankAgainst, bestLineups, pairedLineups, bestDuoVsPair
   };
 }

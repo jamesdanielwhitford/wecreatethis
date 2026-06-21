@@ -29,16 +29,24 @@
   /* Type pills */
   .chooser { display:flex; flex-wrap:wrap; gap:8px; }
   .tpill {
+    display:inline-flex; align-items:center; gap:6px;
     padding:6px 13px; border-radius:22px; font-size:12px; font-weight:700; text-transform:uppercase;
     letter-spacing:.03em; cursor:pointer; border:2px solid transparent; background:var(--panel2);
     color:var(--muted); opacity:.7;
   }
+  .tpill img { width:16px; height:16px; image-rendering:auto; flex-shrink:0; }
   .tpill:hover { opacity:1; }
   .tpill.on { background:var(--tc); color:#fff; border-color:rgba(255,255,255,.35); opacity:1; }
   .tpill.big { font-size:14px; padding:8px 16px; }
-  .tpill.sm { cursor:default; opacity:1; background:var(--tc); color:#fff; display:inline-flex; align-items:center; gap:6px; }
+  .tpill.sm { cursor:default; opacity:1; background:var(--tc); color:#fff; }
   .tpill.sm b { background:rgba(0,0,0,.28); padding:1px 7px; border-radius:5px; font-variant-numeric:tabular-nums; }
   .muted { color:var(--muted); font-size:14px; }
+
+  /* Offense / Defense columns */
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+  .colh { font-size:14px; margin:4px 0 12px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .colh small { font-weight:500; color:var(--muted); font-size:12px; }
+  @media (max-width:720px){ .cols { grid-template-columns:1fr; } }
 
   /* Detail */
   #detail { margin-top:22px; }
@@ -69,7 +77,7 @@
 <header>
   <div>
     <h1>📊 Type Matchup Reference</h1>
-    <div class="sub">Pick one or two types to see what that (combined) typing resists, is weak to, and is immune to — on defense.</div>
+    <div class="sub">Pick one or two types to see both its offensive coverage and its defensive matchups at once.</div>
   </div>
   <a class="back" href="index.html">← Back to calculator</a>
 </header>
@@ -89,15 +97,23 @@
 <script>
 let selected = [];
 
+/* Official round type-symbol icons (Gen IX / Scarlet-Violet); TYPE_ID lives in logic.js. */
+function typeIcon(t){
+  const id = TYPE_ID[t];
+  if(!id) return "";
+  const url = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/${id}.png`;
+  return `<img src="${url}" alt="" onerror="this.remove()"/>`;
+}
+
 function buildChooser(){
   document.getElementById("chooser").innerHTML = TYPES.map(t =>
-    `<button class="tpill" data-type="${t}" style="--tc:${TYPE_COLORS[t]}">${t}</button>`).join("");
+    `<button class="tpill" data-type="${t}" style="--tc:${TYPE_COLORS[t]}">${typeIcon(t)}${t}</button>`).join("");
 }
 
 function renderSelected(){
   const el = document.getElementById("selected");
   el.innerHTML = selected.length
-    ? selected.map(t => `<button class="tpill big on" data-type="${t}" style="--tc:${TYPE_COLORS[t]}">${t} ✕</button>`).join("")
+    ? selected.map(t => `<button class="tpill big on" data-type="${t}" style="--tc:${TYPE_COLORS[t]}">${typeIcon(t)}${t} ✕</button>`).join("")
     : `<span class="muted">none yet — pick a type below</span>`;
   document.querySelectorAll("#chooser .tpill").forEach(b =>
     b.classList.toggle("on", selected.includes(b.dataset.type)));
@@ -107,30 +123,47 @@ function renderSelected(){
 function renderDetail(){
   const el = document.getElementById("detail");
   if(selected.length === 0){
-    el.innerHTML = `<div class="empty">Select a type to see its resistances and weaknesses.</div>`;
+    el.innerHTML = `<div class="empty">Select a type to see its offensive coverage and defensive matchups.</div>`;
     return;
   }
-  // defensive multiplier of each attacking type against the selected (1- or 2-) type combo
-  const groups = {};
-  for(const atk of TYPES){
-    const m = typeMult(atk, selected);
-    (groups[m] = groups[m] || []).push(atk);
-  }
-  const pill = t => `<span class="tpill sm" style="--tc:${TYPE_COLORS[t]}">${t} <b>${fmtMult(typeMult(t, selected))}</b></span>`;
-  const section = (title, cls, mults) => {
-    const types = mults.flatMap(m => groups[m] || []);
-    if(types.length === 0) return "";
-    return `<div class="dsec ${cls}"><h3>${title}</h3><div class="drow">${types.map(pill).join("")}</div></div>`;
+
+  // Build sections for a given per-type multiplier function and label config.
+  const pill = (t, mult) => `<span class="tpill sm" style="--tc:${TYPE_COLORS[t]}">${typeIcon(t)}${t} <b>${fmtMult(mult)}</b></span>`;
+  const build = (multFn, cfg) => {
+    const groups = {};
+    for(const t of TYPES){ const m = multFn(t); (groups[m] = groups[m] || []).push(t); }
+    return cfg.map(({ title, cls, mults }) => {
+      const types = mults.flatMap(m => groups[m] || []);
+      if(types.length === 0) return "";
+      return `<div class="dsec ${cls}"><h3>${title}</h3><div class="drow">${types.map(t => pill(t, multFn(t))).join("")}</div></div>`;
+    }).join("");
   };
+
+  // Offense: best same-type (STAB) hit of the selected type(s) against each defending type.
+  const offense = build(t => bestStabMult(selected, [t]), [
+    { title: "🟢 Super effective against", cls: "resist",  mults: [4, 2] },
+    { title: "🔴 Not very effective against", cls: "weak", mults: [0.5, 0.25] },
+    { title: "⚪ No effect against", cls: "immune", mults: [0] },
+    { title: "➖ Neutral damage to", cls: "neutral", mults: [1] }
+  ]);
+
+  // Defense: damage the selected type(s) take from each attacking type.
+  const defense = build(t => typeMult(t, selected), [
+    { title: "🔴 Weak to — takes extra damage", cls: "weak", mults: [4, 2] },
+    { title: "🟢 Resists — takes less damage", cls: "resist", mults: [0.25, 0.5] },
+    { title: "⚪ Immune — takes no damage", cls: "immune", mults: [0] },
+    { title: "➖ Neutral", cls: "neutral", mults: [1] }
+  ]);
+
   el.innerHTML = `
-    <div class="combo">Defending as
-      ${selected.map(t => `<span class="tpill sm" style="--tc:${TYPE_COLORS[t]}">${t}</span>`).join("")}</div>
-    ${section("🔴 Weak to — takes extra damage", "weak", [4, 2])}
-    ${section("🟢 Resists — takes less damage", "resist", [0.25, 0.5])}
-    ${section("⚪ Immune — takes no damage", "immune", [0])}
-    ${section("➖ Neutral", "neutral", [1])}
-    <div class="note">Damage is shown from the attacking type's point of view. For two types the multipliers
-      are multiplied together (e.g. a ½× and a 2× cancel to neutral; a 2× and 2× stack to 4×; any 0× immunity wins).</div>`;
+    <div class="combo">Selected
+      ${selected.map(t => `<span class="tpill sm" style="--tc:${TYPE_COLORS[t]}">${typeIcon(t)}${t}</span>`).join("")}</div>
+    <div class="cols">
+      <div><h2 class="colh">⚔️ Offense <small>your best same-type move vs each type</small></h2>${offense}</div>
+      <div><h2 class="colh">🛡️ Defense <small>damage taken from each attacking type</small></h2>${defense}</div>
+    </div>
+    <div class="note">Offense uses the best of your selected type(s) attacking each defender; defense multiplies your
+      type(s) together (a ½× and 2× cancel to neutral; 2× and 2× stack to 4×; any 0× immunity wins).</div>`;
 }
 
 function toggleType(t){
