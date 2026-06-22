@@ -196,6 +196,92 @@ const pl2 = pairedLineups([myTeam[0]], oppTeam, 3);
 check("only one slot filled when I have one Pokémon", pl2.pairs.filter(p => p.mine).length, 1);
 check("remaining slots report no counter left", pl2.pairs[2].mine, null);
 
+/* ---------------- type rankings (dashboard) ---------------- */
+group("defensiveProfile / offensiveProfile — single-type sanity");
+const ndef = defensiveProfile(["normal"]);
+check("normal: 1 weakness (fighting)", ndef.weak, 1);
+check("normal: 1 immunity (ghost)",    ndef.immune, 1);
+check("normal: defScore = +2",         ndef.score, 2);
+const noff = offensiveProfile(["normal"]);
+check("normal offense: 0 super-effective", noff.superEff, 0);
+check("normal offense: 1 no-effect (ghost)", noff.noEffect, 1);
+check("normal offense: offScore = -5",  noff.score, -5);
+const groff = offensiveProfile(["ground"]);
+check("ground offense: 5 super-effective", groff.superEff, 5);
+check("ground offense: 1 no-effect (flying)", groff.noEffect, 1);
+
+group("rankTypings — ranked typing lists");
+const RK = rankTypings();
+check("171 typings ranked for defense", RK.defense.length, 171);
+check("171 typings ranked for offense", RK.offense.length, 171);
+check("171 typings ranked combined",    RK.combined.length, 171);
+check("defense list sorted best-first", RK.defense[0].defScore >= RK.defense[170].defScore, true);
+check("offense list sorted best-first", RK.offense[0].offScore >= RK.offense[170].offScore, true);
+check("best single defensive type is steel",
+  RK.defense.filter(x => x.types.length === 1)[0].types, ["steel"]);
+
+group("combineTypings — weighting modes");
+check("even mode ranks all 171 typings", combineTypings("even").length, 171);
+check("even/balanced scores are non-negative (normalized)",
+  combineTypings("even").every(x => x.combinedScore >= 0), true);
+// "balanced" must reward both dimensions: a one-trick offensive typing should rank
+// lower under "balanced" than under "even".
+(function(){
+  const key = "ice,fighting"; // best offense, poor defense
+  const rank = (mode) => combineTypings(mode).findIndex(x => x.types.join(",") === key);
+  check("balanced demotes a one-trick offensive typing vs even", rank("balanced") > rank("even"), true);
+})();
+check("sum mode equals raw def+off", (() => {
+  const top = combineTypings("sum")[0];
+  return top.combinedScore === top.defScore + top.offScore;
+})(), true);
+
+group("isLegendary — legendary/mythical detection");
+check("mewtwo is legendary",            isLegendary({ name:"mewtwo" }), true);
+check("giratina-altered form detected", isLegendary({ name:"giratina-altered" }), true);
+check("ho-oh (hyphenated base) detected", isLegendary({ name:"ho-oh" }), true);
+check("garchomp (pseudo) is NOT legendary", isLegendary({ name:"garchomp" }), false);
+check("kartana (ultra beast) is NOT legendary", isLegendary({ name:"kartana" }), false);
+
+/* ---------------- team coverage + builder (dashboard) ---------------- */
+group("teamDefenseProfile / teamOffenseProfile");
+const tmon = (name, types, stats) => ({ name, id: name, types, stats });
+const evenStats = v => ({ hp:v, attack:v, defense:v, "special-attack":v, "special-defense":v, speed:v });
+const steelMon = tmon("steely", ["steel"], evenStats(80));
+const iceMon   = tmon("icy",    ["ice"],   evenStats(80));
+const tdp = teamDefenseProfile([steelMon]);
+check("lone steel resists/avoids 11 of 18", tdp.resisted, 11);
+check("lone steel leaves 7 attacking types uncovered", tdp.uncovered.length, 7);
+const top = teamOffenseProfile([iceMon]);
+check("lone ice hits 4 types super-effectively", top.covered, 4);
+check("teamScore returns a finite score", Number.isFinite(teamScore([steelMon, iceMon]).score), true);
+
+group("bestTeams — ranked distinct teams");
+const pool = [
+  tmon("a", ["steel","fairy"], evenStats(100)),
+  tmon("b", ["water","ground"], evenStats(95)),
+  tmon("c", ["fire","flying"],  evenStats(90)),
+  tmon("d", ["grass","poison"], evenStats(85)),
+  tmon("e", ["electric"],       evenStats(80)),
+  tmon("f", ["dragon","dark"],  evenStats(110)),
+  tmon("g", ["ghost"],          evenStats(70)),
+  tmon("h", ["normal"],         evenStats(60))
+];
+const teams = bestTeams(pool, { teamSize: 3, restarts: 8, topN: 3, candidatePoolSize: 8 });
+check("returns at most topN teams", teams.length <= 3, true);
+check("each team has the requested size", teams.every(t => t.team.length === 3), true);
+check("no Pokémon repeats within a team",
+  teams.every(t => new Set(t.team.map(p => p.id)).size === 3), true);
+check("teams are ranked best-first",
+  teams.length < 2 || teams[0].score >= teams[teams.length - 1].score, true);
+check("too-small pool yields no teams", bestTeams([pool[0]], { teamSize: 6 }).length, 0);
+(function(){
+  const legpool = pool.concat([tmon("mewtwo", ["psychic"], evenStats(106))]);
+  const teams = bestTeams(legpool, { teamSize: 3, restarts: 8, topN: 5, candidatePoolSize: 9, excludeLegendaries: true });
+  const usesLegend = teams.some(t => t.team.some(p => p.name === "mewtwo"));
+  check("excludeLegendaries keeps legendaries out of every team", usesLegend, false);
+})();
+
 /* ---------------- chart integrity ---------------- */
 group("CHART integrity — data sanity");
 check("18 types defined", TYPES.length, 18);

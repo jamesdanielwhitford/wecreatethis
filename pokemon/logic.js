@@ -205,11 +205,261 @@ function bestDuoVsPair(myTeam, threatA, threatB){
   return best;
 }
 
+/* ============================================================
+   Type-ranking analysis — "which typings are best on defense /
+   offense?" Pure type-chart math, no Pokémon or API needed.
+   ============================================================ */
+
+/* Every distinct typing: 18 single + 153 dual = 171 type combinations. */
+function allTypings(){
+  const out = [];
+  for(let i = 0; i < TYPES.length; i++){
+    out.push([TYPES[i]]);
+    for(let j = i + 1; j < TYPES.length; j++) out.push([TYPES[i], TYPES[j]]);
+  }
+  return out;
+}
+
+/* Defensive profile of a typing across all 18 attacking types.
+   score sums -multToScore(mult): immunity +3, ¼× +2, ½× +1, neutral 0,
+   2× -1, 4× -2. Higher = tougher to hit. */
+function defensiveProfile(defTypes){
+  let immune = 0, resist = 0, neutral = 0, weak = 0, score = 0;
+  for(const atk of TYPES){
+    const m = typeMult(atk, defTypes);
+    score += -multToScore(m);
+    if(m === 0) immune++;
+    else if(m < 1) resist++;
+    else if(m > 1) weak++;
+    else neutral++;
+  }
+  return { types: defTypes, immune, resist, neutral, weak, score };
+}
+
+/* Offensive profile of a typing: its best STAB hit on each of the 18 types.
+   score sums multToScore(bestMult): 4× +2, 2× +1, neutral 0, ½× -1, ¼× -2,
+   immune -3. Higher = better super-effective coverage. */
+function offensiveProfile(atkTypes){
+  let superEff = 0, neutral = 0, notVery = 0, noEffect = 0, score = 0;
+  for(const def of TYPES){
+    const m = bestStabMult(atkTypes, [def]);
+    score += multToScore(m);
+    if(m === 0) noEffect++;
+    else if(m > 1) superEff++;
+    else if(m < 1) notVery++;
+    else neutral++;
+  }
+  return { types: atkTypes, superEff, neutral, notVery, noEffect, score };
+}
+
+/* Rank every typing by defense, by offense, and by their raw-sum combined.
+   Each list is sorted best-first; entries carry both sub-profiles. */
+function rankTypings(){
+  const combined = allTypings().map(t => {
+    const def = defensiveProfile(t), off = offensiveProfile(t);
+    return { types: t, def, off, defScore: def.score, offScore: off.score,
+             score: def.score + off.score };
+  });
+  return {
+    defense:  combined.slice().sort((a, b) => b.defScore - a.defScore),
+    offense:  combined.slice().sort((a, b) => b.offScore - a.offScore),
+    combined: combined.slice().sort((a, b) => b.score - a.score)
+  };
+}
+
+/* Combined ranking with a selectable weighting, sorted best-first. Defense and
+   offense scores live on different scales (def tops out higher than off), so
+   "even" and "balanced" min-max normalize each dimension to 0..1 first:
+     - "even"     → (defN + offN)·50   : honest 50/50; strength in either helps.
+     - "balanced" → √(defN·offN)·100   : rewards typings good at BOTH; a typing
+                    weak in one dimension is dragged down (one-trick typings sink).
+     - "sum"      → defScore + offScore : the raw, defense-leaning total.
+   Each entry gets `combinedScore` (the value sorted on) alongside the raw scores. */
+function combineTypings(mode = "even"){
+  const list = allTypings().map(t => {
+    const def = defensiveProfile(t), off = offensiveProfile(t);
+    return { types: t, def, off, defScore: def.score, offScore: off.score };
+  });
+  const defs = list.map(x => x.defScore), offs = list.map(x => x.offScore);
+  const dMin = Math.min(...defs), dMax = Math.max(...defs);
+  const oMin = Math.min(...offs), oMax = Math.max(...offs);
+  const nd = x => dMax === dMin ? 0 : (x.defScore - dMin) / (dMax - dMin);
+  const no = x => oMax === oMin ? 0 : (x.offScore - oMin) / (oMax - oMin);
+  for(const x of list){
+    const d = nd(x), o = no(x);
+    x.combinedScore = mode === "sum"      ? x.defScore + x.offScore
+                    : mode === "balanced" ? Math.sqrt(d * o) * 100
+                    :                       (d + o) * 50;
+  }
+  return list.sort((a, b) => b.combinedScore - a.combinedScore);
+}
+
+/* ============================================================
+   Team building — best team of 6 real Pokémon by typing spread
+   AND base stats. Pokémon shape matches the app:
+   { name, id, types:[...], stats:{hp,attack,defense,
+     'special-attack','special-defense',speed} }
+   ============================================================ */
+
+function bst(p){
+  const s = p.stats;
+  return s.hp + s.attack + s.defense + s["special-attack"] + s["special-defense"] + s.speed;
+}
+function monId(p){ return p.id != null ? p.id : p.name; }
+
+/* Legendary + mythical species (Gen 1–9), by PokéAPI species slug. Matches the
+   `is_legendary || is_mythical` flag without needing the species endpoint, so
+   the team builder can drop them with no extra API calls. (Ultra Beasts and
+   Paradox Pokémon are intentionally NOT here — PokéAPI doesn't flag them legendary.) */
+const LEGENDARY = new Set([
+  "articuno","zapdos","moltres","mewtwo","mew",
+  "raikou","entei","suicune","lugia","ho-oh","celebi",
+  "regirock","regice","registeel","latias","latios","kyogre","groudon","rayquaza","jirachi","deoxys",
+  "uxie","mesprit","azelf","dialga","palkia","heatran","regigigas","giratina","cresselia",
+  "phione","manaphy","darkrai","shaymin","arceus",
+  "victini","cobalion","terrakion","virizion","tornadus","thundurus","reshiram","zekrom",
+  "landorus","kyurem","keldeo","meloetta","genesect",
+  "xerneas","yveltal","zygarde","diancie","hoopa","volcanion",
+  "tapu-koko","tapu-lele","tapu-bulu","tapu-fini","cosmog","cosmoem","solgaleo","lunala",
+  "necrozma","magearna","marshadow","zeraora","meltan","melmetal",
+  "zacian","zamazenta","eternatus","kubfu","urshifu","regieleki","regidrago","glastrier",
+  "spectrier","calyrex","zarude","enamorus",
+  "wo-chien","chien-pao","ting-lu","chi-yu","koraidon","miraidon",
+  "okidogi","munkidori","fezandipiti","ogerpon","terapagos","pecharunt"
+]);
+
+/* True if a Pokémon is a legendary/mythical. Handles alternate-form slugs
+   (e.g. "giratina-altered", "kyurem-black") by checking the species prefix;
+   hyphenated base names (ho-oh, tapu-koko, wo-chien…) match exactly. */
+function isLegendary(p){
+  const n = (p.name || "").toLowerCase();
+  return LEGENDARY.has(n) || LEGENDARY.has(n.split("-")[0]);
+}
+
+/* Defensive coverage of a whole team: for each attacking type, does ANY member
+   resist/avoid it, and how many members are weak (shared weakness)?
+   score rewards resisted types and penalizes shared weaknesses. */
+function teamDefenseProfile(team){
+  let resisted = 0, score = 0;
+  const uncovered = [];
+  for(const atk of TYPES){
+    let best = Infinity, weakMembers = 0;
+    for(const p of team){
+      const m = typeMult(atk, p.types);
+      best = Math.min(best, m);
+      if(m > 1) weakMembers++;
+    }
+    if(best < 1){ resisted++; score += 1; }
+    else { uncovered.push(atk); score -= 1; }
+    score -= 0.25 * weakMembers;
+  }
+  return { resisted, uncovered, score };
+}
+
+/* Offensive coverage: for each type, can any member hit it super-effectively
+   with STAB? */
+function teamOffenseProfile(team){
+  let covered = 0;
+  const uncovered = [];
+  for(const def of TYPES){
+    let best = 0;
+    for(const p of team) best = Math.max(best, bestStabMult(p.types, [def]));
+    if(best >= 2) covered++;
+    else uncovered.push(def);
+  }
+  return { covered, uncovered, score: covered };
+}
+
+/* Tunable blend of defensive coverage, offensive coverage and raw base stats.
+   The optimizer maximizes this, so whatever mix (all-out offense, defensive
+   wall, or balance) scores highest is what wins. */
+const TEAM_WEIGHTS = { defense: 6, offense: 5, stats: 3 };
+
+function teamScore(team){
+  const def = teamDefenseProfile(team);
+  const off = teamOffenseProfile(team);
+  const avgBst = team.reduce((s, p) => s + bst(p), 0) / team.length;
+  const defN  = def.score / TYPES.length;          // ~ -1..1
+  const offN  = off.covered / TYPES.length;         // 0..1
+  const statN = clamp((avgBst - 400) / 200, -1, 1.5);
+  const W = TEAM_WEIGHTS;
+  const score = W.defense * defN + W.offense * offN + W.stats * statN;
+  return { score, def, off, avgBst, parts: { defN, offN, statN } };
+}
+
+/* Find a ranked list of strong, DISTINCT teams of `teamSize` from `pool`.
+   Brute force over the National Dex is infeasible, so we restrict to the
+   strongest candidates by BST, then run many randomized greedy seeds each
+   refined by hill-climbing single-member swaps, dedupe, and rank.
+   Returns [{ team, score, def, off, avgBst, parts }] best-first. */
+function bestTeams(pool, opts = {}){
+  const size   = opts.teamSize || 6;
+  const restarts = opts.restarts || 60;
+  const topN   = opts.topN || 25;
+  const candN  = opts.candidatePoolSize || 250;
+  const base = opts.excludeLegendaries ? pool.filter(p => !isLegendary(p)) : pool;
+  if(base.length < size) return [];
+
+  const cand = base.slice().sort((a, b) => bst(b) - bst(a))
+                   .slice(0, Math.min(candN, base.length));
+
+  // deterministic RNG so results are stable across runs
+  let s = 0x2545f491;
+  const rng = () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+
+  const has = (team, p, skip) =>
+    team.some((m, idx) => idx !== skip && monId(m) === monId(p));
+
+  function greedySeed(){
+    const team = [cand[Math.floor(rng() * Math.min(40, cand.length))]];
+    while(team.length < size){
+      let best = null, bestS = -Infinity;
+      for(const p of cand){
+        if(has(team, p, -1)) continue;
+        const sc = teamScore([...team, p]).score;
+        if(sc > bestS){ bestS = sc; best = p; }
+      }
+      team.push(best);
+    }
+    return team;
+  }
+
+  function improve(team){
+    let cur = team.slice(), curScore = teamScore(cur).score, improved = true;
+    while(improved){
+      improved = false;
+      for(let i = 0; i < cur.length; i++){
+        let bestP = cur[i], bestS = curScore;
+        for(const p of cand){
+          if(has(cur, p, i)) continue;
+          const trial = cur.slice(); trial[i] = p;
+          const sc = teamScore(trial).score;
+          if(sc > bestS){ bestS = sc; bestP = p; }
+        }
+        if(bestP !== cur[i]){ cur[i] = bestP; curScore = bestS; improved = true; }
+      }
+    }
+    return cur;
+  }
+
+  const seen = new Map();
+  const keyOf = t => t.map(monId).sort().join(",");
+  for(let r = 0; r < restarts; r++){
+    const team = improve(greedySeed());
+    const k = keyOf(team);
+    if(!seen.has(k)) seen.set(k, { team: team.slice(), ...teamScore(team) });
+  }
+  return [...seen.values()].sort((a, b) => b.score - a.score).slice(0, topN);
+}
+
 /* Export for Node-based test runners while staying a plain global script in the browser. */
 if(typeof module !== "undefined" && module.exports){
   module.exports = {
     TYPES, CHART, TYPE_COLORS, TYPE_ID, typeMult, bestStabMult, classify, fmtMult,
     clamp, multToScore, bestAtkStat, counterScore, counterLabel, COUNTER_WEIGHTS,
-    avgCounterScore, rankAgainst, bestLineups, pairedLineups, bestDuoVsPair
+    avgCounterScore, rankAgainst, bestLineups, pairedLineups, bestDuoVsPair,
+    allTypings, defensiveProfile, offensiveProfile, rankTypings, combineTypings,
+    bst, monId, LEGENDARY, isLegendary,
+    teamDefenseProfile, teamOffenseProfile, teamScore, TEAM_WEIGHTS, bestTeams
   };
 }
