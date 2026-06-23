@@ -206,6 +206,104 @@ function bestDuoVsPair(myTeam, threatA, threatB){
 }
 
 /* ============================================================
+   Robust lineup modes — these three plan against the opponent's
+   WHOLE team (not a predicted subset), so the one mon that would
+   blindside you can't hide in an average. Team sizes are small
+   (C(6,3)=20, C(6,4)=15), so we enumerate every lineup exactly.
+   ============================================================ */
+
+/* All distinct lineups of `n` members from `team`. If the team has n or
+   fewer mons there's a single lineup (the whole team). */
+function lineupCombos(team, n){
+  if(n <= 0) return [[]];
+  if(n >= team.length) return [team.slice()];
+  const out = [];
+  const pick = [];
+  (function rec(start){
+    if(pick.length === n){ out.push(pick.slice()); return; }
+    for(let i = start; i < team.length; i++){ pick.push(team[i]); rec(i + 1); pick.pop(); }
+  })(0);
+  return out;
+}
+
+/* Best switch-in `lineup` has for a single threat `opp`:
+   the member with the highest counterScore. */
+function bestAnswer(lineup, opp){
+  let mine = null, score = -Infinity, detail = null;
+  for(const m of lineup){
+    const d = counterScore(m, opp);
+    if(d.score > score){ score = d.score; mine = m; detail = d; }
+  }
+  return { mine, score, detail };
+}
+
+/* "Safest" (maximin): the lineup of `n` whose WORST matchup against any
+   opponent is the least bad — explicitly optimizes the floor, not the mean,
+   so it won't leave a single mon that sweeps you. Ties broken by total margin.
+   Returns { lineup, floor, sum, perThreat } (perThreat worst-first). */
+function safestLineup(myTeam, oppTeam, n){
+  if(myTeam.length === 0 || oppTeam.length === 0) return null;
+  const size = Math.min(n, myTeam.length);
+  let best = null;
+  for(const lineup of lineupCombos(myTeam, size)){
+    const perThreat = oppTeam.map(o => ({ opp: o, ...bestAnswer(lineup, o) }));
+    const floor = Math.min(...perThreat.map(t => t.score));
+    const sum = perThreat.reduce((s, t) => s + t.score, 0);
+    if(!best || floor > best.floor || (floor === best.floor && sum > best.sum)){
+      best = { lineup, floor, sum, perThreat };
+    }
+  }
+  best.perThreat.sort((a, b) => a.score - b.score);
+  return best;
+}
+
+/* "Coverage" (set-cover): the lineup of `n` that gives a solid answer
+   (counterScore ≥ `threshold`, default 1 = "Decent") to the MOST opponents.
+   Guarantees breadth rather than a single great lead. Ties broken by total
+   margin. Returns { lineup, covered, total, threshold, sum, perThreat }. */
+function coverageLineup(myTeam, oppTeam, n, threshold = 1){
+  if(myTeam.length === 0 || oppTeam.length === 0) return null;
+  const size = Math.min(n, myTeam.length);
+  let best = null;
+  for(const lineup of lineupCombos(myTeam, size)){
+    const perThreat = oppTeam.map(o => ({ opp: o, ...bestAnswer(lineup, o) }));
+    const covered = perThreat.filter(t => t.score >= threshold).length;
+    const sum = perThreat.reduce((s, t) => s + t.score, 0);
+    if(!best || covered > best.covered || (covered === best.covered && sum > best.sum)){
+      best = { lineup, covered, total: oppTeam.length, threshold, sum, perThreat };
+    }
+  }
+  best.perThreat.sort((a, b) => b.score - a.score);
+  return best;
+}
+
+/* "Weighted": rank your mons by a threat-weighted average across the opponent's
+   whole team, where each opponent's weight grows with how badly your team fares
+   against it (danger = −avg counterScore of your team vs it). So the mon that
+   threatens to sweep you pulls the pick, instead of being one equal vote.
+   Returns { myBest, threats, edge, ranked } (threats most-dangerous-first). */
+function weightedLineup(myTeam, oppTeam, n){
+  if(myTeam.length === 0 || oppTeam.length === 0) return null;
+  const size = Math.min(n, myTeam.length);
+  const threats = oppTeam.map(o => {
+    let s = 0;
+    for(const m of myTeam) s += counterScore(m, o).score;
+    const danger = -(s / myTeam.length);
+    return { mon: o, danger, weight: 1 + Math.max(0, danger) };
+  });
+  const wTotal = threats.reduce((s, t) => s + t.weight, 0);
+  const ranked = myTeam.map(m => {
+    let s = 0;
+    for(const t of threats) s += t.weight * counterScore(m, t.mon).score;
+    return { mon: m, wAvg: s / wTotal };
+  }).sort((a, b) => b.wAvg - a.wAvg);
+  const myBest = ranked.slice(0, size);
+  const edge = myBest.length ? myBest.reduce((s, x) => s + x.wAvg, 0) / myBest.length : 0;
+  threats.sort((a, b) => b.danger - a.danger);
+  return { myBest, threats, edge, ranked };
+}
+
+/* ============================================================
    Type-ranking analysis — "which typings are best on defense /
    offense?" Pure type-chart math, no Pokémon or API needed.
    ============================================================ */
@@ -458,6 +556,7 @@ if(typeof module !== "undefined" && module.exports){
     TYPES, CHART, TYPE_COLORS, TYPE_ID, typeMult, bestStabMult, classify, fmtMult,
     clamp, multToScore, bestAtkStat, counterScore, counterLabel, COUNTER_WEIGHTS,
     avgCounterScore, rankAgainst, bestLineups, pairedLineups, bestDuoVsPair,
+    lineupCombos, bestAnswer, safestLineup, coverageLineup, weightedLineup,
     allTypings, defensiveProfile, offensiveProfile, rankTypings, combineTypings,
     bst, monId, LEGENDARY, isLegendary,
     teamDefenseProfile, teamOffenseProfile, teamScore, TEAM_WEIGHTS, bestTeams

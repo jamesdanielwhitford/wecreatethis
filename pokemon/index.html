@@ -386,6 +386,13 @@
     .pside.right { justify-content:flex-start; }
     .pside.right .pname { justify-content:flex-start; }
   }
+  /* Robust-mode extras (Safest / Coverage / Weighted) */
+  .threattag { font-size:10px; font-weight:800; padding:2px 7px; border-radius:5px; text-transform:uppercase; letter-spacing:.03em; flex-shrink:0; }
+  .threattag.ok    { background:#14532d; color:#86efac; }
+  .threattag.gap   { background:#5f1e1e; color:#fecaca; }
+  .threattag.worst { background:#5f1e1e; color:#fecaca; }
+  .dangerbar { height:5px; border-radius:3px; background:var(--panel2); margin-top:5px; overflow:hidden; }
+  .dangerbar span { display:block; height:100%; background:var(--red); }
 
   /* Stats table */
   .stats-table th { cursor: pointer; }
@@ -570,6 +577,9 @@
         <div class="toggle" id="lg-order">
           <button data-order="avg" class="active">Average</button>
           <button data-order="paired">Paired</button>
+          <button data-order="safest">Safest</button>
+          <button data-order="coverage">Coverage</button>
+          <button data-order="weighted">Weighted</button>
         </div>
       </div>
     </div>
@@ -919,6 +929,9 @@ function renderLineups(){
     return;
   }
   if(lOrder === "paired"){ renderLineupsPaired(body, myFull, oppFull); return; }
+  if(lOrder === "safest"){ renderLineupsSafest(body, myFull, oppFull); return; }
+  if(lOrder === "coverage"){ renderLineupsCoverage(body, myFull, oppFull); return; }
+  if(lOrder === "weighted"){ renderLineupsWeighted(body, myFull, oppFull); return; }
 
   const { oppLikely, myBest, edge } = bestLineups(myFull, oppFull, lineupSize());
 
@@ -1000,6 +1013,132 @@ function renderLineupsPaired(body, myFull, oppFull){
       <span>Their pick, by threat <span class="dot ${youBlue ? "red" : "blue"}"></span></span>
     </div>
     ${rows}`;
+}
+
+/* offense/defense/speed chips for a counterScore detail `d` */
+function vsChips(d){
+  if(!d) return "";
+  const offCls = d.off > 1 ? "good" : (d.off < 1 ? "bad" : "neu");
+  const defCls = d.def < 1 ? "good" : (d.def > 1 ? "bad" : "neu");
+  const spdCls = d.faster ? "good" : (d.tie ? "neu" : "bad");
+  const spdText = d.faster ? `+${d.speedDiff}` : (d.tie ? "tie" : `${d.speedDiff}`);
+  return `<div class="pvs-chips">
+    <span class="cchip ${offCls}">⚔️ ${fmtMult(d.off)}</span>
+    <span class="cchip ${defCls}">🛡️ ${fmtMult(d.def)}</span>
+    <span class="cchip ${spdCls}">⚡ ${spdText}</span>
+  </div>`;
+}
+
+/* one threat→answer row (their mon on the right, your assigned counter on the left).
+   `tag` is an optional small badge shown over the threat (e.g. a coverage ✓/✗). */
+function threatRow(p, i, youBlue, tag){
+  const lab = p.mine ? counterLabel(p.score) : { text: "—", cls: "even" };
+  const myBlock = p.mine
+    ? `<img src="${p.mine.sprite}" onerror="this.style.visibility='hidden'"/>
+       <div class="pname">${p.mine.name} ${typeTags(p.mine.types)}</div>`
+    : `<span class="mnone">no answer</span>`;
+  return `<div class="pairrow">
+    <div class="pside ${youBlue ? "you" : "them"}">${myBlock}</div>
+    <div class="pvs">
+      <span class="plabel ${lab.cls}">${lab.text}${p.mine ? ` ${p.score >= 0 ? "+" : ""}${p.score.toFixed(1)}` : ""}</span>
+      ${vsChips(p.detail)}
+    </div>
+    <div class="pside ${youBlue ? "them" : "you"} right">
+      ${tag || ""}
+      <div class="pname">${p.opp.name} ${typeTags(p.opp.types)}</div>
+      <img src="${p.opp.sprite}" onerror="this.style.visibility='hidden'"/>
+    </div>
+  </div>`;
+}
+
+/* Safest (maximin): the lineup whose worst matchup is least bad. */
+function renderLineupsSafest(body, myFull, oppFull){
+  const res = safestLineup(myFull, oppFull, lineupSize());
+  if(!res){ body.innerHTML = `<div class="empty">Add Pokémon to both teams to see the best lineups.</div>`; return; }
+  const youBlue = lSide === "you";
+  const b = edgeBanner(res.floor, "Your safest lineup holds up", "Even your best lineup has a weak link");
+  const fLab = counterLabel(res.floor);
+  const team = res.lineup.map(p => `${p.name}`).join(", ");
+  const rows = res.perThreat.map((p, i) => threatRow(p, i, youBlue,
+    p.score === res.floor ? `<span class="threattag worst">weak link</span>` : "")).join("");
+  body.innerHTML = `
+    <div class="edge-banner ${b.cls}">${b.text}
+      <small>Lineup: <b style="text-transform:capitalize">${team}</b> · worst matchup against their whole team:
+        <span class="plabel ${fLab.cls}">${fLab.text} ${res.floor >= 0 ? "+" : ""}${res.floor.toFixed(1)}</span></small>
+    </div>
+    <div class="pairhead">
+      <span><span class="dot ${youBlue ? "blue" : "red"}"></span> Your answer</span>
+      <span>matchup</span>
+      <span>Their team, worst-first <span class="dot ${youBlue ? "red" : "blue"}"></span></span>
+    </div>
+    ${rows}`;
+}
+
+/* Coverage (set-cover): the lineup that answers the most of their team. */
+function renderLineupsCoverage(body, myFull, oppFull){
+  const res = coverageLineup(myFull, oppFull, lineupSize());
+  if(!res){ body.innerHTML = `<div class="empty">Add Pokémon to both teams to see the best lineups.</div>`; return; }
+  const youBlue = lSide === "you";
+  const allCovered = res.covered === res.total;
+  const cls = allCovered ? "you" : (res.covered <= res.total / 2 ? "them" : "even");
+  const team = res.lineup.map(p => p.name).join(", ");
+  const rows = res.perThreat.map((p, i) => {
+    const covered = p.score >= res.threshold;
+    const tag = `<span class="threattag ${covered ? "ok" : "gap"}">${covered ? "✓ covered" : "✗ gap"}</span>`;
+    return threatRow(p, i, youBlue, tag);
+  }).join("");
+  body.innerHTML = `
+    <div class="edge-banner ${cls}">${allCovered ? "✅ Every threat answered" : `⚠️ ${res.total - res.covered} threat${res.total - res.covered === 1 ? "" : "s"} with no solid answer`}
+      <small>Lineup: <b style="text-transform:capitalize">${team}</b> · covers <b>${res.covered}/${res.total}</b> of their team (Decent or better)</small>
+    </div>
+    <div class="pairhead">
+      <span><span class="dot ${youBlue ? "blue" : "red"}"></span> Your answer</span>
+      <span>matchup</span>
+      <span>Their team <span class="dot ${youBlue ? "red" : "blue"}"></span></span>
+    </div>
+    ${rows}`;
+}
+
+/* Weighted: your top N by threat-weighted average; dangerous mons count more. */
+function renderLineupsWeighted(body, myFull, oppFull){
+  const res = weightedLineup(myFull, oppFull, lineupSize());
+  if(!res){ body.innerHTML = `<div class="empty">Add Pokémon to both teams to see the best lineups.</div>`; return; }
+  const youBlue = lSide === "you";
+  const b = edgeBanner(res.edge, "Your lineup answers their threats", "Their threats outweigh your answers");
+  const maxDanger = Math.max(0.001, ...res.threats.map(t => t.danger));
+  const youCol = `
+    <div class="lineup-col ${youBlue ? "you" : "them"}">
+      <h3><span class="dot ${youBlue ? "blue" : "red"}"></span> Your best ${res.myBest.length} <span style="color:var(--muted);font-weight:500;font-size:12px">(threat-weighted)</span></h3>
+      ${res.myBest.map((x, i) => {
+        const lab = counterLabel(x.wAvg);
+        return `<div class="pick">
+          <div class="prank">#${i + 1}</div>
+          <img src="${x.mon.sprite}" onerror="this.style.visibility='hidden'"/>
+          <div class="pmain"><div class="pname">${x.mon.name} ${typeTags(x.mon.types)}</div></div>
+          <span class="plabel ${lab.cls}">${lab.text} ${x.wAvg >= 0 ? "+" : ""}${x.wAvg.toFixed(1)}</span>
+        </div>`;
+      }).join("")}
+    </div>`;
+  const oppCol = `
+    <div class="lineup-col ${youBlue ? "them" : "you"}">
+      <h3><span class="dot ${youBlue ? "red" : "blue"}"></span> Their threats <span style="color:var(--muted);font-weight:500;font-size:12px">(by danger to you)</span></h3>
+      ${res.threats.map(t => {
+        const pct = Math.round(100 * Math.max(0, t.danger) / maxDanger);
+        return `<div class="pick">
+          <img src="${t.mon.sprite}" onerror="this.style.visibility='hidden'"/>
+          <div class="pmain">
+            <div class="pname">${t.mon.name} ${typeTags(t.mon.types)}</div>
+            <div class="dangerbar"><span style="width:${pct}%"></span></div>
+          </div>
+          <span class="plabel ${t.danger > 0 ? "avoid" : "even"}">${t.danger >= 0 ? "+" : ""}${t.danger.toFixed(1)}</span>
+        </div>`;
+      }).join("")}
+    </div>`;
+  body.innerHTML = `
+    <div class="edge-banner ${b.cls}">${b.text}
+      <small>Each of their mons is weighted by how badly your team fares against it, then your best ${res.myBest.length} answers are chosen.</small>
+    </div>
+    <div class="lineups">${youCol}${oppCol}</div>`;
 }
 
 /* ---------- Stats table ---------- */

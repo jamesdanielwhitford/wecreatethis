@@ -196,6 +196,38 @@ const pl2 = pairedLineups([myTeam[0]], oppTeam, 3);
 check("only one slot filled when I have one Pokémon", pl2.pairs.filter(p => p.mine).length, 1);
 check("remaining slots report no counter left", pl2.pairs[2].mine, null);
 
+/* ---------------- robust lineup modes (full-team planning) ---------------- */
+group("lineupCombos — every distinct sub-team of size n");
+check("C(3,2) = 3 combos", lineupCombos(myTeam, 2).length, 3);
+check("each combo has the requested size", lineupCombos(myTeam, 2).every(c => c.length === 2), true);
+check("n >= team size returns the whole team once", lineupCombos(myTeam, 9).length, 1);
+
+group("safestLineup — maximin: best worst-case matchup");
+const safe = safestLineup(myTeam, oppTeam, 2);
+check("safest: returns a lineup of n", safe.lineup.length, 2);
+check("safest: one entry per opponent", safe.perThreat.length, oppTeam.length);
+check("safest: floor equals the minimum per-threat score", safe.floor, Math.min(...safe.perThreat.map(t => t.score)));
+check("safest: threats listed worst-first", safe.perThreat[0].score <= safe.perThreat[safe.perThreat.length - 1].score, true);
+// no other 2-lineup has a strictly better worst-case than the chosen one
+const floorOf = L => Math.min(...oppTeam.map(o => bestAnswer(L, o).score));
+check("safest: no lineup has a higher floor", lineupCombos(myTeam, 2).every(L => floorOf(L) <= safe.floor), true);
+
+group("coverageLineup — answers the most of their team");
+const cov = coverageLineup(myTeam, oppTeam, 2);
+check("coverage: total equals opponent count", cov.total, oppTeam.length);
+check("coverage: covered never exceeds total", cov.covered <= cov.total, true);
+check("coverage: covered counts threats at/above threshold", cov.covered, cov.perThreat.filter(t => t.score >= cov.threshold).length);
+const coverOf = L => oppTeam.filter(o => bestAnswer(L, o).score >= cov.threshold).length;
+check("coverage: no lineup covers more", lineupCombos(myTeam, 2).every(L => coverOf(L) <= cov.covered), true);
+
+group("weightedLineup — dangerous threats pull the pick");
+const wl = weightedLineup(myTeam, oppTeam, 2);
+check("weighted: returns n picks", wl.myBest.length, 2);
+check("weighted: one threat entry per opponent", wl.threats.length, oppTeam.length);
+check("weighted: threats sorted most-dangerous-first", wl.threats[0].danger >= wl.threats[wl.threats.length - 1].danger, true);
+check("weighted: every weight is at least 1", wl.threats.every(t => t.weight >= 1), true);
+check("weighted: edge is a finite number", Number.isFinite(wl.edge), true);
+
 /* ---------------- type rankings (dashboard) ---------------- */
 group("defensiveProfile / offensiveProfile — single-type sanity");
 const ndef = defensiveProfile(["normal"]);
