@@ -10,7 +10,9 @@
   --available-height: calc(var(--actual-vh, 1vh) * 100 - 80px);
   --keyboard-height: 156px;
   --board-height: calc(var(--available-height) - var(--keyboard-height));
-  --tile-size: calc((var(--board-height) - 35px) / 8); /* 7 gaps of 5px = 35px */
+  --tile-size-by-height: calc((var(--board-height) - 35px) / 8); /* 7 gaps of 5px = 35px */
+  --tile-size-by-width: calc((min(100vw, 340px) - 24px - 20px) / 5); /* board padding + 4 gaps of 5px */
+  --tile-size: min(var(--tile-size-by-height), var(--tile-size-by-width));
   --score-box-width: calc(var(--tile-size) * 0.8);
 
   /* Colors */
@@ -139,7 +141,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 12px 12px 8px;
   padding-bottom: max(8px, env(safe-area-inset-bottom, 8px)); /* Account for home indicator */
   gap: 12px;
@@ -548,7 +550,9 @@ body {
     --keyboard-height: 180px;
     --tile-gap: 6px;
     --board-height: calc(var(--available-height) - var(--keyboard-height));
-    --tile-size: calc((var(--board-height) - 42px) / 8); /* 7 gaps of 6px = 42px */
+    --tile-size-by-height: calc((var(--board-height) - 42px) / 8); /* 7 gaps of 6px = 42px */
+    --tile-size-by-width: calc((min(100vw, 340px) - 24px - 24px) / 5); /* board padding + 4 gaps of 6px */
+    --tile-size: min(var(--tile-size-by-height), var(--tile-size-by-width));
   }
 
   .game-container {
@@ -568,6 +572,10 @@ body {
 }
 
 @media (min-width: 768px) {
+  :root {
+    --tile-size-by-width: calc((min(100vw, 400px) - 24px - 20px) / 5); /* board padding + 4 gaps of 5px */
+  }
+
   .board {
     max-width: 400px;
   }
