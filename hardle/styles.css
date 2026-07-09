@@ -26,6 +26,7 @@
   --score-yellow: #ffc107;
   --score-green: #4caf50;
   --key-bg: #e0e0e0;
+  --key-bg-accent: #c9c9c9;
   --key-hover: #d0d0d0;
   --key-active: #bbb;
   --modal-overlay: rgba(0, 0, 0, 0.5);
@@ -40,6 +41,7 @@
   --tile-empty-border: #555;
   --tile-filled-border: #999;
   --key-bg: #3a3a3a;
+  --key-bg-accent: #4d4d4d;
   --key-hover: #4a4a4a;
   --key-active: #555;
   --modal-overlay: rgba(0, 0, 0, 0.7);
@@ -326,10 +328,10 @@ body {
   color: white;
 }
 
-/* Enter and Backspace buttons - same styling as other keys */
+/* Enter and Backspace buttons - slightly distinct shade from other keys */
 .key-enter,
 .key-backspace {
-  background: var(--key-bg) !important;
+  background: var(--key-bg-accent) !important;
   border: none !important;
   box-shadow: none !important;
   font-weight: 800 !important;
@@ -884,6 +886,7 @@ body {
     --tile-empty-border: #555;
     --tile-filled-border: #999;
     --key-bg: #3a3a3a;
+    --key-bg-accent: #4d4d4d;
     --key-hover: #4a4a4a;
     --key-active: #555;
     --modal-overlay: rgba(0, 0, 0, 0.7);

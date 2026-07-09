@@ -323,10 +323,9 @@ const GameState = {
    * Start a new Randle game (random word, practice mode)
    */
   newGame() {
-    // Clear old cache
-    if (this.cacheKey) {
-      localStorage.removeItem(this.cacheKey);
-    }
+    // Clear old Randle cache only - never touch the Hardle daily save,
+    // even if this game instance was previously in Hardle mode
+    localStorage.removeItem('randle-game');
 
     // Generate new word
     const newAnswer = getRandomWord();
