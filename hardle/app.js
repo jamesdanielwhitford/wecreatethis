@@ -14,100 +14,39 @@ function init() {
   // Initialize theme
   UI.initTheme();
 
-  // Determine game mode (hardle vs randle vs testle)
-  const isRandle = window.location.pathname.includes('randle');
-  const isTestle = window.location.pathname.includes('testle');
+  // Hardle always starts on the daily word; Randle (practice mode) is
+  // reached in-page via handleSwitchToRandle(), not on initial load.
+  const today = new Date();
+  const answer = getDailyWord(today);
 
-  // Get the answer word
-  let answer;
-  if (isTestle) {
-    // Testle: Try to load existing game, otherwise get random word
-    const savedState = localStorage.getItem('testle-game');
-    if (savedState) {
-      const parsed = JSON.parse(savedState);
-      answer = parsed.answer;
-    } else {
-      answer = getRandomWord();
-    }
-  } else if (isRandle) {
-    // Randle: Try to load existing game, otherwise get random word
-    const savedState = localStorage.getItem('randle-game');
-    if (savedState) {
-      const parsed = JSON.parse(savedState);
-      answer = parsed.answer;
-    } else {
-      answer = getRandomWord();
-    }
-  } else {
-    // Hardle: Get daily word based on current date
-    const today = new Date();
-    answer = getDailyWord(today);
+  // Check if we need to clear old daily cache
+  const savedState = localStorage.getItem('hardle-game');
+  if (savedState) {
+    const parsed = JSON.parse(savedState);
+    const savedDate = parsed.date;
+    const todayString = today.toISOString().split('T')[0];
 
-    // Check if we need to clear old daily cache
-    const savedState = localStorage.getItem('hardle-game');
-    if (savedState) {
-      const parsed = JSON.parse(savedState);
-      const savedDate = parsed.date;
-      const todayString = today.toISOString().split('T')[0];
-
-      // Clear cache if date has changed
-      if (savedDate !== todayString) {
-        localStorage.removeItem('hardle-game');
-      }
+    // Clear cache if date has changed
+    if (savedDate !== todayString) {
+      localStorage.removeItem('hardle-game');
     }
   }
 
-  // Get preferred mode (separate for Hardle, Randle, and Testle)
-  const modeKey = isTestle ? 'testle-preferred-mode' : isRandle ? 'randle-preferred-mode' : 'hardle-preferred-mode';
-  const preferredMode = localStorage.getItem(modeKey) || 'hard';
-
-  // Determine cache key
-  const cacheKey = isTestle ? 'testle-game' : isRandle ? 'randle-game' : 'hardle-game';
-
   // Initialize game state
   game = Object.create(GameState);
-  game.init(answer, preferredMode, cacheKey, isTestle);
+  game.init(answer, 'hardle', 'hardle-game');
 
   // Make game accessible globally for UI module
   window.game = game;
 
   // Try to load saved state
-  const loaded = game.loadState(cacheKey);
+  const loaded = game.loadState('hardle-game');
 
   if (loaded) {
     console.log('Loaded saved game state');
-
-    // If no guesses yet, apply preferred mode
-    // This allows users to change mode preference between sessions
-    if (game.guesses.length === 0) {
-      game.isHardMode = preferredMode === 'hard';
-    }
-
-    // Re-run mode-specific logic to ensure UI is properly restored
-    if (game.guesses.length > 0) {
-      if (!game.isHardMode) {
-        // Easy mode: Re-run deduction to ensure dots are displayed
-        // This is important because:
-        // 1. Deduction logic may have been updated since last save
-        // 2. Saved tiles might not have dots properly set
-        // 3. User might have refreshed mid-game
-        game.deduceTiles();
-        game.updateKeyboardFromDeduction();
-      } else {
-        // Hard mode: Re-apply keyboard outlines from manual marks
-        game.updateKeyboardFromMarks();
-      }
-    }
+    game.updateKeyboardFromMarks();
   } else {
     console.log('Starting new game');
-  }
-
-  // For testing: log the answer in Randle/Testle mode
-  if (isRandle) {
-    console.log('🎯 RANDLE ANSWER:', answer);
-  }
-  if (isTestle) {
-    console.log('🧪 TESTLE ANSWER:', answer);
   }
 
   // Initial render
@@ -121,8 +60,7 @@ function init() {
   setupViewportHandler();
 
   // Determine if we should show info modal
-  const visitKey = isTestle ? 'testle-visited' : isRandle ? 'randle-visited' : 'hardle-visited';
-  const isFirstVisit = !localStorage.getItem(visitKey);
+  const isFirstVisit = !localStorage.getItem('hardle-visited');
   const hasInfoHash = window.location.hash === '#info';
   const shouldShowInfoModal = hasInfoHash || isFirstVisit;
 
@@ -130,8 +68,6 @@ function init() {
   if (hasInfoHash) {
     setTimeout(() => {
       UI.showModal('info-modal');
-      updateModeSelectionUI();
-      updateStartPlayingButton();
       // Remove hash from URL without reloading
       history.replaceState(null, null, window.location.pathname);
     }, 100);
@@ -141,10 +77,8 @@ function init() {
   if (isFirstVisit) {
     setTimeout(() => {
       UI.showModal('info-modal');
-      updateModeSelectionUI();
-      updateStartPlayingButton();
     }, 500);
-    localStorage.setItem(visitKey, 'true');
+    localStorage.setItem('hardle-visited', 'true');
   }
 
   // Show end game modal if game is already over (but only if info modal isn't being shown)
@@ -173,75 +107,81 @@ function setupEventListeners() {
     });
   });
 
-  // Tile clicks (for marking in Hard mode)
+  // Tile clicks (manual marking, always available)
   document.querySelectorAll('.tile').forEach(tile => {
     tile.addEventListener('click', handleTileClick);
   });
 
-  // Score box clicks (to show explanation modal)
-  document.querySelectorAll('.score-box').forEach(scoreBox => {
-    scoreBox.addEventListener('click', handleScoreBoxClick);
+  // Score dot clicks (show how-to-play modal)
+  document.querySelectorAll('.score-dots').forEach(scoreDots => {
+    scoreDots.addEventListener('click', handleScoreBoxClick);
   });
 
-  // Info button
-  const infoBtn = document.getElementById('info-btn');
-  if (infoBtn) {
-    infoBtn.addEventListener('click', () => {
-      UI.showModal('info-modal');
-      updateModeSelectionUI();
-      updateStartPlayingButton();
+  // Hamburger menu button
+  const menuBtn = document.getElementById('menu-btn');
+  if (menuBtn) {
+    menuBtn.addEventListener('click', () => {
+      updateMenuUI();
+      showMenuMainList();
+      UI.showModal('menu-modal');
     });
   }
 
-  // Quick Settings button
-  const quickSettingsBtn = document.getElementById('quick-settings-btn');
-  if (quickSettingsBtn) {
-    quickSettingsBtn.addEventListener('click', () => {
-      UI.showModal('quick-settings-modal');
-      updateQuickModeSelectionUI();
+  // Menu: How to play
+  const menuHowToPlay = document.getElementById('menu-how-to-play');
+  if (menuHowToPlay) {
+    menuHowToPlay.addEventListener('click', () => {
+      UI.hideModal('menu-modal');
+      setTimeout(() => UI.showModal('info-modal'), 300);
     });
   }
 
-  // Start Playing button
+  // Menu: switch between Hardle <-> Practice Mode
+  const menuSwitchVariant = document.getElementById('menu-switch-variant');
+  if (menuSwitchVariant) {
+    menuSwitchVariant.addEventListener('click', () => {
+      UI.hideModal('menu-modal');
+      if (game.variant === 'hardle') {
+        handleSwitchToRandle();
+      } else {
+        handleSwitchToHardle();
+      }
+    });
+  }
+
+  // Menu: Send feedback (shows email sub-view within the same modal)
+  const menuFeedback = document.getElementById('menu-feedback');
+  if (menuFeedback) {
+    menuFeedback.addEventListener('click', showMenuFeedbackView);
+  }
+
+  // Menu: feedback sub-view back button
+  const menuFeedbackBack = document.getElementById('menu-feedback-back');
+  if (menuFeedbackBack) {
+    menuFeedbackBack.addEventListener('click', showMenuMainList);
+  }
+
+  // Menu: copy feedback email to clipboard
+  const feedbackCopyBtn = document.getElementById('feedback-copy-btn');
+  if (feedbackCopyBtn) {
+    feedbackCopyBtn.addEventListener('click', async () => {
+      const email = document.getElementById('feedback-email').textContent.trim();
+      try {
+        await navigator.clipboard.writeText(email);
+        UI.showNotification('Email copied to clipboard!');
+      } catch (err) {
+        UI.showNotification('Unable to copy email');
+      }
+    });
+  }
+
+  // Start Playing / Got it button (how-to-play modal)
   const startPlayingBtn = document.getElementById('start-playing-btn');
   if (startPlayingBtn) {
-    startPlayingBtn.addEventListener('click', handleStartPlaying);
-  }
-
-  // Mode selection buttons (info modal)
-  const hardModeBtn = document.getElementById('select-hard-mode');
-  const easyModeBtn = document.getElementById('select-easy-mode');
-
-  if (hardModeBtn) {
-    hardModeBtn.addEventListener('click', () => handleModeSelection('hard'));
-  }
-  if (easyModeBtn) {
-    easyModeBtn.addEventListener('click', () => handleModeSelection('easy'));
-  }
-
-  // Mode selection buttons (quick settings modal)
-  const quickHardModeBtn = document.getElementById('quick-select-hard-mode');
-  const quickEasyModeBtn = document.getElementById('quick-select-easy-mode');
-
-  if (quickHardModeBtn) {
-    quickHardModeBtn.addEventListener('click', () => {
-      handleModeSelection('hard');
-      updateQuickModeSelectionUI();
+    startPlayingBtn.addEventListener('click', () => {
+      UI.hideModal('info-modal');
     });
   }
-  if (quickEasyModeBtn) {
-    quickEasyModeBtn.addEventListener('click', () => {
-      handleModeSelection('easy');
-      updateQuickModeSelectionUI();
-    });
-  }
-
-  // Close quick settings button
-  document.querySelectorAll('.close-quick-settings').forEach(btn => {
-    btn.addEventListener('click', () => {
-      UI.hideModal('quick-settings-modal');
-    });
-  });
 
   // Modal close buttons
   document.querySelectorAll('.modal-close').forEach(btn => {
@@ -270,29 +210,16 @@ function setupEventListeners() {
     });
   }
 
-  // Play Again button (Randle only)
-  const playAgainBtn = document.getElementById('play-again-btn');
-  if (playAgainBtn) {
-    playAgainBtn.addEventListener('click', handlePlayAgain);
-  }
-
-  // Reset button (Testle only)
-  const resetBtn = document.getElementById('reset-btn');
-  if (resetBtn) {
-    resetBtn.addEventListener('click', handleReset);
-  }
-
-  // Set Word button (Testle only)
-  const setWordBtn = document.getElementById('set-word-btn');
-  if (setWordBtn) {
-    setWordBtn.addEventListener('click', handleSetWord);
-  }
-
-  // Custom word input - auto uppercase
-  const customWordInput = document.getElementById('custom-word-input');
-  if (customWordInput) {
-    customWordInput.addEventListener('input', (e) => {
-      e.target.value = e.target.value.toUpperCase();
+  // Results screen "next" button: Practice Mode (Hardle) / Play Again (Randle)
+  const resultsNextBtn = document.getElementById('results-next-btn');
+  if (resultsNextBtn) {
+    resultsNextBtn.addEventListener('click', () => {
+      UI.hideAllModals();
+      if (game.variant === 'hardle') {
+        handleSwitchToRandle();
+      } else {
+        handlePlayAgain();
+      }
     });
   }
 }
@@ -370,7 +297,7 @@ function handleSubmit() {
     return;
   }
 
-  // Update UI - render entire board since Easy mode deduction affects all rows
+  // Update UI
   UI.renderBoard(game);
   UI.renderKeyboard(game);
 
@@ -386,10 +313,10 @@ function handleSubmit() {
 }
 
 /**
- * Handle tile click (for marking in Hard mode)
+ * Handle tile click (manual marking, always available)
  */
 function handleTileClick(e) {
-  if (game.gameOver || !game.isHardMode) return;
+  if (game.gameOver) return;
 
   const row = parseInt(e.target.dataset.row);
   const col = parseInt(e.target.dataset.col);
@@ -418,10 +345,10 @@ function handleTileClick(e) {
 }
 
 /**
- * Handle score box click (show explanation modal)
+ * Handle score dots click (show how-to-play modal)
  */
 function handleScoreBoxClick(e) {
-  const row = parseInt(e.target.dataset.row);
+  const row = parseInt(e.currentTarget.dataset.row);
 
   // Only show modal if there's a score in this row
   if (row >= game.currentRow) return;
@@ -429,180 +356,77 @@ function handleScoreBoxClick(e) {
   const guessObj = game.guesses[row];
   if (!guessObj) return;
 
-  // Show the score explanation modal
-  UI.showModal('score-modal');
+  UI.showModal('info-modal');
 }
 
 /**
- * Handle mode selection from info modal
+ * Update the hamburger menu's "switch variant" label based on current mode
  */
-function handleModeSelection(mode) {
-  const isHardMode = mode === 'hard';
-  const isRandle = window.location.pathname.includes('randle');
-  const isTestle = window.location.pathname.includes('testle');
-
-  // If mode is already selected, do nothing
-  if (game.isHardMode === isHardMode) {
-    updateModeSelectionUI();
-    return;
+function updateMenuUI() {
+  const label = document.getElementById('menu-switch-variant-label');
+  if (label) {
+    label.textContent = game.variant === 'hardle' ? 'Practice Mode' : "Today's Puzzle";
   }
+}
 
-  // Check if game has started
-  const hasGuesses = game.guesses.length > 0;
+/**
+ * Show the main menu list, hiding the feedback sub-view
+ */
+function showMenuMainList() {
+  const mainList = document.getElementById('menu-list-main');
+  const feedbackList = document.getElementById('menu-list-feedback');
+  if (mainList) mainList.style.display = 'flex';
+  if (feedbackList) feedbackList.style.display = 'none';
+}
 
-  // Hardle: Don't allow switching mid-game
-  if (!isRandle && !isTestle && hasGuesses && !game.gameOver) {
-    alert('You cannot change modes during a Hardle game. Finish this game first!');
-    updateModeSelectionUI();
-    return;
-  }
+/**
+ * Show the feedback sub-view within the menu modal
+ */
+function showMenuFeedbackView() {
+  const mainList = document.getElementById('menu-list-main');
+  const feedbackList = document.getElementById('menu-list-feedback');
+  if (mainList) mainList.style.display = 'none';
+  if (feedbackList) feedbackList.style.display = 'flex';
+}
 
-  // Randle/Testle: Allow switching but reset the game
-  if ((isRandle || isTestle) && hasGuesses && !game.gameOver) {
-    const confirm = window.confirm(
-      'Switching modes will start a new game with a new word. Continue?'
-    );
-    if (!confirm) {
-      updateModeSelectionUI();
-      return;
-    }
+/**
+ * Switch from Hardle to Randle (practice mode), in-place, no page navigation
+ */
+function handleSwitchToRandle() {
+  game.newGame();
 
-    // Start new game with new mode
-    if (isTestle) {
-      const newWord = getRandomWord();
-      game.init(newWord, mode, 'testle-game', true);
-    } else {
-      game.newGame(mode);
-    }
-  } else {
-    // No guesses yet or game over - just switch mode
-    game.isHardMode = isHardMode;
+  const navTitle = document.getElementById('nav-title');
+  if (navTitle) navTitle.textContent = 'Practice Mode';
 
-    // Clear tile marks/dots when switching
-    for (let row = 0; row < 8; row++) {
-      for (let col = 0; col < 4; col++) {
-        game.tiles[row][col].mark = null;
-        game.tiles[row][col].dot = null;
-      }
-    }
-
-    // If switching to Easy mode, run deduction on existing guesses
-    if (!isHardMode && hasGuesses) {
-      game.deduceTiles();
-      game.updateKeyboardFromDeduction();
-    }
-
-    // If switching to Hard mode, clear keyboard colors except solid ones
-    if (isHardMode) {
-      game.updateKeyboardFromMarks();
-    }
-  }
-
-  // Save mode preference (separate for Hardle, Randle, and Testle)
-  const modeKey = isTestle ? 'testle-preferred-mode' : isRandle ? 'randle-preferred-mode' : 'hardle-preferred-mode';
-  localStorage.setItem(modeKey, mode);
-
-  // Update UI
+  UI.hideAllModals();
   UI.renderBoard(game);
   UI.renderKeyboard(game);
-  updateModeSelectionUI();
-
-  // Save state
   game.saveState();
 }
 
 /**
- * Update mode selection buttons in the info modal
+ * Switch from Randle back to Hardle (today's daily word), in-place
  */
-function updateModeSelectionUI() {
-  const hardBtn = document.getElementById('select-hard-mode');
-  const easyBtn = document.getElementById('select-easy-mode');
-  const marksDescription = document.getElementById('marks-description');
+function handleSwitchToHardle() {
+  const today = new Date();
+  const answer = getDailyWord(today);
 
-  if (hardBtn && easyBtn) {
-    if (game.isHardMode) {
-      hardBtn.classList.add('active');
-      easyBtn.classList.remove('active');
-    } else {
-      hardBtn.classList.remove('active');
-      easyBtn.classList.add('active');
-    }
+  game = Object.create(GameState);
+  game.init(answer, 'hardle', 'hardle-game');
+  window.game = game;
+
+  const loaded = game.loadState('hardle-game');
+  if (loaded) {
+    game.updateKeyboardFromMarks();
   }
 
-  // Update the marks example description and visuals based on mode
-  if (marksDescription) {
-    const exampleTiles = marksDescription.closest('.example').querySelectorAll('.example-tile');
+  const navTitle = document.getElementById('nav-title');
+  if (navTitle) navTitle.textContent = 'Hardle';
 
-    if (game.isHardMode) {
-      marksDescription.textContent = 'Tap tiles to mark them with colored borders to track your thinking.';
-      // Show marks (borders)
-      exampleTiles.forEach(tile => {
-        tile.classList.remove('example-red-dot', 'example-green-dot');
-      });
-      if (exampleTiles[0]) exampleTiles[0].classList.add('example-green-mark');
-      if (exampleTiles[1]) exampleTiles[1].classList.add('example-red-mark');
-      if (exampleTiles[2]) exampleTiles[2].classList.add('example-green-mark');
-      if (exampleTiles[3]) exampleTiles[3].classList.add('example-red-mark');
-    } else {
-      marksDescription.textContent = 'The game automatically adds colored borders to show which letters are correct or incorrect.';
-      // Show borders (same style as hard mode, but automatic)
-      exampleTiles.forEach(tile => {
-        tile.classList.remove('example-red-mark', 'example-green-mark');
-      });
-      if (exampleTiles[0]) exampleTiles[0].classList.add('example-green-dot');
-      if (exampleTiles[1]) exampleTiles[1].classList.add('example-red-dot');
-      if (exampleTiles[2]) exampleTiles[2].classList.add('example-green-dot');
-      if (exampleTiles[3]) exampleTiles[3].classList.add('example-red-dot');
-    }
-  }
-}
+  UI.hideAllModals();
+  UI.renderBoard(game);
+  UI.renderKeyboard(game);
 
-/**
- * Update mode selection buttons in the quick settings modal
- */
-function updateQuickModeSelectionUI() {
-  const hardBtn = document.getElementById('quick-select-hard-mode');
-  const easyBtn = document.getElementById('quick-select-easy-mode');
-
-  if (hardBtn && easyBtn) {
-    if (game.isHardMode) {
-      hardBtn.classList.add('active');
-      easyBtn.classList.remove('active');
-    } else {
-      hardBtn.classList.remove('active');
-      easyBtn.classList.add('active');
-    }
-  }
-}
-
-/**
- * Update the Start Playing button based on game state
- */
-function updateStartPlayingButton() {
-  const startPlayingBtn = document.getElementById('start-playing-btn');
-  if (!startPlayingBtn) return;
-
-  const isHardle = !window.location.pathname.includes('randle') && !window.location.pathname.includes('testle');
-
-  // For Hardle: Check if game is completed
-  if (isHardle && game.gameOver) {
-    startPlayingBtn.textContent = 'Try Randle';
-    startPlayingBtn.onclick = () => {
-      window.location.href = 'randle.html';
-    };
-  } else {
-    startPlayingBtn.textContent = 'Start Playing!';
-    startPlayingBtn.onclick = handleStartPlaying;
-  }
-}
-
-/**
- * Handle Start Playing button click
- */
-function handleStartPlaying() {
-  UI.hideModal('info-modal');
-
-  // Show end game modal if game is over
   if (game.gameOver) {
     setTimeout(() => {
       UI.showEndGameModal(game.won, game.guesses.length, game.answer);
@@ -611,12 +435,10 @@ function handleStartPlaying() {
 }
 
 /**
- * Handle Play Again (Randle only)
+ * Handle Play Again (Randle only) - fresh random word, same variant
  */
 function handlePlayAgain() {
-  // Get new random word and reset game
-  const mode = game.isHardMode ? 'hard' : 'easy';
-  game.newGame(mode);
+  game.newGame();
 
   // Update UI
   UI.hideAllModals();
@@ -625,73 +447,6 @@ function handlePlayAgain() {
 
   // Save new state
   game.saveState();
-}
-
-/**
- * Handle Reset (Testle only) - Clear all guesses
- */
-function handleReset() {
-  if (!confirm('Reset all guesses? The target word will remain the same.')) {
-    return;
-  }
-
-  // Keep the same answer but reset all guesses
-  const currentAnswer = game.answer;
-  const mode = game.isHardMode ? 'hard' : 'easy';
-
-  // Re-initialize with same answer
-  game.init(currentAnswer, mode, 'testle-game', true);
-
-  // Update UI
-  UI.renderBoard(game);
-  UI.renderKeyboard(game);
-
-  // Save state
-  game.saveState();
-}
-
-/**
- * Handle Set Word (Testle only) - Set custom target word
- */
-function handleSetWord() {
-  const input = document.getElementById('custom-word-input');
-  const newWord = input.value.toUpperCase().trim();
-
-  // Validate input
-  if (newWord.length !== 4) {
-    alert('Please enter exactly 4 letters');
-    return;
-  }
-
-  if (!/^[A-Z]{4}$/.test(newWord)) {
-    alert('Please enter only letters (A-Z)');
-    return;
-  }
-
-  // Confirm if game has started
-  if (game.guesses.length > 0) {
-    if (!confirm('Setting a new word will reset the game. Continue?')) {
-      return;
-    }
-  }
-
-  // Initialize new game with custom word
-  const mode = game.isHardMode ? 'hard' : 'easy';
-  game.init(newWord, mode, 'testle-game', true);
-
-  // Update UI
-  UI.hideAllModals();
-  UI.renderBoard(game);
-  UI.renderKeyboard(game);
-
-  // Clear input
-  input.value = '';
-
-  // Save state
-  game.saveState();
-
-  // Show confirmation
-  console.log('🧪 TESTLE TARGET SET TO:', newWord);
 }
 
 /**

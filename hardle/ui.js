@@ -27,12 +27,12 @@ const UI = {
       this.renderTile(gameState, rowIndex, col);
     }
 
-    // Render score box
-    this.renderScoreBox(rowIndex, score, guess === gameState.answer);
+    // Render score dots
+    this.renderScoreDots(rowIndex, score, guess === gameState.answer);
   },
 
   /**
-   * Render a single tile with letter, marks, dots, and background colors
+   * Render a single tile with letter, marks, and background colors
    */
   renderTile(gameState, row, col) {
     const tile = gameState.tiles[row][col];
@@ -70,39 +70,38 @@ const UI = {
       }
     }
 
-    // Add marks (Hard mode)
+    // Add manual marks (tap-to-mark thinking aid)
     if (tile.mark) {
       tileElement.classList.add(`mark-${tile.mark}`);
-    }
-
-    // Add dots (Easy mode)
-    if (tile.dot) {
-      tileElement.classList.add(`dot-${tile.dot}`);
     }
   },
 
   /**
-   * Render the score box for a row
+   * Build the markup for a 2x2 dot cluster given a score (0-4)
+   * First `score` dots are green, remaining are red.
+   * If score is null (row not yet submitted), all 4 dots render empty/gray.
    */
-  renderScoreBox(rowIndex, score, isWinning) {
-    const scoreBox = document.querySelector(`.score-box[data-row="${rowIndex}"]`);
-    if (!scoreBox) return;
-
-    // Clear content
-    scoreBox.textContent = '';
-    scoreBox.className = 'score-box';
-
-    if (score !== null) {
-      scoreBox.textContent = score;
-
-      if (isWinning) {
-        scoreBox.classList.add('winning');
-      } else if (score === 0) {
-        scoreBox.classList.add('zero');
-      } else {
-        scoreBox.classList.add('partial');
+  buildDotClusterHTML(score) {
+    let html = '';
+    for (let i = 0; i < 4; i++) {
+      let cls = 'score-dot';
+      if (score !== null) {
+        cls += i < score ? ' score-dot-green' : ' score-dot-red';
       }
+      html += `<span class="${cls}"></span>`;
     }
+    return html;
+  },
+
+  /**
+   * Render the score dot cluster for a row
+   */
+  renderScoreDots(rowIndex, score, isWinning) {
+    const scoreDots = document.querySelector(`.score-dots[data-row="${rowIndex}"]`);
+    if (!scoreDots) return;
+
+    scoreDots.innerHTML = this.buildDotClusterHTML(score);
+    scoreDots.classList.toggle('winning', !!isWinning);
   },
 
   /**
@@ -155,13 +154,6 @@ const UI = {
     const modal = document.getElementById(modalId);
     if (modal) {
       modal.classList.remove('active');
-
-      // If closing info modal and game is over, show end game modal
-      if (modalId === 'info-modal' && window.game && window.game.gameOver) {
-        setTimeout(() => {
-          this.showEndGameModal(window.game.won, window.game.guesses.length, window.game.answer);
-        }, 300);
-      }
     }
   },
 
@@ -180,31 +172,35 @@ const UI = {
     const modal = document.getElementById('end-game-modal');
     if (!modal) return;
 
+    const gameState = window.game;
     const title = document.getElementById('end-game-title');
+    const stat = document.getElementById('results-stat');
+    const status = document.getElementById('results-status');
     const message = document.getElementById('end-game-message');
-    const answerWord = document.getElementById('answer-word');
-    const playAgainBtn = document.getElementById('play-again-btn');
+    const nextBtn = document.getElementById('results-next-btn');
 
     if (title) {
       title.textContent = won ? '🎉 You Won!' : '😔 Game Over';
     }
 
+    if (stat) {
+      stat.textContent = won ? attempts : 'X';
+      stat.classList.toggle('results-stat-loss', !won);
+    }
+
+    if (status) {
+      status.textContent = won
+        ? `Solved in ${attempts} ${attempts === 1 ? 'guess' : 'guesses'}!`
+        : 'Out of guesses';
+    }
+
     if (message) {
-      if (won) {
-        message.textContent = `Congratulations! You guessed the word in ${attempts} ${attempts === 1 ? 'attempt' : 'attempts'}!`;
-      } else {
-        message.textContent = 'Better luck next time!';
-      }
+      message.textContent = won ? '' : `The word was ${answer.toUpperCase()}`;
     }
 
-    if (answerWord) {
-      answerWord.textContent = answer.toUpperCase();
-    }
-
-    // Show/hide Play Again button (only for Randle)
-    const isRandle = window.location.pathname.includes('randle');
-    if (playAgainBtn) {
-      playAgainBtn.style.display = isRandle ? 'block' : 'none';
+    // Next button: Practice Mode when finishing the daily puzzle, Play Again when finishing Practice Mode
+    if (nextBtn) {
+      nextBtn.textContent = gameState && gameState.variant === 'randle' ? 'Play Again' : 'Practice Mode';
     }
 
     this.showModal('end-game-modal');
@@ -251,28 +247,19 @@ const UI = {
   },
 
   /**
-   * Generate shareable emoji grid for results
+   * Generate shareable emoji grid for results, matching the dot cluster display
    */
   generateShareText(gameState) {
-    const isRandle = window.location.pathname.includes('randle');
-    const gameName = isRandle ? 'Randle' : 'Hardle';
+    const gameName = gameState.variant === 'randle' ? 'Hardle (Practice)' : 'Hardle';
     const attempts = gameState.guesses.length;
     const maxAttempts = 8;
 
     let text = `${gameName} ${gameState.won ? attempts : 'X'}/${maxAttempts}\n\n`;
 
-    // Generate emoji grid
+    // Generate emoji grid: score green squares + (4 - score) red squares
     gameState.guesses.forEach(guessObj => {
-      const guess = guessObj.word;
       const score = guessObj.score;
-
-      if (guess === gameState.answer) {
-        text += '🟩🟩🟩🟩 ✅\n';
-      } else if (score === 0) {
-        text += '🟥🟥🟥🟥 0️⃣\n';
-      } else {
-        text += '🟨🟨🟨🟨 ' + score + '️⃣\n';
-      }
+      text += '🟩'.repeat(score) + '🟥'.repeat(4 - score) + '\n';
     });
 
     text += '\nPlay at wecreatethis.com';
@@ -291,7 +278,7 @@ const UI = {
       try {
         await navigator.share({
           text: shareText,
-          title: 'My Hardle/Randle Results'
+          title: 'My Hardle Results'
         });
         return;
       } catch (err) {

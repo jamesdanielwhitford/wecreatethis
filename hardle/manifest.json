@@ -1,7 +1,7 @@
 {
-  "name": "Hardle & Randle - Word Games",
+  "name": "Hardle - Word Game",
   "short_name": "Hardle",
-  "description": "Guess 4-letter words in 8 attempts. Daily and random modes available.",
+  "description": "Guess 4-letter words in 8 attempts. Daily puzzle plus unlimited Practice Mode.",
   "start_url": "/hardle/",
   "display": "standalone",
   "background_color": "#ffffff",
