@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hardle-v57';
+const CACHE_NAME = 'hardle-v58';
 
 // Normalize URLs to canonical format (extensionless, no query params)
 function normalizeUrl(url) {
