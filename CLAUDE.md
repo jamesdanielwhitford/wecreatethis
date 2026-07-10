@@ -7,7 +7,7 @@ This repository contains multiple offline-first web applications, each living in
 - **birdle/** - Bird spotting game using eBird API (Bird Bingo). See [birdle/CLAUDE.md](birdle/CLAUDE.md) for details.
 - **beautiful-mind/** - Offline notes app with text, image, video, and audio support. E-reader themed with dual storage (File System API/IndexedDB). See [beautiful-mind/CLAUDE.md](beautiful-mind/CLAUDE.md) for details.
 - **tarot/** - Tarot card reading app. See [tarot/CLAUDE.md](tarot/CLAUDE.md) for details.
-- **hardle/** - ⚠️ **IN TESTING** - Word guessing game: daily puzzle plus unlimited Practice Mode, single-page vanilla JS. Merge branch `hardle-update` pushed, not yet in main; see [sessions/overview.md](sessions/overview.md) session 003 for detail.
+- **hardle/** - Word guessing game: daily puzzle plus unlimited Practice Mode, single-page vanilla JS. Live in prod on `main`; see [sessions/overview.md](sessions/overview.md) session 004 for detail.
 - **pomodoro/** - Productivity timer with work and break sessions. Customizable durations, audio notifications, and session tracking. See [pomodoro/CLAUDE.md](pomodoro/CLAUDE.md) for details.
 - **git-notes/** - Note-taking app with GitHub-inspired dark theme. Auto-save, grid layout, and offline-first design. See [git-notes/CLAUDE.md](git-notes/CLAUDE.md) for details.
 - **perfectday/** - Offline-first hiking map with lazy tile caching, GPS, compass, and sensor data. Uses MapLibre GL JS + OpenFreeMap. See [perfectday/CLAUDE.md](perfectday/CLAUDE.md) for details.
