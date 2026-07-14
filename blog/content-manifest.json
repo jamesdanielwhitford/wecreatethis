@@ -1,0 +1,18 @@
+{
+  "sections": [
+    {
+      "slug": "dev-tools",
+      "name": "Dev Tools",
+      "posts": [
+        {
+          "slug": "how-to-write-sick-loops-in-claude-code",
+          "title": "How to write (sick) loops in Claude Code",
+          "date": "2026-06-19",
+          "order": null,
+          "description": "Boris Cherny, creator of Claude Code, says his job is now to write loops that prompt Claude autonomously. Here is how to do it, from simple CI watching to a full multi-model agent loop that clones a website using a browser.",
+          "author": "James Daniel Whitford"
+        }
+      ]
+    }
+  ]
+}

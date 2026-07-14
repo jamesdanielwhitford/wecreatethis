@@ -18,49 +18,68 @@
       padding: 48px 24px;
     }
 
-    header {
-      margin-bottom: 48px;
+    nav {
+      margin-bottom: 24px;
+      font-size: 0.85rem;
+      color: #888;
     }
 
-    header h1 {
-      font-size: 1.1rem;
-      font-weight: normal;
-      letter-spacing: 0.05em;
-    }
-
-    header a {
-      color: inherit;
+    nav a {
+      color: #111;
       text-decoration: none;
     }
 
-    .intro {
-      margin-bottom: 40px;
-      color: #444;
-      line-height: 1.6;
+    nav a:hover {
+      text-decoration: underline;
     }
 
-    .section-list {
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: normal;
+      margin-bottom: 40px;
+    }
+
+    .post-list {
       list-style: none;
     }
 
-    .section-item {
-      margin-bottom: 16px;
-      padding-bottom: 16px;
+    .post-item {
+      margin-bottom: 32px;
+      padding-bottom: 32px;
       border-bottom: 1px solid #e0e0e0;
     }
 
-    .section-item:last-child {
+    .post-item:last-child {
       border-bottom: none;
     }
 
-    .section-item a {
+    .post-date {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 6px;
+    }
+
+    .post-title a {
       font-size: 1.2rem;
       color: #111;
       text-decoration: none;
     }
 
-    .section-item a:hover {
+    .post-title a:hover {
       text-decoration: underline;
+    }
+
+    .post-description {
+      margin-top: 8px;
+      font-size: 0.95rem;
+      color: #444;
+      line-height: 1.5;
+    }
+
+    .post-author {
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: #888;
     }
 
     #loading {
@@ -70,14 +89,16 @@
   </style>
 </head>
 <body>
+  <nav>
+    <a href="/blog/">blog</a>
+  </nav>
+
   <header>
-    <h1><a href="/">wecreatethis.com</a> / blog</h1>
+    <h1 id="section-title">...</h1>
   </header>
 
-  <p class="intro">Welcome to the blog.</p>
-
-  <ul class="section-list" id="section-list">
-    <li id="loading">Loading sections...</li>
+  <ul class="post-list" id="post-list">
+    <li id="loading">Loading posts...</li>
   </ul>
 
   <script src="app.js"></script>
