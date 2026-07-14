@@ -1,36 +1,6 @@
 {
   "sections": [
     {
-      "slug": "demo",
-      "name": "Demo",
-      "posts": [
-        {
-          "slug": "post-one",
-          "title": "Post One",
-          "date": "2026-07-01",
-          "order": 1,
-          "description": "The first post in the demo section, used to test scroll-through between posts.",
-          "author": "Demo Author"
-        },
-        {
-          "slug": "post-two",
-          "title": "Post Two",
-          "date": "2026-07-02",
-          "order": 2,
-          "description": "The second post in the demo section, sits between post one and post three.",
-          "author": "Demo Author"
-        },
-        {
-          "slug": "post-three",
-          "title": "Post Three",
-          "date": "2026-07-03",
-          "order": 3,
-          "description": "The third and final post in the demo section, the end of the scroll chain.",
-          "author": "Demo Author"
-        }
-      ]
-    },
-    {
       "slug": "dev-tools",
       "name": "Dev Tools",
       "posts": [

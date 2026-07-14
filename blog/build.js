@@ -48,6 +48,7 @@ function buildManifest() {
       const mdPath = path.join(sectionDir, postSlug, 'index.md');
       if (!fs.existsSync(mdPath)) continue;
       const meta = parseFrontmatter(fs.readFileSync(mdPath, 'utf8'));
+      if (meta.draft === 'true') continue;
       posts.push({
         slug: postSlug,
         title: meta.title || postSlug,

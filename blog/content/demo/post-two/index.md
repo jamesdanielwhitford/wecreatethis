@@ -4,6 +4,7 @@ author: Demo Author
 date: 2026-07-02
 order: 2
 description: The second post in the demo section, sits between post one and post three.
+draft: true
 ---
 
 # Post Two

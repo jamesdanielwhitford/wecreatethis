@@ -4,6 +4,7 @@ author: Demo Author
 date: 2026-07-01
 order: 1
 description: The first post in the demo section, used to test scroll-through between posts.
+draft: true
 ---
 
 # Post One
