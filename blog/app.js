@@ -8,7 +8,7 @@ function escHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// Minimal markdown renderer: headers, bold, italic, links, paragraphs.
+// Minimal markdown renderer: headers, bold, italic, links, lists, paragraphs.
 function renderMarkdown(md) {
   let html = md;
 
@@ -27,6 +27,12 @@ function renderMarkdown(md) {
 
   // Links
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+  // Unordered lists
+  html = html.replace(/((?:^- .+\n?)+)/gm, block => {
+    const items = block.trim().split('\n').map(l => `<li>${l.replace(/^- /, '')}</li>`).join('');
+    return `<ul>${items}</ul>`;
+  });
 
   // Paragraphs: wrap lines that aren't already a block tag
   html = html.replace(/^(?!<h[1-3]|<\/?[a-z])(.+)$/gm, '<p>$1</p>');
@@ -58,22 +64,20 @@ function parseBlogPath() {
   return { sectionSlug: parts[0] || null, postSlug: location.hash ? location.hash.slice(1) : null };
 }
 
-// Home page: list sections
-if (document.getElementById('section-list')) {
-  const list = document.getElementById('section-list');
-  loadManifest().then(({ sections }) => {
-    if (sections.length === 0) {
-      list.innerHTML = '<li id="loading">No sections yet.</li>';
-      return;
-    }
-    list.innerHTML = sections.map(s => `
-      <li class="section-item">
-        <a href="/blog/${s.slug}">${s.name}</a>
-      </li>
-    `).join('');
-  }).catch(() => {
-    list.innerHTML = '<li id="loading">Failed to load sections.</li>';
-  });
+// Home page: renders blog/content/home.md directly, hand-authored.
+if (document.getElementById('home-content')) {
+  const content = document.getElementById('home-content');
+  fetch('/blog/content/home.md')
+    .then(r => r.text())
+    .then(text => {
+      const { body } = parseFrontmatter(text);
+      content.innerHTML = renderMarkdown(body);
+      document.getElementById('loading').style.display = 'none';
+      content.style.display = 'block';
+    })
+    .catch(() => {
+      document.getElementById('loading').textContent = 'Failed to load home page.';
+    });
 }
 
 // Section page: renders every post in the section as a scrollable stack,

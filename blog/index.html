@@ -33,39 +33,45 @@
       text-decoration: none;
     }
 
-    .intro {
-      margin-bottom: 40px;
+    #loading {
+      color: #888;
+      font-size: 0.95rem;
+    }
+
+    #home-content h2 {
+      font-size: 1.15rem;
+      font-weight: normal;
+      margin: 36px 0 12px;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 6px;
+    }
+
+    #home-content h2:first-child {
+      margin-top: 0;
+    }
+
+    #home-content p {
+      margin-bottom: 16px;
       color: #444;
       line-height: 1.6;
     }
 
-    .section-list {
+    #home-content ul {
       list-style: none;
     }
 
-    .section-item {
-      margin-bottom: 16px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid #e0e0e0;
+    #home-content li {
+      margin-bottom: 12px;
     }
 
-    .section-item:last-child {
-      border-bottom: none;
-    }
-
-    .section-item a {
-      font-size: 1.2rem;
+    #home-content a {
+      font-size: 1.1rem;
       color: #111;
       text-decoration: none;
     }
 
-    .section-item a:hover {
+    #home-content a:hover {
       text-decoration: underline;
-    }
-
-    #loading {
-      color: #888;
-      font-size: 0.95rem;
     }
   </style>
 </head>
@@ -74,11 +80,8 @@
     <h1><a href="/">wecreatethis.com</a> / blog</h1>
   </header>
 
-  <p class="intro">Welcome to the blog.</p>
-
-  <ul class="section-list" id="section-list">
-    <li id="loading">Loading sections...</li>
-  </ul>
+  <div id="loading">Loading...</div>
+  <div id="home-content" style="display:none"></div>
 
   <script src="app.js"></script>
   <script>

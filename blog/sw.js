@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blog-v5';
+const CACHE_NAME = 'blog-v6';
 
 const ASSETS = [
   '/blog/',
@@ -7,6 +7,7 @@ const ASSETS = [
   '/blog/app.js',
   '/blog/manifest.json',
   '/blog/content-manifest.json',
+  '/blog/content/home.md',
   '/blog/content/dev-tools/how-to-write-sick-loops-in-claude-code/index.md',
   '/blog/content/demo/post-one/index.md',
   '/blog/content/demo/post-two/index.md',
