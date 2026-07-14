@@ -1,14 +1,16 @@
-const CACHE_NAME = 'blog-v3';
+const CACHE_NAME = 'blog-v5';
 
 const ASSETS = [
   '/blog/',
   '/blog/index.html',
   '/blog/section.html',
-  '/blog/post.html',
   '/blog/app.js',
   '/blog/manifest.json',
   '/blog/content-manifest.json',
   '/blog/content/dev-tools/how-to-write-sick-loops-in-claude-code/index.md',
+  '/blog/content/demo/post-one/index.md',
+  '/blog/content/demo/post-two/index.md',
+  '/blog/content/demo/post-three/index.md',
 ];
 
 function normalizeUrl(url) {

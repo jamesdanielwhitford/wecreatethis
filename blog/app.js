@@ -52,6 +52,12 @@ function loadManifest() {
   return fetch('/blog/content-manifest.json').then(r => r.json());
 }
 
+// Parses the section slug from /blog/{section}. The post, if any, is in location.hash.
+function parseBlogPath() {
+  const parts = location.pathname.replace(/^\/blog\/?/, '').split('/').filter(Boolean);
+  return { sectionSlug: parts[0] || null, postSlug: location.hash ? location.hash.slice(1) : null };
+}
+
 // Home page: list sections
 if (document.getElementById('section-list')) {
   const list = document.getElementById('section-list');
@@ -62,7 +68,7 @@ if (document.getElementById('section-list')) {
     }
     list.innerHTML = sections.map(s => `
       <li class="section-item">
-        <a href="/blog/section?s=${s.slug}">${s.name}</a>
+        <a href="/blog/${s.slug}">${s.name}</a>
       </li>
     `).join('');
   }).catch(() => {
@@ -70,64 +76,73 @@ if (document.getElementById('section-list')) {
   });
 }
 
-// Section page: list posts within a section
-if (document.getElementById('post-list')) {
-  const params = new URLSearchParams(location.search);
-  const sectionSlug = params.get('s');
-  const list = document.getElementById('post-list');
+// Section page: renders every post in the section as a scrollable stack,
+// so scrolling past one post moves straight into the next/previous one.
+// A #post-slug in the URL scrolls to that post on load; the URL does not
+// follow the scroll afterwards.
+if (document.getElementById('post-stack')) {
+  const { sectionSlug, postSlug } = parseBlogPath();
 
   loadManifest().then(({ sections }) => {
     const section = sections.find(s => s.slug === sectionSlug);
+
     if (!section) {
-      list.innerHTML = '<li id="loading">Section not found.</li>';
+      document.getElementById('loading').textContent = 'Section not found.';
       return;
     }
+
     document.title = section.name + ' - Blog';
+    document.getElementById('section-nav').textContent = section.name;
     document.getElementById('section-title').textContent = section.name;
-    list.innerHTML = section.posts.map(p => `
-      <li class="post-item">
-        <div class="post-date">${formatDate(p.date)}</div>
-        <div class="post-title"><a href="/blog/post?s=${section.slug}&p=${p.slug}">${p.title}</a></div>
-        <div class="post-description">${p.description}</div>
-        <div class="post-author">${p.author}</div>
-      </li>
+
+    const stack = document.getElementById('post-stack');
+    stack.innerHTML = section.posts.map(p => `
+      <article class="post-entry" id="${p.slug}" data-slug="${p.slug}" data-loaded="false">
+        <div class="post-meta">
+          <h2>${p.title}</h2>
+          <div class="meta-line">${formatDate(p.date)} by ${p.author}</div>
+        </div>
+        <div class="post-content post-placeholder">Loading…</div>
+      </article>
     `).join('');
-  }).catch(() => {
-    list.innerHTML = '<li id="loading">Failed to load posts.</li>';
-  });
-}
 
-// Post page
-if (document.getElementById('post-container')) {
-  const params = new URLSearchParams(location.search);
-  const sectionSlug = params.get('s');
-  const postSlug = params.get('p');
+    document.getElementById('loading').style.display = 'none';
+    stack.style.display = 'block';
 
-  loadManifest().then(({ sections }) => {
-    const section = sections.find(s => s.slug === sectionSlug);
-    const post = section && section.posts.find(p => p.slug === postSlug);
-
-    if (!section || !post) {
-      document.getElementById('loading').textContent = 'Post not found.';
-      return;
+    function loadEntry(entry) {
+      if (entry.dataset.loaded === 'true') return;
+      entry.dataset.loaded = 'true';
+      const slug = entry.dataset.slug;
+      fetch(`/blog/content/${section.slug}/${slug}/index.md`)
+        .then(r => r.text())
+        .then(text => {
+          const { body } = parseFrontmatter(text);
+          const contentEl = entry.querySelector('.post-content');
+          contentEl.classList.remove('post-placeholder');
+          contentEl.innerHTML = renderMarkdown(body);
+        })
+        .catch(() => {
+          entry.querySelector('.post-content').textContent = 'Failed to load post.';
+        });
     }
 
-    document.title = post.title + ' - Blog';
-    document.getElementById('section-nav').textContent = section.name;
-    document.getElementById('section-nav').href = `/blog/section?s=${section.slug}`;
+    const entries = Array.from(stack.querySelectorAll('.post-entry'));
 
-    return fetch(`/blog/content/${section.slug}/${post.slug}/index.md`)
-      .then(r => r.text())
-      .then(text => {
-        const { body } = parseFrontmatter(text);
-        document.getElementById('post-title').textContent = post.title;
-        document.getElementById('post-date').textContent = formatDate(post.date);
-        document.getElementById('post-author').textContent = post.author;
-        document.getElementById('post-body').innerHTML = renderMarkdown(body);
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('post-container').style.display = 'block';
-      });
+    // Lazy-load posts as they approach the viewport.
+    const loadObserver = new IntersectionObserver((observed) => {
+      observed.forEach(o => { if (o.isIntersecting) loadEntry(o.target); });
+    }, { rootMargin: '600px 0px' });
+    entries.forEach(entry => loadObserver.observe(entry));
+
+    // Jump straight to the requested post (or the top) without an animated scroll.
+    const target = postSlug && document.getElementById(postSlug);
+    if (target) {
+      loadEntry(target);
+      target.scrollIntoView({ block: 'start' });
+    } else if (entries[0]) {
+      loadEntry(entries[0]);
+    }
   }).catch(() => {
-    document.getElementById('loading').textContent = 'Failed to load post.';
+    document.getElementById('loading').textContent = 'Failed to load section.';
   });
 }
