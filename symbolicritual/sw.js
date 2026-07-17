@@ -26,6 +26,7 @@ const ASSETS = [
   '/symbolicritual/admin.js',
   '/symbolicritual/db.js',
   '/symbolicritual/api.js',
+  '/sw-toast.js'
 ];
 
 function normalizeUrl(url, base = self.location.origin) {
@@ -34,6 +35,40 @@ function normalizeUrl(url, base = self.location.origin) {
   if (path.endsWith('.html')) path = path.slice(0, -5);
   if (path === '/symbolicritual/index') path = '/symbolicritual/';
   return urlObj.origin + path;
+}
+
+// Rewrap before caching to strip redirect metadata.
+function cleanResponse(response) {
+  if (!response.redirected) return response;
+  return response.blob().then((body) =>
+    new Response(body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    })
+  );
+}
+
+// Shell assets (normalized): changes to these are worth an update toast.
+const SHELL_URLS = new Set(ASSETS.map((url) => normalizeUrl(url)));
+
+// Header-only comparison; bodies are never read.
+function responsesDiffer(a, b) {
+  const etagA = a.headers.get('ETag');
+  const etagB = b.headers.get('ETag');
+  if (etagA && etagB) return etagA !== etagB;
+  const lenA = a.headers.get('Content-Length');
+  const lenB = b.headers.get('Content-Length');
+  if (lenA && lenB) return lenA !== lenB;
+  const modA = a.headers.get('Last-Modified');
+  const modB = b.headers.get('Last-Modified');
+  if (modA && modB) return modA !== modB;
+  return false;
+}
+
+async function notifyClientsOfUpdate() {
+  const clients = await self.clients.matchAll({ type: 'window' });
+  clients.forEach((client) => client.postMessage({ type: 'sw-updated' }));
 }
 
 function isMediaRequest(url) {
@@ -46,7 +81,7 @@ self.addEventListener('install', event => {
       await Promise.all(ASSETS.map(async url => {
         try {
           const res = await fetch(url);
-          if (res.ok) await cache.put(normalizeUrl(url), res.clone());
+          if (res.ok) await cache.put(normalizeUrl(url), await cleanResponse(res.clone()));
         } catch {}
       }));
     })
@@ -66,18 +101,43 @@ self.addEventListener('activate', event => {
   })());
 });
 
-// Race the network against a timer so flaky connections degrade to cache
-// quickly instead of hanging.
-function fetchWithTimeout(request, ms) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
-}
-
 async function matchAppCache(request) {
   const normalized = normalizeUrl(request.url);
   const cache = await caches.open(CACHE_NAME);
   return cache.match(normalized);
+}
+
+// Stale-while-revalidate for same-origin: serve cached immediately,
+// revalidate in background.
+async function staleWhileRevalidate(request) {
+  const normalized = normalizeUrl(request.url);
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(normalized);
+
+  const networkPromise = fetch(request).then(async (response) => {
+    if (response.ok) {
+      if (cached && SHELL_URLS.has(normalized) && responsesDiffer(cached, response)) {
+        notifyClientsOfUpdate();
+      }
+      await cache.put(normalized, await cleanResponse(response.clone()));
+    }
+    return response;
+  });
+
+  if (cached) {
+    networkPromise.catch(() => {});
+    return cached;
+  }
+
+  try {
+    return await networkPromise;
+  } catch (err) {
+    if (request.mode === 'navigate') {
+      const shell = await matchAppCache(new Request('/symbolicritual/'));
+      if (shell) return shell;
+    }
+    return new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+  }
 }
 
 // Media: cache-first, network-fallback. R2 objects are immutable per key (each
@@ -154,24 +214,6 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Same-origin app shell: network-first with timeout, cache fallback.
-  event.respondWith(
-    fetchWithTimeout(event.request, 3000).then(async res => {
-      if (res.ok) {
-        const cache = await caches.open(CACHE_NAME);
-        cache.put(normalizeUrl(event.request.url), res.clone()).catch(() => {});
-      }
-      return res;
-    }).catch(async () => {
-      const cached = await matchAppCache(event.request);
-      if (cached) return cached;
-
-      if (event.request.mode === 'navigate') {
-        const fallback = await matchAppCache(new Request('/symbolicritual/'));
-        if (fallback) return fallback;
-      }
-
-      return new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
-    })
-  );
+  // Same-origin app shell: stale-while-revalidate with update toast.
+  event.respondWith(staleWhileRevalidate(event.request));
 });

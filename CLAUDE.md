@@ -100,13 +100,16 @@ Each project folder contains:
 
 ### Service Worker Caching Strategy
 
-Every service worker follows one canonical strategy, **network-first with timeout, cache fallback**. The root `sw.js` is the exemplar; all app SWs copy its structure.
+Every service worker follows one canonical strategy, **stale-while-revalidate with an update toast**. The root `sw.js` is the exemplar; all app SWs copy its structure.
 
 **Behavior:**
-1. **Online:** every same-origin GET goes to the network, so users always see the latest deploy immediately. Successful responses refresh the cache.
-2. **Offline or slow:** if the network fails or takes longer than `NETWORK_TIMEOUT_MS` (3s, raced via `AbortController`), the cached copy is served instead.
+1. **Every load is instant:** same-origin GETs are served from cache immediately while a background fetch revalidates the cache.
+2. **Updates land the same visit:** when the background fetch finds a changed shell asset (header compare via `responsesDiffer`), the SW posts `{type: 'sw-updated'}` and the shared root script `/sw-toast.js` shows a "New version available / Refresh" pill. Reload is always user-initiated (never yank a game in progress).
 3. **Offline navigation to an uncached page** falls back to the app shell (`APP_ROOT`).
 4. **First visit:** `ASSETS` are pre-cached at install, so apps work fully offline from the first load.
+5. **Redirect stripping is mandatory:** every `cache.put` goes through `cleanResponse()`. Cloudflare Pages `_redirects` rewrites mark responses `redirected: true`, and serving such a cached response to a navigation fails with `ERR_FAILED`.
+
+**Wiring a page into the toast:** every user-facing HTML page includes `<script src="/sw-toast.js" defer></script>` in its head, and every app SW lists `/sw-toast.js` in `ASSETS`.
 
 **Canonical URLs:** Extensionless (e.g., `/tarot/reading` not `/tarot/reading.html`). Internal links must use extensionless absolute paths. Each SW keeps a `normalizeUrl()` helper (strips `.html`, normalizes `/index` → `/`, ignores query params) purely as a safety net for stray `.html` bookmarks, correctness must not depend on it.
 
@@ -121,7 +124,7 @@ Every service worker follows one canonical strategy, **network-first with timeou
 
 ### Version Management
 - Service worker cache format: `projectname-vN`
-- **Routine changes need NO version bump**, network-first means deploys reach users immediately. Bump `CACHE_NAME` only to purge deleted/renamed files from users' caches.
+- **Routine changes need NO version bump**, background revalidation picks up deploys automatically (users see the update toast same visit, or get the new version next visit). Bump `CACHE_NAME` only to purge deleted/renamed files from users' caches.
 - **NO version numbers in HTML script tags** - Service workers handle all cache versioning
 - Current versions live in each app's `sw.js`, not here (check `grep CACHE_NAME <app>/sw.js`)
 

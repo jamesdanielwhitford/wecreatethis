@@ -1,17 +1,14 @@
-// Network-first service worker with cache fallback.
+// Stale-while-revalidate service worker with update notification.
 //
-// Strategy: every same-origin GET goes to the network first, so users always
-// see the latest deploy while online. If the network fails or takes longer
-// than NETWORK_TIMEOUT_MS (flaky wifi, offline), the cached copy is served
-// instead. ASSETS are pre-cached at install so the app works offline from
-// the first visit. CACHE_NAME only needs bumping to purge deleted files;
-// routine updates reach users without any version change.
-//
-// Special case: cross-origin requests to APIs are allowed through untouched
-// (not cached); only CDN assets (jsdelivr.net) are cached separately.
+// Strategy: same-origin GETs are served from cache instantly (native-app
+// feel), while a background fetch revalidates the cache. CDN assets
+// (pre-cached at install) are cache-first. API calls (other cross-origin)
+// pass through to the network.
+// Offline just serves the cache; uncached offline navigations fall back
+// to the app shell. ASSETS are pre-cached at install so the app works
+// offline from the first visit.
 const CACHE_NAME = 'starrynight-v3';
 const APP_ROOT = '/starrynight/';
-const NETWORK_TIMEOUT_MS = 3000;
 
 const ASSETS = [
   '/starrynight/',
@@ -25,6 +22,7 @@ const ASSETS = [
   '/starrynight/manifest.json',
   '/starrynight/icon-192.png',
   '/starrynight/icon-512.png',
+  '/sw-toast.js'
 ];
 
 const CDN_ASSETS = [
@@ -50,6 +48,23 @@ function normalizeUrl(url, base = self.location.origin) {
   return urlObj.origin + path;
 }
 
+// Shell assets (normalized): changes to these are worth an update toast.
+const SHELL_URLS = new Set(ASSETS.map((url) => normalizeUrl(url)));
+
+// Rewrap before caching to strip redirect metadata. Cloudflare Pages (and
+// the _redirects self-rewrites) mark responses redirected:true; serving such
+// a cached response to a navigation fails with ERR_FAILED in Chrome/Safari.
+function cleanResponse(response) {
+  if (!response.redirected) return response;
+  return response.blob().then((body) =>
+    new Response(body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    })
+  );
+}
+
 // Install - pre-cache the app shell and CDN assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -59,7 +74,7 @@ self.addEventListener('install', (event) => {
         try {
           const response = await fetch(url);
           if (response.ok) {
-            await cache.put(normalizeUrl(url), response.clone());
+            await cache.put(normalizeUrl(url), await cleanResponse(response.clone()));
           }
         } catch (err) {
           console.warn('Failed to cache:', url, err);
@@ -70,7 +85,7 @@ self.addEventListener('install', (event) => {
         try {
           const response = await fetch(url);
           if (response.ok) {
-            await cache.put(url, response.clone());
+            await cache.put(url, await cleanResponse(response.clone()));
           }
         } catch (err) {
           console.warn('Failed to cache:', url, err);
@@ -93,28 +108,49 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Race the network against a timer so flaky connections degrade to cache
-// quickly instead of hanging.
-function fetchWithTimeout(request, ms) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
+// Header-only comparison; bodies are never read. If we can't tell, stay quiet.
+function responsesDiffer(a, b) {
+  const etagA = a.headers.get('ETag');
+  const etagB = b.headers.get('ETag');
+  if (etagA && etagB) return etagA !== etagB;
+  const lenA = a.headers.get('Content-Length');
+  const lenB = b.headers.get('Content-Length');
+  if (lenA && lenB) return lenA !== lenB;
+  const modA = a.headers.get('Last-Modified');
+  const modB = b.headers.get('Last-Modified');
+  if (modA && modB) return modA !== modB;
+  return false;
 }
 
-async function networkFirst(request) {
+async function notifyClientsOfUpdate() {
+  const clients = await self.clients.matchAll({ type: 'window' });
+  clients.forEach((client) => client.postMessage({ type: 'sw-updated' }));
+}
+
+async function staleWhileRevalidate(request) {
   const normalized = normalizeUrl(request.url);
-  try {
-    const response = await fetchWithTimeout(request, NETWORK_TIMEOUT_MS);
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(normalized);
+
+  const networkPromise = fetch(request).then(async (response) => {
     if (response.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(normalized, response.clone());
+      if (cached && SHELL_URLS.has(normalized) && responsesDiffer(cached, response)) {
+        notifyClientsOfUpdate();
+      }
+      await cache.put(normalized, await cleanResponse(response.clone()));
     }
     return response;
-  } catch (err) {
-    const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(normalized);
-    if (cached) return cached;
+  });
 
+  if (cached) {
+    // Serve stale immediately; the revalidation continues in the background.
+    networkPromise.catch(() => {});
+    return cached;
+  }
+
+  try {
+    return await networkPromise;
+  } catch (err) {
     // Offline navigation to an uncached page: fall back to the app shell
     if (request.mode === 'navigate') {
       const shell = await cache.match(normalizeUrl(APP_ROOT));
@@ -141,7 +177,7 @@ self.addEventListener('fetch', (event) => {
       if (cached) return cached;
       try {
         const response = await fetch(event.request);
-        if (response.ok) await cache.put(url.href, response.clone());
+        if (response.ok) await cache.put(url.href, await cleanResponse(response.clone()));
         return response;
       } catch (err) {
         return new Response('CDN unavailable', { status: 503 });
@@ -153,6 +189,6 @@ self.addEventListener('fetch', (event) => {
   // API calls (other cross-origin): pass through to network
   if (url.origin !== self.location.origin) return;
 
-  // Same-origin: network-first with timeout and cache fallback
-  event.respondWith(networkFirst(event.request));
+  // Same-origin: stale-while-revalidate
+  event.respondWith(staleWhileRevalidate(event.request));
 });

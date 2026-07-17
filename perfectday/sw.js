@@ -8,7 +8,8 @@ const ASSETS = [
   '/perfectday/sensors.js',
   '/perfectday/manifest.json',
   '/perfectday/icon-192.png',
-  '/perfectday/icon-512.png'
+  '/perfectday/icon-512.png',
+  '/sw-toast.js'
 ];
 
 // CDN assets needed for offline — cached separately since they're cross-origin
@@ -32,8 +33,43 @@ function normalizeUrl(url, base = self.location.origin) {
   return urlObj.origin + path;
 }
 
+// Rewrap before caching to strip redirect metadata. Cloudflare Pages (and
+// the _redirects self-rewrites) mark responses redirected:true; serving such
+// a cached response to a navigation fails with ERR_FAILED in Chrome/Safari.
+function cleanResponse(response) {
+  if (!response.redirected) return response;
+  return response.blob().then((body) =>
+    new Response(body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    })
+  );
+}
+
+// Shell assets (normalized): changes to these are worth an update toast.
+const SHELL_URLS = new Set(ASSETS.map((url) => normalizeUrl(url)));
+
+// Header-only comparison; bodies are never read. If we can't tell, stay quiet.
+function responsesDiffer(a, b) {
+  const etagA = a.headers.get('ETag');
+  const etagB = b.headers.get('ETag');
+  if (etagA && etagB) return etagA !== etagB;
+  const lenA = a.headers.get('Content-Length');
+  const lenB = b.headers.get('Content-Length');
+  if (lenA && lenB) return lenA !== lenB;
+  const modA = a.headers.get('Last-Modified');
+  const modB = b.headers.get('Last-Modified');
+  if (modA && modB) return modA !== modB;
+  return false;
+}
+
+async function notifyClientsOfUpdate() {
+  const clients = await self.clients.matchAll({ type: 'window' });
+  clients.forEach((client) => client.postMessage({ type: 'sw-updated' }));
+}
+
 self.addEventListener('install', (event) => {
-  console.log('Service worker installing:', CACHE_NAME);
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
       // Cache local assets
@@ -42,7 +78,7 @@ self.addEventListener('install', (event) => {
           const response = await fetch(url);
           if (response.ok) {
             const normalized = normalizeUrl(url);
-            await cache.put(normalized, response.clone());
+            await cache.put(normalized, await cleanResponse(response.clone()));
           }
         } catch (err) {
           console.warn('Failed to cache:', url, err);
@@ -68,35 +104,50 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('Service worker activating:', CACHE_NAME);
   event.waitUntil(
-    caches.keys().then(async (keys) => {
-      const hadOldCache = keys.some(key => key !== CACHE_NAME);
-      await Promise.all(
+    caches.keys().then((keys) =>
+      Promise.all(
         keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-      await self.clients.claim();
-      // If we replaced an old cache, reload all tabs to serve fresh files
-      if (hadOldCache) {
-        const clients = await self.clients.matchAll({ type: 'window' });
-        clients.forEach(client => client.navigate(client.url));
-      }
-    })
+      )
+    )
   );
+  self.clients.claim();
 });
 
-// Race the network against a timer so flaky connections degrade to cache
-// quickly instead of hanging.
-function fetchWithTimeout(request, ms) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
-}
-
-async function matchCache(request) {
+// Stale-while-revalidate for same-origin app assets
+async function staleWhileRevalidate(request) {
   const normalized = normalizeUrl(request.url);
   const cache = await caches.open(CACHE_NAME);
-  return cache.match(normalized);
+  const cached = await cache.match(normalized);
+
+  const networkPromise = fetch(request).then(async (response) => {
+    if (response.ok) {
+      if (cached && SHELL_URLS.has(normalized) && responsesDiffer(cached, response)) {
+        notifyClientsOfUpdate();
+      }
+      await cache.put(normalized, await cleanResponse(response.clone()));
+    }
+    return response;
+  });
+
+  if (cached) {
+    networkPromise.catch(() => {});
+    return cached;
+  }
+
+  try {
+    return await networkPromise;
+  } catch (err) {
+    if (request.mode === 'navigate') {
+      const shell = await cache.match(normalizeUrl('/perfectday/'));
+      if (shell) return shell;
+    }
+    return new Response('Offline - content not cached', {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  }
 }
 
 self.addEventListener('fetch', (event) => {
@@ -126,29 +177,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Local app assets — network-first with timeout, fallback to cache
-  event.respondWith(
-    fetchWithTimeout(event.request, 3000).then(async (response) => {
-      if (response.ok && event.request.method === 'GET') {
-        const cache = await caches.open(CACHE_NAME);
-        const normalized = normalizeUrl(event.request.url);
-        cache.put(normalized, response.clone());
-      }
-      return response;
-    }).catch(async () => {
-      const cached = await matchCache(event.request);
-      if (cached) return cached;
-
-      if (event.request.mode === 'navigate') {
-        const fallback = await matchCache(new Request('/perfectday/'));
-        if (fallback) return fallback;
-      }
-
-      return new Response('Offline - content not cached', {
-        status: 503,
-        statusText: 'Service Unavailable',
-        headers: { 'Content-Type': 'text/plain' }
-      });
-    })
-  );
+  // Local app assets — stale-while-revalidate
+  if (event.request.method === 'GET') {
+    event.respondWith(staleWhileRevalidate(event.request));
+  }
 });

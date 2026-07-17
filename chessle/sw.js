@@ -1,18 +1,14 @@
-// Network-first service worker with cache fallback.
+// Stale-while-revalidate service worker with update notification.
 //
-// Strategy: every same-origin GET goes to the network first, so users always
-// see the latest deploy while online. If the network fails or takes longer
-// than NETWORK_TIMEOUT_MS (flaky wifi, offline), the cached copy is served
-// instead. ASSETS are pre-cached at install so the app works offline from
-// the first visit. CACHE_NAME only needs bumping to purge deleted files;
-// routine updates reach users without any version change.
-//
-// Special case: cross-origin GET requests (e.g., external APIs) are also
-// cached under their exact request URL and follow network-first strategy
-// with no timeout, allowing fallback to cache on network failure.
+// Strategy: same-origin GETs are served from cache instantly (native-app
+// feel), while a background fetch revalidates the cache. Cross-origin
+// requests follow network-first without timeout (exact-URL cache keys),
+// allowing fallback to cache on network failure.
+// Offline just serves the cache; uncached offline navigations fall back
+// to the app shell. ASSETS are pre-cached at install so the app works
+// offline from the first visit.
 const CACHE_NAME = 'chessle-v22';
 const APP_ROOT = '/chessle/';
-const NETWORK_TIMEOUT_MS = 3000;
 
 const ASSETS = [
   '/chessle/',
@@ -27,7 +23,8 @@ const ASSETS = [
   '/chessle/db.js',
   '/chessle/manifest.json',
   '/chessle/icon-192.png',
-  '/chessle/icon-512.png'
+  '/chessle/icon-512.png',
+  '/sw-toast.js'
 ];
 
 // Normalize URL to canonical extensionless format (safety net for stray
@@ -49,6 +46,23 @@ function normalizeUrl(url, base = self.location.origin) {
   return urlObj.origin + path;
 }
 
+// Shell assets (normalized): changes to these are worth an update toast.
+const SHELL_URLS = new Set(ASSETS.map((url) => normalizeUrl(url)));
+
+// Rewrap before caching to strip redirect metadata. Cloudflare Pages (and
+// the _redirects self-rewrites) mark responses redirected:true; serving such
+// a cached response to a navigation fails with ERR_FAILED in Chrome/Safari.
+function cleanResponse(response) {
+  if (!response.redirected) return response;
+  return response.blob().then((body) =>
+    new Response(body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    })
+  );
+}
+
 // Install - pre-cache the app shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -57,7 +71,7 @@ self.addEventListener('install', (event) => {
         try {
           const response = await fetch(url);
           if (response.ok) {
-            await cache.put(normalizeUrl(url), response.clone());
+            await cache.put(normalizeUrl(url), await cleanResponse(response.clone()));
           }
         } catch (err) {
           console.warn('Failed to cache:', url, err);
@@ -80,28 +94,49 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Race the network against a timer so flaky connections degrade to cache
-// quickly instead of hanging.
-function fetchWithTimeout(request, ms) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
+// Header-only comparison; bodies are never read. If we can't tell, stay quiet.
+function responsesDiffer(a, b) {
+  const etagA = a.headers.get('ETag');
+  const etagB = b.headers.get('ETag');
+  if (etagA && etagB) return etagA !== etagB;
+  const lenA = a.headers.get('Content-Length');
+  const lenB = b.headers.get('Content-Length');
+  if (lenA && lenB) return lenA !== lenB;
+  const modA = a.headers.get('Last-Modified');
+  const modB = b.headers.get('Last-Modified');
+  if (modA && modB) return modA !== modB;
+  return false;
 }
 
-async function networkFirst(request) {
+async function notifyClientsOfUpdate() {
+  const clients = await self.clients.matchAll({ type: 'window' });
+  clients.forEach((client) => client.postMessage({ type: 'sw-updated' }));
+}
+
+async function staleWhileRevalidate(request) {
   const normalized = normalizeUrl(request.url);
-  try {
-    const response = await fetchWithTimeout(request, NETWORK_TIMEOUT_MS);
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(normalized);
+
+  const networkPromise = fetch(request).then(async (response) => {
     if (response.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(normalized, response.clone());
+      if (cached && SHELL_URLS.has(normalized) && responsesDiffer(cached, response)) {
+        notifyClientsOfUpdate();
+      }
+      await cache.put(normalized, await cleanResponse(response.clone()));
     }
     return response;
-  } catch (err) {
-    const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(normalized);
-    if (cached) return cached;
+  });
 
+  if (cached) {
+    // Serve stale immediately; the revalidation continues in the background.
+    networkPromise.catch(() => {});
+    return cached;
+  }
+
+  try {
+    return await networkPromise;
+  } catch (err) {
     // Offline navigation to an uncached page: fall back to the app shell
     if (request.mode === 'navigate') {
       const shell = await cache.match(normalizeUrl(APP_ROOT));
@@ -147,6 +182,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Same-origin GETs: network-first with timeout, cache by normalized URL
-  event.respondWith(networkFirst(event.request));
+  // Same-origin GETs: stale-while-revalidate
+  event.respondWith(staleWhileRevalidate(event.request));
 });
