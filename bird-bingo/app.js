@@ -84,7 +84,8 @@ const Shared = {
         const pages = data.query?.pages;
         if (pages) {
           const page = Object.values(pages)[0];
-          if (page.thumbnail?.source || page.extract) {
+          const isDisambiguation = /may (also )?refer to:?\s*$/i.test((page.extract || '').trim());
+          if (!isDisambiguation && (page.thumbnail?.source || page.extract)) {
             const result = {
               imageUrl: page.thumbnail?.source || null,
               description: page.extract || null
