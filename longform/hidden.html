@@ -340,7 +340,7 @@ function postTitleHref(post) {
   if (post.type === 'link') return post.url || '#';
   if (post.type === 'txt') return '/longform/view?id=' + post.id + '&src=user';
   if (post.type === 'file') return '/longform/view?id=' + post.id + '&src=user';
-  return '/longform/post.html?id=' + post.id;
+  return '/longform/post?id=' + post.id;
 }
 
 function postTitleTarget(post) {
@@ -417,7 +417,7 @@ function renderStories() {
           <a href="#">${agoText}</a>
           | <a href="#" class="unhide-link" data-post-id="${post.id}">unhide</a>
           ${post._isWelcome ? '' : `| <a href="#" class="delete-link" data-post-id="${post.id}">delete</a>`}
-          | <a href="/longform/post.html?id=${post.id}${isUserPost ? '&src=user' : ''}">${commentCount} note${commentCount !== 1 ? 's' : ''}</a>
+          | <a href="/longform/post?id=${post.id}${isUserPost ? '&src=user' : ''}">${commentCount} note${commentCount !== 1 ? 's' : ''}</a>
         </td>
       </tr>
       <tr class="spacer" data-post-id="${post.id}" style="height:5px;"><td></td></tr>`;

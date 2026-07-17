@@ -1,26 +1,16 @@
-// Service Worker for Git Notes
-const CACHE_NAME = 'git-notes-v4';
+// Network-first service worker with cache fallback.
+//
+// Strategy: every same-origin GET goes to the network first, so users always
+// see the latest deploy while online. If the network fails or takes longer
+// than NETWORK_TIMEOUT_MS (flaky wifi, offline), the cached copy is served
+// instead. ASSETS are pre-cached at install so the app works offline from
+// the first visit. CACHE_NAME only needs bumping to purge deleted files;
+// routine updates reach users without any version change.
+const CACHE_NAME = 'git-notes-v5';
+const APP_ROOT = '/git-notes/';
+const NETWORK_TIMEOUT_MS = 3000;
 
-// Normalize URL function - strips .html and query params
-function normalizeUrl(url) {
-  const urlObj = new URL(url);
-  let path = urlObj.pathname;
-
-  // Remove .html extension
-  if (path.endsWith('.html')) {
-    path = path.slice(0, -5);
-  }
-
-  // Normalize /app/index -> /app/
-  if (path.endsWith('/index')) {
-    path = path.slice(0, -5);
-  }
-
-  return urlObj.origin + path;
-}
-
-// Files to cache
-const urlsToCache = [
+const ASSETS = [
   '/git-notes/',
   '/git-notes/index.html',
   '/git-notes/repo.html',
@@ -38,69 +28,95 @@ const urlsToCache = [
   '/git-notes/icon-512.png'
 ];
 
-// Install event - cache all files
+// Normalize URL to canonical extensionless format (safety net for stray
+// .html links and bookmarks; ignores query params for cache keys).
+function normalizeUrl(url, base = self.location.origin) {
+  const urlObj = new URL(url, base);
+  let path = urlObj.pathname;
+
+  // Remove .html extension
+  if (path.endsWith('.html')) {
+    path = path.slice(0, -5);
+  }
+
+  // Normalize /index -> /
+  if (path.endsWith('/index')) {
+    path = path.slice(0, -5);
+  }
+
+  return urlObj.origin + path;
+}
+
+// Install - pre-cache the app shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching app files');
-      return cache.addAll(urlsToCache);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await Promise.all(ASSETS.map(async (url) => {
+        try {
+          const response = await fetch(url);
+          if (response.ok) {
+            await cache.put(normalizeUrl(url), response.clone());
+          }
+        } catch (err) {
+          console.warn('Failed to cache:', url, err);
+        }
+      }));
     })
   );
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate - clean old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('[SW] Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      )
+    )
   );
-  return self.clients.claim();
+  self.clients.claim();
 });
 
-// Fetch event - serve from cache first, then network
-self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
-  if (event.request.method !== 'GET') {
-    return;
+// Race the network against a timer so flaky connections degrade to cache
+// quickly instead of hanging.
+function fetchWithTimeout(request, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+async function networkFirst(request) {
+  const normalized = normalizeUrl(request.url);
+  try {
+    const response = await fetchWithTimeout(request, NETWORK_TIMEOUT_MS);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(normalized, response.clone());
+    }
+    return response;
+  } catch (err) {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(normalized);
+    if (cached) return cached;
+
+    // Offline navigation to an uncached page: fall back to the app shell
+    if (request.mode === 'navigate') {
+      const shell = await cache.match(normalizeUrl(APP_ROOT));
+      if (shell) return shell;
+    }
+
+    return new Response('Offline - content not cached', {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: { 'Content-Type': 'text/plain' }
+    });
   }
+}
 
-  event.respondWith(
-    caches.open(CACHE_NAME).then((cache) => {
-      const normalizedUrl = normalizeUrl(event.request.url);
-
-      return cache.match(normalizedUrl).then((cachedResponse) => {
-        // Return cached version if available
-        if (cachedResponse) {
-          // Update cache in background (stale-while-revalidate)
-          fetch(event.request).then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              cache.put(normalizedUrl, networkResponse.clone());
-            }
-          }).catch(() => {
-            // Network error, continue using cached version
-          });
-
-          return cachedResponse;
-        }
-
-        // Not in cache, fetch from network
-        return fetch(event.request).then((networkResponse) => {
-          // Cache successful responses
-          if (networkResponse && networkResponse.status === 200) {
-            cache.put(normalizedUrl, networkResponse.clone());
-          }
-          return networkResponse;
-        });
-      });
-    })
-  );
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+  event.respondWith(networkFirst(event.request));
 });

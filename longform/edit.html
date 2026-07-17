@@ -283,7 +283,7 @@ function getParam(name) {
 const postId = parseInt(getParam('id'), 10);
 
 // Update cancel link to go back to post page
-document.getElementById('cancel-link').href = '/longform/post.html?id=' + postId + '&src=user';
+document.getElementById('cancel-link').href = '/longform/post?id=' + postId + '&src=user';
 
 // --- Type tab switching ---
 
@@ -817,7 +817,7 @@ document.getElementById('submit-form').addEventListener('submit', async (e) => {
   }
 
   await updatePost(post);
-  window.location.href = '/longform/post.html?id=' + post.id + '&src=user';
+  window.location.href = '/longform/post?id=' + post.id + '&src=user';
 });
 
 (function(){

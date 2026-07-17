@@ -176,7 +176,7 @@ const WeekApp = {
       const moonSvg   = Icons.moonPhase(moonData.fraction, moonData.phase, 22);
 
       return `
-        <a class="week-row${isToday ? ' today' : ''}" href="index.html?date=${day.date}">
+        <a class="week-row${isToday ? ' today' : ''}" href="/starrynight/?date=${day.date}">
           <span class="week-day-name">${dayName}</span>
           <span class="week-date">${dateStr}</span>
           <span class="week-cloud">${cloudIcon}</span>

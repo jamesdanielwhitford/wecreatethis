@@ -100,68 +100,39 @@ Each project folder contains:
 
 ### Service Worker Caching Strategy
 
-All service workers use a simplified **canonical URL normalization** approach to handle caching and offline support:
+Every service worker follows one canonical strategy, **network-first with timeout, cache fallback**. The root `sw.js` is the exemplar; all app SWs copy its structure.
 
-**Canonical Format:** Extensionless URLs (e.g., `/tarot/reading` instead of `/tarot/reading.html`)
+**Behavior:**
+1. **Online:** every same-origin GET goes to the network, so users always see the latest deploy immediately. Successful responses refresh the cache.
+2. **Offline or slow:** if the network fails or takes longer than `NETWORK_TIMEOUT_MS` (3s, raced via `AbortController`), the cached copy is served instead.
+3. **Offline navigation to an uncached page** falls back to the app shell (`APP_ROOT`).
+4. **First visit:** `ASSETS` are pre-cached at install, so apps work fully offline from the first load.
 
-**How it works:**
-1. **URL Normalization Function** - Strips `.html` extensions and normalizes `/index` → `/` before caching or matching
-2. **Single Cache Entry** - Each page is cached once under its normalized URL
-3. **Query Params Ignored** - `/tarot/reading?id=123` matches the same cache as `/tarot/reading`
-4. **Works with All URL Formats** - Handles requests for `.html` URLs, extensionless URLs, and Cloudflare redirects transparently
+**Canonical URLs:** Extensionless (e.g., `/tarot/reading` not `/tarot/reading.html`). Internal links must use extensionless absolute paths. Each SW keeps a `normalizeUrl()` helper (strips `.html`, normalizes `/index` → `/`, ignores query params) purely as a safety net for stray `.html` bookmarks, correctness must not depend on it.
 
-**Example:**
-```javascript
-function normalizeUrl(url) {
-  const urlObj = new URL(url);
-  let path = urlObj.pathname;
-
-  // Remove .html extension
-  if (path.endsWith('.html')) {
-    path = path.slice(0, -5);
-  }
-
-  // Normalize /app/index -> /app/
-  if (path.endsWith('/index')) {
-    path = path.slice(0, -5);
-  }
-
-  return urlObj.origin + path;
-}
-```
-
-**Benefits:**
-- Drastically simpler (~5 lines vs ~50 lines of matching logic)
-- No cache misses on pages that are cached
-- Works seamlessly with Cloudflare Pages redirects
-- Consistent behavior across all apps
-
-### Current Service Worker Versions
-- **Birdle**: v128
-- **Tarot**: v31
-- **Beautiful Mind**: v10
-- **Pomodoro**: v1
-- **Perfect Day**: v1
-- **Homepage**: v19
-- **Blog**: v7
-- **Starry Night**: v1
-- **Voice Notes**: v14
+**Per-app exceptions (preserve these when editing):**
+- **blog**: content and manifest are network-first with URLs derived from `content-manifest.json`; shell is cache-first; never fetch `.html` URLs from that SW (see [blog/CLAUDE.md](blog/CLAUDE.md))
+- **birdle / chessle**: cross-origin GETs (eBird API, external images) are also cached, network-first with exact-URL keys and no timeout
+- **beautiful-mind**: marked.js CDN is cache-first (pre-cached at install)
+- **starrynight**: jsdelivr CDN cache-first; weather/astronomy APIs pass through uncached
+- **perfectday**: map tiles pass through (app handles them via IndexedDB); MapLibre CDN stale-while-revalidate
+- **symbolicritual**: separate R2 media cache with LRU trim, cache-first
+- **tarot**: `message` handler (CACHE_DECK/REMOVE_DECK) for deck image management
 
 ### Version Management
 - Service worker cache format: `projectname-vN`
+- **Routine changes need NO version bump**, network-first means deploys reach users immediately. Bump `CACHE_NAME` only to purge deleted/renamed files from users' caches.
 - **NO version numbers in HTML script tags** - Service workers handle all cache versioning
-- Bump service worker `CACHE_NAME` version when making changes
-- Service worker installation automatically caches all assets fresh
+- Current versions live in each app's `sw.js`, not here (check `grep CACHE_NAME <app>/sw.js`)
 
 ### IMPORTANT: Service Worker Cache Rules
 
-**When adding ANY new HTML page or JS file to ANY project, you MUST also add it to the `ASSETS` array in that project's `sw.js`.** Otherwise the page will not be available offline.
+**When adding ANY new HTML page or JS file to ANY project, you MUST also add it to the `ASSETS` array in that project's `sw.js`.** Otherwise the page will not be available offline on first visit.
 
 - HTML pages go in as extensionless normalized paths (e.g., `/birdle/trips/new` not `/birdle/trips/new.html`)
 - JS files go in with their extension (e.g., `/birdle/trips/app.js`)
-- Always bump the `CACHE_NAME` version when changing cached assets
 - This applies to all new pages, scripts, and static assets — no exceptions
-- **Exception: blog content.** The blog SW derives post URLs from `content-manifest.json` at install and serves content network-first; new posts need no SW edits or version bump (see [blog/CLAUDE.md](blog/CLAUDE.md))
+- **Exception: blog content.** The blog SW derives post URLs from `content-manifest.json` at install; new posts need no SW edits (see [blog/CLAUDE.md](blog/CLAUDE.md))
 
 ### Code Style
 - Simple, readable vanilla JS

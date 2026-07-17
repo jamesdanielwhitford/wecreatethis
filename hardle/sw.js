@@ -1,29 +1,15 @@
-const CACHE_NAME = 'hardle-v58';
+// Network-first service worker with cache fallback.
+//
+// Strategy: every same-origin GET goes to the network first, so users always
+// see the latest deploy while online. If the network fails or takes longer
+// than NETWORK_TIMEOUT_MS (flaky wifi, offline), the cached copy is served
+// instead. ASSETS are pre-cached at install so the app works offline from
+// the first visit. CACHE_NAME only needs bumping to purge deleted files;
+// routine updates reach users without any version change.
+const CACHE_NAME = 'hardle-v59';
+const APP_ROOT = '/hardle/';
+const NETWORK_TIMEOUT_MS = 3000;
 
-// Normalize URLs to canonical format (extensionless, no query params)
-function normalizeUrl(url) {
-  const urlObj = new URL(url);
-  let path = urlObj.pathname;
-
-  // Remove .html extension
-  if (path.endsWith('.html')) {
-    path = path.slice(0, -5);
-  }
-
-  // Normalize /hardle/index -> /hardle/
-  if (path.endsWith('/index')) {
-    path = path.slice(0, -5);
-  }
-
-  // Ensure trailing slash for directory paths
-  if (path === '/hardle') {
-    path = '/hardle/';
-  }
-
-  return urlObj.origin + path;
-}
-
-// Assets to cache on install
 const ASSETS = [
   '/hardle/index.html',
   '/hardle/styles.css',
@@ -36,74 +22,95 @@ const ASSETS = [
   '/hardle/icon-512.png'
 ];
 
-// Install event - cache all assets
+// Normalize URL to canonical extensionless format (safety net for stray
+// .html links and bookmarks; ignores query params for cache keys).
+function normalizeUrl(url, base = self.location.origin) {
+  const urlObj = new URL(url, base);
+  let path = urlObj.pathname;
+
+  // Remove .html extension
+  if (path.endsWith('.html')) {
+    path = path.slice(0, -5);
+  }
+
+  // Normalize /index -> /
+  if (path.endsWith('/index')) {
+    path = path.slice(0, -5);
+  }
+
+  return urlObj.origin + path;
+}
+
+// Install - pre-cache the app shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching assets');
-      return cache.addAll(ASSETS);
-    }).then(() => {
-      console.log('[SW] Install complete');
-      return self.skipWaiting();
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await Promise.all(ASSETS.map(async (url) => {
+        try {
+          const response = await fetch(url);
+          if (response.ok) {
+            await cache.put(normalizeUrl(url), response.clone());
+          }
+        } catch (err) {
+          console.warn('Failed to cache:', url, err);
+        }
+      }));
     })
   );
+  self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate - clean old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name.startsWith('hardle-') && name !== CACHE_NAME)
-          .map((name) => {
-            console.log('[SW] Deleting old cache:', name);
-            return caches.delete(name);
-          })
-      );
-    }).then(() => {
-      console.log('[SW] Activate complete');
-      return self.clients.claim();
-    })
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      )
+    )
   );
+  self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Race the network against a timer so flaky connections degrade to cache
+// quickly instead of hanging.
+function fetchWithTimeout(request, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+async function networkFirst(request) {
+  const normalized = normalizeUrl(request.url);
+  try {
+    const response = await fetchWithTimeout(request, NETWORK_TIMEOUT_MS);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(normalized, response.clone());
+    }
+    return response;
+  } catch (err) {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(normalized);
+    if (cached) return cached;
+
+    // Offline navigation to an uncached page: fall back to the app shell
+    if (request.mode === 'navigate') {
+      const shell = await cache.match(normalizeUrl(APP_ROOT));
+      if (shell) return shell;
+    }
+
+    return new Response('Offline - content not cached', {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  }
+}
+
 self.addEventListener('fetch', (event) => {
-  const url = event.request.url;
-
-  // Only handle same-origin requests
-  if (!url.startsWith(self.location.origin)) {
-    return;
-  }
-
-  // Only handle GET requests
-  if (event.request.method !== 'GET') {
-    return;
-  }
-
-  event.respondWith(
-    caches.open(CACHE_NAME).then((cache) => {
-      const normalizedUrl = normalizeUrl(url);
-
-      return cache.match(normalizedUrl).then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-
-        // Not in cache, fetch from network
-        return fetch(event.request).then((networkResponse) => {
-          // Cache successful responses
-          if (networkResponse && networkResponse.status === 200) {
-            cache.put(normalizedUrl, networkResponse.clone());
-          }
-          return networkResponse;
-        }).catch((error) => {
-          console.log('[SW] Fetch failed:', error);
-          // Could return offline fallback page here
-          throw error;
-        });
-      });
-    })
-  );
+  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+  event.respondWith(networkFirst(event.request));
 });

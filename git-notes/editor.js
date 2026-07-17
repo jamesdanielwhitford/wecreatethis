@@ -11,14 +11,14 @@ async function init() {
   fileId = parseInt(params.get('id'));
 
   if (!fileId) {
-    window.location.href = 'index.html';
+    window.location.href = '/git-notes/';
     return;
   }
 
   currentFile = await getFile(fileId);
   if (!currentFile) {
     alert('File not found');
-    window.location.href = 'index.html';
+    window.location.href = '/git-notes/';
     return;
   }
 
@@ -28,7 +28,7 @@ async function init() {
   // Set up back button
   document.getElementById('backBtn').addEventListener('click', (e) => {
     e.preventDefault();
-    window.location.href = `repo.html?id=${currentFile.repoId}`;
+    window.location.href = `/git-notes/repo?id=${currentFile.repoId}`;
   });
 
   // Set up auto-save

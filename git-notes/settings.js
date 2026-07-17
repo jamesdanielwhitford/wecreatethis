@@ -12,14 +12,14 @@ async function init() {
   repoId = parseInt(params.get('id'));
 
   if (!repoId) {
-    window.location.href = 'index.html';
+    window.location.href = '/git-notes/';
     return;
   }
 
   currentRepo = await getRepo(repoId);
   if (!currentRepo) {
     alert('Repo not found');
-    window.location.href = 'index.html';
+    window.location.href = '/git-notes/';
     return;
   }
 
@@ -28,7 +28,7 @@ async function init() {
   // Set up back button
   document.getElementById('backBtn').addEventListener('click', (e) => {
     e.preventDefault();
-    window.location.href = `repo.html?id=${repoId}`;
+    window.location.href = `/git-notes/repo?id=${repoId}`;
   });
 
   // Show appropriate section

@@ -32,7 +32,7 @@ function renderRepos() {
 
     return `
       <div class="item-wrapper">
-        <a href="repo.html?id=${repo.id}" class="item">
+        <a href="/git-notes/repo?id=${repo.id}" class="item">
           <div class="item-title">
             <span class="icon">📁</span>${escapeHtml(repo.name)}${escapeHtml(branch)}${connectedIcon}
           </div>
@@ -194,7 +194,7 @@ async function createNewRepo() {
 
     // If connect to GitHub is checked, open settings
     if (connectGithub && repoId) {
-      window.location.href = `settings.html?id=${repoId}`;
+      window.location.href = `/git-notes/settings?id=${repoId}`;
     }
   });
 

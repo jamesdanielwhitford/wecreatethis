@@ -15,14 +15,14 @@ async function init() {
   currentFolderId = parseInt(params.get('folder')) || null;
 
   if (!repoId) {
-    window.location.href = 'index.html';
+    window.location.href = '/git-notes/';
     return;
   }
 
   currentRepo = await getRepo(repoId);
   if (!currentRepo) {
     alert('Repo not found');
-    window.location.href = 'index.html';
+    window.location.href = '/git-notes/';
     return;
   }
 
@@ -39,7 +39,7 @@ async function init() {
   document.getElementById('newFolderBtn').addEventListener('click', createNewFolder);
   document.getElementById('newFileBtn').addEventListener('click', createNewFile);
   document.getElementById('settingsBtn').addEventListener('click', () => {
-    window.location.href = `settings.html?id=${repoId}`;
+    window.location.href = `/git-notes/settings?id=${repoId}`;
   });
   document.getElementById('commitBtn').addEventListener('click', commitChanges);
 }
@@ -64,7 +64,7 @@ async function renderBreadcrumb() {
       return `<span>${escapeHtml(part.name)}</span>`;
     } else {
       // Parent - clickable
-      const url = part.folderId ? `repo.html?id=${repoId}&folder=${part.folderId}` : `repo.html?id=${repoId}`;
+      const url = part.folderId ? `/git-notes/repo?id=${repoId}&folder=${part.folderId}` : `/git-notes/repo?id=${repoId}`;
       return `<a href="${url}">${escapeHtml(part.name)}</a>`;
     }
   }).join(' / ');
@@ -120,7 +120,7 @@ function renderItems() {
   folders.forEach(folder => {
     html += `
       <div class="item-wrapper">
-        <a href="repo.html?id=${repoId}&folder=${folder.id}" class="item">
+        <a href="/git-notes/repo?id=${repoId}&folder=${folder.id}" class="item">
           <div class="item-title">
             <span class="icon">📁</span>${escapeHtml(folder.name)}
           </div>
@@ -134,7 +134,7 @@ function renderItems() {
   files.forEach(file => {
     html += `
       <div class="item-wrapper">
-        <a href="editor.html?id=${file.id}" class="item">
+        <a href="/git-notes/editor?id=${file.id}" class="item">
           <div class="item-title">
             <span class="icon">📄</span>${escapeHtml(file.name)}
           </div>
@@ -336,7 +336,7 @@ async function createNewFile() {
   };
 
   const fileId = await saveFile(file);
-  window.location.href = `editor.html?id=${fileId}`;
+  window.location.href = `/git-notes/editor?id=${fileId}`;
 }
 
 async function buildPath(name) {

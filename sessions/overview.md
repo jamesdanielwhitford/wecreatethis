@@ -10,6 +10,7 @@
 | 004 | 2026-07-09 | Hardle: merged `hardle-update` to `main` (live in prod). Fixed tile squashing on narrow screens, dead gap on tall screens (iPad Pro), daily puzzle resetting after switching to Practice Mode, and Enter/Backspace key shading. |
 | 005 | 2026-07-14 | Blog: full rebuild to folder-driven content (`content/{section}/{post}/index.md` + `build.js` manifest generator), scroll-through post stack with `#fragment` URLs, hand-authored `content/home.md` homepage, `draft: true` frontmatter flag. Merged `blog-work` → `dev` → `main`, live in prod. |
 | 006 | 2026-07-17 | Blog: nested sections (any folder depth), unified breadcrumb layout + shared `style.css`, zero-maintenance `_redirects` (content pass-through + wildcard), CI manifest regeneration (GitHub Action), reading-order toggle, code fences/inline code/blockquotes with a tiny no-dependency highlighter, SW v7 (manifest-derived assets, network-first content, cache-poisoning fix). Uncommitted on `dev`. |
+| 007 | 2026-07-17 | Site-wide caching rework: all 15 non-blog SWs converted to one canonical network-first strategy (3s timeout, cache fallback, shell fallback); version-bump ritual retired; internal `.html` links fixed (git-notes, longform, pokemon, starrynight); homepage validScopes bug fixed (was unregistering blog/chesstimer/chessle/inkwell/symbolicritual SWs). Executed via Haiku subagents, verified with Playwright. On `dev`, not yet in prod. |
 
 ## Current status
 
@@ -19,7 +20,8 @@
 - Mic-drop stops animation immediately
 - Not yet tested: admin login + D1 sync on mobile
 - Hardle: Hardle/Randle merge is live in prod on `main` (commit `b896181`), including follow-up fixes for tile sizing, layout centering, and a daily-puzzle-reset bug. See session-004 for full detail.
-- Blog: session-006 upgrade (nested sections, unified layout, CI manifest, sort toggle, code rendering, SW v7) is **uncommitted on `dev`**, verified locally via Playwright + wrangler but not yet deployed. Architecture is documented in `blog/CLAUDE.md`; the blog SW deliberately deviates from repo-wide SW rules (manifest-derived assets, network-first content, never fetch `.html` URLs from it). Prod still runs the session-005 version. See session-006 for full detail.
+- Blog: session-006 upgrade (nested sections, unified layout, CI manifest, sort toggle, code rendering, SW v7) committed on `dev` (`1127053`), not yet deployed. Architecture is documented in `blog/CLAUDE.md`; the blog SW deliberately deviates from repo-wide SW rules (manifest-derived assets, network-first content, never fetch `.html` URLs from it). Prod still runs the session-005 version. See session-006 for full detail.
+- Site-wide caching rework (session 007) is committed on `dev`, not yet in prod: every non-blog SW now uses network-first with 3s timeout and cache fallback ("fresh when online, cached when offline"); version bumps no longer needed for routine deploys. `dev/` folder is obsolete and pending deletion. See session-007 for full detail.
 
 ## Next session checklist
 

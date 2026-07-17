@@ -1,4 +1,4 @@
-const CACHE_NAME = 'birdle-130';
+const CACHE_NAME = 'birdle-131';
 const ASSETS = [
   '/birdle/',
   '/birdle/index',
@@ -93,6 +93,14 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Race the network against a timer so flaky connections degrade to cache
+// quickly instead of hanging.
+function fetchWithTimeout(request, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 // Match cache using normalized URL (ignores query params for HTML pages)
 async function matchCache(request) {
   const url = new URL(request.url);
@@ -109,27 +117,48 @@ async function matchCache(request) {
   return caches.match(request);
 }
 
-// Fetch - network first, fallback to cache
+// Fetch - network first (with timeout for same-origin), fallback to cache
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    fetch(event.request).then(async (response) => {
-      // Cache successful GET requests
-      if (response.ok && event.request.method === 'GET') {
-        const url = new URL(event.request.url);
-        // Only normalize same-origin HTML pages
-        if (url.origin === self.location.origin && event.request.mode === 'navigate') {
-          const cache = await caches.open(CACHE_NAME);
-          const normalized = normalizeUrl(event.request.url);
-          cache.put(normalized, response.clone());
-        } else {
-          // Cache external resources as-is
+  const url = new URL(event.request.url);
+
+  // Cross-origin requests (eBird API, external images): plain fetch with no timeout
+  if (url.origin !== self.location.origin) {
+    event.respondWith(
+      fetch(event.request).then(async (response) => {
+        // Cache successful GET requests
+        if (response.ok && event.request.method === 'GET') {
           const cache = await caches.open(CACHE_NAME);
           cache.put(event.request, response.clone());
         }
+        return response;
+      }).catch(async () => {
+        // Network failed, try cache
+        const cached = await caches.match(event.request);
+        if (cached) {
+          return cached;
+        }
+        return new Response('Offline - content not cached', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain' }
+        });
+      })
+    );
+    return;
+  }
+
+  // Same-origin requests: network-first with 3s timeout
+  event.respondWith(
+    fetchWithTimeout(event.request, 3000).then(async (response) => {
+      // Cache successful GET requests
+      if (response.ok && event.request.method === 'GET') {
+        const cache = await caches.open(CACHE_NAME);
+        const normalized = normalizeUrl(event.request.url);
+        cache.put(normalized, response.clone());
       }
       return response;
     }).catch(async () => {
-      // Network failed, try cache
+      // Network failed or timed out, try cache
       const cached = await matchCache(event.request);
       if (cached) {
         return cached;

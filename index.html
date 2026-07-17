@@ -90,7 +90,7 @@
     if ('serviceWorker' in navigator) {
       // Clean up old/orphaned service workers from deleted projects
       navigator.serviceWorker.getRegistrations().then(registrations => {
-        const validScopes = ['/', '/birdle/', '/tarot/', '/beautiful-mind/', '/hardle/', '/pomodoro/', '/git-notes/', '/perfectday/', '/longform/', '/voice-notes/', '/starrynight/', '/slowread/'];
+        const validScopes = ['/', '/beautiful-mind/', '/birdle/', '/blog/', '/chessle/', '/chesstimer/', '/git-notes/', '/hardle/', '/inkwell/', '/longform/', '/perfectday/', '/slowread/', '/starrynight/', '/symbolicritual/', '/tarot/', '/voice-notes/'];
         registrations.forEach(registration => {
           const scope = new URL(registration.scope).pathname;
           if (!validScopes.includes(scope)) {

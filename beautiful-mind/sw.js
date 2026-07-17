@@ -1,4 +1,15 @@
-const CACHE_NAME = 'beautiful-mind-v13';
+// Network-first service worker with cache fallback.
+//
+// Strategy: every same-origin GET goes to the network first, so users always
+// see the latest deploy while online. If the network fails or takes longer
+// than NETWORK_TIMEOUT_MS (flaky wifi, offline), the cached copy is served
+// instead. ASSETS are pre-cached at install so the app works offline from
+// the first visit. CACHE_NAME only needs bumping to purge deleted files;
+// routine updates reach users without any version change.
+const CACHE_NAME = 'beautiful-mind-v14';
+const APP_ROOT = '/beautiful-mind/';
+const NETWORK_TIMEOUT_MS = 3000;
+
 const ASSETS = [
   '/beautiful-mind/',
   '/beautiful-mind/index',
@@ -11,9 +22,10 @@ const ASSETS = [
   'https://cdn.jsdelivr.net/npm/marked/marked.min.js'
 ];
 
-// Normalize URL to canonical extensionless format
-function normalizeUrl(url) {
-  const urlObj = new URL(url);
+// Normalize URL to canonical extensionless format (safety net for stray
+// .html links and bookmarks; ignores query params for cache keys).
+function normalizeUrl(url, base = self.location.origin) {
+  const urlObj = new URL(url, base);
   let path = urlObj.pathname;
 
   // Remove .html extension
@@ -21,7 +33,7 @@ function normalizeUrl(url) {
     path = path.slice(0, -5);
   }
 
-  // Normalize /beautiful-mind/index -> /beautiful-mind/
+  // Normalize /index -> /
   if (path.endsWith('/index')) {
     path = path.slice(0, -5);
   }
@@ -29,24 +41,20 @@ function normalizeUrl(url) {
   return urlObj.origin + path;
 }
 
-// Install - cache all assets
+// Install - pre-cache the app shell
 self.addEventListener('install', (event) => {
-  console.log('Service worker installing:', CACHE_NAME);
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      const fetchPromises = ASSETS.map(async (url) => {
+      await Promise.all(ASSETS.map(async (url) => {
         try {
           const response = await fetch(url);
           if (response.ok) {
-            // Cache under normalized URL
-            const normalized = normalizeUrl(url);
-            await cache.put(normalized, response.clone());
+            await cache.put(normalizeUrl(url), response.clone());
           }
         } catch (err) {
           console.warn('Failed to cache:', url, err);
         }
-      });
-      await Promise.all(fetchPromises);
+      }));
     })
   );
   self.skipWaiting();
@@ -54,63 +62,71 @@ self.addEventListener('install', (event) => {
 
 // Activate - clean old caches
 self.addEventListener('activate', (event) => {
-  console.log('Service worker activating:', CACHE_NAME);
   event.waitUntil(
-    caches.keys().then((keys) => {
-      console.log('Deleting old caches:', keys.filter(k => k !== CACHE_NAME));
-      return Promise.all(
+    caches.keys().then((keys) =>
+      Promise.all(
         keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-    })
+      )
+    )
   );
-  // Force immediate control of all pages
   self.clients.claim();
 });
 
-// Match cache using normalized URL (ignores query params)
-async function matchCache(request) {
-  const normalized = normalizeUrl(request.url);
-  const cache = await caches.open(CACHE_NAME);
-  return cache.match(normalized);
+// Race the network against a timer so flaky connections degrade to cache
+// quickly instead of hanging.
+function fetchWithTimeout(request, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
-// Fetch - cache first with background update
+async function networkFirst(request) {
+  const normalized = normalizeUrl(request.url);
+  try {
+    const response = await fetchWithTimeout(request, NETWORK_TIMEOUT_MS);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(normalized, response.clone());
+    }
+    return response;
+  } catch (err) {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(normalized);
+    if (cached) return cached;
+
+    // Offline navigation to an uncached page: fall back to the app shell
+    if (request.mode === 'navigate') {
+      const shell = await cache.match(normalizeUrl(APP_ROOT));
+      if (shell) return shell;
+    }
+
+    return new Response('Offline - content not cached', {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  }
+}
+
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    matchCache(event.request).then(async (cached) => {
-      // Start background network request for updates
-      const networkPromise = fetch(event.request).then(async (response) => {
-        if (response.ok && event.request.method === 'GET') {
-          const cache = await caches.open(CACHE_NAME);
-          const normalized = normalizeUrl(event.request.url);
-          cache.put(normalized, response.clone());
-        }
+  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+
+  // marked.js CDN (pre-cached at install): cache-first so the markdown
+  // renderer keeps working offline.
+  if (url.hostname === 'cdn.jsdelivr.net') {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(normalizeUrl(event.request.url));
+        if (cached) return cached;
+        const response = await fetch(event.request);
+        if (response.ok) cache.put(normalizeUrl(event.request.url), response.clone());
         return response;
-      }).catch(() => null);
+      })
+    );
+    return;
+  }
 
-      // Return cached response immediately if available
-      if (cached) {
-        networkPromise; // Update in background
-        return cached;
-      }
-
-      // No cache, wait for network
-      const networkResponse = await networkPromise;
-      if (networkResponse) {
-        return networkResponse;
-      }
-
-      // Network failed and no cache, return offline page
-      if (event.request.mode === 'navigate') {
-        const fallback = await matchCache(new Request('/beautiful-mind/'));
-        if (fallback) return fallback;
-      }
-
-      return new Response('Offline - content not cached', {
-        status: 503,
-        statusText: 'Service Unavailable',
-        headers: { 'Content-Type': 'text/plain' }
-      });
-    })
-  );
+  if (url.origin !== self.location.origin) return;
+  event.respondWith(networkFirst(event.request));
 });

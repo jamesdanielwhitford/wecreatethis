@@ -1,4 +1,4 @@
-const CACHE_NAME = 'perfectday-v9';
+const CACHE_NAME = 'perfectday-v10';
 const ASSETS = [
   '/perfectday/',
   '/perfectday/index',
@@ -85,6 +85,14 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Race the network against a timer so flaky connections degrade to cache
+// quickly instead of hanging.
+function fetchWithTimeout(request, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 async function matchCache(request) {
   const normalized = normalizeUrl(request.url);
   const cache = await caches.open(CACHE_NAME);
@@ -118,27 +126,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Local app assets — cache-first with background refresh
+  // Local app assets — network-first with timeout, fallback to cache
   event.respondWith(
-    matchCache(event.request).then(async (cached) => {
-      const networkPromise = fetch(event.request).then(async (response) => {
-        if (response.ok && event.request.method === 'GET') {
-          const cache = await caches.open(CACHE_NAME);
-          const normalized = normalizeUrl(event.request.url);
-          cache.put(normalized, response.clone());
-        }
-        return response;
-      }).catch(() => null);
-
-      if (cached) {
-        networkPromise;
-        return cached;
+    fetchWithTimeout(event.request, 3000).then(async (response) => {
+      if (response.ok && event.request.method === 'GET') {
+        const cache = await caches.open(CACHE_NAME);
+        const normalized = normalizeUrl(event.request.url);
+        cache.put(normalized, response.clone());
       }
-
-      const networkResponse = await networkPromise;
-      if (networkResponse) {
-        return networkResponse;
-      }
+      return response;
+    }).catch(async () => {
+      const cached = await matchCache(event.request);
+      if (cached) return cached;
 
       if (event.request.mode === 'navigate') {
         const fallback = await matchCache(new Request('/perfectday/'));

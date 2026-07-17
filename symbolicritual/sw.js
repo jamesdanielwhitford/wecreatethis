@@ -1,5 +1,5 @@
 // Cache for HTML/JS/CSS app shell — bumped on every release.
-const CACHE_NAME = 'symbolic-ritual-v27';
+const CACHE_NAME = 'symbolic-ritual-v28';
 // Cache for R2 media. Bumped only when we want to evict everything, otherwise
 // growth is bounded by a runtime LRU.
 const MEDIA_CACHE = 'symbolic-ritual-media-v1';
@@ -65,6 +65,14 @@ self.addEventListener('activate', event => {
     await self.clients.claim();
   })());
 });
+
+// Race the network against a timer so flaky connections degrade to cache
+// quickly instead of hanging.
+function fetchWithTimeout(request, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
 
 async function matchAppCache(request) {
   const normalized = normalizeUrl(request.url);
@@ -146,20 +154,17 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Same-origin app shell: stale-while-revalidate.
+  // Same-origin app shell: network-first with timeout, cache fallback.
   event.respondWith(
-    matchAppCache(event.request).then(async cached => {
-      const networkPromise = fetch(event.request).then(async res => {
-        if (res.ok) {
-          const cache = await caches.open(CACHE_NAME);
-          cache.put(normalizeUrl(event.request.url), res.clone()).catch(() => {});
-        }
-        return res;
-      }).catch(() => null);
-
+    fetchWithTimeout(event.request, 3000).then(async res => {
+      if (res.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(normalizeUrl(event.request.url), res.clone()).catch(() => {});
+      }
+      return res;
+    }).catch(async () => {
+      const cached = await matchAppCache(event.request);
       if (cached) return cached;
-      const net = await networkPromise;
-      if (net) return net;
 
       if (event.request.mode === 'navigate') {
         const fallback = await matchAppCache(new Request('/symbolicritual/'));
