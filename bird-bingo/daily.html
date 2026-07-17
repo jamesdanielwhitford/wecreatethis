@@ -88,16 +88,31 @@ document.getElementById('set-location-btn').addEventListener('click', async () =
 
 document.getElementById('change-location-btn').addEventListener('click', async () => {
   const statusEl = document.getElementById('game-status');
-  statusEl.textContent = 'Getting your new location and regenerating today\'s card...';
+  const previousCard = currentCard;
+  statusEl.textContent = 'Getting your location...';
   try {
     const location = await Shared.captureLocation();
     renderLocationSummary(location);
-    await generateAndSaveDailyCard(location, isHardMode());
+
+    if (previousCard && locationsAreClose(previousCard, location)) {
+      statusEl.textContent = 'Location is unchanged - keeping today\'s card.';
+      return;
+    }
+
+    statusEl.textContent = 'Location changed - regenerating today\'s card...';
+    await generateAndSaveDailyCard(location, isHardMode(), previousCard);
     statusEl.textContent = 'Card regenerated for your new location.';
   } catch (err) {
     statusEl.textContent = err.message;
   }
 });
+
+// GPS jitter is commonly tens of meters even when standing still; ~0.005deg (~500m)
+// is a meaningful move, not noise. Only regenerate the daily card past that threshold.
+function locationsAreClose(card, location) {
+  return Math.abs(card.lat - location.lat) < 0.005 &&
+         Math.abs(card.lng - location.lng) < 0.005;
+}
 
 function isHardMode() {
   return document.getElementById('hard-mode-btn').classList.contains('active');
@@ -109,7 +124,7 @@ document.getElementById('hard-mode-btn').addEventListener('click', async () => {
   const location = Shared.getSavedLocation();
   if (location) {
     document.getElementById('game-status').textContent = 'Regenerating with hard mode ' + (btn.classList.contains('active') ? 'on' : 'off') + '...';
-    await generateAndSaveDailyCard(location, isHardMode());
+    await generateAndSaveDailyCard(location, isHardMode(), currentCard);
     document.getElementById('game-status').textContent = '';
   }
 });
@@ -119,10 +134,8 @@ async function loadOrCreateDailyCard(location) {
   const statusEl = document.getElementById('game-status');
 
   const existing = await BingoDB.getDailyCardForDate(dateKey);
-  // Regenerate if location moved since the card was made (rounding to ~4 decimal places, ~11m)
-  const locationMatches = existing &&
-    Math.abs(existing.lat - location.lat) < 0.001 &&
-    Math.abs(existing.lng - location.lng) < 0.001;
+  // Reuse today's card unless the saved location has genuinely moved (see locationsAreClose).
+  const locationMatches = existing && locationsAreClose(existing, location);
 
   if (existing && locationMatches) {
     currentCard = existing;
