@@ -20,8 +20,8 @@
 - Mic-drop stops animation immediately
 - Not yet tested: admin login + D1 sync on mobile
 - Hardle: Hardle/Randle merge is live in prod on `main` (commit `b896181`), including follow-up fixes for tile sizing, layout centering, and a daily-puzzle-reset bug. See session-004 for full detail.
-- Blog: session-006 upgrade (nested sections, unified layout, CI manifest, sort toggle, code rendering, SW v7) committed on `dev` (`1127053`), not yet deployed. Architecture is documented in `blog/CLAUDE.md`; the blog SW deliberately deviates from repo-wide SW rules (manifest-derived assets, network-first content, never fetch `.html` URLs from it). Prod still runs the session-005 version. See session-006 for full detail.
-- Site-wide caching rework (session 007) is committed on `dev`, not yet in prod: every non-blog SW now uses network-first with 3s timeout and cache fallback ("fresh when online, cached when offline"); version bumps no longer needed for routine deploys. `dev/` folder is obsolete and pending deletion. See session-007 for full detail.
+- Blog: session-006 upgrade (nested sections, unified layout, CI manifest, sort toggle, code rendering, SW v7) is **live in prod** (merged to `main` in `459600c`). Architecture documented in `blog/CLAUDE.md`; the blog SW deliberately deviates from repo-wide SW rules. Watch: first prod deploy of the `/blog/ /blog/ 200` self-rewrite.
+- Site-wide caching rework (session 007) is **live in prod** (`459600c`): every non-blog SW uses stale-while-revalidate + shared `/sw-toast.js` update pill (instant loads, same-visit update prompts); `cleanResponse()` redirect stripping on every cache.put; version bumps no longer needed for routine deploys. Verify on a real device: old cache-first SWs self-replace on next online visit. `dev/` folder is obsolete and pending deletion (permission-blocked). See session-007 for full detail.
 
 ## Next session checklist
 
