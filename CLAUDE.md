@@ -13,7 +13,7 @@ This repository contains multiple offline-first web applications, each living in
 - **perfectday/** - Offline-first hiking map with lazy tile caching, GPS, compass, and sensor data. Uses MapLibre GL JS + OpenFreeMap. See [perfectday/CLAUDE.md](perfectday/CLAUDE.md) for details.
 - **starrynight/** - Skywatching conditions app (Starry Night). Cloud cover, moon phase, planet visibility, 7-day sky forecast. Uses Open-Meteo + SunCalc + AstronomyAPI. See [starrynight/CLAUDE.md](starrynight/CLAUDE.md) for details.
 - **voice-notes/** - Offline-first voice recording app with AI transcription via Mistral Voxtral. See [voice-notes/CLAUDE.md](voice-notes/CLAUDE.md) for details.
-- **blog/** - Blog with markdown-based posts and offline support. Folder-driven content (`content/{section}/{post}/index.md`), scroll-through post stack, hand-authored homepage (`content/home.md`). Rebuilt on branch `blog-work`, not yet merged/pushed; see [sessions/overview.md](sessions/overview.md) session 005 for detail.
+- **blog/** - Blog with markdown-based posts and offline support. Folder-driven content with nested sections (`content/{section...}/{post}/index.md`), scroll-through post stack, hand-authored homepage (`content/home.md`), auto-generated manifest (CI regenerates on push). See [blog/CLAUDE.md](blog/CLAUDE.md) for details, including how its service worker deliberately differs from the repo-wide SW rules.
 - **towersofhanoi/** - Tower of Hanoi agent benchmark. AI agents solve the puzzle via an MCP server (Pages Function + KV); live visualization, manual play, and leaderboard. See [towersofhanoi/CLAUDE.md](towersofhanoi/CLAUDE.md) for details.
 
 ## GitNotes Folder (Development Notes)
@@ -143,7 +143,7 @@ function normalizeUrl(url) {
 - **Pomodoro**: v1
 - **Perfect Day**: v1
 - **Homepage**: v19
-- **Blog**: v1
+- **Blog**: v7
 - **Starry Night**: v1
 - **Voice Notes**: v14
 
@@ -161,6 +161,7 @@ function normalizeUrl(url) {
 - JS files go in with their extension (e.g., `/birdle/trips/app.js`)
 - Always bump the `CACHE_NAME` version when changing cached assets
 - This applies to all new pages, scripts, and static assets — no exceptions
+- **Exception: blog content.** The blog SW derives post URLs from `content-manifest.json` at install and serves content network-first; new posts need no SW edits or version bump (see [blog/CLAUDE.md](blog/CLAUDE.md))
 
 ### Code Style
 - Simple, readable vanilla JS

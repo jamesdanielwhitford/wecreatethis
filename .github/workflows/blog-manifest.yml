@@ -1,0 +1,39 @@
+name: Blog manifest
+
+# Regenerates blog/content-manifest.json whenever blog content changes,
+# so adding a post is just adding a folder: no manual build step needed.
+# The commit lands back on the pushed branch; on main, Cloudflare Pages
+# picks it up and redeploys.
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'blog/content/**'
+      - 'blog/build.js'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Rebuild manifest
+        run: node blog/build.js
+
+      - name: Commit manifest if changed
+        run: |
+          if ! git diff --quiet blog/content-manifest.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add blog/content-manifest.json
+            git commit -m "Regenerate blog content manifest"
+            git push
+          else
+            echo "Manifest already up to date."
+          fi

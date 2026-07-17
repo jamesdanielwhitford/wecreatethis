@@ -14,12 +14,17 @@ https://wecreatethis.pages.dev/* https://wecreatethis.com/:splat 301
 # Birdle app routing (if needed in future)
 /birdle/*  /birdle/index.html  200
 
-# Blog: clean URLs for sections (posts use a #fragment, no server routing needed)
-# Static files must be listed here first so the wildcard section rule below doesn't swallow them.
+# Blog: clean URLs for sections (posts use a #fragment, no server routing needed).
+# Real files must pass through first (first match wins), then any other
+# /blog/... path serves the section shell. Nested sections work with no
+# extra rules: adding a content folder needs NO changes here.
+/blog/  /blog/  200
+/blog/content/*  /blog/content/:splat  200
 /blog/app.js  /blog/app.js  200
+/blog/style.css  /blog/style.css  200
 /blog/sw.js  /blog/sw.js  200
 /blog/manifest.json  /blog/manifest.json  200
 /blog/content-manifest.json  /blog/content-manifest.json  200
 /blog/icon-192.png  /blog/icon-192.png  200
 /blog/icon-512.png  /blog/icon-512.png  200
-/blog/:section  /blog/section  200
+/blog/*  /blog/section  200

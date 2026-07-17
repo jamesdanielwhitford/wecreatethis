@@ -6,84 +6,17 @@
   <meta name="theme-color" content="#ffffff">
   <title>Blog</title>
   <link rel="manifest" href="manifest.json">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: Georgia, serif;
-      background: #fff;
-      color: #111;
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 48px 24px;
-    }
-
-    header {
-      margin-bottom: 48px;
-    }
-
-    header h1 {
-      font-size: 1.1rem;
-      font-weight: normal;
-      letter-spacing: 0.05em;
-    }
-
-    header a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    #loading {
-      color: #888;
-      font-size: 0.95rem;
-    }
-
-    #home-content h2 {
-      font-size: 1.15rem;
-      font-weight: normal;
-      margin: 36px 0 12px;
-      border-bottom: 1px solid #e0e0e0;
-      padding-bottom: 6px;
-    }
-
-    #home-content h2:first-child {
-      margin-top: 0;
-    }
-
-    #home-content p {
-      margin-bottom: 16px;
-      color: #444;
-      line-height: 1.6;
-    }
-
-    #home-content ul {
-      list-style: none;
-    }
-
-    #home-content li {
-      margin-bottom: 12px;
-    }
-
-    #home-content a {
-      font-size: 1.1rem;
-      color: #111;
-      text-decoration: none;
-    }
-
-    #home-content a:hover {
-      text-decoration: underline;
-    }
-  </style>
+  <link rel="stylesheet" href="/blog/style.css">
 </head>
 <body>
   <header>
-    <h1><a href="/">wecreatethis.com</a> / blog</h1>
+    <nav id="crumbs" aria-label="Breadcrumb"></nav>
   </header>
 
   <div id="loading">Loading...</div>
-  <div id="home-content" style="display:none"></div>
+  <div id="home-content" class="md-content" style="display:none"></div>
 
-  <script src="app.js"></script>
+  <script src="/blog/app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/blog/sw.js', { scope: '/blog/' });

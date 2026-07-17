@@ -1,7 +1,7 @@
 {
   "sections": [
     {
-      "slug": "dev-tools",
+      "path": "dev-tools",
       "name": "Dev Tools",
       "posts": [
         {
