@@ -4,7 +4,8 @@ This repository contains multiple offline-first web applications, each living in
 
 ## Projects
 
-- **birdle/** - Bird spotting game using eBird API (Bird Bingo). See [birdle/CLAUDE.md](birdle/CLAUDE.md) for details.
+- **birdle/** - Bird spotting game using eBird API. See [birdle/CLAUDE.md](birdle/CLAUDE.md) for details.
+- **bird-bingo/** - Standalone bird bingo game: daily 3x3 card plus unlimited practice mode (3x3/4x4/5x5), cards built from real nearby eBird sightings, own life list, bird detail pages with description/call/sighting logging. See [bird-bingo/CLAUDE.md](bird-bingo/CLAUDE.md) for details.
 - **beautiful-mind/** - Offline notes app with text, image, video, and audio support. E-reader themed with dual storage (File System API/IndexedDB). See [beautiful-mind/CLAUDE.md](beautiful-mind/CLAUDE.md) for details.
 - **tarot/** - Tarot card reading app. See [tarot/CLAUDE.md](tarot/CLAUDE.md) for details.
 - **hardle/** - Word guessing game: daily puzzle plus unlimited Practice Mode, single-page vanilla JS. Live in prod on `main`; see [sessions/overview.md](sessions/overview.md) session 004 for detail.

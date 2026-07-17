@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Game - Bird Bingo</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+<script src="/sw-toast.js" defer></script>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="index" class="back-link">&larr; Home</a>
+  <span class="status" id="header-date"></span>
+</div>
+
+<h1>📅 Daily Game</h1>
+
+<div id="no-location-panel" class="panel" style="display:none;">
+  <p class="status">Set your location to generate today's card.</p>
+  <button id="set-location-btn">📍 Use My Location</button>
+  <div class="status" id="location-status"></div>
+</div>
+
+<div id="game-panel" style="display:none;">
+  <div class="panel">
+    <div class="location-summary" id="location-summary"></div>
+    <button class="secondary change-location-btn" id="change-location-btn">📍 Update Location (regenerates today's card)</button>
+    <div class="toggle-group" style="margin-top:12px;">
+      <button class="toggle-btn" id="hard-mode-btn">🔥 Hard Mode (exclude birds you've already seen)</button>
+    </div>
+    <div class="status" id="game-status"></div>
+  </div>
+
+  <div id="celebration-area"></div>
+
+  <div class="bingo-grid" id="bingo-grid" style="grid-template-columns: repeat(3, 1fr);"></div>
+</div>
+
+<script src="ebird.js"></script>
+<script src="location.js"></script>
+<script src="db.js"></script>
+<script src="bingo.js"></script>
+<script src="app.js"></script>
+<script>
+let currentCard = null;
+
+document.getElementById('header-date').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+
+async function init() {
+  const location = Shared.getSavedLocation();
+  if (!location) {
+    document.getElementById('no-location-panel').style.display = 'block';
+    document.getElementById('game-panel').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('no-location-panel').style.display = 'none';
+  document.getElementById('game-panel').style.display = 'block';
+  renderLocationSummary(location);
+
+  await loadOrCreateDailyCard(location);
+}
+
+function renderLocationSummary(location) {
+  document.getElementById('location-summary').innerHTML = `
+    <strong>${location.regionName || 'Unknown region'}</strong><br>
+    ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}
+    <div class="status">Card generated: ${location.updatedAt ? Shared.formatDate(location.updatedAt) : ''}</div>
+  `;
+}
+
+document.getElementById('set-location-btn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('location-status');
+  statusEl.textContent = 'Getting your location...';
+  try {
+    const location = await Shared.captureLocation();
+    statusEl.textContent = '';
+    document.getElementById('no-location-panel').style.display = 'none';
+    document.getElementById('game-panel').style.display = 'block';
+    renderLocationSummary(location);
+    await loadOrCreateDailyCard(location);
+  } catch (err) {
+    statusEl.textContent = err.message;
+  }
+});
+
+document.getElementById('change-location-btn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('game-status');
+  statusEl.textContent = 'Getting your new location and regenerating today\'s card...';
+  try {
+    const location = await Shared.captureLocation();
+    renderLocationSummary(location);
+    await generateAndSaveDailyCard(location, isHardMode());
+    statusEl.textContent = 'Card regenerated for your new location.';
+  } catch (err) {
+    statusEl.textContent = err.message;
+  }
+});
+
+function isHardMode() {
+  return document.getElementById('hard-mode-btn').classList.contains('active');
+}
+
+document.getElementById('hard-mode-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('hard-mode-btn');
+  btn.classList.toggle('active');
+  const location = Shared.getSavedLocation();
+  if (location) {
+    document.getElementById('game-status').textContent = 'Regenerating with hard mode ' + (btn.classList.contains('active') ? 'on' : 'off') + '...';
+    await generateAndSaveDailyCard(location, isHardMode());
+    document.getElementById('game-status').textContent = '';
+  }
+});
+
+async function loadOrCreateDailyCard(location) {
+  const dateKey = Bingo.todayKey();
+  const statusEl = document.getElementById('game-status');
+
+  const existing = await BingoDB.getDailyCardForDate(dateKey);
+  // Regenerate if location moved since the card was made (rounding to ~4 decimal places, ~11m)
+  const locationMatches = existing &&
+    Math.abs(existing.lat - location.lat) < 0.001 &&
+    Math.abs(existing.lng - location.lng) < 0.001;
+
+  if (existing && locationMatches) {
+    currentCard = existing;
+    document.getElementById('hard-mode-btn').classList.toggle('active', existing.hardMode);
+    await renderGrid();
+    return;
+  }
+
+  statusEl.textContent = 'Building today\'s card...';
+  await generateAndSaveDailyCard(location, isHardMode(), existing);
+  statusEl.textContent = '';
+}
+
+async function generateAndSaveDailyCard(location, hardMode, replacing) {
+  const dateKey = Bingo.todayKey();
+  const seed = Bingo.hashStringToNumber(`${dateKey}:${location.lat.toFixed(3)}:${location.lng.toFixed(3)}`);
+
+  const data = await Bingo.generateCard({
+    lat: location.lat,
+    lng: location.lng,
+    size: 3,
+    hardMode,
+    seed,
+    regionName: location.regionName
+  });
+
+  if (replacing) {
+    await BingoDB.deleteBingoCard(replacing.id);
+  }
+
+  currentCard = await BingoDB.createBingoCard({
+    mode: 'daily',
+    dateKey,
+    size: data.size,
+    hardMode: data.hardMode,
+    lat: data.lat,
+    lng: data.lng,
+    regionName: data.regionName,
+    birds: data.birds
+  });
+
+  await renderGrid();
+}
+
+async function renderGrid() {
+  const gridEl = document.getElementById('bingo-grid');
+  gridEl.innerHTML = '';
+  gridEl.style.gridTemplateColumns = `repeat(${currentCard.size}, 1fr)`;
+
+  const sightings = await BingoDB.getAllSightings();
+  const seenCodes = new Set(
+    sightings.filter(s => s.date >= currentCard.createdAt.split('T')[0]).map(s => s.speciesCode)
+  );
+
+  const { hasBingo, winningCells } = Bingo.checkBingo(currentCard.birds, currentCard.size, seenCodes);
+
+  currentCard.birds.forEach((bird, index) => {
+    const found = seenCodes.has(bird.speciesCode);
+    const cell = Shared.renderCell(bird, index, found);
+    if (winningCells.includes(index)) cell.classList.add('bingo-line');
+    cell.addEventListener('click', () => {
+      localStorage.setItem('currentCardBirds', JSON.stringify(currentCard.birds));
+      window.location.href = `bird?code=${bird.speciesCode}&from=daily&cardId=${currentCard.id}`;
+    });
+    gridEl.appendChild(cell);
+  });
+
+  if (hasBingo && !currentCard.completedAt) {
+    currentCard.completedAt = new Date().toISOString();
+    await BingoDB.updateBingoCard(currentCard);
+  }
+
+  renderCelebration(hasBingo);
+}
+
+function renderCelebration(hasBingo) {
+  const area = document.getElementById('celebration-area');
+  if (hasBingo) {
+    area.innerHTML = `
+      <div class="celebration-banner bingo-win">
+        <h2>🎉 BINGO!</h2>
+        <p>You've spotted a full line on today's card.</p>
+      </div>
+    `;
+  } else {
+    area.innerHTML = '';
+  }
+}
+
+init();
+
+window.addEventListener('pageshow', () => {
+  if (currentCard) renderGrid();
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && currentCard) renderGrid();
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(err => console.error('SW registration failed', err));
+}
+</script>
+
+</body>
+</html>

@@ -32,6 +32,11 @@
     </div>
 
     <div class="app-item">
+      <a href="/bird-bingo/" class="app-btn" style="background-image: url('/bird-bingo/icon-192.png');"></a>
+      <span class="app-name">Bird Bingo</span>
+    </div>
+
+    <div class="app-item">
       <a href="/tarot/" class="app-btn" style="background-image: url('/tarot/icon-192.png');"></a>
       <span class="app-name">Tarot</span>
     </div>
@@ -91,7 +96,7 @@
     if ('serviceWorker' in navigator) {
       // Clean up old/orphaned service workers from deleted projects
       navigator.serviceWorker.getRegistrations().then(registrations => {
-        const validScopes = ['/', '/beautiful-mind/', '/birdle/', '/blog/', '/chessle/', '/chesstimer/', '/git-notes/', '/hardle/', '/inkwell/', '/longform/', '/perfectday/', '/slowread/', '/starrynight/', '/symbolicritual/', '/tarot/', '/voice-notes/'];
+        const validScopes = ['/', '/beautiful-mind/', '/bird-bingo/', '/birdle/', '/blog/', '/chessle/', '/chesstimer/', '/git-notes/', '/hardle/', '/inkwell/', '/longform/', '/perfectday/', '/slowread/', '/starrynight/', '/symbolicritual/', '/tarot/', '/voice-notes/'];
         registrations.forEach(registration => {
           const scope = new URL(registration.scope).pathname;
           if (!validScopes.includes(scope)) {

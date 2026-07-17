@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bird - Bird Bingo</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+<script src="/sw-toast.js" defer></script>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="index" class="back-link" id="back-link">&larr; Back</a>
+</div>
+
+<div id="celebration-area"></div>
+
+<img id="bird-image" class="bird-detail-image" style="display:none;">
+<div class="bird-detail-name" id="bird-name"></div>
+<div class="bird-detail-sci" id="bird-sci"></div>
+
+<button class="call-btn" id="call-btn" style="display:none;">🔊 Play Call</button>
+<div class="status" id="call-status"></div>
+
+<div class="panel">
+  <button id="description-toggle-btn" class="secondary">Description</button>
+  <div id="description-content" style="display:none; margin-top:10px; font-size:0.88rem; line-height:1.5;"></div>
+</div>
+
+<div class="panel">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <h2 style="margin:0;">Sightings</h2>
+    <button id="add-sighting-btn">+ Log Sighting</button>
+  </div>
+  <div id="sightings-list" style="margin-top:10px;"></div>
+  <p class="empty-state" id="no-sightings-msg" style="display:none;">No sightings logged yet.</p>
+</div>
+
+<!-- Log sighting modal -->
+<div class="modal-overlay hidden" id="sighting-modal">
+  <div class="modal-content">
+    <h2 style="margin-top:0">Log Sighting</h2>
+    <label>Date</label>
+    <input type="date" id="sighting-date">
+    <label>Notes (optional)</label>
+    <input type="text" id="sighting-notes" placeholder="e.g. at the feeder">
+    <div class="modal-actions">
+      <button class="secondary" id="sighting-cancel-btn">Cancel</button>
+      <button id="sighting-save-btn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="ebird.js"></script>
+<script src="location.js"></script>
+<script src="db.js"></script>
+<script src="bingo.js"></script>
+<script src="app.js"></script>
+<script>
+const params = new URLSearchParams(window.location.search);
+const speciesCode = params.get('code');
+const fromMode = params.get('from');
+const cardId = params.get('cardId');
+
+let currentBird = null;
+let currentAudio = null;
+
+function setBackLink() {
+  const backLink = document.getElementById('back-link');
+  if (fromMode === 'daily') {
+    backLink.href = 'daily';
+    backLink.textContent = '← Back to Daily Game';
+  } else if (fromMode === 'practice') {
+    backLink.href = 'practice';
+    backLink.textContent = '← Back to Practice Mode';
+  } else if (fromMode === 'life') {
+    backLink.href = 'life';
+    backLink.textContent = '← Back to Life List';
+  } else {
+    backLink.href = 'index';
+    backLink.textContent = '← Home';
+  }
+}
+
+function findBirdInfo() {
+  if (!speciesCode) return null;
+
+  // Try the card that linked here first (has comName/sciName without a DB round-trip)
+  try {
+    const cardBirds = JSON.parse(localStorage.getItem('currentCardBirds') || '[]');
+    const match = cardBirds.find(b => b.speciesCode === speciesCode);
+    if (match) return match;
+  } catch (e) {}
+
+  return null;
+}
+
+async function init() {
+  setBackLink();
+
+  currentBird = findBirdInfo();
+  if (!currentBird) {
+    // Fall back to life list / sightings history for this species
+    const sightings = await BingoDB.getSightingsForSpecies(speciesCode);
+    if (sightings.length > 0) {
+      currentBird = { speciesCode, comName: sightings[0].comName, sciName: sightings[0].sciName };
+    }
+  }
+
+  if (!currentBird) {
+    document.getElementById('bird-name').textContent = 'Bird not found';
+    return;
+  }
+
+  document.getElementById('bird-name').textContent = currentBird.comName;
+  document.getElementById('bird-sci').textContent = currentBird.sciName || '';
+
+  loadWikiData();
+  loadCall();
+
+  document.getElementById('sighting-date').value = new Date().toISOString().split('T')[0];
+  await renderSightings();
+}
+
+async function loadWikiData() {
+  const data = await Shared.fetchWikipediaData(currentBird.comName) ||
+               (currentBird.sciName ? await Shared.fetchWikipediaData(currentBird.sciName) : null);
+
+  if (data && data.imageUrl) {
+    const img = document.getElementById('bird-image');
+    img.src = data.imageUrl;
+    img.style.display = 'block';
+  }
+
+  const content = document.getElementById('description-content');
+  content.textContent = (data && data.description) ? data.description : 'No description available.';
+}
+
+document.getElementById('description-toggle-btn').addEventListener('click', () => {
+  const content = document.getElementById('description-content');
+  content.style.display = content.style.display === 'none' ? 'block' : 'none';
+});
+
+async function loadCall() {
+  if (!currentBird.sciName) return;
+  const audioUrl = await Shared.fetchBirdCall(currentBird.sciName);
+  const btn = document.getElementById('call-btn');
+  const statusEl = document.getElementById('call-status');
+
+  if (!audioUrl) {
+    statusEl.textContent = 'No call recording found.';
+    return;
+  }
+
+  btn.style.display = 'flex';
+  btn.addEventListener('click', () => {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+      btn.textContent = '🔊 Play Call';
+      return;
+    }
+    currentAudio = new Audio(audioUrl);
+    currentAudio.play().catch(() => {
+      statusEl.textContent = 'Could not play audio.';
+    });
+    btn.textContent = '⏸ Stop';
+    currentAudio.onended = () => {
+      currentAudio = null;
+      btn.textContent = '🔊 Play Call';
+    };
+  });
+}
+
+// ---------- Sightings ----------
+
+async function renderSightings() {
+  const sightings = await BingoDB.getSightingsForSpecies(speciesCode);
+  sightings.sort((a, b) => b.date.localeCompare(a.date));
+
+  const listEl = document.getElementById('sightings-list');
+  const emptyEl = document.getElementById('no-sightings-msg');
+  listEl.innerHTML = '';
+
+  if (sightings.length === 0) {
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  sightings.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'sighting-item';
+    item.innerHTML = `
+      <span>${Shared.formatDate(s.date)}${s.notes ? ' - ' + s.notes : ''}</span>
+      <button class="delete-sighting-btn" data-id="${s.id}">✕</button>
+    `;
+    item.querySelector('.delete-sighting-btn').addEventListener('click', () => handleDeleteSighting(s.id));
+    listEl.appendChild(item);
+  });
+}
+
+document.getElementById('add-sighting-btn').addEventListener('click', () => {
+  document.getElementById('sighting-modal').classList.remove('hidden');
+});
+document.getElementById('sighting-cancel-btn').addEventListener('click', () => {
+  document.getElementById('sighting-modal').classList.add('hidden');
+});
+
+document.getElementById('sighting-save-btn').addEventListener('click', async () => {
+  const date = document.getElementById('sighting-date').value || new Date().toISOString().split('T')[0];
+  const notes = document.getElementById('sighting-notes').value.trim();
+
+  const wasOnLifeList = await BingoDB.isOnLifeList(speciesCode);
+
+  await BingoDB.addSighting({
+    speciesCode: currentBird.speciesCode,
+    comName: currentBird.comName,
+    sciName: currentBird.sciName,
+    date,
+    notes
+  });
+
+  document.getElementById('sighting-modal').classList.add('hidden');
+  document.getElementById('sighting-notes').value = '';
+
+  const isLifer = !wasOnLifeList;
+  await renderSightings();
+  renderCelebration(isLifer);
+});
+
+async function handleDeleteSighting(id) {
+  if (!confirm('Delete this sighting?')) return;
+
+  await BingoDB.deleteSighting(id);
+
+  // If that was the species' only sighting, this cascades: the life list drops it
+  // automatically (derived from sightings), and any bingo card square marked from
+  // it un-marks on next render since seenCodes is recomputed from getAllSightings().
+  await renderSightings();
+}
+
+function renderCelebration(isLifer) {
+  const area = document.getElementById('celebration-area');
+  if (isLifer) {
+    area.innerHTML = `
+      <div class="celebration-banner lifer-win">
+        <h2>🌟 New Lifer!</h2>
+        <p>${currentBird.comName} is now on your life list.</p>
+      </div>
+    `;
+  } else {
+    area.innerHTML = `<div class="status">Sighting logged.</div>`;
+    setTimeout(() => { if (area.innerHTML.includes('Sighting logged')) area.innerHTML = ''; }, 2500);
+  }
+}
+
+init();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(err => console.error('SW registration failed', err));
+}
+</script>
+
+</body>
+</html>

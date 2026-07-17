@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life List - Bird Bingo</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+<script src="/sw-toast.js" defer></script>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="index" class="back-link">&larr; Home</a>
+</div>
+
+<h1>📖 Life List</h1>
+<p class="status" id="count-status"></p>
+
+<div id="life-list"></div>
+<p class="empty-state" id="empty-state" style="display:none;">No birds logged yet. Log a sighting from a bingo card to start your life list.</p>
+
+<script src="ebird.js"></script>
+<script src="location.js"></script>
+<script src="db.js"></script>
+<script src="bingo.js"></script>
+<script src="app.js"></script>
+<script>
+async function renderLifeList() {
+  const list = await BingoDB.getLifeList();
+  const listEl = document.getElementById('life-list');
+  const emptyEl = document.getElementById('empty-state');
+  const countEl = document.getElementById('count-status');
+  listEl.innerHTML = '';
+
+  countEl.textContent = `${list.length} species logged`;
+
+  if (list.length === 0) {
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  for (const bird of list) {
+    const item = document.createElement('div');
+    item.className = 'life-list-item';
+    item.innerHTML = `
+      <img class="life-thumb" id="thumb-${bird.speciesCode}">
+      <a class="life-info" href="bird?code=${bird.speciesCode}&from=life">
+        <div class="life-name">${bird.comName}</div>
+        <div class="life-meta">${bird.count} sighting${bird.count === 1 ? '' : 's'} · first seen ${Shared.formatDate(bird.firstDate)}</div>
+      </a>
+      <button class="remove-life-btn" data-code="${bird.speciesCode}" title="Remove from life list">🗑</button>
+    `;
+
+    item.querySelector('.remove-life-btn').addEventListener('click', () => handleRemove(bird));
+    listEl.appendChild(item);
+
+    loadThumb(bird);
+  }
+}
+
+async function loadThumb(bird) {
+  const data = await Shared.fetchWikipediaData(bird.comName) ||
+               (bird.sciName ? await Shared.fetchWikipediaData(bird.sciName) : null);
+  if (data && data.imageUrl) {
+    const img = document.getElementById(`thumb-${bird.speciesCode}`);
+    if (img) img.src = data.imageUrl;
+  }
+}
+
+async function handleRemove(bird) {
+  const confirmed = confirm(`Remove ${bird.comName} from your life list? This deletes all ${bird.count} logged sighting${bird.count === 1 ? '' : 's'} for this species.`);
+  if (!confirmed) return;
+
+  await BingoDB.deleteAllSightingsForSpecies(bird.speciesCode);
+  await renderLifeList();
+}
+
+renderLifeList();
+
+window.addEventListener('pageshow', renderLifeList);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') renderLifeList();
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(err => console.error('SW registration failed', err));
+}
+</script>
+
+</body>
+</html>

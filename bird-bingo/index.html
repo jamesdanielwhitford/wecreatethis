@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bird Bingo</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+<script src="/sw-toast.js" defer></script>
+</head>
+<body>
+
+<h1>🐦 Bird Bingo</h1>
+<p class="status">Bingo cards built from real, recent bird sightings near you.</p>
+
+<div class="panel">
+  <h2 style="margin-top:0">Your Location</h2>
+  <div id="no-location" style="display:none;">
+    <p class="status">Bird Bingo needs your location to find birds near you.</p>
+    <button id="set-location-btn">📍 Use My Location</button>
+  </div>
+  <div id="has-location" style="display:none;">
+    <div class="location-summary" id="location-summary"></div>
+    <button class="secondary change-location-btn" id="change-location-btn">📍 Update Location</button>
+  </div>
+  <div class="status" id="location-status"></div>
+</div>
+
+<div class="home-actions">
+  <a href="daily">
+    <div class="action-title">📅 Daily Game</div>
+    <div class="action-desc">One 3x3 card per day, based on your saved location.</div>
+  </a>
+  <a href="practice">
+    <div class="action-title">🎯 Practice Mode</div>
+    <div class="action-desc">Run multiple cards at once, choose a size, play as much as you like.</div>
+  </a>
+  <a href="life">
+    <div class="action-title">📖 Life List</div>
+    <div class="action-desc">Every bird you've logged in Bird Bingo.</div>
+  </a>
+</div>
+
+<script src="ebird.js"></script>
+<script src="location.js"></script>
+<script src="app.js"></script>
+<script>
+function renderLocationPanel() {
+  const location = Shared.getSavedLocation();
+  const noLocEl = document.getElementById('no-location');
+  const hasLocEl = document.getElementById('has-location');
+
+  if (location) {
+    noLocEl.style.display = 'none';
+    hasLocEl.style.display = 'block';
+    document.getElementById('location-summary').innerHTML = `
+      <strong>${location.regionName || 'Unknown region'}</strong><br>
+      ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}
+    `;
+  } else {
+    noLocEl.style.display = 'block';
+    hasLocEl.style.display = 'none';
+  }
+}
+
+async function handleSetLocation() {
+  const statusEl = document.getElementById('location-status');
+  statusEl.textContent = 'Getting your location...';
+  try {
+    await Shared.captureLocation();
+    statusEl.textContent = '';
+    renderLocationPanel();
+  } catch (err) {
+    statusEl.textContent = err.message;
+  }
+}
+
+document.getElementById('set-location-btn').addEventListener('click', handleSetLocation);
+document.getElementById('change-location-btn').addEventListener('click', handleSetLocation);
+
+renderLocationPanel();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(err => console.error('SW registration failed', err));
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Practice Mode - Bird Bingo</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+<script src="/sw-toast.js" defer></script>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="index" class="back-link">&larr; Home</a>
+</div>
+
+<h1>🎯 Practice Mode</h1>
+<p class="status">Run as many cards as you like, any size.</p>
+
+<div class="panel">
+  <h2 style="margin-top:0">New Card</h2>
+
+  <label style="font-size:0.8rem; color:#555; display:block; margin-bottom:6px;">Size</label>
+  <div class="toggle-group" id="size-group">
+    <button class="toggle-btn active" data-size="3">3 x 3</button>
+    <button class="toggle-btn" data-size="4">4 x 4</button>
+    <button class="toggle-btn" data-size="5">5 x 5</button>
+  </div>
+
+  <div class="toggle-group" style="margin-top:12px;">
+    <button class="toggle-btn" id="hard-mode-toggle">🔥 Hard Mode</button>
+  </div>
+
+  <div style="margin-top:14px;">
+    <div id="new-card-location-summary" class="location-summary" style="display:none;"></div>
+    <button id="use-saved-location-btn" style="margin-top:10px;">📍 Use Saved Location</button>
+    <button class="secondary" id="use-new-location-btn" style="margin-top:10px;">📍 Use a Different Location</button>
+  </div>
+
+  <div class="status" id="new-card-status"></div>
+</div>
+
+<h2>Active Cards</h2>
+<div class="practice-card-list" id="card-list"></div>
+<p class="empty-state" id="empty-state" style="display:none;">No practice cards yet. Create one above.</p>
+
+<script src="ebird.js"></script>
+<script src="location.js"></script>
+<script src="db.js"></script>
+<script src="bingo.js"></script>
+<script src="app.js"></script>
+<script>
+let selectedSize = 3;
+
+function renderSavedLocationSummary() {
+  const location = Shared.getSavedLocation();
+  const el = document.getElementById('new-card-location-summary');
+  if (location) {
+    el.style.display = 'block';
+    el.innerHTML = `Saved location: <strong>${location.regionName || 'Unknown region'}</strong> (${location.lat.toFixed(4)}, ${location.lng.toFixed(4)})`;
+  } else {
+    el.style.display = 'none';
+  }
+}
+renderSavedLocationSummary();
+
+document.querySelectorAll('#size-group .toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#size-group .toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedSize = parseInt(btn.dataset.size, 10);
+  });
+});
+
+document.getElementById('hard-mode-toggle').addEventListener('click', () => {
+  document.getElementById('hard-mode-toggle').classList.toggle('active');
+});
+
+function isHardMode() {
+  return document.getElementById('hard-mode-toggle').classList.contains('active');
+}
+
+document.getElementById('use-saved-location-btn').addEventListener('click', async () => {
+  const location = Shared.getSavedLocation();
+  const statusEl = document.getElementById('new-card-status');
+  if (!location) {
+    statusEl.textContent = 'No saved location yet - use "Use a Different Location" to set one.';
+    return;
+  }
+  await createPracticeCard(location);
+});
+
+document.getElementById('use-new-location-btn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('new-card-status');
+  statusEl.textContent = 'Getting your location...';
+  try {
+    const location = await Shared.captureLocation();
+    statusEl.textContent = '';
+    renderSavedLocationSummary();
+    await createPracticeCard(location);
+  } catch (err) {
+    statusEl.textContent = err.message;
+  }
+});
+
+async function createPracticeCard(location) {
+  const statusEl = document.getElementById('new-card-status');
+  statusEl.textContent = 'Building your card...';
+
+  const data = await Bingo.generateCard({
+    lat: location.lat,
+    lng: location.lng,
+    size: selectedSize,
+    hardMode: isHardMode(),
+    seed: null, // practice cards aren't seeded - fresh/live each time
+    regionName: location.regionName
+  });
+
+  await BingoDB.createBingoCard({
+    mode: 'practice',
+    size: data.size,
+    hardMode: data.hardMode,
+    lat: data.lat,
+    lng: data.lng,
+    regionName: data.regionName,
+    birds: data.birds
+  });
+
+  statusEl.textContent = '';
+  await renderCardList();
+}
+
+async function renderCardList() {
+  const cards = await BingoDB.getAllPracticeCards();
+  const listEl = document.getElementById('card-list');
+  const emptyEl = document.getElementById('empty-state');
+  listEl.innerHTML = '';
+
+  if (cards.length === 0) {
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  const sightings = await BingoDB.getAllSightings();
+
+  for (const card of cards) {
+    const seenCodes = new Set(
+      sightings.filter(s => s.date >= card.createdAt.split('T')[0]).map(s => s.speciesCode)
+    );
+    const { hasBingo, winningCells } = Bingo.checkBingo(card.birds, card.size, seenCodes);
+
+    if (hasBingo && !card.completedAt) {
+      card.completedAt = new Date().toISOString();
+      await BingoDB.updateBingoCard(card);
+    }
+
+    const cardEl = document.createElement('div');
+    cardEl.className = 'practice-card';
+    cardEl.innerHTML = `
+      <div class="practice-card-header">
+        <div>
+          <div class="card-title">${card.size}x${card.size}${card.hardMode ? ' 🔥' : ''}${hasBingo ? ' - 🎉 BINGO!' : ''}</div>
+          <div class="card-meta">${card.regionName || ''} · started ${Shared.formatDate(card.createdAt)}</div>
+        </div>
+        <button class="secondary delete-card-btn" data-id="${card.id}">Delete</button>
+      </div>
+      <div class="bingo-grid" style="grid-template-columns: repeat(${card.size}, 1fr);"></div>
+    `;
+
+    const gridEl = cardEl.querySelector('.bingo-grid');
+    card.birds.forEach((bird, index) => {
+      const found = seenCodes.has(bird.speciesCode);
+      const cell = Shared.renderCell(bird, index, found);
+      if (winningCells.includes(index)) cell.classList.add('bingo-line');
+      cell.addEventListener('click', () => {
+        localStorage.setItem('currentCardBirds', JSON.stringify(card.birds));
+        window.location.href = `bird?code=${bird.speciesCode}&from=practice&cardId=${card.id}`;
+      });
+      gridEl.appendChild(cell);
+    });
+
+    cardEl.querySelector('.delete-card-btn').addEventListener('click', async () => {
+      if (confirm('Delete this practice card?')) {
+        await BingoDB.deleteBingoCard(card.id);
+        await renderCardList();
+      }
+    });
+
+    listEl.appendChild(cardEl);
+  }
+}
+
+renderCardList();
+
+window.addEventListener('pageshow', renderCardList);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') renderCardList();
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(err => console.error('SW registration failed', err));
+}
+</script>
+
+</body>
+</html>
