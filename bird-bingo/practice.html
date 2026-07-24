@@ -10,93 +10,145 @@
 </head>
 <body>
 
-<div class="top-bar">
-  <a href="index" class="back-link">&larr; Home</a>
+<div class="app-header" id="app-header-slot"></div>
+
+<div id="no-location-panel" class="onboarding-view" style="display:none;">
+  <div class="onboarding-icon">🎯</div>
+  <h2>Practice Card</h2>
+  <p class="onboarding-sub">Any size, as many as you like, built from real bird sightings near you. Set a location to build a card.</p>
+  <button id="set-location-btn">📍 Use My Location</button>
+  <div class="status" id="location-status"></div>
 </div>
 
-<h1>🎯 Practice Mode</h1>
-<p class="status">Run as many cards as you like, any size.</p>
-
-<div class="panel">
-  <h2 style="margin-top:0">New Card</h2>
-
-  <label style="font-size:0.8rem; color:#555; display:block; margin-bottom:6px;">Size</label>
-  <div class="toggle-group" id="size-group">
-    <button class="toggle-btn active" data-size="3">3 x 3</button>
-    <button class="toggle-btn" data-size="4">4 x 4</button>
-    <button class="toggle-btn" data-size="5">5 x 5</button>
+<div id="game-panel" style="display:none;">
+  <div class="bingo-stage" id="grid-view">
+    <div class="bingo-progress" id="progress-text"></div>
+    <div class="bingo-grid" id="bingo-grid"></div>
+    <button class="secondary regenerate-btn" id="regenerate-btn">🔄 New Card</button>
   </div>
-
-  <div class="toggle-group" style="margin-top:12px;">
-    <button class="toggle-btn" id="hard-mode-toggle">🔥 Hard Mode</button>
-  </div>
-
-  <div style="margin-top:14px;">
-    <div id="new-card-location-summary" class="location-summary" style="display:none;"></div>
-    <button id="use-saved-location-btn" style="margin-top:10px;">📍 Use Saved Location</button>
-    <button class="secondary" id="use-new-location-btn" style="margin-top:10px;">📍 Use a Different Location</button>
-  </div>
-
-  <div class="status" id="new-card-status"></div>
 </div>
 
-<h2>Active Cards</h2>
-<div class="practice-card-list" id="card-list"></div>
-<p class="empty-state" id="empty-state" style="display:none;">No practice cards yet. Create one above.</p>
+<div class="celebration-overlay hidden" id="celebration-overlay">
+  <div class="celebration-modal" id="celebration-modal">
+    <div class="celebration-icon" id="celebration-icon">🎉</div>
+    <h2 id="celebration-title">BINGO!</h2>
+    <p class="celebration-sub" id="celebration-sub">You've spotted a full line on this card.</p>
+    <div class="celebration-actions">
+      <button id="share-score-btn">📤 Share Score</button>
+      <button class="secondary" id="celebration-close-btn">Keep Playing</button>
+      <button id="celebration-regenerate-btn">🔄 New Card</button>
+    </div>
+  </div>
+</div>
+
+<div id="app-menu-slot"></div>
 
 <script src="ebird.js"></script>
 <script src="location.js"></script>
 <script src="db.js"></script>
 <script src="bingo.js"></script>
 <script src="app.js"></script>
+<script src="menu.js"></script>
 <script>
+let currentCard = null;
 let selectedSize = 3;
+let hardMode = false;
 
-function renderSavedLocationSummary() {
+AppMenu.mount('🎯 Practice Mode');
+
+function renderMenuBody() {
   const location = Shared.getSavedLocation();
-  const el = document.getElementById('new-card-location-summary');
-  if (location) {
-    el.style.display = 'block';
-    el.innerHTML = `Saved location: <strong>${location.regionName || 'Unknown region'}</strong> (${location.lat.toFixed(4)}, ${location.lng.toFixed(4)})`;
-  } else {
-    el.style.display = 'none';
-  }
-}
-renderSavedLocationSummary();
+  const body = document.getElementById('app-menu-body');
+  body.innerHTML = `
+    <div class="menu-section">
+      <div class="menu-section-title">Card Size</div>
+      <div class="toggle-group" id="size-group">
+        <button class="toggle-btn${selectedSize === 3 ? ' active' : ''}" data-size="3">3 x 3</button>
+        <button class="toggle-btn${selectedSize === 4 ? ' active' : ''}" data-size="4">4 x 4</button>
+        <button class="toggle-btn${selectedSize === 5 ? ' active' : ''}" data-size="5">5 x 5</button>
+      </div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-row">
+        <span class="menu-row-label">🔥 Hard Mode</span>
+      </div>
+      <p class="status" style="margin-top:0;">Exclude birds you've already logged.</p>
+      <div class="toggle-group">
+        <button class="toggle-btn${hardMode ? ' active' : ''}" id="hard-mode-btn">${hardMode ? 'On' : 'Off'}</button>
+      </div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-section-title">Location</div>
+      <div class="location-summary" id="menu-location-summary">
+        ${location ? `<strong>${location.regionName || 'Unknown region'}</strong><br>${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}` : 'No location set.'}
+      </div>
+      <button class="secondary" id="menu-new-location-btn" style="margin-top:10px; width:100%;">📍 Use a Different Location</button>
+      <div class="status" id="menu-location-status"></div>
+    </div>
+    <p class="status">Changes apply the next time you tap "New Card".</p>
+  `;
 
-document.querySelectorAll('#size-group .toggle-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#size-group .toggle-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedSize = parseInt(btn.dataset.size, 10);
+  document.querySelectorAll('#size-group .toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedSize = parseInt(btn.dataset.size, 10);
+      renderMenuBody();
+    });
   });
-});
-
-document.getElementById('hard-mode-toggle').addEventListener('click', () => {
-  document.getElementById('hard-mode-toggle').classList.toggle('active');
-});
-
-function isHardMode() {
-  return document.getElementById('hard-mode-toggle').classList.contains('active');
+  document.getElementById('hard-mode-btn').addEventListener('click', () => {
+    hardMode = !hardMode;
+    renderMenuBody();
+  });
+  document.getElementById('menu-new-location-btn').addEventListener('click', async () => {
+    const statusEl = document.getElementById('menu-location-status');
+    statusEl.textContent = 'Getting your location...';
+    try {
+      await Shared.captureLocation();
+      statusEl.textContent = 'Location updated.';
+      renderMenuBody();
+    } catch (err) {
+      statusEl.textContent = err.message;
+    }
+  });
 }
 
-document.getElementById('use-saved-location-btn').addEventListener('click', async () => {
-  const location = Shared.getSavedLocation();
-  const statusEl = document.getElementById('new-card-status');
-  if (!location) {
-    statusEl.textContent = 'No saved location yet - use "Use a Different Location" to set one.';
+async function init() {
+  renderMenuBody();
+
+  const existing = await BingoDB.getActivePracticeCard();
+  if (existing) {
+    currentCard = existing;
+    selectedSize = existing.size;
+    hardMode = existing.hardMode;
+    // Already completed before this load - don't re-pop the celebration on every revisit.
+    if (existing.completedAt) celebratedLevel = 'bingo';
+    renderMenuBody();
+    document.getElementById('no-location-panel').style.display = 'none';
+    document.getElementById('game-panel').style.display = 'block';
+    await renderGrid();
     return;
   }
-  await createPracticeCard(location);
-});
 
-document.getElementById('use-new-location-btn').addEventListener('click', async () => {
-  const statusEl = document.getElementById('new-card-status');
+  const location = Shared.getSavedLocation();
+  if (!location) {
+    document.getElementById('no-location-panel').style.display = 'block';
+    document.getElementById('game-panel').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('no-location-panel').style.display = 'none';
+  document.getElementById('game-panel').style.display = 'block';
+  await createPracticeCard(location);
+}
+
+document.getElementById('set-location-btn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('location-status');
   statusEl.textContent = 'Getting your location...';
   try {
     const location = await Shared.captureLocation();
     statusEl.textContent = '';
-    renderSavedLocationSummary();
+    document.getElementById('no-location-panel').style.display = 'none';
+    document.getElementById('game-panel').style.display = 'block';
+    renderMenuBody();
     await createPracticeCard(location);
   } catch (err) {
     statusEl.textContent = err.message;
@@ -104,19 +156,23 @@ document.getElementById('use-new-location-btn').addEventListener('click', async 
 });
 
 async function createPracticeCard(location) {
-  const statusEl = document.getElementById('new-card-status');
+  const statusEl = document.getElementById('progress-text');
   statusEl.textContent = 'Building your card...';
 
   const data = await Bingo.generateCard({
     lat: location.lat,
     lng: location.lng,
     size: selectedSize,
-    hardMode: isHardMode(),
+    hardMode,
     seed: null, // practice cards aren't seeded - fresh/live each time
     regionName: location.regionName
   });
 
-  await BingoDB.createBingoCard({
+  if (currentCard) {
+    await BingoDB.deleteBingoCard(currentCard.id);
+  }
+
+  currentCard = await BingoDB.createBingoCard({
     mode: 'practice',
     size: data.size,
     hardMode: data.hardMode,
@@ -126,76 +182,102 @@ async function createPracticeCard(location) {
     birds: data.birds
   });
 
-  statusEl.textContent = '';
-  await renderCardList();
+  await renderGrid();
 }
 
-async function renderCardList() {
-  const cards = await BingoDB.getAllPracticeCards();
-  const listEl = document.getElementById('card-list');
-  const emptyEl = document.getElementById('empty-state');
-  listEl.innerHTML = '';
-
-  if (cards.length === 0) {
-    emptyEl.style.display = 'block';
+async function handleRegenerate() {
+  const location = Shared.getSavedLocation();
+  if (!location) {
+    document.getElementById('no-location-panel').style.display = 'block';
+    document.getElementById('game-panel').style.display = 'none';
     return;
   }
-  emptyEl.style.display = 'none';
+  closeCelebration();
+  celebratedLevel = null;
+  await createPracticeCard(location);
+}
+
+document.getElementById('regenerate-btn').addEventListener('click', handleRegenerate);
+document.getElementById('celebration-regenerate-btn').addEventListener('click', handleRegenerate);
+document.getElementById('celebration-close-btn').addEventListener('click', () => closeCelebration());
+document.getElementById('celebration-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'celebration-overlay') closeCelebration();
+});
+document.getElementById('share-score-btn').addEventListener('click', async () => {
+  const fullHouse = document.getElementById('celebration-modal').classList.contains('full-house');
+  const result = await Shared.shareResults(currentCard, { fullHouse });
+  if (result === 'clipboard') {
+    const btn = document.getElementById('share-score-btn');
+    const original = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.textContent = original; }, 2000);
+  }
+});
+
+// Tracks what's already been celebrated for the current card, so re-renders
+// (pageshow, visibilitychange) don't repeatedly pop the modal - resets on regenerate.
+let celebratedLevel = null; // null | 'bingo' | 'fullHouse'
+
+function closeCelebration() {
+  document.getElementById('celebration-overlay').classList.add('hidden');
+}
+
+function showCelebration({ fullHouse }) {
+  document.getElementById('celebration-modal').classList.toggle('full-house', fullHouse);
+  document.getElementById('celebration-icon').textContent = fullHouse ? '🏆' : '🎉';
+  document.getElementById('celebration-title').textContent = fullHouse ? 'FULL HOUSE!' : 'BINGO!';
+  document.getElementById('celebration-sub').textContent = fullHouse
+    ? 'Every bird on this card, found.'
+    : 'You\'ve spotted a full line on this card.';
+  document.getElementById('celebration-overlay').classList.remove('hidden');
+}
+
+async function renderGrid() {
+  const gridEl = document.getElementById('bingo-grid');
+  gridEl.innerHTML = '';
+  gridEl.style.gridTemplateColumns = `repeat(${currentCard.size}, 1fr)`;
 
   const sightings = await BingoDB.getAllSightings();
+  const seenCodes = new Set(
+    sightings.filter(s => s.date >= currentCard.createdAt.split('T')[0]).map(s => s.speciesCode)
+  );
 
-  for (const card of cards) {
-    const seenCodes = new Set(
-      sightings.filter(s => s.date >= card.createdAt.split('T')[0]).map(s => s.speciesCode)
-    );
-    const { hasBingo, winningCells } = Bingo.checkBingo(card.birds, card.size, seenCodes);
+  const { hasBingo, winningCells, fullHouse } = Bingo.checkBingo(currentCard.birds, currentCard.size, seenCodes);
+  const foundCount = currentCard.birds.filter(b => seenCodes.has(b.speciesCode)).length;
+  document.getElementById('progress-text').textContent = `${currentCard.size}x${currentCard.size}${currentCard.hardMode ? ' 🔥' : ''} · ${foundCount} / ${currentCard.birds.length} found`;
 
-    if (hasBingo && !card.completedAt) {
-      card.completedAt = new Date().toISOString();
-      await BingoDB.updateBingoCard(card);
-    }
+  if (hasBingo && !currentCard.completedAt) {
+    currentCard.completedAt = new Date().toISOString();
+    await BingoDB.updateBingoCard(currentCard);
+  }
 
-    const cardEl = document.createElement('div');
-    cardEl.className = 'practice-card';
-    cardEl.innerHTML = `
-      <div class="practice-card-header">
-        <div>
-          <div class="card-title">${card.size}x${card.size}${card.hardMode ? ' 🔥' : ''}${hasBingo ? ' - 🎉 BINGO!' : ''}</div>
-          <div class="card-meta">${card.regionName || ''} · started ${Shared.formatDate(card.createdAt)}</div>
-        </div>
-        <button class="secondary delete-card-btn" data-id="${card.id}">Delete</button>
-      </div>
-      <div class="bingo-grid" style="grid-template-columns: repeat(${card.size}, 1fr);"></div>
-    `;
-
-    const gridEl = cardEl.querySelector('.bingo-grid');
-    card.birds.forEach((bird, index) => {
-      const found = seenCodes.has(bird.speciesCode);
-      const cell = Shared.renderCell(bird, index, found);
-      if (winningCells.includes(index)) cell.classList.add('bingo-line');
-      cell.addEventListener('click', () => {
-        localStorage.setItem('currentCardBirds', JSON.stringify(card.birds));
-        window.location.href = `bird?code=${bird.speciesCode}&from=practice&cardId=${card.id}`;
-      });
-      gridEl.appendChild(cell);
+  currentCard.birds.forEach((bird, index) => {
+    const found = seenCodes.has(bird.speciesCode);
+    const cell = Shared.renderCell(bird, index, found);
+    if (winningCells.includes(index)) cell.classList.add('bingo-line');
+    cell.addEventListener('click', () => {
+      localStorage.setItem('currentCardBirds', JSON.stringify(currentCard.birds));
+      window.location.href = `bird?code=${bird.speciesCode}&from=practice&cardId=${currentCard.id}`;
     });
+    gridEl.appendChild(cell);
+  });
 
-    cardEl.querySelector('.delete-card-btn').addEventListener('click', async () => {
-      if (confirm('Delete this practice card?')) {
-        await BingoDB.deleteBingoCard(card.id);
-        await renderCardList();
-      }
-    });
-
-    listEl.appendChild(cardEl);
+  if (fullHouse && celebratedLevel !== 'fullHouse') {
+    celebratedLevel = 'fullHouse';
+    showCelebration({ fullHouse: true });
+  } else if (hasBingo && !celebratedLevel) {
+    celebratedLevel = 'bingo';
+    showCelebration({ fullHouse: false });
   }
 }
 
-renderCardList();
+init();
 
-window.addEventListener('pageshow', renderCardList);
+window.addEventListener('pageshow', () => {
+  if (currentCard) renderGrid();
+});
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') renderCardList();
+  if (document.visibilityState === 'visible' && currentCard) renderGrid();
 });
 
 if ('serviceWorker' in navigator) {

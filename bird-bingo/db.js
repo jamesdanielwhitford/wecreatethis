@@ -219,14 +219,19 @@ const BingoDB = {
     });
   },
 
-  async getAllPracticeCards() {
+  // Practice mode keeps at most one active card at a time (see practice.html) -
+  // this returns it, or null if none exists yet.
+  async getActivePracticeCard() {
     const db = await this.ready();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(['bingo_cards'], 'readonly');
       const store = tx.objectStore('bingo_cards');
       const index = store.index('mode');
       const req = index.getAll('practice');
-      req.onsuccess = () => resolve((req.result || []).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      req.onsuccess = () => {
+        const results = (req.result || []).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        resolve(results.length > 0 ? results[0] : null);
+      };
       req.onerror = () => reject(req.error);
     });
   },

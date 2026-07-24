@@ -166,5 +166,37 @@ const Shared = {
 
   formatDate(isoString) {
     return new Date(isoString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  },
+
+  // ---------- Sharing (mirrors hardle/ui.js's generateShareText/shareResults) ----------
+
+  generateBingoShareText(card, { fullHouse } = {}) {
+    const size = card.size;
+    const label = card.mode === 'daily' ? 'Bird Bingo Daily' : `Bird Bingo Practice (${size}x${size})`;
+    const dateStr = card.mode === 'daily' && card.dateKey ? ` ${card.dateKey}` : '';
+    const headline = fullHouse ? '🏆 FULL HOUSE' : '🎉 BINGO';
+
+    let text = `${label}${dateStr}\n${headline}!\n\nPlay at wecreatethis.com/bird-bingo`;
+    return text;
+  },
+
+  async shareResults(card, opts) {
+    const shareText = this.generateBingoShareText(card, opts);
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: shareText, title: 'My Bird Bingo Results' });
+        return true;
+      } catch (err) {
+        return false; // user cancelled or share failed
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareText);
+      return 'clipboard';
+    } catch (err) {
+      return false;
+    }
   }
 };

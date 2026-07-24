@@ -13,19 +13,6 @@
 <h1>🐦 Bird Bingo</h1>
 <p class="status">Bingo cards built from real, recent bird sightings near you.</p>
 
-<div class="panel">
-  <h2 style="margin-top:0">Your Location</h2>
-  <div id="no-location" style="display:none;">
-    <p class="status">Bird Bingo needs your location to find birds near you.</p>
-    <button id="set-location-btn">📍 Use My Location</button>
-  </div>
-  <div id="has-location" style="display:none;">
-    <div class="location-summary" id="location-summary"></div>
-    <button class="secondary change-location-btn" id="change-location-btn">📍 Update Location</button>
-  </div>
-  <div class="status" id="location-status"></div>
-</div>
-
 <div class="home-actions">
   <a href="daily">
     <div class="action-title">📅 Daily Game</div>
@@ -33,12 +20,24 @@
   </a>
   <a href="practice">
     <div class="action-title">🎯 Practice Mode</div>
-    <div class="action-desc">Run multiple cards at once, choose a size, play as much as you like.</div>
+    <div class="action-desc">Choose a size, regenerate as many cards as you like.</div>
   </a>
   <a href="life">
     <div class="action-title">📖 Life List</div>
     <div class="action-desc">Every bird you've logged in Bird Bingo.</div>
   </a>
+</div>
+
+<div class="location-footer">
+  <div id="no-location" style="display:none;">
+    <span class="status">No location set yet.</span>
+    <button class="secondary" id="set-location-btn">📍 Use My Location</button>
+  </div>
+  <div id="has-location" style="display:none;">
+    <span class="status" id="location-summary"></span>
+    <button class="secondary" id="change-location-btn">📍 Update</button>
+  </div>
+  <div class="status" id="location-status"></div>
 </div>
 
 <script src="ebird.js"></script>
@@ -53,10 +52,8 @@ function renderLocationPanel() {
   if (location) {
     noLocEl.style.display = 'none';
     hasLocEl.style.display = 'block';
-    document.getElementById('location-summary').innerHTML = `
-      <strong>${location.regionName || 'Unknown region'}</strong><br>
-      ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}
-    `;
+    document.getElementById('location-summary').textContent =
+      `📍 ${location.regionName || 'Unknown region'} (${location.lat.toFixed(4)}, ${location.lng.toFixed(4)})`;
   } else {
     noLocEl.style.display = 'block';
     hasLocEl.style.display = 'none';

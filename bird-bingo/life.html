@@ -10,22 +10,26 @@
 </head>
 <body>
 
-<div class="top-bar">
-  <a href="index" class="back-link">&larr; Home</a>
-</div>
-
-<h1>📖 Life List</h1>
+<div class="app-header" id="app-header-slot"></div>
 <p class="status" id="count-status"></p>
 
 <div id="life-list"></div>
 <p class="empty-state" id="empty-state" style="display:none;">No birds logged yet. Log a sighting from a bingo card to start your life list.</p>
+
+<div id="app-menu-slot"></div>
 
 <script src="ebird.js"></script>
 <script src="location.js"></script>
 <script src="db.js"></script>
 <script src="bingo.js"></script>
 <script src="app.js"></script>
+<script src="menu.js"></script>
 <script>
+AppMenu.mount('📖 Life List');
+document.getElementById('app-menu-body').innerHTML = `
+  <p class="status" style="margin-top:0;">Every bird you've ever logged, across Daily and Practice cards. Nothing to configure here.</p>
+`;
+
 async function renderLifeList() {
   const list = await BingoDB.getLifeList();
   const listEl = document.getElementById('life-list');

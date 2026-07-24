@@ -151,6 +151,10 @@ const Bingo = {
       diagonal2.forEach(i => winningCells.add(i));
     }
 
-    return { hasBingo, winningCells: [...winningCells] };
+    // Full house: every cell found, not just one line - a rarer bonus
+    // most players won't realize is possible until they get there.
+    const fullHouse = grid.every((_, i) => isMarked(i));
+
+    return { hasBingo, winningCells: [...winningCells], fullHouse };
   }
 };
