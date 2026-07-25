@@ -13,10 +13,10 @@
 <div class="app-header" id="app-header-slot"></div>
 
 <div id="no-location-panel" class="onboarding-view" style="display:none;">
-  <div class="onboarding-icon">🎯</div>
+  <div class="onboarding-icon" id="onboarding-icon"></div>
   <h2>Practice Card</h2>
   <p class="onboarding-sub">Any size, as many as you like, built from real bird sightings near you. Set a location to build a card.</p>
-  <button id="set-location-btn">📍 Use My Location</button>
+  <button id="set-location-btn">Use My Location</button>
   <div class="status" id="location-status"></div>
 </div>
 
@@ -24,37 +24,44 @@
   <div class="bingo-stage" id="grid-view">
     <div class="bingo-progress" id="progress-text"></div>
     <div class="bingo-grid" id="bingo-grid"></div>
-    <button class="secondary regenerate-btn" id="regenerate-btn">🔄 New Card</button>
+    <button class="secondary regenerate-btn" id="regenerate-btn"></button>
   </div>
 </div>
 
 <div class="celebration-overlay hidden" id="celebration-overlay">
   <div class="celebration-modal" id="celebration-modal">
-    <div class="celebration-icon" id="celebration-icon">🎉</div>
+    <div class="celebration-icon" id="celebration-icon"></div>
     <h2 id="celebration-title">BINGO!</h2>
     <p class="celebration-sub" id="celebration-sub">You've spotted a full line on this card.</p>
     <div class="celebration-actions">
-      <button id="share-score-btn">📤 Share Score</button>
+      <button id="share-score-btn"></button>
       <button class="secondary" id="celebration-close-btn">Keep Playing</button>
-      <button id="celebration-regenerate-btn">🔄 New Card</button>
+      <button id="celebration-regenerate-btn"></button>
     </div>
   </div>
 </div>
 
 <div id="app-menu-slot"></div>
 
+<script src="icons.js"></script>
+<script src="menu.js"></script>
 <script src="ebird.js"></script>
 <script src="location.js"></script>
 <script src="db.js"></script>
 <script src="bingo.js"></script>
 <script src="app.js"></script>
-<script src="menu.js"></script>
 <script>
+AppMenu.applyStoredTheme();
 let currentCard = null;
 let selectedSize = 3;
 let hardMode = false;
 
-AppMenu.mount('🎯 Practice Mode');
+document.getElementById('onboarding-icon').innerHTML = Icons.svg('target', 'icon-xl');
+document.getElementById('regenerate-btn').innerHTML = Icons.svg('refreshCw') + 'New Card';
+document.getElementById('share-score-btn').innerHTML = Icons.svg('share') + 'Share Score';
+document.getElementById('celebration-regenerate-btn').innerHTML = Icons.svg('refreshCw') + 'New Card';
+
+AppMenu.mount('Practice Mode');
 
 function renderMenuBody() {
   const location = Shared.getSavedLocation();
@@ -70,7 +77,7 @@ function renderMenuBody() {
     </div>
     <div class="menu-section">
       <div class="menu-row">
-        <span class="menu-row-label">🔥 Hard Mode</span>
+        <span class="menu-row-label">${Icons.svg('flame')}Hard Mode</span>
       </div>
       <p class="status" style="margin-top:0;">Exclude birds you've already logged.</p>
       <div class="toggle-group">
@@ -82,7 +89,7 @@ function renderMenuBody() {
       <div class="location-summary" id="menu-location-summary">
         ${location ? `<strong>${location.regionName || 'Unknown region'}</strong><br>${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}` : 'No location set.'}
       </div>
-      <button class="secondary" id="menu-new-location-btn" style="margin-top:10px; width:100%;">📍 Use a Different Location</button>
+      <button class="secondary" id="menu-new-location-btn" style="margin-top:10px; width:100%;">${Icons.svg('mapPin')}Use a Different Location</button>
       <div class="status" id="menu-location-status"></div>
     </div>
     <p class="status">Changes apply the next time you tap "New Card".</p>
@@ -208,9 +215,9 @@ document.getElementById('share-score-btn').addEventListener('click', async () =>
   const result = await Shared.shareResults(currentCard, { fullHouse });
   if (result === 'clipboard') {
     const btn = document.getElementById('share-score-btn');
-    const original = btn.textContent;
-    btn.textContent = '✓ Copied!';
-    setTimeout(() => { btn.textContent = original; }, 2000);
+    const original = btn.innerHTML;
+    btn.innerHTML = Icons.svg('check') + 'Copied!';
+    setTimeout(() => { btn.innerHTML = original; }, 2000);
   }
 });
 
@@ -224,7 +231,7 @@ function closeCelebration() {
 
 function showCelebration({ fullHouse }) {
   document.getElementById('celebration-modal').classList.toggle('full-house', fullHouse);
-  document.getElementById('celebration-icon').textContent = fullHouse ? '🏆' : '🎉';
+  document.getElementById('celebration-icon').innerHTML = Icons.svg(fullHouse ? 'trophy' : 'partyPopper', 'icon-xl');
   document.getElementById('celebration-title').textContent = fullHouse ? 'FULL HOUSE!' : 'BINGO!';
   document.getElementById('celebration-sub').textContent = fullHouse
     ? 'Every bird on this card, found.'
@@ -244,7 +251,7 @@ async function renderGrid() {
 
   const { hasBingo, winningCells, fullHouse } = Bingo.checkBingo(currentCard.birds, currentCard.size, seenCodes);
   const foundCount = currentCard.birds.filter(b => seenCodes.has(b.speciesCode)).length;
-  document.getElementById('progress-text').textContent = `${currentCard.size}x${currentCard.size}${currentCard.hardMode ? ' 🔥' : ''} · ${foundCount} / ${currentCard.birds.length} found`;
+  document.getElementById('progress-text').innerHTML = `${currentCard.size}x${currentCard.size}${currentCard.hardMode ? Icons.svg('flame', 'icon-inline-left') : ''} &middot; ${foundCount} / ${currentCard.birds.length} found`;
 
   if (hasBingo && !currentCard.completedAt) {
     currentCard.completedAt = new Date().toISOString();

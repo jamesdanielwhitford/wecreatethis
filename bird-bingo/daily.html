@@ -13,10 +13,10 @@
 <div class="app-header" id="app-header-slot"></div>
 
 <div id="no-location-panel" class="onboarding-view" style="display:none;">
-  <div class="onboarding-icon">📅</div>
+  <div class="onboarding-icon" id="onboarding-icon"></div>
   <h2>Today's Bingo Card</h2>
   <p class="onboarding-sub">One 3x3 card a day, built from real bird sightings near you. Set your location to build today's card.</p>
-  <button id="set-location-btn">📍 Use My Location</button>
+  <button id="set-location-btn">Use My Location</button>
   <div class="status" id="location-status"></div>
 </div>
 
@@ -29,11 +29,11 @@
 
 <div class="celebration-overlay hidden" id="celebration-overlay">
   <div class="celebration-modal" id="celebration-modal">
-    <div class="celebration-icon" id="celebration-icon">🎉</div>
+    <div class="celebration-icon" id="celebration-icon"></div>
     <h2 id="celebration-title">BINGO!</h2>
     <p class="celebration-sub" id="celebration-sub">You've spotted a full line on today's card.</p>
     <div class="celebration-actions">
-      <button id="share-score-btn">📤 Share Score</button>
+      <button id="share-score-btn"></button>
       <button class="secondary" id="celebration-close-btn">Keep Playing</button>
     </div>
   </div>
@@ -41,13 +41,15 @@
 
 <div id="app-menu-slot"></div>
 
+<script src="icons.js"></script>
+<script src="menu.js"></script>
 <script src="ebird.js"></script>
 <script src="location.js"></script>
 <script src="db.js"></script>
 <script src="bingo.js"></script>
 <script src="app.js"></script>
-<script src="menu.js"></script>
 <script>
+AppMenu.applyStoredTheme();
 let currentCard = null;
 
 function renderMenuBody() {
@@ -59,12 +61,12 @@ function renderMenuBody() {
       <div class="location-summary" id="menu-location-summary">
         ${location ? `<strong>${location.regionName || 'Unknown region'}</strong><br>${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}` : 'No location set.'}
       </div>
-      <button class="secondary change-location-btn" id="menu-change-location-btn" style="margin-top:10px; width:100%;">📍 Update Location (regenerates today's card)</button>
+      <button class="secondary change-location-btn" id="menu-change-location-btn" style="margin-top:10px; width:100%;">${Icons.svg('mapPin')}Update Location (regenerates today's card)</button>
       <div class="status" id="menu-location-status"></div>
     </div>
     <div class="menu-section">
       <div class="menu-row">
-        <span class="menu-row-label">🔥 Hard Mode</span>
+        <span class="menu-row-label">${Icons.svg('flame')}Hard Mode</span>
       </div>
       <p class="status" style="margin-top:0;">Exclude birds you've already logged.</p>
       <div class="toggle-group">
@@ -78,7 +80,10 @@ function renderMenuBody() {
   document.getElementById('hard-mode-btn').addEventListener('click', handleToggleHardMode);
 }
 
-AppMenu.mount('📅 Daily Game');
+document.getElementById('onboarding-icon').innerHTML = Icons.svg('calendar', 'icon-xl');
+document.getElementById('share-score-btn').innerHTML = Icons.svg('share') + 'Share Score';
+
+AppMenu.mount('Daily Game');
 
 async function init() {
   const location = Shared.getSavedLocation();
@@ -248,7 +253,7 @@ async function renderGrid() {
 
 function showCelebration({ fullHouse }) {
   document.getElementById('celebration-modal').classList.toggle('full-house', fullHouse);
-  document.getElementById('celebration-icon').textContent = fullHouse ? '🏆' : '🎉';
+  document.getElementById('celebration-icon').innerHTML = Icons.svg(fullHouse ? 'trophy' : 'partyPopper', 'icon-xl');
   document.getElementById('celebration-title').textContent = fullHouse ? 'FULL HOUSE!' : 'BINGO!';
   document.getElementById('celebration-sub').textContent = fullHouse
     ? 'Every bird on today\'s card, found.'
@@ -269,9 +274,9 @@ document.getElementById('share-score-btn').addEventListener('click', async () =>
   const result = await Shared.shareResults(currentCard, { fullHouse });
   if (result === 'clipboard') {
     const btn = document.getElementById('share-score-btn');
-    const original = btn.textContent;
-    btn.textContent = '✓ Copied!';
-    setTimeout(() => { btn.textContent = original; }, 2000);
+    const original = btn.innerHTML;
+    btn.innerHTML = Icons.svg('check') + 'Copied!';
+    setTimeout(() => { btn.innerHTML = original; }, 2000);
   }
 });
 

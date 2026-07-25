@@ -34,7 +34,7 @@ const LocationService = {
 
   // Get the appropriate button text
   getButtonText() {
-    return this.hasCached() ? '📍 Update Location' : '📍 Use My Location';
+    return this.hasCached() ? 'Update Location' : 'Use My Location';
   },
 
   // Update all location buttons on the page to show correct text

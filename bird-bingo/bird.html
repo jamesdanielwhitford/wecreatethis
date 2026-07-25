@@ -20,7 +20,7 @@
 <div class="bird-detail-name" id="bird-name"></div>
 <div class="bird-detail-sci" id="bird-sci"></div>
 
-<button class="call-btn" id="call-btn" style="display:none;">🔊 Play Call</button>
+<button class="call-btn" id="call-btn" style="display:none;"></button>
 <div class="status" id="call-status"></div>
 
 <div class="panel">
@@ -31,7 +31,7 @@
 <div class="panel">
   <div style="display:flex; justify-content:space-between; align-items:center;">
     <h2 style="margin:0;">Sightings</h2>
-    <button id="add-sighting-btn">+ Log Sighting</button>
+    <button id="add-sighting-btn">Log Sighting</button>
   </div>
   <div id="sightings-list" style="margin-top:10px;"></div>
   <p class="empty-state" id="no-sightings-msg" style="display:none;">No sightings logged yet.</p>
@@ -52,12 +52,17 @@
   </div>
 </div>
 
+<script src="icons.js"></script>
+<script src="menu.js"></script>
 <script src="ebird.js"></script>
 <script src="location.js"></script>
 <script src="db.js"></script>
 <script src="bingo.js"></script>
 <script src="app.js"></script>
 <script>
+AppMenu.applyStoredTheme();
+document.getElementById('call-btn').innerHTML = Icons.svg('volume') + 'Play Call';
+
 const params = new URLSearchParams(window.location.search);
 const speciesCode = params.get('code');
 const fromMode = params.get('from');
@@ -68,18 +73,19 @@ let currentAudio = null;
 
 function setBackLink() {
   const backLink = document.getElementById('back-link');
+  const chevron = Icons.svg('chevronLeft');
   if (fromMode === 'daily') {
     backLink.href = 'daily';
-    backLink.textContent = '← Back to Daily Game';
+    backLink.innerHTML = chevron + 'Back to Daily Game';
   } else if (fromMode === 'practice') {
     backLink.href = 'practice';
-    backLink.textContent = '← Back to Practice Mode';
+    backLink.innerHTML = chevron + 'Back to Practice Mode';
   } else if (fromMode === 'life') {
     backLink.href = 'life';
-    backLink.textContent = '← Back to Life List';
+    backLink.innerHTML = chevron + 'Back to Life List';
   } else {
     backLink.href = 'index';
-    backLink.textContent = '← Home';
+    backLink.innerHTML = chevron + 'Home';
   }
 }
 
@@ -158,17 +164,17 @@ async function loadCall() {
     if (currentAudio) {
       currentAudio.pause();
       currentAudio = null;
-      btn.textContent = '🔊 Play Call';
+      btn.innerHTML = Icons.svg('volume') + 'Play Call';
       return;
     }
     currentAudio = new Audio(audioUrl);
     currentAudio.play().catch(() => {
       statusEl.textContent = 'Could not play audio.';
     });
-    btn.textContent = '⏸ Stop';
+    btn.innerHTML = Icons.svg('pause') + 'Stop';
     currentAudio.onended = () => {
       currentAudio = null;
-      btn.textContent = '🔊 Play Call';
+      btn.innerHTML = Icons.svg('volume') + 'Play Call';
     };
   });
 }
@@ -194,7 +200,7 @@ async function renderSightings() {
     item.className = 'sighting-item';
     item.innerHTML = `
       <span>${Shared.formatDate(s.date)}${s.notes ? ' - ' + s.notes : ''}</span>
-      <button class="delete-sighting-btn" data-id="${s.id}">✕</button>
+      <button class="delete-sighting-btn" data-id="${s.id}">${Icons.svg('x')}</button>
     `;
     item.querySelector('.delete-sighting-btn').addEventListener('click', () => handleDeleteSighting(s.id));
     listEl.appendChild(item);
@@ -246,7 +252,7 @@ function renderCelebration(isLifer) {
   if (isLifer) {
     area.innerHTML = `
       <div class="celebration-banner lifer-win">
-        <h2>🌟 New Lifer!</h2>
+        <h2>${Icons.svg('star')}New Lifer!</h2>
         <p>${currentBird.comName} is now on your life list.</p>
       </div>
     `;

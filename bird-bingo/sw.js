@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bird-bingo-v2';
+const CACHE_NAME = 'bird-bingo-v3';
 const ASSETS = [
   '/bird-bingo/',
   '/bird-bingo/index',
@@ -13,6 +13,7 @@ const ASSETS = [
   '/bird-bingo/location.js',
   '/bird-bingo/bingo.js',
   '/bird-bingo/menu.js',
+  '/bird-bingo/icons.js',
   '/bird-bingo/manifest.json',
   '/bird-bingo/icon-192.png',
   '/bird-bingo/icon-512.png',

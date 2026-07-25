@@ -142,7 +142,7 @@ const Shared = {
     cell.className = 'bingo-cell' + (found ? ' found' : '');
     cell.dataset.speciesCode = bird.speciesCode;
     cell.innerHTML = `
-      <div class="thumb-wrap"><span class="no-img">🐦</span></div>
+      <div class="thumb-wrap"><span class="no-img">${Icons.svg('bird', 'icon-xl')}</span></div>
       <div class="cell-name">${bird.comName}</div>
     `;
     this.loadCellImage(cell, bird);

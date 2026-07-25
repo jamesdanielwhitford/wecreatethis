@@ -10,20 +10,20 @@
 </head>
 <body>
 
-<h1>🐦 Bird Bingo</h1>
+<div class="app-header" id="app-header-slot"></div>
 <p class="status">Bingo cards built from real, recent bird sightings near you.</p>
 
 <div class="home-actions">
   <a href="daily">
-    <div class="action-title">📅 Daily Game</div>
+    <div class="action-title" id="daily-action-title"></div>
     <div class="action-desc">One 3x3 card per day, based on your saved location.</div>
   </a>
   <a href="practice">
-    <div class="action-title">🎯 Practice Mode</div>
+    <div class="action-title" id="practice-action-title"></div>
     <div class="action-desc">Choose a size, regenerate as many cards as you like.</div>
   </a>
   <a href="life">
-    <div class="action-title">📖 Life List</div>
+    <div class="action-title" id="life-action-title"></div>
     <div class="action-desc">Every bird you've logged in Bird Bingo.</div>
   </a>
 </div>
@@ -31,19 +31,33 @@
 <div class="location-footer">
   <div id="no-location" style="display:none;">
     <span class="status">No location set yet.</span>
-    <button class="secondary" id="set-location-btn">📍 Use My Location</button>
+    <button class="secondary" id="set-location-btn">Use My Location</button>
   </div>
   <div id="has-location" style="display:none;">
     <span class="status" id="location-summary"></span>
-    <button class="secondary" id="change-location-btn">📍 Update</button>
+    <button class="secondary" id="change-location-btn">Update</button>
   </div>
   <div class="status" id="location-status"></div>
 </div>
 
+<div id="app-menu-slot"></div>
+
+<script src="icons.js"></script>
+<script src="menu.js"></script>
 <script src="ebird.js"></script>
 <script src="location.js"></script>
 <script src="app.js"></script>
 <script>
+AppMenu.applyStoredTheme();
+AppMenu.mount('Bird Bingo', 'https://wecreatethis.com');
+document.getElementById('app-menu-body').innerHTML = `
+  <p class="status" style="margin-top:0;">Location and card settings live on the Daily Game and Practice Mode pages.</p>
+`;
+
+document.getElementById('daily-action-title').innerHTML = Icons.svg('calendar') + 'Daily Game';
+document.getElementById('practice-action-title').innerHTML = Icons.svg('target') + 'Practice Mode';
+document.getElementById('life-action-title').innerHTML = Icons.svg('bookOpen') + 'Life List';
+
 function renderLocationPanel() {
   const location = Shared.getSavedLocation();
   const noLocEl = document.getElementById('no-location');
@@ -53,7 +67,7 @@ function renderLocationPanel() {
     noLocEl.style.display = 'none';
     hasLocEl.style.display = 'block';
     document.getElementById('location-summary').textContent =
-      `📍 ${location.regionName || 'Unknown region'} (${location.lat.toFixed(4)}, ${location.lng.toFixed(4)})`;
+      `${location.regionName || 'Unknown region'} (${location.lat.toFixed(4)}, ${location.lng.toFixed(4)})`;
   } else {
     noLocEl.style.display = 'block';
     hasLocEl.style.display = 'none';

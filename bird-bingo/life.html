@@ -18,14 +18,16 @@
 
 <div id="app-menu-slot"></div>
 
+<script src="icons.js"></script>
+<script src="menu.js"></script>
 <script src="ebird.js"></script>
 <script src="location.js"></script>
 <script src="db.js"></script>
 <script src="bingo.js"></script>
 <script src="app.js"></script>
-<script src="menu.js"></script>
 <script>
-AppMenu.mount('📖 Life List');
+AppMenu.applyStoredTheme();
+AppMenu.mount('Life List');
 document.getElementById('app-menu-body').innerHTML = `
   <p class="status" style="margin-top:0;">Every bird you've ever logged, across Daily and Practice cards. Nothing to configure here.</p>
 `;
@@ -54,7 +56,7 @@ async function renderLifeList() {
         <div class="life-name">${bird.comName}</div>
         <div class="life-meta">${bird.count} sighting${bird.count === 1 ? '' : 's'} · first seen ${Shared.formatDate(bird.firstDate)}</div>
       </a>
-      <button class="remove-life-btn" data-code="${bird.speciesCode}" title="Remove from life list">🗑</button>
+      <button class="remove-life-btn" data-code="${bird.speciesCode}" title="Remove from life list">${Icons.svg('trash')}</button>
     `;
 
     item.querySelector('.remove-life-btn').addEventListener('click', () => handleRemove(bird));

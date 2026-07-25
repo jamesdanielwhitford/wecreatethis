@@ -1,3 +1,61 @@
+:root {
+  --bg: #101114;
+  --panel-bg: #17181c;
+  --panel-border: #26282f;
+  --text: #f2f2f0;
+  --text-dim: #9a9a9a;
+  --text-dimmer: #8a8c94;
+  --text-faint: #b7b7b7;
+  --cell-bg: #1c1e24;
+  --divider: #202228;
+  --input-bg: #1a1c21;
+  --input-border: #33353c;
+  --link: #8fd694;
+  --accent: #2d7a3a;
+  --accent-text: #fff;
+  --secondary-btn-bg: #22242a;
+  --secondary-btn-hover: #1c1e24;
+  --secondary-btn-hover-border: #34363e;
+  --danger: #c62828;
+  --danger-text: #e57373;
+  --location-bg: #142016;
+  --location-border: #26402a;
+  --toggle-text: #d8d8d8;
+  --no-img: #4a4c54;
+  --overlay-bg: rgba(0,0,0,0.6);
+  --full-house-border: #6b5a1a;
+  --full-house-bg-start: #1c1a0f;
+}
+
+:root[data-theme="light"] {
+  --bg: #f5f5f0;
+  --panel-bg: #ffffff;
+  --panel-border: #ddd;
+  --text: #1c1e1a;
+  --text-dim: #5a5c58;
+  --text-dimmer: #7a7c78;
+  --text-faint: #5a5c58;
+  --cell-bg: #e9e9e3;
+  --divider: #e0e0d8;
+  --input-bg: #ffffff;
+  --input-border: #ccc;
+  --link: #2d7a3a;
+  --accent: #2d7a3a;
+  --accent-text: #fff;
+  --secondary-btn-bg: #eee;
+  --secondary-btn-hover: #e4e4de;
+  --secondary-btn-hover-border: #ccc;
+  --danger: #c62828;
+  --danger-text: #c62828;
+  --location-bg: #eef6ee;
+  --location-border: #cde;
+  --toggle-text: #333;
+  --no-img: #bbb;
+  --overlay-bg: rgba(0,0,0,0.35);
+  --full-house-border: #d9b93a;
+  --full-house-bg-start: #fdf6e0;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -6,19 +64,23 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #101114;
-  color: #f2f2f0;
+  background: var(--bg);
+  color: var(--text);
   max-width: 640px;
   margin: 0 auto;
   padding: 20px;
   padding-bottom: 60px;
   min-height: 100vh;
   line-height: 1.4;
+  transition: background 0.15s, color 0.15s;
 }
 
 h1 {
   font-size: 1.5rem;
   margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 h2 {
@@ -27,7 +89,41 @@ h2 {
 }
 
 a {
-  color: #8fd694;
+  color: var(--link);
+}
+
+/* ---------- Icons: inlined Lucide SVGs, sized to font-size, aligned to text ---------- */
+.icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  vertical-align: -0.15em;
+}
+
+.icon-lg {
+  width: 1.4em;
+  height: 1.4em;
+}
+
+.icon-xl {
+  width: 2.4em;
+  height: 2.4em;
+}
+
+.icon-inline-left {
+  margin-left: 0.4em;
+}
+
+button:not(.menu-btn):not(.modal-close-btn) .icon,
+a:not(.menu-btn) .icon {
+  margin-right: 0.4em;
+}
+
+.app-icon-img {
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: 22%;
+  display: block;
 }
 
 button {
@@ -36,8 +132,8 @@ button {
   padding: 10px 16px;
   border-radius: 8px;
   border: none;
-  background: #3d7a37;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
 }
 
@@ -46,23 +142,23 @@ button:active {
 }
 
 button.secondary {
-  background: #22242a;
-  color: #f2f2f0;
+  background: var(--secondary-btn-bg);
+  color: var(--text);
 }
 
 button.danger {
-  background: #c62828;
+  background: var(--danger);
 }
 
 input, select {
   font-family: inherit;
   font-size: 0.95rem;
   padding: 8px 10px;
-  border: 1px solid #33353c;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   width: 100%;
-  background: #1a1c21;
-  color: #f2f2f0;
+  background: var(--input-bg);
+  color: var(--text);
 }
 
 /* ---------- App header: minimal, matches every page ---------- */
@@ -82,7 +178,7 @@ input, select {
 .menu-btn {
   background: none;
   border: none;
-  color: #f2f2f0;
+  color: var(--text);
   font-size: 1.3rem;
   padding: 6px 8px;
   line-height: 1;
@@ -97,11 +193,14 @@ input, select {
   font-size: 1.05rem;
   margin: 0;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
 }
 
 .header-status {
   font-size: 0.85rem;
-  color: #9a9a9a;
+  color: var(--text-dim);
 }
 
 .top-bar {
@@ -114,12 +213,12 @@ input, select {
 .back-link {
   font-size: 0.9rem;
   text-decoration: none;
-  color: #9a9a9a;
+  color: var(--text-dim);
 }
 
 .panel {
-  background: #17181c;
-  border: 1px solid #26282f;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 16px;
@@ -131,7 +230,7 @@ input, select {
 
 .status {
   font-size: 0.85rem;
-  color: #9a9a9a;
+  color: var(--text-dim);
   margin-top: 8px;
   white-space: pre-wrap;
 }
@@ -139,7 +238,7 @@ input, select {
 .location-footer {
   margin-top: 28px;
   padding-top: 16px;
-  border-top: 1px solid #202228;
+  border-top: 1px solid var(--divider);
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -165,8 +264,8 @@ input, select {
 
 .location-summary {
   font-size: 0.9rem;
-  background: #142016;
-  border: 1px solid #26402a;
+  background: var(--location-bg);
+  border: 1px solid var(--location-border);
   padding: 10px 12px;
   border-radius: 8px;
   margin-top: 10px;
@@ -188,17 +287,17 @@ input, select {
 .home-actions a {
   display: block;
   text-decoration: none;
-  background: #17181c;
-  border: 1px solid #26282f;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 12px;
   padding: 18px 20px;
-  color: #f2f2f0;
+  color: var(--text);
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
 
 .home-actions a:hover {
-  background: #1c1e24;
-  border-color: #34363e;
+  background: var(--cell-bg);
+  border-color: var(--secondary-btn-hover-border);
 }
 
 .home-actions a:active {
@@ -213,7 +312,7 @@ input, select {
 
 .home-actions a .action-desc {
   font-size: 0.85rem;
-  color: #9a9a9a;
+  color: var(--text-dim);
   line-height: 1.45;
 }
 
@@ -225,9 +324,9 @@ input, select {
 }
 
 .toggle-btn {
-  background: #22242a;
-  color: #d8d8d8;
-  border: 1px solid #33353c;
+  background: var(--secondary-btn-bg);
+  color: var(--toggle-text);
+  border: 1px solid var(--input-border);
   padding: 8px 14px;
   border-radius: 20px;
   font-size: 0.85rem;
@@ -235,9 +334,9 @@ input, select {
 }
 
 .toggle-btn.active {
-  background: #3d7a37;
-  color: #fff;
-  border-color: #3d7a37;
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
 }
 
 /* ---------- Bingo grid: dark tile cells, image + name ---------- */
@@ -252,7 +351,7 @@ input, select {
   text-align: center;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #d8d8d8;
+  color: var(--toggle-text);
   margin-bottom: 18px;
 }
 
@@ -269,9 +368,9 @@ input, select {
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  background: #1c1e24;
+  background: var(--cell-bg);
   transition: transform 0.1s;
-  box-shadow: inset 0 0 0 1px #26282f;
+  box-shadow: inset 0 0 0 1px var(--panel-border);
 }
 
 .bingo-cell:active {
@@ -284,7 +383,7 @@ input, select {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1c1e24;
+  background: var(--cell-bg);
 }
 
 .bingo-cell .thumb-wrap img {
@@ -295,7 +394,7 @@ input, select {
 
 .bingo-cell .thumb-wrap .no-img {
   font-size: 1.6rem;
-  color: #4a4c54;
+  color: var(--no-img);
 }
 
 .bingo-cell .cell-name {
@@ -304,8 +403,8 @@ input, select {
   right: 0;
   bottom: 0;
   z-index: 1;
-  background: rgba(0,0,0,0.6);
-  color: #fff;
+  background: var(--overlay-bg);
+  color: var(--accent-text);
   font-size: 0.68rem;
   line-height: 1.2;
   padding: 3px 4px;
@@ -323,7 +422,7 @@ input, select {
   right: 4px;
   z-index: 2;
   background: #4caf50;
-  color: #fff;
+  color: var(--accent-text);
   width: 20px;
   height: 20px;
   border-radius: 50%;
@@ -369,7 +468,7 @@ input, select {
 .onboarding-view .onboarding-sub {
   font-size: 0.92rem;
   line-height: 1.5;
-  color: #b7b7b7;
+  color: var(--text-faint);
   margin-bottom: 22px;
 }
 
@@ -386,7 +485,7 @@ input, select {
 .celebration-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.65);
+  background: var(--overlay-bg);
   backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
@@ -400,8 +499,8 @@ input, select {
 }
 
 .celebration-modal {
-  background: #17181c;
-  border: 1px solid #26282f;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 16px;
   padding: 28px 24px;
   max-width: 380px;
@@ -411,8 +510,8 @@ input, select {
 }
 
 .celebration-modal.full-house {
-  background: linear-gradient(160deg, #1c1a0f, #17181c 60%);
-  border-color: #6b5a1a;
+  background: linear-gradient(160deg, #1c1a0f, var(--panel-bg) 60%);
+  border-color: var(--full-house-border);
 }
 
 .celebration-modal .celebration-icon {
@@ -427,7 +526,7 @@ input, select {
 
 .celebration-modal .celebration-sub {
   font-size: 0.9rem;
-  color: #9a9a9a;
+  color: var(--text-dim);
   margin-bottom: 22px;
 }
 
@@ -478,8 +577,8 @@ input, select {
 
 /* ---------- Practice mode: single active card ---------- */
 .practice-card {
-  background: #17181c;
-  border: 1px solid #26282f;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 10px;
   padding: 14px;
 }
@@ -498,7 +597,7 @@ input, select {
 
 .practice-card-header .card-meta {
   font-size: 0.75rem;
-  color: #9a9a9a;
+  color: var(--text-dim);
 }
 
 .regenerate-btn {
@@ -514,7 +613,7 @@ input, select {
   aspect-ratio: 1.3;
   object-fit: cover;
   border-radius: 10px;
-  background: #1c1e24;
+  background: var(--cell-bg);
   margin-bottom: 12px;
 }
 
@@ -525,7 +624,7 @@ input, select {
 
 .bird-detail-sci {
   font-style: italic;
-  color: #9a9a9a;
+  color: var(--text-dim);
   margin-bottom: 12px;
 }
 
@@ -539,7 +638,7 @@ input, select {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #26282f;
+  border-bottom: 1px solid var(--panel-border);
   padding: 8px 0;
   font-size: 0.85rem;
 }
@@ -550,7 +649,7 @@ input, select {
 
 .sighting-item .delete-sighting-btn {
   background: none;
-  color: #e57373;
+  color: var(--danger-text);
   padding: 2px 8px;
   font-size: 1rem;
 }
@@ -561,7 +660,7 @@ input, select {
   align-items: center;
   gap: 10px;
   padding: 8px 0;
-  border-bottom: 1px solid #26282f;
+  border-bottom: 1px solid var(--panel-border);
 }
 
 .life-list-item:last-child {
@@ -573,14 +672,14 @@ input, select {
   height: 44px;
   border-radius: 8px;
   object-fit: cover;
-  background: #1c1e24;
+  background: var(--cell-bg);
   flex-shrink: 0;
 }
 
 .life-list-item .life-info {
   flex: 1;
   text-decoration: none;
-  color: #f2f2f0;
+  color: var(--text);
 }
 
 .life-list-item .life-name {
@@ -590,12 +689,12 @@ input, select {
 
 .life-list-item .life-meta {
   font-size: 0.75rem;
-  color: #9a9a9a;
+  color: var(--text-dim);
 }
 
 .life-list-item .remove-life-btn {
   background: none;
-  color: #e57373;
+  color: var(--danger-text);
   font-size: 1.1rem;
   padding: 4px 8px;
 }
@@ -604,7 +703,7 @@ input, select {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: var(--overlay-bg);
   backdrop-filter: blur(2px);
   display: flex;
   align-items: flex-end;
@@ -617,8 +716,8 @@ input, select {
 }
 
 .modal-content {
-  background: #17181c;
-  border: 1px solid #26282f;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-bottom: none;
   border-radius: 16px 16px 0 0;
   padding: 20px;
@@ -631,7 +730,7 @@ input, select {
 .modal-content label {
   display: block;
   font-size: 0.8rem;
-  color: #9a9a9a;
+  color: var(--text-dim);
   margin: 10px 0 4px;
 }
 
@@ -655,7 +754,7 @@ input, select {
 
 .modal-close-btn {
   background: none;
-  color: #9a9a9a;
+  color: var(--text-dim);
   font-size: 1.3rem;
   padding: 2px 8px;
 }
@@ -666,7 +765,7 @@ input, select {
   align-items: center;
   justify-content: space-between;
   padding: 14px 4px;
-  border-bottom: 1px solid #26282f;
+  border-bottom: 1px solid var(--panel-border);
   font-size: 0.95rem;
 }
 
@@ -686,13 +785,13 @@ input, select {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #8a8c94;
+  color: var(--text-dimmer);
   margin: 0 0 8px;
 }
 
 .empty-state {
   text-align: center;
-  color: #9a9a9a;
+  color: var(--text-dim);
   padding: 30px 10px;
   font-size: 0.9rem;
 }
