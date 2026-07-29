@@ -3,7 +3,9 @@
 Companion to `session-010-2026-07-29.md`. This is the diagnosis of the
 unresolved layout-shift bug, to be implemented in the next session.
 
-**Status: diagnosed and empirically verified, NOT yet implemented.**
+**Status: IMPLEMENTED in session 011 (2026-07-29) and verified. CLS 0 on every
+route, Lighthouse 100/100/100/100 including Agentic Browsing.** Kept for the
+reasoning: why height reservation and `content-visibility` cannot work here.
 
 ---
 

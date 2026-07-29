@@ -282,21 +282,36 @@ if (document.getElementById('post-stack')) {
     if (!section) return;
 
     const stack = document.getElementById('post-stack');
-    // Posts after the first reserve a rough height inline, so the space
-    // exists in the very first paint. Setting it from JS afterwards is too
-    // late: the stack has already been laid out, and the post growing into
-    // place shifts everything below it.
-    stack.innerHTML = section.posts.map((p, i) => `
+    // Every post starts hidden and is revealed in stack order as it renders
+    // (see revealLoaded), which is what keeps CLS at zero: posts render in
+    // network-completion order, so without this a slow post landing above
+    // already-painted siblings shoves them out of the viewport.
+    stack.innerHTML = section.posts.map((p) => `
       <article class="post-entry" id="${p.slug}" data-slug="${p.slug}" data-title="${escHtml(p.title).replace(/"/g, '&quot;')}" data-loaded="false">
         <div class="post-meta">
           <h2>${escHtml(p.title)}</h2>
           <div class="meta-line">${formatDate(p.date)}${p.author ? ' by ' + escHtml(p.author) : ''}</div>
         </div>
-        <div class="md-content post-placeholder"${i === 0 ? '' : ' style="min-height:70vh"'}></div>
+        <div class="md-content post-placeholder"></div>
       </article>
     `).join('');
 
     stack.style.display = 'block';
+
+    // Reveal the contiguous prefix of rendered posts, stopping at the first
+    // one that has not landed yet. Painted content is then only ever
+    // appended below, never displaced. Iterates the live DOM, not `entries`,
+    // so it stays correct after the reading-order toggle reorders the stack.
+    function revealLoaded() {
+      let atFrontier = true;
+      for (const e of stack.querySelectorAll('.post-entry')) {
+        if (!e.classList.contains('is-loaded')) atFrontier = false;
+        // Toggled both ways: the reading-order toggle can move a revealed
+        // post below an unloaded one, which has to hide again or it would
+        // be displaced when that post finally lands.
+        e.classList.toggle('is-revealed', atFrontier);
+      }
+    }
 
     function loadEntry(entry) {
       if (entry.dataset.loaded === 'true') return Promise.resolve();
@@ -314,23 +329,23 @@ if (document.getElementById('post-stack')) {
             stripLeadingTitle(body, title),
             post && post.images
           );
-          // Drop the reserved height now the real content sets it.
-          contentEl.style.minHeight = '';
+          entry.classList.add('is-loaded');
+          revealLoaded();
         })
         .catch(() => {
           entry.querySelector('.md-content').textContent = 'Failed to load post.';
+          // The error message is this post's final size, so the frontier can
+          // move past it. Without this a failed fetch leaves every post
+          // below it hidden forever.
+          entry.classList.add('is-loaded');
+          revealLoaded();
         });
     }
 
     const entries = Array.from(stack.querySelectorAll('.post-entry'));
 
-    // Only the posts below the first one need reserving: the first renders
-    // before anything is on screen, but a later post growing from nothing
-    // pushes every sibling under it down, which is a layout shift the size
-    // of the post. Reserving a rough height caps that movement to the
-    // difference between the estimate and the real height. Cleared as soon
-    // as the post renders.
-    // Lazy-load posts as they approach the viewport.
+    // Lazy-load posts as they approach the viewport. Hidden posts keep their
+    // layout boxes (visibility, not display), so this still fires for them.
     const loadObserver = new IntersectionObserver((observed) => {
       observed.forEach(o => { if (o.isIntersecting) loadEntry(o.target); });
     }, { rootMargin: '600px 0px' });
@@ -356,6 +371,9 @@ if (document.getElementById('post-stack')) {
       toggle.addEventListener('click', () => {
         entries.reverse();
         entries.forEach(e => stack.appendChild(e));
+        // The frontier is positional, so it has to be recomputed against the
+        // new order: an unloaded post may now sit above loaded ones.
+        revealLoaded();
         if (direction) direction = direction === 'newest' ? 'oldest' : 'newest';
         toggle.textContent = label();
         window.scrollTo({ top: 0 });
