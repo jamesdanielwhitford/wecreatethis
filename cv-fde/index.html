@@ -23,8 +23,9 @@
       .no-print { display: none; }
       .page { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; }
 
-      /* Keep job entries and project cards together */
-      .job-entry,
+      /* Keep project cards and individual bullets together. Job entries are
+         allowed to split: the first one is long enough that forcing it whole
+         pushed it to page 2 and left most of page 1 empty. */
       .project-card,
       li,
       h2 { break-inside: avoid; }
