@@ -165,14 +165,13 @@ header nav span[aria-current] {
   font-size: 1rem;
 }
 
-/* Unloaded posts reserve some height so the scrollbar does not lurch as
-   posts stream in. Deliberately modest: any reserved height is a guess and
-   collapses to the real height on load, so a large value means a large
-   shift. Deep links hide the stack until the posts above the target have
-   loaded (see app.js), which is what keeps CLS down in the worst case. */
+/* Unloaded posts get NO reserved height on purpose. Any guess is wrong for
+   most posts and collapses to the real height on load, which is a layout
+   shift of exactly the amount guessed. Posts render fast enough that an
+   unstyled gap is never really seen, and a placeholder that occupies no
+   space cannot shift anything when it fills in. */
 .md-content.post-placeholder {
   color: var(--muted);
-  min-height: 8rem;
 }
 
 /* Headings carry anchor ids, so keep linked headings off the viewport edge. */

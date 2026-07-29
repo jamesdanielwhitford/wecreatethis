@@ -10,6 +10,7 @@
   <title>Blog</title>
   <link rel="manifest" href="/blog/manifest.json">
   <link rel="stylesheet" href="/blog/style.css">
+  <script src="/sw-toast.js" defer></script>
 </head>
 <body>
   <header>
@@ -28,7 +29,7 @@
     <div id="post-stack" style="display:none"></div>
   </main>
 
-  <script src="/blog/app.js"></script>
+  <script src="/blog/app.js" defer></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/blog/sw.js', { scope: '/blog/' });

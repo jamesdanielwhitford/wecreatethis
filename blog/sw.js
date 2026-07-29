@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blog-v10';
+const CACHE_NAME = 'blog-v11';
 
 // App shell only, listed as canonical (extensionless) URLs since those are
 // the keys the fetch handler looks up. Content (home.md, post index.md
@@ -10,6 +10,7 @@ const ASSETS = [
   '/blog/app.js',
   '/blog/style.css',
   '/blog/manifest.json',
+  '/sw-toast.js',
 ];
 
 const MANIFEST_URL = '/blog/content-manifest.json';
@@ -31,6 +32,21 @@ function isContent(pathname) {
 // the _redirects self-rewrites that serve every section path) mark responses
 // redirected:true; serving such a cached response to a navigation fails with
 // ERR_FAILED in Chrome/Safari.
+// Cheap "did this actually change?" check on headers alone, so the update
+// toast only fires for real changes. Same logic as the root sw.js.
+function responsesDiffer(a, b) {
+  const etagA = a.headers.get('ETag');
+  const etagB = b.headers.get('ETag');
+  if (etagA && etagB) return etagA !== etagB;
+  const lenA = a.headers.get('Content-Length');
+  const lenB = b.headers.get('Content-Length');
+  if (lenA && lenB) return lenA !== lenB;
+  const modA = a.headers.get('Last-Modified');
+  const modB = b.headers.get('Last-Modified');
+  if (modA && modB) return modA !== modB;
+  return false;
+}
+
 function cleanResponse(response) {
   if (!response.redirected) return Promise.resolve(response);
   return response.blob().then(body =>
@@ -115,16 +131,25 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Shell and everything else: cache-first.
+  // Shell: stale-while-revalidate. The cached copy is served immediately
+  // (instant loads), while a background fetch refreshes it. Without the
+  // revalidation a cache-first shell can pin a visitor to an old app.js
+  // indefinitely - new CSS with old JS, which looks like broken rendering
+  // rather than a stale cache.
   event.respondWith(
     caches.match(normalized).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
+      const network = fetch(event.request).then(async response => {
         if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(async cache =>
-            cache.put(normalized, await cleanResponse(clone))
-          );
+          const fresh = await cleanResponse(response.clone());
+          const cache = await caches.open(CACHE_NAME);
+          // Tell open clients when a shell asset actually changed, so
+          // /sw-toast.js can offer a refresh instead of silently swapping
+          // code under a page that is already running.
+          if (cached && responsesDiffer(cached, fresh)) {
+            const clients = await self.clients.matchAll({ type: 'window' });
+            clients.forEach(c => c.postMessage({ type: 'sw-updated' }));
+          }
+          await cache.put(normalized, fresh);
         }
         return response;
       }).catch(err => {
@@ -138,6 +163,8 @@ self.addEventListener('fetch', event => {
         }
         throw err;
       });
+
+      return cached || network;
     })
   );
 });
