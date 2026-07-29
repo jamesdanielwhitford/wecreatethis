@@ -11,6 +11,8 @@ const path = require('path');
 
 const CONTENT_DIR = path.join(__dirname, 'content');
 const OUT_FILE = path.join(__dirname, 'content-manifest.json');
+const SITEMAP_FILE = path.join(__dirname, 'sitemap.xml');
+const SITE_ORIGIN = 'https://wecreatethis.com';
 
 function slugToName(slug) {
   return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -47,12 +49,33 @@ function collectPosts(relDir, postsBySection) {
         console.warn(`Skipping ${rel}/index.md: posts must live inside a section (content/{section}/{post}/index.md).`);
       } else {
         const meta = parseFrontmatter(fs.readFileSync(mdPath, 'utf8'));
-        if (meta.draft !== 'true') {
+
+        // Frontmatter is hand-written, so warn loudly on the values that
+        // fail silently at runtime rather than letting them through.
+        const draft = (meta.draft || '').toLowerCase();
+        if (draft && draft !== 'true' && draft !== 'false') {
+          console.warn(`${rel}: draft is "${meta.draft}", only "true" hides a post - this one WILL publish.`);
+        }
+        if (meta.date && !/^\d{4}-\d{2}-\d{2}$/.test(meta.date)) {
+          console.warn(`${rel}: date "${meta.date}" is not YYYY-MM-DD; sorting and display will be wrong.`);
+        }
+        if (!meta.date && meta.order === undefined) {
+          console.warn(`${rel}: no date and no order, ordering will be arbitrary.`);
+        }
+        if (meta.order !== undefined && Number.isNaN(Number(meta.order))) {
+          console.warn(`${rel}: order "${meta.order}" is not a number, ignoring it.`);
+        }
+
+        const order = meta.order !== undefined && !Number.isNaN(Number(meta.order))
+          ? Number(meta.order)
+          : null;
+
+        if (draft !== 'true') {
           (postsBySection[relDir] = postsBySection[relDir] || []).push({
             slug: name,
             title: meta.title || name,
             date: meta.date || '',
-            order: meta.order !== undefined ? Number(meta.order) : null,
+            order,
             description: meta.description || '',
             author: meta.author || '',
           });
@@ -92,6 +115,40 @@ function buildManifest() {
 
   fs.writeFileSync(OUT_FILE, JSON.stringify({ sections }, null, 2));
   console.log(`Wrote ${OUT_FILE} (${sections.length} section${sections.length === 1 ? '' : 's'})`);
+
+  writeSitemap(sections);
+}
+
+// One URL per section (posts live inside a section page as #fragments, so
+// they are not separately addressable) plus the blog home.
+function writeSitemap(sections) {
+  const urls = [`${SITE_ORIGIN}/blog/`].concat(
+    sections.map(s => `${SITE_ORIGIN}/blog/${s.path}`)
+  );
+
+  const lastmodFor = sectionPath => {
+    if (!sectionPath) return '';
+    const section = sections.find(s => s.path === sectionPath);
+    if (!section) return '';
+    const dates = section.posts.map(p => p.date).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
+    return dates.sort().pop() || '';
+  };
+
+  const body = urls.map(url => {
+    const sectionPath = url.replace(`${SITE_ORIGIN}/blog/`, '').replace(/\/$/, '');
+    const lastmod = lastmodFor(sectionPath);
+    return '  <url>\n' +
+      `    <loc>${url}</loc>\n` +
+      (lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : '') +
+      '  </url>';
+  }).join('\n');
+
+  fs.writeFileSync(SITEMAP_FILE,
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    body + '\n</urlset>\n'
+  );
+  console.log(`Wrote ${SITEMAP_FILE} (${urls.length} urls)`);
 }
 
 buildManifest();

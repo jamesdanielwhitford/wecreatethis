@@ -95,7 +95,7 @@ function renderMarkdown(md) {
     return text
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img src="$2" alt="$1">')
+      .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img src="$2" alt="$1" loading="lazy" decoding="async">')
       .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>');
   }
 
@@ -249,6 +249,17 @@ if (document.getElementById('post-stack')) {
     const name = section ? section.name : slugToName(sectionPath.split('/').pop());
     document.title = name + ' - Blog';
     document.getElementById('section-title').textContent = name;
+
+    // Fill the meta description from the section's own posts. Client-side,
+    // so crawlers that don't run JS still only see the static fallback,
+    // but it keeps the tag accurate for those that do.
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc && section && section.posts.length) {
+      const first = section.posts.find(p => p.description);
+      metaDesc.setAttribute('content', first
+        ? first.description
+        : `${section.posts.length} post${section.posts.length === 1 ? '' : 's'} in ${name}.`);
+    }
 
     // Sections nested below this path get listed as links above the posts.
     if (subsections.length > 0) {

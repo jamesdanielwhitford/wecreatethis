@@ -1,9 +1,52 @@
+/* Theme: follows the system light/dark setting, no toggle.
+   Muted greys are kept at or above 4.5:1 against their own background so
+   body text, meta lines, and the breadcrumb all clear WCAG AA. */
+:root {
+  color-scheme: light;
+
+  --bg: #fff;
+  --text: #111;
+  --muted: #6b6b6b;          /* 5.3:1 on --bg */
+  --rule: #e0e0e0;
+  --rule-strong: #ccc;
+  --quote-text: #4a4a4a;
+  --code-bg: #f2f2ef;
+  --pre-bg: #f6f6f4;
+  --img-bg: #f6f6f4;
+
+  --tok-comment: #6a6a6a;    /* 4.9:1 on --pre-bg */
+  --tok-string: #47612f;
+  --tok-number: #8a4f24;
+  --tok-keyword: #1f4f7a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --bg: #14140f;
+    --text: #e8e6e0;
+    --muted: #9a978e;        /* 5.6:1 on --bg */
+    --rule: #2e2e28;
+    --rule-strong: #45443c;
+    --quote-text: #b8b5ac;
+    --code-bg: #232320;
+    --pre-bg: #1c1c18;
+    --img-bg: #232320;
+
+    --tok-comment: #8b887f;  /* 4.8:1 on --pre-bg */
+    --tok-string: #a3c07a;
+    --tok-number: #d9a066;
+    --tok-keyword: #7fb3d9;
+  }
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: Georgia, serif;
-  background: #fff;
-  color: #111;
+  background: var(--bg);
+  color: var(--text);
   max-width: 640px;
   margin: 0 auto;
   padding: 48px 24px;
@@ -17,11 +60,11 @@ header {
 header nav {
   font-size: 1.1rem;
   letter-spacing: 0.05em;
-  color: #888;
+  color: var(--muted);
 }
 
 header nav a {
-  color: #111;
+  color: var(--text);
   text-decoration: none;
 }
 
@@ -30,11 +73,11 @@ header nav a:hover {
 }
 
 header nav span[aria-current] {
-  color: #111;
+  color: var(--text);
 }
 
 #loading {
-  color: #888;
+  color: var(--muted);
   font-size: 0.95rem;
 }
 
@@ -54,7 +97,7 @@ header nav span[aria-current] {
   display: none;
   font-family: inherit;
   font-size: 0.85rem;
-  color: #888;
+  color: var(--muted);
   background: none;
   border: none;
   padding: 0;
@@ -63,7 +106,7 @@ header nav span[aria-current] {
 }
 
 #sort-toggle:hover {
-  color: #111;
+  color: var(--text);
 }
 
 #subsections {
@@ -78,7 +121,7 @@ header nav span[aria-current] {
 
 #subsections a {
   font-size: 1.1rem;
-  color: #111;
+  color: var(--text);
   text-decoration: none;
 }
 
@@ -89,7 +132,7 @@ header nav span[aria-current] {
 .post-entry {
   margin-bottom: 64px;
   padding-bottom: 64px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--rule);
   scroll-margin-top: 24px;
 }
 
@@ -112,7 +155,7 @@ header nav span[aria-current] {
 
 .post-meta .meta-line {
   font-size: 0.85rem;
-  color: #888;
+  color: var(--muted);
 }
 
 /* Rendered markdown, shared by posts and the home page */
@@ -122,8 +165,11 @@ header nav span[aria-current] {
   font-size: 1rem;
 }
 
+/* Unloaded posts reserve roughly a screen of height, so the stack does not
+   collapse and then jolt back open as posts stream in (layout shift). */
 .md-content.post-placeholder {
-  color: #888;
+  color: var(--muted);
+  min-height: 60vh;
 }
 
 /* Headings carry anchor ids, so keep linked headings off the viewport edge. */
@@ -143,7 +189,7 @@ header nav span[aria-current] {
   font-size: 1.15rem;
   font-weight: normal;
   margin: 36px 0 12px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--rule);
   padding-bottom: 6px;
 }
 
@@ -162,7 +208,7 @@ header nav span[aria-current] {
 }
 
 .md-content a {
-  color: #111;
+  color: var(--text);
 }
 
 .md-content ul,
@@ -174,9 +220,27 @@ header nav span[aria-current] {
   margin-bottom: 8px;
 }
 
+/* Images: never wider than the column, never upscaled past their natural
+   size, and never so tall they push the rest of the post off screen. */
 .md-content img {
   max-width: 100%;
+  max-height: 80vh;
   height: auto;
+  width: auto;
+  display: block;
+  margin: 0 0 16px;
+  border-radius: 4px;
+  background: var(--img-bg);
+}
+
+.md-content li img {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0;
+}
+
+.md-content a img {
+  margin-bottom: 0;
 }
 
 /* Tables: scroll horizontally on narrow screens rather than overflowing. */
@@ -194,13 +258,13 @@ header nav span[aria-current] {
 .md-content td {
   text-align: left;
   padding: 8px 12px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--rule);
   vertical-align: top;
 }
 
 .md-content th {
   font-weight: bold;
-  border-bottom: 2px solid #ccc;
+  border-bottom: 2px solid var(--rule-strong);
   white-space: nowrap;
 }
 
@@ -211,8 +275,8 @@ header nav span[aria-current] {
 .md-content blockquote {
   margin: 0 0 16px;
   padding: 4px 0 4px 20px;
-  border-left: 3px solid #e0e0e0;
-  color: #555;
+  border-left: 3px solid var(--rule);
+  color: var(--quote-text);
 }
 
 .md-content blockquote p:last-child {
@@ -227,15 +291,17 @@ header nav span[aria-current] {
 }
 
 .md-content p code,
-.md-content li code {
-  background: #f2f2ef;
+.md-content li code,
+.md-content td code,
+.md-content th code {
+  background: var(--code-bg);
   padding: 1px 5px;
   border-radius: 3px;
 }
 
 .md-content pre {
-  background: #f6f6f4;
-  border: 1px solid #e0e0e0;
+  background: var(--pre-bg);
+  border: 1px solid var(--rule);
   border-radius: 4px;
   padding: 16px;
   margin-bottom: 16px;
@@ -249,10 +315,10 @@ header nav span[aria-current] {
   padding: 0;
 }
 
-.tok-c { color: #999; font-style: italic; }
-.tok-s { color: #59763d; }
-.tok-n { color: #9a5b2b; }
-.tok-k { color: #245c8f; }
+.tok-c { color: var(--tok-comment); font-style: italic; }
+.tok-s { color: var(--tok-string); }
+.tok-n { color: var(--tok-number); }
+.tok-k { color: var(--tok-keyword); }
 
 /* Home page markdown tweaks: link lists without bullets */
 
@@ -275,5 +341,5 @@ header nav span[aria-current] {
 }
 
 #home-content p {
-  color: #444;
+  color: var(--muted);
 }
