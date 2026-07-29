@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blog-v7';
+const CACHE_NAME = 'blog-v8';
 
 // App shell only, listed as canonical (extensionless) URLs since those are
 // the keys the fetch handler looks up. Content (home.md, post index.md
@@ -27,20 +27,40 @@ function isContent(pathname) {
   return pathname.startsWith('/blog/content/') || pathname === MANIFEST_URL;
 }
 
+// Rewrap before caching to strip redirect metadata. Cloudflare Pages (and
+// the _redirects self-rewrites that serve every section path) mark responses
+// redirected:true; serving such a cached response to a navigation fails with
+// ERR_FAILED in Chrome/Safari.
+function cleanResponse(response) {
+  if (!response.redirected) return Promise.resolve(response);
+  return response.blob().then(body =>
+    new Response(body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    })
+  );
+}
+
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
 
+    // `cache: 'reload'` bypasses the HTTP cache, so a CACHE_NAME bump can
+    // never pre-cache a stale shell asset (the shell is served cache-first
+    // with no revalidation, so a stale entry would stick).
     await Promise.all(ASSETS.map(async url => {
-      const response = await fetch(url);
-      if (response.ok) await cache.put(new URL(url, self.location.origin).href, response);
+      const response = await fetch(url, { cache: 'reload' });
+      if (response.ok) {
+        await cache.put(new URL(url, self.location.origin).href, await cleanResponse(response));
+      }
     }));
 
     // Cache all published content listed in the manifest (best effort).
     try {
-      const response = await fetch(MANIFEST_URL);
+      const response = await fetch(MANIFEST_URL, { cache: 'reload' });
       const manifest = await response.clone().json();
-      await cache.put(new URL(MANIFEST_URL, self.location.origin).href, response);
+      await cache.put(new URL(MANIFEST_URL, self.location.origin).href, await cleanResponse(response));
 
       const urls = ['/blog/content/home.md'];
       for (const section of manifest.sections) {
@@ -48,7 +68,16 @@ self.addEventListener('install', event => {
           urls.push(`/blog/content/${section.path}/${post.slug}/index.md`);
         }
       }
-      await Promise.all(urls.map(url => cache.add(url).catch(() => {})));
+      await Promise.all(urls.map(async url => {
+        try {
+          const res = await fetch(url, { cache: 'reload' });
+          if (res.ok) {
+            await cache.put(new URL(url, self.location.origin).href, await cleanResponse(res));
+          }
+        } catch (e) {
+          // Best effort; runtime caching fills in later.
+        }
+      }));
     } catch (e) {
       // Offline or manifest missing; runtime caching will fill in later.
     }
@@ -76,7 +105,9 @@ self.addEventListener('fetch', event => {
       fetch(event.request).then(response => {
         if (response.ok) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(normalized, clone));
+          caches.open(CACHE_NAME).then(async cache =>
+            cache.put(normalized, await cleanResponse(clone))
+          );
         }
         return response;
       }).catch(() => caches.match(normalized))
@@ -91,7 +122,9 @@ self.addEventListener('fetch', event => {
       return fetch(event.request).then(response => {
         if (response.ok) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(normalized, clone));
+          caches.open(CACHE_NAME).then(async cache =>
+            cache.put(normalized, await cleanResponse(clone))
+          );
         }
         return response;
       }).catch(err => {

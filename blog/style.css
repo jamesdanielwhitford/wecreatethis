@@ -126,6 +126,13 @@ header nav span[aria-current] {
   color: #888;
 }
 
+/* Headings carry anchor ids, so keep linked headings off the viewport edge. */
+.md-content h1,
+.md-content h2,
+.md-content h3 {
+  scroll-margin-top: 24px;
+}
+
 .md-content h1 {
   font-size: 1.3rem;
   font-weight: normal;
@@ -158,12 +165,47 @@ header nav span[aria-current] {
   color: #111;
 }
 
-.md-content ul {
+.md-content ul,
+.md-content ol {
   margin: 0 0 16px 24px;
 }
 
 .md-content li {
   margin-bottom: 8px;
+}
+
+.md-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tables: scroll horizontally on narrow screens rather than overflowing. */
+
+.md-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+  display: block;
+  overflow-x: auto;
+}
+
+.md-content th,
+.md-content td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e0e0e0;
+  vertical-align: top;
+}
+
+.md-content th {
+  font-weight: bold;
+  border-bottom: 2px solid #ccc;
+  white-space: nowrap;
+}
+
+.md-content tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .md-content blockquote {

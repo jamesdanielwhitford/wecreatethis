@@ -13,6 +13,64 @@
           "author": "James Daniel Whitford"
         }
       ]
+    },
+    {
+      "path": "test",
+      "name": "Test",
+      "posts": [
+        {
+          "slug": "kitchen-sink",
+          "title": "Kitchen sink - every markdown feature",
+          "date": "2026-07-29",
+          "order": 1,
+          "description": "Exercises every construct the renderer supports, so regressions in headings, tables, lists, code, quotes, and inline formatting are visible at a glance.",
+          "author": "Test Suite"
+        },
+        {
+          "slug": "navigation-modes",
+          "title": "Navigation modes",
+          "date": "2026-07-28",
+          "order": 2,
+          "description": "Every way of moving around the blog - post fragments within a section, heading anchors, sibling sections, nested subsections, and back to home.",
+          "author": "Test Suite"
+        },
+        {
+          "slug": "ordering-and-dates",
+          "title": "Ordering and dates",
+          "date": "2026-07-27",
+          "order": 3,
+          "description": "The third post in the section, used to test the reading-order toggle, the scroll stack running to its end, and deep links that land on the last post.",
+          "author": "Test Suite"
+        }
+      ]
+    },
+    {
+      "path": "test/nested",
+      "name": "Nested",
+      "posts": [
+        {
+          "slug": "nested-post-one",
+          "title": "Nested post one",
+          "date": "2026-07-26",
+          "order": null,
+          "description": "A post one level down, used to check that nested section URLs, breadcrumbs, and subsection listings all work.",
+          "author": "Test Suite"
+        }
+      ]
+    },
+    {
+      "path": "test/nested/deeper",
+      "name": "Deeper",
+      "posts": [
+        {
+          "slug": "deep-post",
+          "title": "Deep post",
+          "date": "2026-07-25",
+          "order": null,
+          "description": "Three levels deep, to confirm section nesting has no depth limit and the breadcrumb keeps every ancestor linkable.",
+          "author": "Test Suite"
+        }
+      ]
     }
   ]
 }
