@@ -18,6 +18,67 @@ function slugToName(slug) {
   return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
+// Intrinsic image dimensions, read straight from the file header. The
+// renderer puts these on the <img> so the browser can reserve the right
+// box before the image arrives, instead of shoving the page down when it
+// loads. No dependencies: PNG, GIF, and JPEG headers are simple enough to
+// parse by hand.
+function imageSize(file) {
+  let buf;
+  try {
+    buf = fs.readFileSync(file);
+  } catch (e) {
+    return null;
+  }
+  if (buf.length < 24) return null;
+
+  // PNG: IHDR width/height are big-endian at byte 16.
+  if (buf.readUInt32BE(0) === 0x89504e47) {
+    return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+  }
+
+  // GIF: little-endian width/height at byte 6.
+  if (buf.slice(0, 3).toString('ascii') === 'GIF') {
+    return { width: buf.readUInt16LE(6), height: buf.readUInt16LE(8) };
+  }
+
+  // JPEG: walk the segment chain to the SOFn frame header.
+  if (buf[0] === 0xff && buf[1] === 0xd8) {
+    let o = 2;
+    while (o + 9 < buf.length) {
+      if (buf[o] !== 0xff) { o++; continue; }
+      const marker = buf[o + 1];
+      // SOF0-SOF3, SOF5-SOF7, SOF9-SOF11, SOF13-SOF15 carry dimensions.
+      if (marker >= 0xc0 && marker <= 0xcf &&
+          marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+        return { height: buf.readUInt16BE(o + 5), width: buf.readUInt16BE(o + 7) };
+      }
+      o += 2 + buf.readUInt16BE(o + 2);
+    }
+  }
+
+  return null;
+}
+
+// Collects intrinsic sizes for every image referenced by a post, keyed by
+// the src exactly as written in the markdown.
+function imageSizesFor(postDir, markdown) {
+  const sizes = {};
+  const re = /!\[[^\]]*\]\(([^)\s]+)\)/g;
+  let m;
+  while ((m = re.exec(markdown)) !== null) {
+    const src = m[1];
+    if (/^https?:\/\//i.test(src)) continue; // remote, can't measure at build time
+    const file = src.startsWith('/')
+      ? path.join(__dirname, '..', src.replace(/^\//, ''))
+      : path.join(postDir, src);
+    const size = imageSize(file);
+    if (size) sizes[src] = size;
+    else console.warn(`  image not found or unreadable: ${src}`);
+  }
+  return Object.keys(sizes).length ? sizes : undefined;
+}
+
 function parseFrontmatter(text) {
   const match = text.match(/^---\n([\s\S]+?)\n---\n?/);
   if (!match) return {};
@@ -48,7 +109,8 @@ function collectPosts(relDir, postsBySection) {
       if (!relDir) {
         console.warn(`Skipping ${rel}/index.md: posts must live inside a section (content/{section}/{post}/index.md).`);
       } else {
-        const meta = parseFrontmatter(fs.readFileSync(mdPath, 'utf8'));
+        const source = fs.readFileSync(mdPath, 'utf8');
+        const meta = parseFrontmatter(source);
 
         // Frontmatter is hand-written, so warn loudly on the values that
         // fail silently at runtime rather than letting them through.
@@ -78,6 +140,7 @@ function collectPosts(relDir, postsBySection) {
             order,
             description: meta.description || '',
             author: meta.author || '',
+            images: imageSizesFor(path.join(CONTENT_DIR, rel), source),
           });
         }
       }

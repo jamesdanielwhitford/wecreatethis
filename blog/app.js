@@ -62,7 +62,10 @@ function headingTag(level, text) {
 
 // Minimal markdown renderer: headings, bold, italic, links, lists,
 // blockquotes, fenced + inline code, paragraphs. No dependencies.
-function renderMarkdown(md) {
+// `imageSizes` maps an image src to its intrinsic {width, height} (from the
+// manifest, measured at build time); passing it lets images reserve the
+// right space before they load instead of shifting the page.
+function renderMarkdown(md, imageSizes) {
   const blocks = [];
   const spans = [];
 
@@ -77,7 +80,7 @@ function renderMarkdown(md) {
   // so quoted code fences, lists, and inline markdown all work.
   html = html.replace(/((?:^> ?.*\n?)+)/gm, block => {
     const inner = block.replace(/^> ?/gm, '');
-    blocks.push(`<blockquote>${renderMarkdown(inner)}</blockquote>`);
+    blocks.push(`<blockquote>${renderMarkdown(inner, imageSizes)}</blockquote>`);
     return placeholder('B', blocks.length - 1);
   });
 
@@ -95,7 +98,11 @@ function renderMarkdown(md) {
     return text
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img src="$2" alt="$1" loading="lazy" decoding="async">')
+      .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (m, alt, src) => {
+        const size = imageSizes && imageSizes[src];
+        const dims = size ? ` width="${size.width}" height="${size.height}"` : '';
+        return `<img src="${src}" alt="${alt}"${dims} loading="lazy" decoding="async">`;
+      })
       .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>');
   }
 
@@ -292,13 +299,17 @@ if (document.getElementById('post-stack')) {
       entry.dataset.loaded = 'true';
       const slug = entry.dataset.slug;
       const title = entry.dataset.title || '';
+      const post = section.posts.find(p => p.slug === slug);
       return fetch(`/blog/content/${section.path}/${slug}/index.md`)
         .then(r => r.text())
         .then(text => {
           const { body } = parseFrontmatter(text);
           const contentEl = entry.querySelector('.md-content');
           contentEl.classList.remove('post-placeholder');
-          contentEl.innerHTML = renderMarkdown(stripLeadingTitle(body, title));
+          contentEl.innerHTML = renderMarkdown(
+            stripLeadingTitle(body, title),
+            post && post.images
+          );
         })
         .catch(() => {
           entry.querySelector('.md-content').textContent = 'Failed to load post.';
@@ -370,7 +381,13 @@ if (document.getElementById('post-stack')) {
     }
 
     if (postSlug) {
-      goToFragment(postSlug, false);
+      // Deep link: the stack is still all placeholders, so keep it hidden
+      // until the posts above the target have their real height. Revealing
+      // and scrolling in one go avoids a large layout shift.
+      stack.style.visibility = 'hidden';
+      goToFragment(postSlug, false).finally(() => {
+        stack.style.visibility = '';
+      });
     } else if (entries[0]) {
       loadEntry(entries[0]);
     }

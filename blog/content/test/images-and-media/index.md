@@ -8,7 +8,7 @@ description: Image rendering at different aspect ratios, plus the alt-text and d
 
 # Images and media
 
-The renderer supports `![alt](src)`. These are generated test images, checked in next to this post, so the fixture is self-contained and works offline.
+The renderer supports markdown image syntax. These are generated test images, checked in next to this post, so the fixture is self-contained and works offline.
 
 ## Wide image
 

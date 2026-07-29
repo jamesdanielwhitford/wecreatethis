@@ -165,11 +165,14 @@ header nav span[aria-current] {
   font-size: 1rem;
 }
 
-/* Unloaded posts reserve roughly a screen of height, so the stack does not
-   collapse and then jolt back open as posts stream in (layout shift). */
+/* Unloaded posts reserve some height so the scrollbar does not lurch as
+   posts stream in. Deliberately modest: any reserved height is a guess and
+   collapses to the real height on load, so a large value means a large
+   shift. Deep links hide the stack until the posts above the target have
+   loaded (see app.js), which is what keeps CLS down in the worst case. */
 .md-content.post-placeholder {
   color: var(--muted);
-  min-height: 60vh;
+  min-height: 8rem;
 }
 
 /* Headings carry anchor ids, so keep linked headings off the viewport edge. */
@@ -221,16 +224,30 @@ header nav span[aria-current] {
 }
 
 /* Images: never wider than the column, never upscaled past their natural
-   size, and never so tall they push the rest of the post off screen. */
+   size, and never so tall they push the rest of the post off screen.
+   `height: auto` alone (no `width: auto`) is deliberate: it lets the
+   width/height attributes the renderer emits establish an aspect-ratio
+   box, so the space is reserved before the file loads. Adding
+   `width: auto` would discard that and reintroduce layout shift. */
+/* Images: never wider than the column, and sized from the width/height
+   attributes the renderer emits so the space is reserved before the file
+   loads (this is what keeps layout shift near zero).
+   No `max-height` here: clamping the height while the width follows the
+   attribute ratio stretches tall images. Portrait images are simply as
+   tall as their aspect ratio makes them. */
 .md-content img {
   max-width: 100%;
-  max-height: 80vh;
   height: auto;
-  width: auto;
   display: block;
   margin: 0 0 16px;
   border-radius: 4px;
   background: var(--img-bg);
+}
+
+/* An image with no known intrinsic size (remote, or missing at build time)
+   still must not overflow the column. */
+.md-content img:not([width]) {
+  width: auto;
 }
 
 .md-content li img {

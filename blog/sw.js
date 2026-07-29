@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blog-v9';
+const CACHE_NAME = 'blog-v10';
 
 // App shell only, listed as canonical (extensionless) URLs since those are
 // the keys the fetch handler looks up. Content (home.md, post index.md
