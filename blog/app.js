@@ -24,7 +24,8 @@ const CODE_KEYWORDS = new Set((
 ).split(/\s+/));
 
 function highlightCode(escaped) {
-  const re = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|(^[ \t]*#(?:$|[ !][^\n]*))|(&quot;|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(0x[\da-fA-F]+|\d+(?:\.\d+)?)\b|\b([A-Za-z_$][\w$]*)\b/gm;
+  // `(?<!:)` keeps URLs (https://...) from being swallowed by the // comment rule.
+  const re = /((?<!:)\/\/[^\n]*|\/\*[\s\S]*?\*\/)|(^[ \t]*#(?:$|[ !][^\n]*))|(&quot;|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(0x[\da-fA-F]+|\d+(?:\.\d+)?)\b|\b([A-Za-z_$][\w$]*)\b/gm;
   return escaped.replace(re, (m, comment, hashComment, str, num, word) => {
     if (comment || hashComment) return `<span class="tok-c">${m}</span>`;
     if (str) return `<span class="tok-s">${m}</span>`;
@@ -40,9 +41,31 @@ function placeholder(kind, i) {
   return String.fromCharCode(0) + kind + i + String.fromCharCode(0);
 }
 
+// Heading anchors are prefixed so they can never collide with a post slug,
+// which shares the same URL fragment (see parseBlogPath).
+const HEADING_ID_PREFIX = 'h-';
+
+function headingId(text) {
+  const slug = text
+    .toLowerCase()
+    .replace(/<[^>]+>/g, '')
+    .replace(/[^\w\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+  return slug ? HEADING_ID_PREFIX + slug : '';
+}
+
+function headingTag(level, text) {
+  const id = headingId(text);
+  return `<h${level}${id ? ` id="${id}"` : ''}>${text}</h${level}>`;
+}
+
 // Minimal markdown renderer: headings, bold, italic, links, lists,
 // blockquotes, fenced + inline code, paragraphs. No dependencies.
-function renderMarkdown(md) {
+// `imageSizes` maps an image src to its intrinsic {width, height} (from the
+// manifest, measured at build time); passing it lets images reserve the
+// right space before they load instead of shifting the page.
+function renderMarkdown(md, imageSizes) {
   const blocks = [];
   const spans = [];
 
@@ -57,7 +80,7 @@ function renderMarkdown(md) {
   // so quoted code fences, lists, and inline markdown all work.
   html = html.replace(/((?:^> ?.*\n?)+)/gm, block => {
     const inner = block.replace(/^> ?/gm, '');
-    blocks.push(`<blockquote>${renderMarkdown(inner)}</blockquote>`);
+    blocks.push(`<blockquote>${renderMarkdown(inner, imageSizes)}</blockquote>`);
     return placeholder('B', blocks.length - 1);
   });
 
@@ -69,19 +92,42 @@ function renderMarkdown(md) {
     return placeholder('S', spans.length - 1);
   });
 
-  // Headings
-  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  // Inline transforms, applied to a single line of already-escaped text.
+  // Shared by paragraphs, list items, and table cells.
+  function inline(text) {
+    return text
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (m, alt, src) => {
+        const size = imageSizes && imageSizes[src];
+        const dims = size ? ` width="${size.width}" height="${size.height}"` : '';
+        return `<img src="${src}" alt="${alt}"${dims} loading="lazy" decoding="async">`;
+      })
+      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>');
+  }
 
-  // Bold
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Tables: a header row, a |---|---| separator, then body rows. Pulled out
+  // as whole blocks before the line-level passes so the pipes never leak.
+  html = html.replace(
+    /^\|(.+)\|[ \t]*\n\|[ \t]*:?-{1,}:?[ \t]*(?:\|[ \t]*:?-{1,}:?[ \t]*)*\|[ \t]*\n((?:\|.*\|[ \t]*\n?)*)/gm,
+    (m, headerRow, bodyRows) => {
+      const cells = row => row.trim().replace(/^\||\|$/g, '').split('|').map(c => inline(c.trim()));
+      const head = cells(headerRow).map(c => `<th>${c}</th>`).join('');
+      const body = bodyRows.trim().split('\n').filter(Boolean).map(row =>
+        `<tr>${cells(row).map(c => `<td>${c}</td>`).join('')}</tr>`
+      ).join('');
+      blocks.push(`<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`);
+      return placeholder('B', blocks.length - 1) + '\n';
+    }
+  );
 
-  // Italic
-  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // Headings, with anchor ids so in-page links work.
+  html = html.replace(/^### (.+)$/gm, (m, t) => headingTag(3, inline(t)));
+  html = html.replace(/^## (.+)$/gm, (m, t) => headingTag(2, inline(t)));
+  html = html.replace(/^# (.+)$/gm, (m, t) => headingTag(1, inline(t)));
 
-  // Links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  // Bold, italic, images, links
+  html = inline(html);
 
   // Unordered lists
   html = html.replace(/((?:^- .+\n?)+)/gm, block => {
@@ -89,8 +135,20 @@ function renderMarkdown(md) {
     return `<ul>${items}</ul>`;
   });
 
-  // Paragraphs: wrap lines that aren't already a block tag
-  html = html.replace(/^(?!<h[1-3]|<\/?[a-z])(.+)$/gm, '<p>$1</p>');
+  // Ordered lists
+  html = html.replace(/((?:^\d+\. .+\n?)+)/gm, block => {
+    const items = block.trim().split('\n').map(l => `<li>${l.replace(/^\d+\. /, '')}</li>`).join('');
+    return `<ol>${items}</ol>`;
+  });
+
+  // Paragraphs: wrap any line that isn't already a block-level element.
+  // Only real block tags are skipped, inline tags (<strong>, <em>, <a>,
+  // <code>) must still be wrapped, so a line starting with bold text
+  // still becomes its own paragraph.
+  html = html.replace(
+    /^(?!<h[1-3]|<ul|<\/ul|<ol|<\/ol|<li|<\/li|<blockquote|<\/blockquote|<pre|<\/pre|<table|<\/table|\u0000B)(.+)$/gm,
+    '<p>$1</p>'
+  );
 
   html = html.replace(/<p>\s*<\/p>/g, '');
 
@@ -111,6 +169,16 @@ function parseFrontmatter(text) {
     meta[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
   });
   return { meta, body: match[2] };
+}
+
+// Posts normally repeat their frontmatter title as a leading `# H1`. The
+// stack already renders the title from the manifest, so drop the duplicate.
+function stripLeadingTitle(body, title) {
+  if (!title) return body;
+  const norm = s => s.trim().toLowerCase();
+  return body.replace(/^\s*# (.+)(?:\n|$)/, (m, heading) =>
+    norm(heading) === norm(title) ? '' : m
+  );
 }
 
 function loadManifest() {
@@ -189,6 +257,17 @@ if (document.getElementById('post-stack')) {
     document.title = name + ' - Blog';
     document.getElementById('section-title').textContent = name;
 
+    // Fill the meta description from the section's own posts. Client-side,
+    // so crawlers that don't run JS still only see the static fallback,
+    // but it keeps the tag accurate for those that do.
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc && section && section.posts.length) {
+      const first = section.posts.find(p => p.description);
+      metaDesc.setAttribute('content', first
+        ? first.description
+        : `${section.posts.length} post${section.posts.length === 1 ? '' : 's'} in ${name}.`);
+    }
+
     // Sections nested below this path get listed as links above the posts.
     if (subsections.length > 0) {
       const list = document.getElementById('subsections');
@@ -204,7 +283,7 @@ if (document.getElementById('post-stack')) {
 
     const stack = document.getElementById('post-stack');
     stack.innerHTML = section.posts.map(p => `
-      <article class="post-entry" id="${p.slug}" data-slug="${p.slug}" data-loaded="false">
+      <article class="post-entry" id="${p.slug}" data-slug="${p.slug}" data-title="${escHtml(p.title).replace(/"/g, '&quot;')}" data-loaded="false">
         <div class="post-meta">
           <h2>${escHtml(p.title)}</h2>
           <div class="meta-line">${formatDate(p.date)}${p.author ? ' by ' + escHtml(p.author) : ''}</div>
@@ -216,16 +295,21 @@ if (document.getElementById('post-stack')) {
     stack.style.display = 'block';
 
     function loadEntry(entry) {
-      if (entry.dataset.loaded === 'true') return;
+      if (entry.dataset.loaded === 'true') return Promise.resolve();
       entry.dataset.loaded = 'true';
       const slug = entry.dataset.slug;
-      fetch(`/blog/content/${section.path}/${slug}/index.md`)
+      const title = entry.dataset.title || '';
+      const post = section.posts.find(p => p.slug === slug);
+      return fetch(`/blog/content/${section.path}/${slug}/index.md`)
         .then(r => r.text())
         .then(text => {
           const { body } = parseFrontmatter(text);
           const contentEl = entry.querySelector('.md-content');
           contentEl.classList.remove('post-placeholder');
-          contentEl.innerHTML = renderMarkdown(body);
+          contentEl.innerHTML = renderMarkdown(
+            stripLeadingTitle(body, title),
+            post && post.images
+          );
         })
         .catch(() => {
           entry.querySelector('.md-content').textContent = 'Failed to load post.';
@@ -266,14 +350,54 @@ if (document.getElementById('post-stack')) {
       });
     }
 
-    // Jump straight to the requested post (or the top) without an animated scroll.
-    const target = postSlug && document.getElementById(postSlug);
-    if (target) {
-      loadEntry(target);
-      target.scrollIntoView({ block: 'start' });
+    // Jump to a fragment: either a post slug (an article in the stack) or a
+    // heading anchor inside a post (prefixed `h-`, see headingId).
+    // Posts above the target are loaded first, otherwise they expand from
+    // short placeholders to full content after the scroll and push the
+    // target out of view.
+    function goToFragment(fragment, smooth) {
+      if (!fragment) return Promise.resolve(false);
+
+      const post = document.getElementById(fragment);
+      if (post && post.classList.contains('post-entry')) {
+        const above = entries.slice(0, entries.indexOf(post));
+        return Promise.all(above.concat(post).map(loadEntry)).then(() => {
+          post.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
+          return true;
+        });
+      }
+
+      // Heading anchors only exist once their post is rendered, so load
+      // everything, then look again. Bare anchors (`#some-heading`, as
+      // written by hand in a post's own table of contents) also resolve
+      // against the prefixed id.
+      return Promise.all(entries.map(loadEntry)).then(() => {
+        const heading = document.getElementById(fragment) ||
+          document.getElementById(HEADING_ID_PREFIX + fragment);
+        if (!heading) return false;
+        heading.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
+        return true;
+      });
+    }
+
+    if (postSlug) {
+      // Deep link: the stack is still all placeholders, so keep it hidden
+      // until the posts above the target have their real height. Revealing
+      // and scrolling in one go avoids a large layout shift.
+      stack.style.visibility = 'hidden';
+      goToFragment(postSlug, false).finally(() => {
+        stack.style.visibility = '';
+      });
     } else if (entries[0]) {
       loadEntry(entries[0]);
     }
+
+    // In-page fragment links (a post's own table of contents) don't reload
+    // the page, so handle them here too.
+    window.addEventListener('hashchange', () => {
+      const fragment = location.hash ? location.hash.slice(1) : null;
+      goToFragment(fragment, true);
+    });
   }).catch(() => {
     document.getElementById('loading').textContent = 'Failed to load section.';
   });

@@ -25,6 +25,7 @@ https://wecreatethis.pages.dev/* https://wecreatethis.com/:splat 301
 /blog/sw.js  /blog/sw.js  200
 /blog/manifest.json  /blog/manifest.json  200
 /blog/content-manifest.json  /blog/content-manifest.json  200
+/blog/sitemap.xml  /blog/sitemap.xml  200
 /blog/icon-192.png  /blog/icon-192.png  200
 /blog/icon-512.png  /blog/icon-512.png  200
 /blog/*  /blog/section  200
