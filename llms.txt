@@ -1,0 +1,31 @@
+# We Create This
+
+Personal site by James Daniel Whitford: a collection of small, offline-first
+web apps and a blog, all built with vanilla JavaScript and no frameworks.
+Every app is a progressive web app that works fully offline after first load.
+
+## Blog
+
+- [Blog](https://wecreatethis.com/blog/): writing on development tools and side projects
+- [Dev Tools](https://wecreatethis.com/blog/dev-tools): posts about development tooling and workflow
+- [Sitemap](https://wecreatethis.com/blog/sitemap.xml): every published section
+
+## Apps
+
+- [Birdle](https://wecreatethis.com/birdle/): bird spotting game using the eBird API
+- [Bird Bingo](https://wecreatethis.com/bird-bingo/): daily and practice bingo cards built from nearby eBird sightings
+- [Hardle](https://wecreatethis.com/hardle/): word guessing game with a daily puzzle and practice mode
+- [Beautiful Mind](https://wecreatethis.com/beautiful-mind/): offline notes app with text, image, video, and audio
+- [Tarot](https://wecreatethis.com/tarot/): tarot card reading app
+- [Perfect Day](https://wecreatethis.com/perfectday/): offline-first hiking map with lazy tile caching and GPS
+- [Starry Night](https://wecreatethis.com/starrynight/): skywatching conditions, cloud cover, moon phase, planet visibility
+- [Voice Notes](https://wecreatethis.com/voice-notes/): voice recording with AI transcription
+- [Git Notes](https://wecreatethis.com/git-notes/): note-taking app with a GitHub-inspired theme
+
+## Notes
+
+- Content is rendered client-side from markdown; blog posts live at
+  `/blog/content/{section}/{post}/index.md` and are listed in
+  [the content manifest](https://wecreatethis.com/blog/content-manifest.json).
+- Blog posts are addressed as fragments on their section page, so
+  `/blog/dev-tools#some-post` refers to a single post.

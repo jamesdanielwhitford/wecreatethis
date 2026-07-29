@@ -282,13 +282,17 @@ if (document.getElementById('post-stack')) {
     if (!section) return;
 
     const stack = document.getElementById('post-stack');
-    stack.innerHTML = section.posts.map(p => `
+    // Posts after the first reserve a rough height inline, so the space
+    // exists in the very first paint. Setting it from JS afterwards is too
+    // late: the stack has already been laid out, and the post growing into
+    // place shifts everything below it.
+    stack.innerHTML = section.posts.map((p, i) => `
       <article class="post-entry" id="${p.slug}" data-slug="${p.slug}" data-title="${escHtml(p.title).replace(/"/g, '&quot;')}" data-loaded="false">
         <div class="post-meta">
           <h2>${escHtml(p.title)}</h2>
           <div class="meta-line">${formatDate(p.date)}${p.author ? ' by ' + escHtml(p.author) : ''}</div>
         </div>
-        <div class="md-content post-placeholder">Loading…</div>
+        <div class="md-content post-placeholder"${i === 0 ? '' : ' style="min-height:70vh"'}></div>
       </article>
     `).join('');
 
@@ -310,6 +314,8 @@ if (document.getElementById('post-stack')) {
             stripLeadingTitle(body, title),
             post && post.images
           );
+          // Drop the reserved height now the real content sets it.
+          contentEl.style.minHeight = '';
         })
         .catch(() => {
           entry.querySelector('.md-content').textContent = 'Failed to load post.';
@@ -318,6 +324,12 @@ if (document.getElementById('post-stack')) {
 
     const entries = Array.from(stack.querySelectorAll('.post-entry'));
 
+    // Only the posts below the first one need reserving: the first renders
+    // before anything is on screen, but a later post growing from nothing
+    // pushes every sibling under it down, which is a layout shift the size
+    // of the post. Reserving a rough height caps that movement to the
+    // difference between the estimate and the real height. Cleared as soon
+    // as the post renders.
     // Lazy-load posts as they approach the viewport.
     const loadObserver = new IntersectionObserver((observed) => {
       observed.forEach(o => { if (o.isIntersecting) loadEntry(o.target); });
