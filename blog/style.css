@@ -136,6 +136,17 @@ header nav span[aria-current] {
   scroll-margin-top: 24px;
 }
 
+/* A post is revealed only once it and every post above it have rendered
+   (see revealLoaded in app.js), so content is only ever appended below what
+   is already painted, never inserted above it. visibility (not display) so
+   hidden posts keep their boxes: the IntersectionObserver still sees them,
+   and invisible elements can shuffle freely without counting as layout
+   shifts. Height reservation cannot solve this - any estimate is
+   viewport-width-dependent and wrong by hundreds of px. */
+.post-entry:not(.is-revealed) {
+  visibility: hidden;
+}
+
 .post-entry:last-child {
   border-bottom: none;
   margin-bottom: 0;
