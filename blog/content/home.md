@@ -1,5 +1,9 @@
 Welcome to the blog.
 
+## Recipes
+
+- [Gochujang chicken ramen for four to six, shopped entirely at Woolworths](/blog/recipes#gochujang-chicken-ramen)
+
 ## Dev Tools
 
 - [Dev Tools](/blog/dev-tools)
