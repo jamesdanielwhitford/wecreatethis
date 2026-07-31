@@ -15,6 +15,20 @@
       ]
     },
     {
+      "path": "recipes",
+      "name": "Recipes",
+      "posts": [
+        {
+          "slug": "gochujang-chicken-ramen",
+          "title": "Gochujang chicken ramen for four to six, shopped entirely at Woolworths",
+          "date": "2026-07-31",
+          "order": null,
+          "description": "Chicken ramen with a rich gochujang and miso broth, scaled for four to six, with a Woolworths South Africa shopping list of real products and pack sizes.",
+          "author": "James Daniel Whitford"
+        }
+      ]
+    },
+    {
       "path": "test",
       "name": "Test",
       "posts": [

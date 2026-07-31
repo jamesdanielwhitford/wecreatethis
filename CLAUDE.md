@@ -17,6 +17,32 @@ This repository contains multiple offline-first web applications, each living in
 - **blog/** - Blog with markdown-based posts and offline support. Folder-driven content with nested sections (`content/{section...}/{post}/index.md`), scroll-through post stack, hand-authored homepage (`content/home.md`), auto-generated manifest (CI regenerates on push). See [blog/CLAUDE.md](blog/CLAUDE.md) for details, including how its service worker deliberately differs from the repo-wide SW rules.
 - **towersofhanoi/** - Tower of Hanoi agent benchmark. AI agents solve the puzzle via an MCP server (Pages Function + KV); live visualization, manual play, and leaderboard. See [towersofhanoi/CLAUDE.md](towersofhanoi/CLAUDE.md) for details.
 
+## CV and Portfolio Pages
+
+Not apps, so they follow none of the PWA conventions below (no service worker, no manifest,
+no offline requirement). Tailwind CDN + Inter, fixed A4 print layout.
+
+- `cv/` - general CV · `cv-fde/` - CV for Forward Deployed Engineer roles
+- `portfolio-fde/` - FDE portfolio · `technical-writing-portfolio/` - writing portfolio
+
+Each ships a checked-in PDF alongside its `index.html`. **The PDFs are generated from the
+pages, so any content edit leaves them stale — regenerate and commit them in the same change.**
+To regenerate: serve the repo, then render with headless Chrome `--print-to-pdf`, injecting
+`.no-print{display:none !important}` into a temp copy first. The page's own `.no-print` rule
+lives inside `@media print`, which `--print-to-pdf` does not reliably apply, so the
+Print/Download buttons otherwise appear in the output.
+
+**Verify a regenerated PDF by reading the rendered pages, not by extracting text** — the text
+is font-encoded and extraction reports every string as missing, including ones that are there.
+
+Print-CSS gotcha: `h2` carries `break-after: avoid`, so a long first `.job-entry` with
+`break-inside: avoid` cannot fit in what remains of page 1 and Chrome pushes the heading and
+the whole entry to page 2, leaving page 1 mostly blank. `cv-fde/` was fixed by letting job
+entries split; **`cv/` still has the original rule** and will do the same once its first entry
+grows past eight bullets.
+
+See `sessions/overview.md` for current content status.
+
 ## GitNotes Folder (Development Notes)
 
 **⚠️ DO NOT CONFUSE WITH git-notes APP**
