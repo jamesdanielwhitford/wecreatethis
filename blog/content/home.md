@@ -2,7 +2,7 @@ Welcome to the blog.
 
 ## Recipes
 
-- [Gochujang chicken ramen for four to six, shopped entirely at Woolworths](/blog/recipes#gochujang-chicken-ramen)
+- [Gochujang chicken ramen for four, shopped entirely at Woolworths](/blog/recipes#gochujang-chicken-ramen)
 
 ## Dev Tools
 
