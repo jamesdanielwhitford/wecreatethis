@@ -5,6 +5,14 @@
       "name": "Dev Tools",
       "posts": [
         {
+          "slug": "a-skill-structure-that-improves-itself",
+          "title": "A skill structure that improves itself",
+          "date": "2026-08-01",
+          "order": null,
+          "description": "Five sections, in order: goal, workflow, tools, files, and a closing instruction to keep all four current. The last section is what makes the first four maintainable by the agent that uses them.",
+          "author": "James Daniel Whitford"
+        },
+        {
           "slug": "how-to-write-sick-loops-in-claude-code",
           "title": "How to write (sick) loops in Claude Code",
           "date": "2026-06-19",
