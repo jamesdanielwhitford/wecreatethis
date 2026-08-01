@@ -370,3 +370,47 @@ header nav span[aria-current] {
 #home-content p {
   color: var(--muted);
 }
+
+/* Section table of contents. Shown when a section URL carries no post slug;
+   a slug switches the same page to single-post mode (see app.js). */
+.post-toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.post-toc .toc-item {
+  padding: 1.4rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.post-toc .toc-item:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+
+.post-toc .toc-date {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 0.3rem;
+}
+
+.post-toc .toc-title {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  margin-bottom: 0.4rem;
+}
+
+.post-toc .toc-title a {
+  text-decoration: none;
+}
+
+.post-toc .toc-title a:hover,
+.post-toc .toc-title a:focus-visible {
+  text-decoration: underline;
+}
+
+.post-toc .toc-description {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
