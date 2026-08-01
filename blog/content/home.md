@@ -1,17 +1,9 @@
 Welcome to the blog.
 
-## Recipes
+## Software
 
-- [Gochujang chicken ramen for four, shopped entirely at Woolworths](/blog/recipes#gochujang-chicken-ramen)
+### Dev Tools
 
-## Dev Tools
+Writing about Claude Code, agent skills, and the tooling around them.
 
 - [Dev Tools](/blog/dev-tools)
-
-## Test
-
-Rendering and navigation test content. Not real writing.
-
-- [Test](/blog/test)
-- [Test / Nested](/blog/test/nested)
-- [Test / Nested / Deeper](/blog/test/nested/deeper)

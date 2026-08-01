@@ -282,11 +282,43 @@ if (document.getElementById('post-stack')) {
     if (!section) return;
 
     const stack = document.getElementById('post-stack');
+
+    // Two modes on one page. Without a post slug the section is a table of
+    // contents; with one it renders that single post. Post links elsewhere on
+    // the site are all of the form /blog/{section}#{slug}, so those keep
+    // working and now open one post instead of a scroll-through stack.
+    if (!postSlug) {
+      // The reading-order toggle belongs to the stack, which this mode
+      // replaces; the TOC is already in the manifest's order.
+      const toggleEl = document.getElementById('sort-toggle');
+      if (toggleEl) toggleEl.style.display = 'none';
+      document.getElementById('post-stack').className = 'post-toc';
+      stack.innerHTML = `<ul>` + section.posts.map(p => `
+        <li class="toc-item">
+          <div class="toc-date">${formatDate(p.date)}</div>
+          <div class="toc-title"><a href="/blog/${section.path}#${p.slug}">${escHtml(p.title)}</a></div>
+          ${p.description ? `<div class="toc-description">${escHtml(p.description)}</div>` : ''}
+        </li>
+      `).join('') + `</ul>`;
+      stack.style.display = 'block';
+      return;
+    }
+
+    // Single-post mode: only the requested post is in the DOM, so the lazy
+    // loading and reading-order machinery below has one entry to work with.
+    const only = section.posts.filter(p => p.slug === postSlug);
+    if (!only.length) {
+      document.getElementById('loading').textContent = 'Post not found.';
+      document.getElementById('loading').style.display = 'block';
+      return;
+    }
+    document.title = only[0].title + ' - Blog';
+
     // Every post starts hidden and is revealed in stack order as it renders
     // (see revealLoaded), which is what keeps CLS at zero: posts render in
     // network-completion order, so without this a slow post landing above
     // already-painted siblings shoves them out of the viewport.
-    stack.innerHTML = section.posts.map((p) => `
+    stack.innerHTML = only.map((p) => `
       <article class="post-entry" id="${p.slug}" data-slug="${p.slug}" data-title="${escHtml(p.title).replace(/"/g, '&quot;')}" data-loaded="false">
         <div class="post-meta">
           <h2>${escHtml(p.title)}</h2>
