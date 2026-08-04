@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wecreatethis-v26';
+const CACHE_NAME = 'wecreatethis-v27';
 
 // App shell only, listed as canonical (extensionless) URLs since those are
 // the keys the fetch handler looks up. Content (home.md, post index.md
@@ -8,6 +8,7 @@ const ASSETS = [
   '/',
   '/section',
   '/app.js',
+  '/icons.js',
   '/style.css',
   '/manifest.json',
   '/sw-toast.js',

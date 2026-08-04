@@ -206,30 +206,179 @@ function parseBlogPath(sections) {
   return { sectionPath: fullPath, postSlug: null };
 }
 
-// Shared breadcrumb header: wecreatethis.com / section / subsection.
-// Every segment except the current page is a link.
-function renderCrumbs(sectionPath) {
-  const crumbs = document.getElementById('crumbs');
-  const parts = [`<a href="/">wecreatethis.com</a>`];
+const SITE_OWNER_NAME = 'James Daniel Whitford';
+const SITE_OWNER_EMAIL = 'james@wecreatethis.com';
 
-  if (sectionPath) {
-    const segments = sectionPath.split('/');
-    segments.forEach((seg, i) => {
-      const href = '/' + segments.slice(0, i + 1).join('/');
-      if (i === segments.length - 1) {
-        parts.push(`<span aria-current="page">${escHtml(seg)}</span>`);
-      } else {
-        parts.push(`<a href="${href}">${escHtml(seg)}</a>`);
-      }
-    });
-  }
+// Bio modal: same on every page (home, section, post). Built once and
+// appended to <body> lazily on first open.
+function ensureBioModal() {
+  let modal = document.getElementById('bio-modal');
+  if (modal) return modal;
 
-  crumbs.innerHTML = parts.join(' / ');
+  modal = document.createElement('div');
+  modal.id = 'bio-modal';
+  modal.className = 'modal-overlay';
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="bio-modal-title">
+      <button type="button" class="modal-close" aria-label="Close">${Icons.svg('x')}</button>
+      <div class="bio-avatar">${escHtml(initials(SITE_OWNER_NAME))}</div>
+      <h2 id="bio-modal-title">${escHtml(SITE_OWNER_NAME)}</h2>
+      <p class="bio-text">Writing on development tools, side projects, and whatever else is worth a post.</p>
+      <a class="bio-email" href="mailto:${SITE_OWNER_EMAIL}">${Icons.svg('mail')} ${SITE_OWNER_EMAIL}</a>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const close = () => { modal.hidden = true; };
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  modal.querySelector('.modal-close').addEventListener('click', close);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !modal.hidden) close();
+  });
+
+  return modal;
+}
+
+function openBioModal() {
+  ensureBioModal().hidden = false;
+}
+
+function profileButtonHtml() {
+  return `<button type="button" id="profile-btn" class="circle-btn" aria-label="About ${escHtml(SITE_OWNER_NAME)}">${escHtml(initials(SITE_OWNER_NAME))}</button>`;
+}
+
+// Home page header: left spacer (reserved, empty), centered wordmark,
+// right profile circle.
+function renderHomeHeader() {
+  const nav = document.getElementById('crumbs');
+  nav.className = 'top-nav';
+  nav.innerHTML = `
+    <span class="nav-slot nav-left" aria-hidden="true"></span>
+    <span class="nav-slot nav-center"><span class="nav-wordmark">wecreatethis.com</span></span>
+    <span class="nav-slot nav-right">${profileButtonHtml()}</span>
+  `;
+  nav.querySelector('#profile-btn').addEventListener('click', openBioModal);
+}
+
+// Section/folder page header: back arrow to the parent directory (or home
+// at the top level), centered folder title, right profile circle.
+function renderSectionHeader(sectionPath, title) {
+  const nav = document.getElementById('crumbs');
+  nav.className = 'top-nav';
+  const segments = sectionPath.split('/');
+  const parentHref = segments.length > 1 ? '/' + segments.slice(0, -1).join('/') : '/';
+
+  nav.innerHTML = `
+    <span class="nav-slot nav-left">
+      <a href="${parentHref}" class="circle-btn" aria-label="Back">${Icons.svg('arrowLeft')}</a>
+    </span>
+    <span class="nav-slot nav-center"><span class="nav-wordmark">${escHtml(title)}</span></span>
+    <span class="nav-slot nav-right">${profileButtonHtml()}</span>
+  `;
+  nav.querySelector('#profile-btn').addEventListener('click', openBioModal);
+}
+
+// Post page top nav: back to the section on the left, table-of-contents
+// modal on the right. No wordmark/title in the center; the post's own
+// title is the article's H1.
+function renderPostHeader(sectionPath, post, headings) {
+  const nav = document.getElementById('crumbs');
+  nav.className = 'top-nav';
+  const backHref = '/' + sectionPath;
+
+  nav.innerHTML = `
+    <span class="nav-slot nav-left">
+      <a href="${backHref}" class="circle-btn" aria-label="Back">${Icons.svg('arrowLeft')}</a>
+    </span>
+    <span class="nav-slot nav-center"></span>
+    <span class="nav-slot nav-right">
+      <button type="button" id="toc-btn" class="circle-btn" aria-label="Table of contents">${Icons.svg('list')}</button>
+    </span>
+  `;
+
+  const modal = document.createElement('div');
+  modal.id = 'toc-modal';
+  modal.className = 'modal-overlay';
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="toc-modal-title">
+      <button type="button" class="modal-close" aria-label="Close">${Icons.svg('x')}</button>
+      <h2 id="toc-modal-title">${escHtml(post.title)}</h2>
+      ${headings.length ? `
+        <ul class="toc-links">
+          ${headings.map(h => `<li><a href="#${h.id}">${h.text}</a></li>`).join('')}
+        </ul>
+      ` : ''}
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const close = () => { modal.hidden = true; };
+  const open = () => { modal.hidden = false; };
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  modal.querySelector('.modal-close').addEventListener('click', close);
+  modal.querySelectorAll('.toc-links a').forEach(a => a.addEventListener('click', close));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !modal.hidden) close();
+  });
+  nav.querySelector('#toc-btn').addEventListener('click', open);
+}
+
+// Bottom nav on post pages: previous/next post within the same section,
+// ordered exactly as the manifest (already sorted by build.js).
+function renderPostBottomNav(section, currentSlug) {
+  const bar = document.getElementById('bottom-nav');
+  if (!bar) return;
+  const idx = section.posts.findIndex(p => p.slug === currentSlug);
+  const prev = idx > 0 ? section.posts[idx - 1] : null;
+  const next = idx < section.posts.length - 1 ? section.posts[idx + 1] : null;
+
+  bar.innerHTML = `
+    <span class="nav-slot nav-left">
+      ${prev ? `<a href="/${section.path}/${prev.slug}" class="circle-btn" aria-label="Previous: ${escHtml(prev.title)}">${Icons.svg('chevronLeft')}</a>` : ''}
+    </span>
+    <span class="nav-slot nav-center"></span>
+    <span class="nav-slot nav-right">
+      ${next ? `<a href="/${section.path}/${next.slug}" class="circle-btn" aria-label="Next: ${escHtml(next.title)}">${Icons.svg('chevronRight')}</a>` : ''}
+    </span>
+  `;
+  bar.hidden = false;
+}
+
+// Post pages only: top and bottom nav fade out on scroll-down, reappear
+// instantly on scroll-up, and reappear once the page is scrolled to the
+// very bottom (so the nav is never permanently hidden after the last
+// upward scroll gesture on a short viewport).
+function setupPostScrollFade() {
+  const header = document.querySelector('header');
+  const bottomNav = document.getElementById('bottom-nav');
+  if (!header || !bottomNav) return;
+
+  let lastY = window.scrollY;
+
+  const setVisible = visible => {
+    header.classList.toggle('nav-hidden', !visible);
+    bottomNav.classList.toggle('nav-hidden', !visible);
+  };
+
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    const atBottom = y + window.innerHeight >= document.documentElement.scrollHeight - 1;
+
+    if (atBottom || y <= lastY) {
+      setVisible(true);
+    } else if (y > lastY) {
+      setVisible(false);
+    }
+
+    lastY = y;
+  }, { passive: true });
 }
 
 // Home page: renders content/home.md directly, hand-authored.
 if (document.getElementById('home-content')) {
-  renderCrumbs(null);
+  renderHomeHeader();
   const content = document.getElementById('home-content');
   fetch('/content/home.md')
     .then(r => r.text())
@@ -251,7 +400,6 @@ if (document.getElementById('home-content')) {
 if (document.getElementById('post-stack')) {
   loadManifest().then(({ sections }) => {
     const { sectionPath, postSlug } = parseBlogPath(sections);
-    renderCrumbs(sectionPath);
 
     const section = sections.find(s => s.path === sectionPath);
     const subsections = sectionPath
@@ -290,13 +438,22 @@ if (document.getElementById('post-stack')) {
         .then(r => r.text())
         .then(text => {
           const { body } = parseFrontmatter(text);
-          stack.querySelector('.md-content').innerHTML = renderMarkdown(
+          const content = stack.querySelector('.md-content');
+          content.innerHTML = renderMarkdown(
             stripLeadingTitle(body, post.title),
             post.images
           );
+
+          const headings = Array.from(content.querySelectorAll('h2'))
+            .filter(h => h.id)
+            .map(h => ({ id: h.id, text: h.textContent }));
+          renderPostHeader(section.path, post, headings);
+          renderPostBottomNav(section, postSlug);
+          setupPostScrollFade();
         })
         .catch(() => {
           stack.querySelector('.md-content').textContent = 'Failed to load post.';
+          renderPostHeader(section.path, post, []);
         });
       return;
     }
@@ -306,6 +463,7 @@ if (document.getElementById('post-stack')) {
     const name = section ? section.name : slugToName(sectionPath.split('/').pop());
     document.title = name + ' - wecreatethis.com';
     document.getElementById('section-title').textContent = name;
+    renderSectionHeader(sectionPath, name);
 
     // Fill the meta description from the section's own posts. Client-side,
     // so crawlers that don't run JS still only see the static fallback,

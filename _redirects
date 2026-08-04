@@ -23,6 +23,7 @@ https://wecreatethis.pages.dev/* https://wecreatethis.com/:splat 301
 /  /  200
 /content/*  /content/:splat  200
 /app.js  /app.js  200
+/icons.js  /icons.js  200
 /style.css  /style.css  200
 /sw.js  /sw.js  200
 /manifest.json  /manifest.json  200

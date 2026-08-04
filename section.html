@@ -10,11 +10,12 @@
   <title>wecreatethis.com</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/style.css">
+  <script src="/icons.js" defer></script>
   <script src="/sw-toast.js" defer></script>
 </head>
 <body>
   <header>
-    <nav id="crumbs" aria-label="Breadcrumb"></nav>
+    <nav id="crumbs" aria-label="Navigation"></nav>
   </header>
 
   <main>
@@ -27,6 +28,8 @@
     <div id="loading">Loading...</div>
     <div id="post-stack" style="display:none"></div>
   </main>
+
+  <nav id="bottom-nav" class="bottom-nav" hidden></nav>
 
   <script src="/app.js" defer></script>
   <script>
