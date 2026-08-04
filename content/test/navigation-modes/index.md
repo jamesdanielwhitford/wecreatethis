@@ -3,26 +3,23 @@ title: Navigation modes
 author: Test Suite
 date: 2026-07-28
 order: 2
-description: Every way of moving around the blog - post fragments within a section, heading anchors, sibling sections, nested subsections, and back to home.
+description: Every way of moving around the blog - post routes within a section, in-page heading anchors, sibling sections, nested subsections, and back to home.
 ---
 
 # Navigation modes
 
-The blog addresses posts by URL fragment within a section page, so this post exists to test each kind of link from inside rendered content.
+Every folder is its own route and every post is its own route (`/{section}/{post-slug}`). There is no scroll stack: a post page renders only that post, so this post exists to test each kind of link from inside rendered content.
 
-## Within this section
+## Other posts in this section
 
-These jump between posts in the same scroll stack. The page should not reload, and the target post should end up at the top of the viewport with the posts above it already fully rendered (not still showing "Loading...").
+Each of these is a full page navigation to that post's own URL, not a fragment jump within a shared stack:
 
-- [Up to the kitchen sink post](#kitchen-sink)
-- [Down to the third post](#ordering-and-dates)
+- [Kitchen sink](/test/kitchen-sink)
+- [Ordering and dates](/test/ordering-and-dates)
 
-## Heading anchors in another post
+## Heading anchors within a post
 
-These target a heading inside a different post in the same section. Both the bare form and the prefixed form should work:
-
-- [Kitchen sink: Tables (prefixed)](#h-tables)
-- [Kitchen sink: Code (prefixed)](#h-code)
+These only make sense inside the same post: a heading anchor targets an id on the current page, and does not reach into a different post. See the kitchen sink post's own table of contents for that case.
 
 ## Across sections
 
@@ -34,10 +31,10 @@ Full page navigations to other section URLs. Each relies on the `_redirects` wil
 - [Blog home](/)
 - [Main site](/)
 
-## Deep links
+## Direct links
 
-Copy these into the address bar to test a cold load that lands mid-stack:
+Copy these into the address bar to test a cold load straight to a route:
 
-- `/test#ordering-and-dates` should open the section already scrolled to the third post
-- `/test#h-tables` should open scrolled to the Tables heading of the first post
-- `/test/nested#nested-post-one` should open the nested section at its first post
+- `/test/ordering-and-dates` should open that post directly, standalone
+- `/test/kitchen-sink#h-tables` should open that post scrolled to the Tables heading
+- `/test/nested/nested-post-one` should open that post at three URL segments deep

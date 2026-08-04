@@ -7,7 +7,7 @@ Folder-driven markdown blog. Adding a post is adding a folder; everything else f
 ## Content model
 
 - `content/{section...}/{post-slug}/index.md`. Any folder containing an `index.md` is a **post**; the folder holding post folders is a **section**. Sections nest to any depth (`content/game-dev/godot/my-post/index.md` → section `game-dev/godot`).
-- Section URL: `/{section-path}`. All posts in a section render as one continuous scroll-through stack. Individual posts are addressed with a URL fragment: `/{section-path}#{post-slug}`.
+- Section URL: `/{section-path}`, a table of contents listing that section's own posts. Post URL: `/{section-path}/{post-slug}`, a real route rendering that one post standalone - **every folder and every post is its own route**, there is no shared multi-post stack.
 - A section page also lists any sections nested below it, so intermediate paths work as index pages.
 - Homepage is hand-authored at `content/home.md`, rendered at `/`. Which sections appear there, and how they're grouped, is edited by hand.
 - Frontmatter: `title`, `date` (YYYY-MM-DD), `author`, `description`, optional `order` (overrides date sort), optional `draft: true` (excluded from the manifest, stays in the repo).
@@ -33,20 +33,19 @@ It also:
 - Code blocks get a tiny language-agnostic highlighter (comments, strings, numbers, shared keyword set), no libraries. `//` preceded by `:` is not treated as a comment, so URLs survive.
 - Renderer trick: fenced code, blockquotes, and tables are extracted behind NUL-delimited placeholders before other transforms, then restored at the end.
 - **Paragraph wrapping skips only block-level tags.** Inline tags (`<strong>`, `<em>`, `<a>`, `<code>`) must still be wrapped, or a line starting with bold text silently loses its `<p>` and runs together with the next line. This was a real bug affecting 22 paragraphs in the published post.
-- **Heading ids are prefixed `h-`** (`headingId()`), so they can never collide with a post slug, which shares the same URL fragment. Hand-written bare anchors (`#some-heading`) fall back to the prefixed id at scroll time.
-- A post's leading `# H1` is dropped when it matches the frontmatter title, since the stack already renders the title from the manifest.
+- **Heading ids are prefixed `h-`** (`headingId()`). The prefix predates the routing change (it used to avoid colliding with a post slug sharing the same URL fragment) but is kept: it's a harmless, cheap guarantee that a heading id can never collide with anything else on the page.
+- A post's leading `# H1` is dropped when it matches the frontmatter title, since the post page already renders the title in the header (`#section-title`) from the manifest.
 - **Known bug (not yet fixed): loose ordered lists.** A numbered list written with blank lines between items renders as N separate one-item `<ol>`s instead of one list, because the paragraph/blank-line split runs before list detection. Unordered lists likely have the same bug, invisibly (bullets don't number). Workaround: no blank lines between list items. See `sessions/session-014-2026-07-31.md` for the full repro; fix belongs in the list-handling regexes in `app.js`.
 
-### Reveal frontier (do not replace with height reservation)
+### Routing: every folder and post is its own route (no more shared stack)
 
-The stack paints in manifest order but posts render in **network-completion order**, so a slow post landing above already-painted siblings shoves them out of the viewport. That was CLS ~0.298 in prod.
+Originally all posts in a section rendered as one continuous scroll-through stack, addressed by URL fragment (`/{section}#{post-slug}`), with lazy loading and a "reveal frontier" mechanism to keep CLS at zero as posts rendered out of order. That model is gone: `/{section...}/{post-slug}` is now a real path, and a post page renders **only that one post**, standalone, with nothing else in the DOM to load, sequence, or scroll into.
 
-`revealLoaded()` in `app.js` fixes it: a post gets `is-revealed` only once it **and every post above it** have rendered, so content is only ever appended below what is painted, never inserted above. `.post-entry:not(.is-revealed)` hides with **`visibility: hidden`, not `display: none`** - hidden posts keep their layout boxes, so the IntersectionObserver still fires and lazy loading keeps working, while invisible elements shuffle freely without counting as shifts.
+`parseBlogPath()` in `app.js` splits the URL into section + post by checking the manifest: everything but the last path segment is tried as a section path, and if that section has a post whose slug matches the last segment, it's a post page; otherwise the whole path is the section (a table of contents). This means it needs the manifest loaded first, unlike the old fragment-based version.
 
-Three things that must stay true:
-- The failure branch in `loadEntry` also sets `is-loaded` and calls `revealLoaded()`. Without it one failed fetch leaves every post below it hidden forever.
-- `revealLoaded` toggles `is-revealed` **both ways** and iterates the live DOM, because the reading-order toggle can move a revealed post below an unloaded one.
-- **Height reservation cannot work here** and was tried four ways. Estimates are viewport-width-dependent (the same markdown is ~3700px at 412px wide) and wrong by hundreds of px. `content-visibility` is worse still: it never skips elements near the viewport, so the reservation never applies where it matters, and its initial unskip adds its own shift (measured 0.456, worse than the bug). Full write-up in `sessions/session-010-cls-diagnosis.md`.
+Because there's only ever one post on a post page, the old reveal-frontier/lazy-load/reading-order-toggle machinery (`revealLoaded()`, the `IntersectionObserver`, `is-loaded`/`is-revealed` bookkeeping, `#sort-toggle`) no longer exists - there's nothing to sequence against. In-page heading anchors (`#h-...`) still work, natively, since they're just ids on the single page that's already loaded.
+
+`content/test/` still exercises this: `navigation-modes` covers cross-post and cross-section links, `ordering-and-dates` covers section-TOC sort order, and the two nested posts cover multi-segment path parsing (3 and 4 segments deep).
 
 ## Theme
 
@@ -68,8 +67,8 @@ This is now the site's only service worker (the old root app-hub `sw.js` is arch
 
 ## Known issues
 
-- When debugging layout shift here, remember `LayoutShiftAttribution` rects are **clipped to the viewport** - a current rect of `0x0` means the element was pushed out of view, not that it collapsed. Misreading this cost three failed fix attempts.
-- **SEO ceiling.** Posts are `#fragment`s on a section page, so every post in a section shares one URL and one `<title>`. Search results and social cards can only ever point at a section. Fixing this means emitting static per-post HTML from `build.js` (viable - it already parses every post - but not done).
+- When debugging layout shift here, remember `LayoutShiftAttribution` rects are **clipped to the viewport** - a current rect of `0x0` means the element was pushed out of view, not that it collapsed. Misreading this cost three failed fix attempts. This applied to the old scroll-stack model; with one post per page there is much less surface for CLS bugs to hide in, but the gotcha is worth keeping in mind for any future multi-element layout.
+- **SEO ceiling, mostly resolved.** Posts now have their own URL and their own `<title>`/meta description (set client-side in `app.js`), and the sitemap lists every post individually. What's still missing is static HTML: content is still rendered client-side from markdown fetched at runtime, so a crawler that doesn't run JS sees an empty shell. Fixing that means emitting static per-post HTML from `build.js` (viable - it already parses every post - but not done).
 - `content/test/` is **published, not draft**, and linked from the homepage. It's renderer/navigation test content, kept live deliberately for testing on the real site; flip to `draft: true` when done.
 - **Loose ordered lists break** - see the list-rendering note above.
 - `archive/app-hub/index.html`'s internal links (styles.css, icon-192.png, its own service-worker registration at scope `/`) are stale now that it no longer lives at the actual root - harmless since nothing links to it and it isn't in the sitemap, but don't load it directly expecting it to render or behave correctly.

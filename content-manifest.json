@@ -53,7 +53,7 @@
           "title": "Navigation modes",
           "date": "2026-07-28",
           "order": 2,
-          "description": "Every way of moving around the blog - post fragments within a section, heading anchors, sibling sections, nested subsections, and back to home.",
+          "description": "Every way of moving around the blog - post routes within a section, in-page heading anchors, sibling sections, nested subsections, and back to home.",
           "author": "Test Suite"
         },
         {
@@ -61,7 +61,7 @@
           "title": "Ordering and dates",
           "date": "2026-07-27",
           "order": 3,
-          "description": "The third post in the section, used to test the reading-order toggle, the scroll stack running to its end, and deep links that land on the last post.",
+          "description": "The third post in the section by explicit order, used to check the section table of contents sorts correctly and that this standalone post page renders on its own route.",
           "author": "Test Suite"
         },
         {
@@ -101,7 +101,7 @@
           "title": "Nested post one",
           "date": "2026-07-26",
           "order": null,
-          "description": "A post one level down, used to check that nested section URLs, breadcrumbs, and subsection listings all work.",
+          "description": "A post one level down, used to check that nested section URLs, breadcrumbs, and post routes at any depth all work.",
           "author": "Test Suite"
         }
       ]
@@ -115,7 +115,7 @@
           "title": "Deep post",
           "date": "2026-07-25",
           "order": null,
-          "description": "Three levels deep, to confirm section nesting has no depth limit and the breadcrumb keeps every ancestor linkable.",
+          "description": "Three section levels deep, to confirm section nesting has no depth limit, the breadcrumb keeps every ancestor linkable, and post-route parsing still resolves the last segment as a post at any depth.",
           "author": "Test Suite"
         }
       ]

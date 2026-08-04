@@ -182,36 +182,35 @@ function buildManifest() {
   writeSitemap(sections);
 }
 
-// One URL per section (posts live inside a section page as #fragments, so
-// they are not separately addressable) plus the home page.
+// One URL per section, one URL per post (each is its own route:
+// /{section}/{post-slug}), plus the home page.
 function writeSitemap(sections) {
-  const urls = [`${SITE_ORIGIN}/`].concat(
-    sections.map(s => `${SITE_ORIGIN}/${s.path}`)
-  );
+  const entries = [{ url: `${SITE_ORIGIN}/`, lastmod: '' }];
 
-  const lastmodFor = sectionPath => {
-    if (!sectionPath) return '';
-    const section = sections.find(s => s.path === sectionPath);
-    if (!section) return '';
+  sections.forEach(section => {
     const dates = section.posts.map(p => p.date).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
-    return dates.sort().pop() || '';
-  };
+    entries.push({ url: `${SITE_ORIGIN}/${section.path}`, lastmod: dates.sort().pop() || '' });
+    section.posts.forEach(post => {
+      entries.push({
+        url: `${SITE_ORIGIN}/${section.path}/${post.slug}`,
+        lastmod: /^\d{4}-\d{2}-\d{2}$/.test(post.date) ? post.date : '',
+      });
+    });
+  });
 
-  const body = urls.map(url => {
-    const sectionPath = url.replace(`${SITE_ORIGIN}/`, '').replace(/\/$/, '');
-    const lastmod = lastmodFor(sectionPath);
-    return '  <url>\n' +
-      `    <loc>${url}</loc>\n` +
-      (lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : '') +
-      '  </url>';
-  }).join('\n');
+  const body = entries.map(({ url, lastmod }) =>
+    '  <url>\n' +
+    `    <loc>${url}</loc>\n` +
+    (lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : '') +
+    '  </url>'
+  ).join('\n');
 
   fs.writeFileSync(SITEMAP_FILE,
     '<?xml version="1.0" encoding="UTF-8"?>\n' +
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
     body + '\n</urlset>\n'
   );
-  console.log(`Wrote ${SITEMAP_FILE} (${urls.length} urls)`);
+  console.log(`Wrote ${SITEMAP_FILE} (${entries.length} urls)`);
 }
 
 buildManifest();

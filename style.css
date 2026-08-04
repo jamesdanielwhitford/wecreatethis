@@ -93,22 +93,6 @@ header nav span[aria-current] {
   margin-bottom: 40px;
 }
 
-#sort-toggle {
-  display: none;
-  font-family: inherit;
-  font-size: 0.85rem;
-  color: var(--muted);
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-#sort-toggle:hover {
-  color: var(--text);
-}
-
 #subsections {
   display: none;
   list-style: none;
@@ -136,17 +120,6 @@ header nav span[aria-current] {
   scroll-margin-top: 24px;
 }
 
-/* A post is revealed only once it and every post above it have rendered
-   (see revealLoaded in app.js), so content is only ever appended below what
-   is already painted, never inserted above it. visibility (not display) so
-   hidden posts keep their boxes: the IntersectionObserver still sees them,
-   and invisible elements can shuffle freely without counting as layout
-   shifts. Height reservation cannot solve this - any estimate is
-   viewport-width-dependent and wrong by hundreds of px. */
-.post-entry:not(.is-revealed) {
-  visibility: hidden;
-}
-
 .post-entry:last-child {
   border-bottom: none;
   margin-bottom: 0;
@@ -155,13 +128,6 @@ header nav span[aria-current] {
 
 .post-meta {
   margin-bottom: 32px;
-}
-
-.post-meta h2 {
-  font-size: 1.6rem;
-  font-weight: normal;
-  line-height: 1.3;
-  margin-bottom: 12px;
 }
 
 .post-meta .meta-line {
@@ -174,15 +140,6 @@ header nav span[aria-current] {
 .md-content {
   line-height: 1.8;
   font-size: 1rem;
-}
-
-/* Unloaded posts get NO reserved height on purpose. Any guess is wrong for
-   most posts and collapses to the real height on load, which is a layout
-   shift of exactly the amount guessed. Posts render fast enough that an
-   unstyled gap is never really seen, and a placeholder that occupies no
-   space cannot shift anything when it fills in. */
-.md-content.post-placeholder {
-  color: var(--muted);
 }
 
 /* Headings carry anchor ids, so keep linked headings off the viewport edge. */

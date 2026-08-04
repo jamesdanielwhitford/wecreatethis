@@ -185,14 +185,25 @@ function loadManifest() {
   return fetch('/content-manifest.json').then(r => r.json());
 }
 
-// Parses the section path from /{section...} (nesting allowed).
-// The post, if any, is in location.hash.
-function parseBlogPath() {
+// Splits /{section...}/{post-slug} into its section and post parts. Every
+// folder and every post is its own route, so this has to check the manifest
+// to know whether the last path segment is a post slug or another section
+// level: /a/b could be section "a" + post "b", or section "a/b" with no
+// post selected.
+function parseBlogPath(sections) {
   const parts = location.pathname.replace(/^\//, '').split('/').filter(Boolean);
-  return {
-    sectionPath: parts.join('/') || null,
-    postSlug: location.hash ? location.hash.slice(1) : null,
-  };
+  const fullPath = parts.join('/') || null;
+
+  if (parts.length > 1) {
+    const parentPath = parts.slice(0, -1).join('/');
+    const slug = parts[parts.length - 1];
+    const parent = sections.find(s => s.path === parentPath);
+    if (parent && parent.posts.some(p => p.slug === slug)) {
+      return { sectionPath: parentPath, postSlug: slug };
+    }
+  }
+
+  return { sectionPath: fullPath, postSlug: null };
 }
 
 // Shared breadcrumb header: wecreatethis.com / section / subsection.
@@ -233,23 +244,65 @@ if (document.getElementById('home-content')) {
     });
 }
 
-// Section page: renders every post in the section as a scrollable stack,
-// so scrolling past one post moves straight into the next/previous one.
-// A #post-slug in the URL scrolls to that post on load; the URL does not
-// follow the scroll afterwards.
+// Section page: lists the posts (and any nested sections) at this path.
+// Post page: renders exactly one post, standalone. Every folder and every
+// post is its own route (/{section...}/{post-slug}); there is no
+// multi-post stack, so nothing here loads or scrolls to another post.
 if (document.getElementById('post-stack')) {
-  const { sectionPath, postSlug } = parseBlogPath();
-  renderCrumbs(sectionPath);
-
   loadManifest().then(({ sections }) => {
+    const { sectionPath, postSlug } = parseBlogPath(sections);
+    renderCrumbs(sectionPath);
+
     const section = sections.find(s => s.path === sectionPath);
-    const subsections = sections.filter(s => s.path.startsWith(sectionPath + '/'));
+    const subsections = sectionPath
+      ? sections.filter(s => s.path.startsWith(sectionPath + '/'))
+      : [];
 
     if (!section && subsections.length === 0) {
       document.getElementById('loading').textContent = 'Section not found.';
       return;
     }
 
+    const stack = document.getElementById('post-stack');
+    document.getElementById('loading').style.display = 'none';
+
+    // Post page: render the single requested post and stop.
+    if (postSlug) {
+      const post = section.posts.find(p => p.slug === postSlug);
+      document.title = post.title + ' - wecreatethis.com';
+      document.getElementById('section-title').textContent = post.title;
+
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc && post.description) metaDesc.setAttribute('content', post.description);
+
+      stack.className = 'post-single';
+      stack.innerHTML = `
+        <article class="post-entry is-revealed">
+          <div class="post-meta">
+            <div class="meta-line">${formatDate(post.date)}${post.author ? ' by ' + escHtml(post.author) : ''}</div>
+          </div>
+          <div class="md-content"></div>
+        </article>
+      `;
+      stack.style.display = 'block';
+
+      fetch(`/content/${section.path}/${postSlug}/index.md`)
+        .then(r => r.text())
+        .then(text => {
+          const { body } = parseFrontmatter(text);
+          stack.querySelector('.md-content').innerHTML = renderMarkdown(
+            stripLeadingTitle(body, post.title),
+            post.images
+          );
+        })
+        .catch(() => {
+          stack.querySelector('.md-content').textContent = 'Failed to load post.';
+        });
+      return;
+    }
+
+    // Section page: table of contents for this section's own posts, plus
+    // links to any nested sections.
     const name = section ? section.name : slugToName(sectionPath.split('/').pop());
     document.title = name + ' - wecreatethis.com';
     document.getElementById('section-title').textContent = name;
@@ -274,189 +327,17 @@ if (document.getElementById('post-stack')) {
       list.style.display = 'block';
     }
 
-    document.getElementById('loading').style.display = 'none';
-
     if (!section) return;
 
-    const stack = document.getElementById('post-stack');
-
-    // Two modes on one page. Without a post slug the section is a table of
-    // contents; with one it renders that single post. Post links elsewhere on
-    // the site are all of the form /{section}#{slug}, so those keep
-    // working and now open one post instead of a scroll-through stack.
-    if (!postSlug) {
-      // The reading-order toggle belongs to the stack, which this mode
-      // replaces; the TOC is already in the manifest's order.
-      const toggleEl = document.getElementById('sort-toggle');
-      if (toggleEl) toggleEl.style.display = 'none';
-      document.getElementById('post-stack').className = 'post-toc';
-      stack.innerHTML = `<ul>` + section.posts.map(p => `
-        <li class="toc-item">
-          <div class="toc-date">${formatDate(p.date)}</div>
-          <div class="toc-title"><a href="/${section.path}#${p.slug}">${escHtml(p.title)}</a></div>
-          ${p.description ? `<div class="toc-description">${escHtml(p.description)}</div>` : ''}
-        </li>
-      `).join('') + `</ul>`;
-      stack.style.display = 'block';
-      return;
-    }
-
-    // Single-post mode: only the requested post is in the DOM, so the lazy
-    // loading and reading-order machinery below has one entry to work with.
-    const only = section.posts.filter(p => p.slug === postSlug);
-    if (!only.length) {
-      document.getElementById('loading').textContent = 'Post not found.';
-      document.getElementById('loading').style.display = 'block';
-      return;
-    }
-    document.title = only[0].title + ' - wecreatethis.com';
-
-    // Every post starts hidden and is revealed in stack order as it renders
-    // (see revealLoaded), which is what keeps CLS at zero: posts render in
-    // network-completion order, so without this a slow post landing above
-    // already-painted siblings shoves them out of the viewport.
-    stack.innerHTML = only.map((p) => `
-      <article class="post-entry" id="${p.slug}" data-slug="${p.slug}" data-title="${escHtml(p.title).replace(/"/g, '&quot;')}" data-loaded="false">
-        <div class="post-meta">
-          <h2>${escHtml(p.title)}</h2>
-          <div class="meta-line">${formatDate(p.date)}${p.author ? ' by ' + escHtml(p.author) : ''}</div>
-        </div>
-        <div class="md-content post-placeholder"></div>
-      </article>
-    `).join('');
-
+    stack.className = 'post-toc';
+    stack.innerHTML = `<ul>` + section.posts.map(p => `
+      <li class="toc-item">
+        <div class="toc-date">${formatDate(p.date)}</div>
+        <div class="toc-title"><a href="/${section.path}/${p.slug}">${escHtml(p.title)}</a></div>
+        ${p.description ? `<div class="toc-description">${escHtml(p.description)}</div>` : ''}
+      </li>
+    `).join('') + `</ul>`;
     stack.style.display = 'block';
-
-    // Reveal the contiguous prefix of rendered posts, stopping at the first
-    // one that has not landed yet. Painted content is then only ever
-    // appended below, never displaced. Iterates the live DOM, not `entries`,
-    // so it stays correct after the reading-order toggle reorders the stack.
-    function revealLoaded() {
-      let atFrontier = true;
-      for (const e of stack.querySelectorAll('.post-entry')) {
-        if (!e.classList.contains('is-loaded')) atFrontier = false;
-        // Toggled both ways: the reading-order toggle can move a revealed
-        // post below an unloaded one, which has to hide again or it would
-        // be displaced when that post finally lands.
-        e.classList.toggle('is-revealed', atFrontier);
-      }
-    }
-
-    function loadEntry(entry) {
-      if (entry.dataset.loaded === 'true') return Promise.resolve();
-      entry.dataset.loaded = 'true';
-      const slug = entry.dataset.slug;
-      const title = entry.dataset.title || '';
-      const post = section.posts.find(p => p.slug === slug);
-      return fetch(`/content/${section.path}/${slug}/index.md`)
-        .then(r => r.text())
-        .then(text => {
-          const { body } = parseFrontmatter(text);
-          const contentEl = entry.querySelector('.md-content');
-          contentEl.classList.remove('post-placeholder');
-          contentEl.innerHTML = renderMarkdown(
-            stripLeadingTitle(body, title),
-            post && post.images
-          );
-          entry.classList.add('is-loaded');
-          revealLoaded();
-        })
-        .catch(() => {
-          entry.querySelector('.md-content').textContent = 'Failed to load post.';
-          // The error message is this post's final size, so the frontier can
-          // move past it. Without this a failed fetch leaves every post
-          // below it hidden forever.
-          entry.classList.add('is-loaded');
-          revealLoaded();
-        });
-    }
-
-    const entries = Array.from(stack.querySelectorAll('.post-entry'));
-
-    // Lazy-load posts as they approach the viewport. Hidden posts keep their
-    // layout boxes (visibility, not display), so this still fires for them.
-    const loadObserver = new IntersectionObserver((observed) => {
-      observed.forEach(o => { if (o.isIntersecting) loadEntry(o.target); });
-    }, { rootMargin: '600px 0px' });
-    entries.forEach(entry => loadObserver.observe(entry));
-
-    // Reading-order toggle: flips the stack between newest-first and
-    // oldest-first. Only shown when there is more than one post.
-    if (entries.length > 1) {
-      const toggle = document.getElementById('sort-toggle');
-      // Work out which way the manifest order runs from the post dates;
-      // sections ordered by an explicit `order` field just get "reversed".
-      const first = section.posts[0].date;
-      const last = section.posts[section.posts.length - 1].date;
-      let direction = first && last ? (first >= last ? 'newest' : 'oldest') : null;
-
-      function label() {
-        if (!direction) return 'Reverse order';
-        return direction === 'newest' ? 'Reading: newest first' : 'Reading: oldest first';
-      }
-
-      toggle.textContent = label();
-      toggle.style.display = 'inline-block';
-      toggle.addEventListener('click', () => {
-        entries.reverse();
-        entries.forEach(e => stack.appendChild(e));
-        // The frontier is positional, so it has to be recomputed against the
-        // new order: an unloaded post may now sit above loaded ones.
-        revealLoaded();
-        if (direction) direction = direction === 'newest' ? 'oldest' : 'newest';
-        toggle.textContent = label();
-        window.scrollTo({ top: 0 });
-      });
-    }
-
-    // Jump to a fragment: either a post slug (an article in the stack) or a
-    // heading anchor inside a post (prefixed `h-`, see headingId).
-    // Posts above the target are loaded first, otherwise they expand from
-    // short placeholders to full content after the scroll and push the
-    // target out of view.
-    function goToFragment(fragment, smooth) {
-      if (!fragment) return Promise.resolve(false);
-
-      const post = document.getElementById(fragment);
-      if (post && post.classList.contains('post-entry')) {
-        const above = entries.slice(0, entries.indexOf(post));
-        return Promise.all(above.concat(post).map(loadEntry)).then(() => {
-          post.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
-          return true;
-        });
-      }
-
-      // Heading anchors only exist once their post is rendered, so load
-      // everything, then look again. Bare anchors (`#some-heading`, as
-      // written by hand in a post's own table of contents) also resolve
-      // against the prefixed id.
-      return Promise.all(entries.map(loadEntry)).then(() => {
-        const heading = document.getElementById(fragment) ||
-          document.getElementById(HEADING_ID_PREFIX + fragment);
-        if (!heading) return false;
-        heading.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
-        return true;
-      });
-    }
-
-    if (postSlug) {
-      // Deep link: the stack is still all placeholders, so keep it hidden
-      // until the posts above the target have their real height. Revealing
-      // and scrolling in one go avoids a large layout shift.
-      stack.style.visibility = 'hidden';
-      goToFragment(postSlug, false).finally(() => {
-        stack.style.visibility = '';
-      });
-    } else if (entries[0]) {
-      loadEntry(entries[0]);
-    }
-
-    // In-page fragment links (a post's own table of contents) don't reload
-    // the page, so handle them here too.
-    window.addEventListener('hashchange', () => {
-      const fragment = location.hash ? location.hash.slice(1) : null;
-      goToFragment(fragment, true);
-    });
   }).catch(() => {
     document.getElementById('loading').textContent = 'Failed to load section.';
   });
