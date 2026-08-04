@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://wecreatethis.com/blog/</loc>
+    <loc>https://wecreatethis.com/</loc>
   </url>
   <url>
-    <loc>https://wecreatethis.com/blog/dev-tools</loc>
+    <loc>https://wecreatethis.com/dev-tools</loc>
     <lastmod>2026-08-01</lastmod>
   </url>
   <url>
-    <loc>https://wecreatethis.com/blog/recipes</loc>
+    <loc>https://wecreatethis.com/recipes</loc>
     <lastmod>2026-07-31</lastmod>
   </url>
   <url>
-    <loc>https://wecreatethis.com/blog/test</loc>
+    <loc>https://wecreatethis.com/test</loc>
     <lastmod>2026-07-29</lastmod>
   </url>
   <url>
-    <loc>https://wecreatethis.com/blog/test/nested</loc>
+    <loc>https://wecreatethis.com/test/nested</loc>
     <lastmod>2026-07-26</lastmod>
   </url>
   <url>
-    <loc>https://wecreatethis.com/blog/test/nested/deeper</loc>
+    <loc>https://wecreatethis.com/test/nested/deeper</loc>
     <lastmod>2026-07-25</lastmod>
   </url>
 </urlset>

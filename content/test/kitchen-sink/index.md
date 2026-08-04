@@ -111,6 +111,6 @@ plain preformatted text
 Navigation targets, used by the other test posts:
 
 - [Second test post, same section](#navigation-modes)
-- [The nested subsection](/blog/test/nested)
-- [The dev-tools section](/blog/dev-tools)
-- [Blog home](/blog/)
+- [The nested subsection](/test/nested)
+- [The dev-tools section](/dev-tools)
+- [Blog home](/)

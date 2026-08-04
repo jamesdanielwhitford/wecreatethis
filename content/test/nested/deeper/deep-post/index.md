@@ -7,16 +7,16 @@ description: Three levels deep, to confirm section nesting has no depth limit an
 
 # Deep post
 
-Section path `test/nested/deeper`, reached at `/blog/test/nested/deeper`. This is the deepest test content, confirming the `/blog/*` wildcard handles any depth.
+Section path `test/nested/deeper`, reached at `/test/nested/deeper`. This is the deepest test content, confirming the `/*` wildcard handles any depth.
 
 ## What to check
 
-- The breadcrumb reads `wecreatethis.com / blog / test / nested / deeper`
+- The breadcrumb reads `wecreatethis.com / test / nested / deeper`
 - Every ancestor segment is a working link
 - This section has only one post, so the reading-order toggle should be hidden
 
 ## Links back up
 
-- [Parent: nested](/blog/test/nested)
-- [Grandparent: test](/blog/test)
-- [Blog home](/blog/)
+- [Parent: nested](/test/nested)
+- [Grandparent: test](/test)
+- [Blog home](/)

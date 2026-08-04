@@ -6,4 +6,4 @@ Welcome to the blog.
 
 Writing about Claude Code, agent skills, and the tooling around them.
 
-- [Dev Tools](/blog/dev-tools)
+- [Dev Tools](/dev-tools)

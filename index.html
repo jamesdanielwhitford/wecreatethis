@@ -3,110 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#333">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="We Create This">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#14140f" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="Writing on development tools, side projects, and whatever else is worth a post.">
   <title>wecreatethis.com</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="/style.css">
   <script src="/sw-toast.js" defer></script>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="game-navbar">
-    <span style="font-weight: bold; font-size: 18px;">wecreatethis.com</span>
-    <a href="/contact" style="position: absolute; right: 20px; font-size: 14px; font-weight: 500; color: #333; text-decoration: none;">Contact</a>
-  </nav>
+  <header>
+    <nav id="crumbs" aria-label="Breadcrumb"></nav>
+  </header>
 
-  <div class="button-container">
-    <!-- <div class="app-item">
-      <a href="/beautiful-mind/" class="app-btn" style="background-image: url('/beautiful-mind/icon-192.png');"></a>
-      <span class="app-name">Beautiful Mind</span>
-    </div> -->
+  <main>
+    <div id="loading">Loading...</div>
+    <div id="home-content" class="md-content" style="display:none"></div>
+  </main>
 
-    <div class="app-item">
-      <a href="/birdle/" class="app-btn" style="background-image: url('/birdle/icon-192.png');"></a>
-      <span class="app-name">Birdle</span>
-    </div>
-
-    <div class="app-item">
-      <a href="/bird-bingo/" class="app-btn" style="background-image: url('/bird-bingo/icon-192.png');"></a>
-      <span class="app-name">Bird Bingo</span>
-    </div>
-
-    <div class="app-item">
-      <a href="/tarot/" class="app-btn" style="background-image: url('/tarot/icon-192.png');"></a>
-      <span class="app-name">Tarot</span>
-    </div>
-
-    <div class="app-item">
-      <a href="/hardle/" class="app-btn" style="background-image: url('/hardle/icon-192.png');"></a>
-      <span class="app-name">Hardle</span>
-    </div>
-
-    <!-- <div class="app-item">
-      <a href="/perfectday/" class="app-btn" style="background-image: url('/perfectday/icon-192.png');"></a>
-      <span class="app-name">Perfect Day</span>
-    </div> -->
-
-    <!-- <div class="app-item">
-      <a href="/chessle/" class="app-btn" style="background-image: url('/chessle/icon-192.png');"></a>
-      <span class="app-name">Chessle</span>
-    </div> -->
-
-    <div class="app-item">
-      <a href="/longform/" class="app-btn" style="background-color: #02db02; background-image: url('/longform/icon-192.png');"></a>
-      <span class="app-name">Long Form</span>
-    </div>
-
-    <div class="app-item">
-      <a href="/voice-notes/" class="app-btn" style="background-color: #1a1a2e; background-image: url('/voice-notes/icon-192.png');"></a>
-      <span class="app-name">Voice Notes</span>
-    </div>
-
-    <div class="app-item">
-      <a href="/starrynight/" class="app-btn" style="background-color: #050a05; background-image: url('/starrynight/icon-192.png');"></a>
-      <span class="app-name">Starry Night</span>
-    </div>
-
-    <div class="app-item">
-      <a href="/slowread/" class="app-btn" style="background-color: #000; background-image: url('/slowread/icon-192.png');"></a>
-      <span class="app-name">Slow Read</span>
-    </div>
-
-    <div class="app-item">
-      <a href="/blog/" class="app-btn" style="background-color: #fff; background-image: url('/blog/icon-192.png'); border: 1px solid #e0e0e0;"></a>
-      <span class="app-name">Blog</span>
-    </div>
-
-    <div class="app-item">
-      <a href="/chesstimer/" class="app-btn" style="background-color: #1E1E1E; background-image: url('/chesstimer/icon-192.png');"></a>
-      <span class="app-name">Chess Timer</span>
-    </div>
-
-    <div class="app-item">
-      <a href="/pokemon/" class="app-btn" style="background-color: #ef4444;"></a>
-      <span class="app-name">Pokémon</span>
-    </div>
-  </div>
-
+  <script src="/app.js" defer></script>
   <script>
     if ('serviceWorker' in navigator) {
-      // Clean up old/orphaned service workers from deleted projects
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        const validScopes = ['/', '/beautiful-mind/', '/bird-bingo/', '/birdle/', '/blog/', '/chessle/', '/chesstimer/', '/git-notes/', '/hardle/', '/inkwell/', '/longform/', '/perfectday/', '/slowread/', '/starrynight/', '/symbolicritual/', '/tarot/', '/voice-notes/'];
-        registrations.forEach(registration => {
-          const scope = new URL(registration.scope).pathname;
-          if (!validScopes.includes(scope)) {
-            console.log('Unregistering orphaned service worker:', scope);
-            registration.unregister();
-          }
-        });
-      });
-
-      // Register the homepage service worker
       navigator.serviceWorker.register('/sw.js', { scope: '/' });
     }
   </script>

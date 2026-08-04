@@ -27,4 +27,4 @@ The last post in a section has no bottom border and no trailing gap, so the page
 
 - [First post](#kitchen-sink)
 - [Second post](#navigation-modes)
-- [Blog home](/blog/)
+- [Blog home](/)

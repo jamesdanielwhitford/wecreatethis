@@ -28,16 +28,16 @@ These target a heading inside a different post in the same section. Both the bar
 
 Full page navigations to other section URLs. Each relies on the `_redirects` wildcard, so these are also the links that break on a plain static server:
 
-- [Nested subsection](/blog/test/nested)
-- [Deeply nested subsection](/blog/test/nested/deeper)
-- [Dev tools section](/blog/dev-tools)
-- [Blog home](/blog/)
+- [Nested subsection](/test/nested)
+- [Deeply nested subsection](/test/nested/deeper)
+- [Dev tools section](/dev-tools)
+- [Blog home](/)
 - [Main site](/)
 
 ## Deep links
 
 Copy these into the address bar to test a cold load that lands mid-stack:
 
-- `/blog/test#ordering-and-dates` should open the section already scrolled to the third post
-- `/blog/test#h-tables` should open scrolled to the Tables heading of the first post
-- `/blog/test/nested#nested-post-one` should open the nested section at its first post
+- `/test#ordering-and-dates` should open the section already scrolled to the third post
+- `/test#h-tables` should open scrolled to the Tables heading of the first post
+- `/test/nested#nested-post-one` should open the nested section at its first post

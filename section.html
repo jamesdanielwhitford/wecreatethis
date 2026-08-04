@@ -7,9 +7,9 @@
   <meta name="theme-color" content="#14140f" media="(prefers-color-scheme: dark)">
   <!-- Replaced per-section from the manifest once it loads (see app.js). -->
   <meta name="description" content="Posts from the wecreatethis.com blog.">
-  <title>Blog</title>
-  <link rel="manifest" href="/blog/manifest.json">
-  <link rel="stylesheet" href="/blog/style.css">
+  <title>wecreatethis.com</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/style.css">
   <script src="/sw-toast.js" defer></script>
 </head>
 <body>
@@ -29,10 +29,10 @@
     <div id="post-stack" style="display:none"></div>
   </main>
 
-  <script src="/blog/app.js" defer></script>
+  <script src="/app.js" defer></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/blog/sw.js', { scope: '/blog/' });
+      navigator.serviceWorker.register('/sw.js', { scope: '/' });
     }
   </script>
 </body>

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Scans blog/content/ recursively and writes blog/content-manifest.json.
+// Scans content/ recursively and writes content-manifest.json.
 // Any folder containing an index.md is a post; the folder that holds post
 // folders is a section, addressed by its path relative to content/
 // (nesting allowed: content/game-dev/godot/my-post/index.md -> section
@@ -70,7 +70,7 @@ function imageSizesFor(postDir, markdown) {
     const src = m[1];
     if (/^https?:\/\//i.test(src)) continue; // remote, can't measure at build time
     const file = src.startsWith('/')
-      ? path.join(__dirname, '..', src.replace(/^\//, ''))
+      ? path.join(__dirname, src.replace(/^\//, ''))
       : path.join(postDir, src);
     const size = imageSize(file);
     if (size) sizes[src] = size;
@@ -183,10 +183,10 @@ function buildManifest() {
 }
 
 // One URL per section (posts live inside a section page as #fragments, so
-// they are not separately addressable) plus the blog home.
+// they are not separately addressable) plus the home page.
 function writeSitemap(sections) {
-  const urls = [`${SITE_ORIGIN}/blog/`].concat(
-    sections.map(s => `${SITE_ORIGIN}/blog/${s.path}`)
+  const urls = [`${SITE_ORIGIN}/`].concat(
+    sections.map(s => `${SITE_ORIGIN}/${s.path}`)
   );
 
   const lastmodFor = sectionPath => {
@@ -198,7 +198,7 @@ function writeSitemap(sections) {
   };
 
   const body = urls.map(url => {
-    const sectionPath = url.replace(`${SITE_ORIGIN}/blog/`, '').replace(/\/$/, '');
+    const sectionPath = url.replace(`${SITE_ORIGIN}/`, '').replace(/\/$/, '');
     const lastmod = lastmodFor(sectionPath);
     return '  <url>\n' +
       `    <loc>${url}</loc>\n` +

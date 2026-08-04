@@ -182,32 +182,29 @@ function stripLeadingTitle(body, title) {
 }
 
 function loadManifest() {
-  return fetch('/blog/content-manifest.json').then(r => r.json());
+  return fetch('/content-manifest.json').then(r => r.json());
 }
 
-// Parses the section path from /blog/{section...} (nesting allowed).
+// Parses the section path from /{section...} (nesting allowed).
 // The post, if any, is in location.hash.
 function parseBlogPath() {
-  const parts = location.pathname.replace(/^\/blog\/?/, '').split('/').filter(Boolean);
+  const parts = location.pathname.replace(/^\//, '').split('/').filter(Boolean);
   return {
     sectionPath: parts.join('/') || null,
     postSlug: location.hash ? location.hash.slice(1) : null,
   };
 }
 
-// Shared breadcrumb header: wecreatethis.com / blog / section / subsection.
+// Shared breadcrumb header: wecreatethis.com / section / subsection.
 // Every segment except the current page is a link.
 function renderCrumbs(sectionPath) {
   const crumbs = document.getElementById('crumbs');
   const parts = [`<a href="/">wecreatethis.com</a>`];
 
-  if (!sectionPath) {
-    parts.push('<span aria-current="page">blog</span>');
-  } else {
-    parts.push('<a href="/blog/">blog</a>');
+  if (sectionPath) {
     const segments = sectionPath.split('/');
     segments.forEach((seg, i) => {
-      const href = '/blog/' + segments.slice(0, i + 1).join('/');
+      const href = '/' + segments.slice(0, i + 1).join('/');
       if (i === segments.length - 1) {
         parts.push(`<span aria-current="page">${escHtml(seg)}</span>`);
       } else {
@@ -219,11 +216,11 @@ function renderCrumbs(sectionPath) {
   crumbs.innerHTML = parts.join(' / ');
 }
 
-// Home page: renders blog/content/home.md directly, hand-authored.
+// Home page: renders content/home.md directly, hand-authored.
 if (document.getElementById('home-content')) {
   renderCrumbs(null);
   const content = document.getElementById('home-content');
-  fetch('/blog/content/home.md')
+  fetch('/content/home.md')
     .then(r => r.text())
     .then(text => {
       const { body } = parseFrontmatter(text);
@@ -254,7 +251,7 @@ if (document.getElementById('post-stack')) {
     }
 
     const name = section ? section.name : slugToName(sectionPath.split('/').pop());
-    document.title = name + ' - Blog';
+    document.title = name + ' - wecreatethis.com';
     document.getElementById('section-title').textContent = name;
 
     // Fill the meta description from the section's own posts. Client-side,
@@ -272,7 +269,7 @@ if (document.getElementById('post-stack')) {
     if (subsections.length > 0) {
       const list = document.getElementById('subsections');
       list.innerHTML = subsections.map(s =>
-        `<li><a href="/blog/${s.path}">${escHtml(s.path.slice(sectionPath.length + 1))}</a></li>`
+        `<li><a href="/${s.path}">${escHtml(s.path.slice(sectionPath.length + 1))}</a></li>`
       ).join('');
       list.style.display = 'block';
     }
@@ -285,7 +282,7 @@ if (document.getElementById('post-stack')) {
 
     // Two modes on one page. Without a post slug the section is a table of
     // contents; with one it renders that single post. Post links elsewhere on
-    // the site are all of the form /blog/{section}#{slug}, so those keep
+    // the site are all of the form /{section}#{slug}, so those keep
     // working and now open one post instead of a scroll-through stack.
     if (!postSlug) {
       // The reading-order toggle belongs to the stack, which this mode
@@ -296,7 +293,7 @@ if (document.getElementById('post-stack')) {
       stack.innerHTML = `<ul>` + section.posts.map(p => `
         <li class="toc-item">
           <div class="toc-date">${formatDate(p.date)}</div>
-          <div class="toc-title"><a href="/blog/${section.path}#${p.slug}">${escHtml(p.title)}</a></div>
+          <div class="toc-title"><a href="/${section.path}#${p.slug}">${escHtml(p.title)}</a></div>
           ${p.description ? `<div class="toc-description">${escHtml(p.description)}</div>` : ''}
         </li>
       `).join('') + `</ul>`;
@@ -312,7 +309,7 @@ if (document.getElementById('post-stack')) {
       document.getElementById('loading').style.display = 'block';
       return;
     }
-    document.title = only[0].title + ' - Blog';
+    document.title = only[0].title + ' - wecreatethis.com';
 
     // Every post starts hidden and is revealed in stack order as it renders
     // (see revealLoaded), which is what keeps CLS at zero: posts render in
@@ -351,7 +348,7 @@ if (document.getElementById('post-stack')) {
       const slug = entry.dataset.slug;
       const title = entry.dataset.title || '';
       const post = section.posts.find(p => p.slug === slug);
-      return fetch(`/blog/content/${section.path}/${slug}/index.md`)
+      return fetch(`/content/${section.path}/${slug}/index.md`)
         .then(r => r.text())
         .then(text => {
           const { body } = parseFrontmatter(text);

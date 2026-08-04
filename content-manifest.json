@@ -72,19 +72,19 @@
           "description": "Image rendering at different aspect ratios, plus the alt-text and dark-mode cases that are easy to get wrong.",
           "author": "Test Suite",
           "images": {
-            "/blog/content/test/images-and-media/wide-gradient.png": {
+            "/content/test/images-and-media/wide-gradient.png": {
               "width": 1200,
               "height": 500
             },
-            "/blog/content/test/images-and-media/small-square.png": {
+            "/content/test/images-and-media/small-square.png": {
               "width": 160,
               "height": 160
             },
-            "/blog/content/test/images-and-media/tall-portrait.png": {
+            "/content/test/images-and-media/tall-portrait.png": {
               "width": 400,
               "height": 900
             },
-            "/blog/content/test/images-and-media/white-diagram.png": {
+            "/content/test/images-and-media/white-diagram.png": {
               "width": 800,
               "height": 300
             }
