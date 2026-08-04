@@ -279,9 +279,15 @@ function renderSectionHeader(sectionPath, title) {
   nav.querySelector('#profile-btn').addEventListener('click', openBioModal);
 }
 
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  history.replaceState(null, '', location.pathname);
+}
+
 // Post page top nav: back to the section on the left, table-of-contents
-// modal on the right. No wordmark/title in the center; the post's own
-// title is the article's H1.
+// modal on the right. The center slot holds the post title, hidden while
+// the article's own H1 is on screen and shown once it scrolls past (see
+// setupPostTitleReveal) - clicking it scrolls back to top.
 function renderPostHeader(sectionPath, post, headings) {
   const nav = document.getElementById('crumbs');
   nav.className = 'top-nav';
@@ -291,11 +297,14 @@ function renderPostHeader(sectionPath, post, headings) {
     <span class="nav-slot nav-left">
       <a href="${backHref}" class="circle-btn" aria-label="Back">${Icons.svg('arrowLeft')}</a>
     </span>
-    <span class="nav-slot nav-center"></span>
+    <span class="nav-slot nav-center">
+      <button type="button" id="post-title-btn" class="nav-wordmark nav-title-btn" hidden>${escHtml(post.title)}</button>
+    </span>
     <span class="nav-slot nav-right">
       <button type="button" id="toc-btn" class="circle-btn" aria-label="Table of contents">${Icons.svg('list')}</button>
     </span>
   `;
+  nav.querySelector('#post-title-btn').addEventListener('click', scrollToTop);
 
   const modal = document.createElement('div');
   modal.id = 'toc-modal';
@@ -304,7 +313,7 @@ function renderPostHeader(sectionPath, post, headings) {
   modal.innerHTML = `
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="toc-modal-title">
       <button type="button" class="modal-close" aria-label="Close">${Icons.svg('x')}</button>
-      <h2 id="toc-modal-title">${escHtml(post.title)}</h2>
+      <h2 id="toc-modal-title"><a href="#top" class="toc-top-link">${escHtml(post.title)}</a></h2>
       ${headings.length ? `
         <ul class="toc-links">
           ${headings.map(h => `<li><a href="#${h.id}">${h.text}</a></li>`).join('')}
@@ -318,11 +327,32 @@ function renderPostHeader(sectionPath, post, headings) {
   const open = () => { modal.hidden = false; };
   modal.addEventListener('click', e => { if (e.target === modal) close(); });
   modal.querySelector('.modal-close').addEventListener('click', close);
+  modal.querySelector('.toc-top-link').addEventListener('click', e => {
+    e.preventDefault();
+    close();
+    scrollToTop();
+  });
   modal.querySelectorAll('.toc-links a').forEach(a => a.addEventListener('click', close));
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && !modal.hidden) close();
   });
   nav.querySelector('#toc-btn').addEventListener('click', open);
+}
+
+// Shows the post title in the top nav's center slot once the article's own
+// H1 has scrolled out of view above the header, hides it while the H1 is
+// still visible (avoids showing the same title twice on screen at once).
+function setupPostTitleReveal() {
+  const titleEl = document.getElementById('section-title');
+  const btn = document.getElementById('post-title-btn');
+  const header = document.querySelector('header');
+  if (!titleEl || !btn) return;
+
+  const observer = new IntersectionObserver(([entry]) => {
+    btn.hidden = entry.isIntersecting;
+  }, { rootMargin: `-${header.offsetHeight}px 0px 0px 0px` });
+
+  observer.observe(titleEl);
 }
 
 // Bottom nav on post pages: previous/next post within the same section,
@@ -450,6 +480,7 @@ if (document.getElementById('post-stack')) {
           renderPostHeader(section.path, post, headings);
           renderPostBottomNav(section, postSlug);
           setupPostScrollFade();
+          setupPostTitleReveal();
         })
         .catch(() => {
           stack.querySelector('.md-content').textContent = 'Failed to load post.';

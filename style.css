@@ -86,6 +86,29 @@ header {
   letter-spacing: 0.05em;
   color: var(--text);
   white-space: nowrap;
+  max-width: 60vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Post title in the top nav's center slot: a real <button> for a11y, styled
+   to look like plain nav text (see .nav-wordmark), visible only once the
+   article's own H1 has scrolled out of view (see setupPostTitleReveal). */
+.nav-title-btn {
+  font-family: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.nav-title-btn:hover,
+.nav-title-btn:focus-visible {
+  text-decoration: underline;
+}
+
+.nav-title-btn[hidden] {
+  display: none;
 }
 
 .circle-btn {
@@ -228,6 +251,16 @@ header.nav-hidden {
   font-size: 1.2rem;
   font-weight: normal;
   margin-bottom: 12px;
+}
+
+.toc-top-link {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.toc-top-link:hover,
+.toc-top-link:focus-visible {
+  text-decoration: underline;
 }
 
 .bio-text {
