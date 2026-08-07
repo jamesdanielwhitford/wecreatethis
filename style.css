@@ -4,15 +4,15 @@
 :root {
   color-scheme: light;
 
-  --bg: #fff;
+  --bg: #e9e9eb;
   --text: #111;
   --muted: #6b6b6b;          /* 5.3:1 on --bg */
-  --rule: #e0e0e0;
-  --rule-strong: #ccc;
+  --rule: #cacacc;
+  --rule-strong: #b6b6b8;
   --quote-text: #4a4a4a;
-  --code-bg: #f2f2ef;
-  --pre-bg: #f6f6f4;
-  --img-bg: #f6f6f4;
+  --code-bg: #dcdcdb;
+  --pre-bg: #e0e0e0;
+  --img-bg: #e0e0e0;
 
   --tok-comment: #6a6a6a;    /* 4.9:1 on --pre-bg */
   --tok-string: #47612f;
