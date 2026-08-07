@@ -69,17 +69,25 @@ function renderMarkdown(md, imageSizes) {
   const blocks = [];
   const spans = [];
 
+  // Normalize line endings first. Every block-level regex below is
+  // line-anchored (`^`/`$` with `.` never matching newlines), and a
+  // trailing \r would either get stuck inside a captured line or make
+  // consecutive `.+\n?` list/quote lines fail to chain into one block.
+  let html = md.replace(/\r\n?/g, '\n');
+
   // Pull fenced code blocks out of the raw text first so nothing inside
-  // them gets treated as markdown.
-  let html = md.replace(/^```[^\n]*\n([\s\S]*?)\n```[ \t]*$/gm, (m, code) => {
+  // them gets treated as markdown. Up to 3 leading spaces are tolerated
+  // before the marker, matching how far a heading/list/quote can be
+  // indented before it's read as an indented code block instead.
+  html = html.replace(/^ {0,3}```[^\n]*\n([\s\S]*?)\n {0,3}```[ \t]*$/gm, (m, code) => {
     blocks.push(`<pre><code>${highlightCode(escHtml(code))}</code></pre>`);
     return placeholder('B', blocks.length - 1);
   });
 
   // Blockquotes: strip the "> " prefixes and render the inside recursively,
   // so quoted code fences, lists, and inline markdown all work.
-  html = html.replace(/((?:^> ?.*\n?)+)/gm, block => {
-    const inner = block.replace(/^> ?/gm, '');
+  html = html.replace(/((?:^ {0,3}> ?.*\n?)+)/gm, block => {
+    const inner = block.replace(/^ {0,3}> ?/gm, '');
     blocks.push(`<blockquote>${renderMarkdown(inner, imageSizes)}</blockquote>`);
     return placeholder('B', blocks.length - 1);
   });
@@ -109,7 +117,7 @@ function renderMarkdown(md, imageSizes) {
   // Tables: a header row, a |---|---| separator, then body rows. Pulled out
   // as whole blocks before the line-level passes so the pipes never leak.
   html = html.replace(
-    /^\|(.+)\|[ \t]*\n\|[ \t]*:?-{1,}:?[ \t]*(?:\|[ \t]*:?-{1,}:?[ \t]*)*\|[ \t]*\n((?:\|.*\|[ \t]*\n?)*)/gm,
+    /^ {0,3}\|(.+)\|[ \t]*\n {0,3}\|[ \t]*:?-{1,}:?[ \t]*(?:\|[ \t]*:?-{1,}:?[ \t]*)*\|[ \t]*\n((?:[ ]{0,3}\|.*\|[ \t]*\n?)*)/gm,
     (m, headerRow, bodyRows) => {
       const cells = row => row.trim().replace(/^\||\|$/g, '').split('|').map(c => inline(c.trim()));
       const head = cells(headerRow).map(c => `<th>${c}</th>`).join('');
@@ -121,23 +129,29 @@ function renderMarkdown(md, imageSizes) {
     }
   );
 
-  // Headings, with anchor ids so in-page links work.
-  html = html.replace(/^### (.+)$/gm, (m, t) => headingTag(3, inline(t)));
-  html = html.replace(/^## (.+)$/gm, (m, t) => headingTag(2, inline(t)));
-  html = html.replace(/^# (.+)$/gm, (m, t) => headingTag(1, inline(t)));
+  // Headings, with anchor ids so in-page links work. Up to 3 leading
+  // spaces are tolerated, same as lists/quotes/fences above.
+  html = html.replace(/^ {0,3}### (.+)$/gm, (m, t) => headingTag(3, inline(t)));
+  html = html.replace(/^ {0,3}## (.+)$/gm, (m, t) => headingTag(2, inline(t)));
+  html = html.replace(/^ {0,3}# (.+)$/gm, (m, t) => headingTag(1, inline(t)));
 
   // Bold, italic, images, links
   html = inline(html);
 
-  // Unordered lists
-  html = html.replace(/((?:^- .+\n?)+)/gm, block => {
-    const items = block.trim().split('\n').map(l => `<li>${l.replace(/^- /, '')}</li>`).join('');
+  // Unordered lists. Accepts -, *, or + as the bullet, and up to 3 leading
+  // spaces (a common shape from editor auto-indent or a pasted sub-item).
+  // There's no true nesting: an indented item is flattened into the same
+  // <ul> as its parent rather than a nested one, which is a smaller gap
+  // than the previous behaviour of leaking the indented line as raw,
+  // unwrapped text outside every tag.
+  html = html.replace(/((?:^ {0,3}[-*+] .+\n?)+)/gm, block => {
+    const items = block.trim().split('\n').map(l => `<li>${l.replace(/^ {0,3}[-*+] /, '')}</li>`).join('');
     return `<ul>${items}</ul>`;
   });
 
   // Ordered lists
-  html = html.replace(/((?:^\d+\. .+\n?)+)/gm, block => {
-    const items = block.trim().split('\n').map(l => `<li>${l.replace(/^\d+\. /, '')}</li>`).join('');
+  html = html.replace(/((?:^ {0,3}\d+\. .+\n?)+)/gm, block => {
+    const items = block.trim().split('\n').map(l => `<li>${l.replace(/^ {0,3}\d+\. /, '')}</li>`).join('');
     return `<ol>${items}</ol>`;
   });
 

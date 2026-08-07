@@ -21,7 +21,7 @@
   </url>
   <url>
     <loc>https://wecreatethis.com/test</loc>
-    <lastmod>2026-07-29</lastmod>
+    <lastmod>2026-08-07</lastmod>
   </url>
   <url>
     <loc>https://wecreatethis.com/test/kitchen-sink</loc>
@@ -30,6 +30,10 @@
   <url>
     <loc>https://wecreatethis.com/test/navigation-modes</loc>
     <lastmod>2026-07-28</lastmod>
+  </url>
+  <url>
+    <loc>https://wecreatethis.com/test/renderer-edge-cases</loc>
+    <lastmod>2026-08-07</lastmod>
   </url>
   <url>
     <loc>https://wecreatethis.com/test/ordering-and-dates</loc>

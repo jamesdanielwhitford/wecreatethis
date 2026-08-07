@@ -49,6 +49,14 @@
           "author": "Test Suite"
         },
         {
+          "slug": "renderer-edge-cases",
+          "title": "Renderer edge cases - indentation and whitespace",
+          "date": "2026-08-07",
+          "order": 2,
+          "description": "Leading-space and indentation variants of every block type. Each case should render like its kitchen-sink equivalent; if it renders as raw text in a paragraph instead, that is the bug.",
+          "author": "Test Suite"
+        },
+        {
           "slug": "ordering-and-dates",
           "title": "Ordering and dates",
           "date": "2026-07-27",

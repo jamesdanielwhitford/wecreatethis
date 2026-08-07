@@ -560,30 +560,6 @@ main:has(.post-single) .section-head {
 .tok-n { color: var(--tok-number); }
 .tok-k { color: var(--tok-keyword); }
 
-/* Home page markdown tweaks: link lists without bullets */
-
-#home-content ul {
-  list-style: none;
-  margin-left: 0;
-}
-
-#home-content li {
-  margin-bottom: 12px;
-}
-
-#home-content a {
-  font-size: 1.1rem;
-  text-decoration: none;
-}
-
-#home-content a:hover {
-  text-decoration: underline;
-}
-
-#home-content p {
-  color: var(--muted);
-}
-
 /* Section table of contents. Shown when a section URL carries no post slug;
    a slug switches the same page to single-post mode (see app.js). */
 .post-toc ul {
