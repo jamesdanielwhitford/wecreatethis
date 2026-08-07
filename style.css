@@ -4,37 +4,37 @@
 :root {
   color-scheme: light;
 
-  --bg: #e9e9eb;
+  --bg: #bcbcbe;
   --text: #111;
-  --muted: #6b6b6b;          /* 5.3:1 on --bg */
-  --rule: #cacacc;
-  --rule-strong: #b6b6b8;
-  --quote-text: #4a4a4a;
-  --code-bg: #dcdcdb;
-  --pre-bg: #e0e0e0;
-  --img-bg: #e0e0e0;
+  --muted: #484848;          /* 4.8:1 on --bg */
+  --rule: #949496;
+  --rule-strong: #606060;    /* 3.3:1 on --bg (UI/border, not text) */
+  --quote-text: #3e3e3e;     /* 5.6:1 on --bg */
+  --code-bg: #d4d4d4;
+  --pre-bg: #d8d8d8;
+  --img-bg: #d8d8d8;
 
-  --tok-comment: #6a6a6a;    /* 4.9:1 on --pre-bg */
-  --tok-string: #47612f;
-  --tok-number: #8a4f24;
-  --tok-keyword: #1f4f7a;
+  --tok-comment: #505050;    /* 5.7:1 on --pre-bg */
+  --tok-string: #0d5715;
+  --tok-number: #754000;
+  --tok-keyword: #084f87;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
 
-    --bg: #14140f;
-    --text: #e8e6e0;
-    --muted: #9a978e;        /* 5.6:1 on --bg */
-    --rule: #2e2e28;
-    --rule-strong: #45443c;
-    --quote-text: #b8b5ac;
-    --code-bg: #232320;
-    --pre-bg: #1c1c18;
-    --img-bg: #232320;
+    --bg: #000;
+    --text: #cccccc;
+    --muted: #a3a3a3;         /* 8.3:1 on --bg */
+    --rule: #2a2a2a;
+    --rule-strong: #3d3d3d;
+    --quote-text: #bbb;
+    --code-bg: #181818;
+    --pre-bg: #141414;
+    --img-bg: #181818;
 
-    --tok-comment: #8b887f;  /* 4.8:1 on --pre-bg */
+    --tok-comment: #8b887f;  /* 5.2:1 on --pre-bg */
     --tok-string: #a3c07a;
     --tok-number: #d9a066;
     --tok-keyword: #7fb3d9;
