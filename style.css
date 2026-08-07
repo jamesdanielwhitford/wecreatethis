@@ -268,7 +268,13 @@ header.nav-hidden {
   margin-bottom: 16px;
 }
 
-.bio-email {
+.bio-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bio-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -277,11 +283,11 @@ header.nav-hidden {
   font-size: 0.95rem;
 }
 
-.bio-email:hover {
+.bio-link:hover {
   text-decoration: underline;
 }
 
-.bio-email .icon {
+.bio-link .icon {
   width: 16px;
   height: 16px;
 }

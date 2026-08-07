@@ -222,6 +222,7 @@ function parseBlogPath(sections) {
 
 const SITE_OWNER_NAME = 'James Daniel Whitford';
 const SITE_OWNER_EMAIL = 'james@wecreatethis.com';
+const SITE_OWNER_GITHUB = 'jamesdanielwhitford';
 
 // Bio modal: same on every page (home, section, post). Built once and
 // appended to <body> lazily on first open.
@@ -245,7 +246,10 @@ function ensureBioModal() {
       <div class="bio-avatar">${escHtml(initials(SITE_OWNER_NAME))}</div>
       <h2 id="bio-modal-title">${escHtml(SITE_OWNER_NAME)}</h2>
       <p class="bio-text">Writing on development tools, side projects, and whatever else is worth a post.</p>
-      <a class="bio-email" href="mailto:${SITE_OWNER_EMAIL}">${Icons.svg('mail')} ${SITE_OWNER_EMAIL}</a>
+      <div class="bio-links">
+        <a class="bio-link" href="mailto:${SITE_OWNER_EMAIL}">${Icons.svg('mail')} ${SITE_OWNER_EMAIL}</a>
+        <a class="bio-link" href="https://github.com/${SITE_OWNER_GITHUB}" target="_blank" rel="noopener">${Icons.svg('github')} github.com/${SITE_OWNER_GITHUB}</a>
+      </div>
     </div>
   `;
   document.body.appendChild(modal);
