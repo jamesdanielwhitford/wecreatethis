@@ -1,9 +1,7 @@
-Welcome to the blog.
+Welcome to my blog.
 
-## Software
+## Agentic Engineering
 
-### Dev Tools
+My learning and experiments with AI Agents, and designing architecture for Agentic workflows.
 
-Writing about Claude Code, agent skills, and the tooling around them.
-
-- [Dev Tools](/dev-tools)
+ - [Harness Customisation](/harness-customisation)

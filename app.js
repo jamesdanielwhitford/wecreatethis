@@ -221,7 +221,13 @@ function ensureBioModal() {
   modal.hidden = true;
   modal.innerHTML = `
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="bio-modal-title">
-      <button type="button" class="modal-close" aria-label="Close">${Icons.svg('x')}</button>
+      <div class="top-nav">
+        <span class="nav-slot nav-left" aria-hidden="true"></span>
+        <span class="nav-slot nav-center"></span>
+        <span class="nav-slot nav-right">
+          <button type="button" class="modal-close" aria-label="Close">${Icons.svg('x')}</button>
+        </span>
+      </div>
       <div class="bio-avatar">${escHtml(initials(SITE_OWNER_NAME))}</div>
       <h2 id="bio-modal-title">${escHtml(SITE_OWNER_NAME)}</h2>
       <p class="bio-text">Writing on development tools, side projects, and whatever else is worth a post.</p>
@@ -312,7 +318,13 @@ function renderPostHeader(sectionPath, post, headings) {
   modal.hidden = true;
   modal.innerHTML = `
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="toc-modal-title">
-      <button type="button" class="modal-close" aria-label="Close">${Icons.svg('x')}</button>
+      <div class="top-nav">
+        <span class="nav-slot nav-left" aria-hidden="true"></span>
+        <span class="nav-slot nav-center"></span>
+        <span class="nav-slot nav-right">
+          <button type="button" class="modal-close" aria-label="Close">${Icons.svg('x')}</button>
+        </span>
+      </div>
       <h2 id="toc-modal-title"><a href="#top" class="toc-top-link">${escHtml(post.title)}</a></h2>
       ${headings.length ? `
         <ul class="toc-links">
@@ -392,11 +404,20 @@ function setupPostScrollFade() {
     bottomNav.classList.toggle('nav-hidden', !visible);
   };
 
+  // Rubber-band overscroll at the top fires a jittery, non-monotonic run of
+  // scroll events settling back to 0 (e.g. 3 -> 1 -> 2 -> 0), so a small
+  // top zone is treated as "at top" throughout rather than comparing each
+  // event to the last - otherwise the tiny upward jitter within the bounce
+  // reads as a downward scroll and hides the nav right when the page is
+  // at rest at the top.
+  const TOP_ZONE = 24;
+
   window.addEventListener('scroll', () => {
-    const y = window.scrollY;
+    const y = Math.max(0, window.scrollY);
+    const atTop = y <= TOP_ZONE;
     const atBottom = y + window.innerHeight >= document.documentElement.scrollHeight - 1;
 
-    if (atBottom || y <= lastY) {
+    if (atTop || atBottom || y <= lastY) {
       setVisible(true);
     } else if (y > lastY) {
       setVisible(false);

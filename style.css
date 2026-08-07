@@ -181,17 +181,18 @@ header.nav-hidden {
   padding-bottom: 72px;
 }
 
-/* Bio + table-of-contents modals */
+/* Bio + table-of-contents modals: styled as full pages, not floating
+   cards, so opening one reads as "the content changed" rather than a
+   dialog popping up over it. Same page shell (max-width, padding, top-nav
+   grid) as every real page; the close button sits in the same nav-right
+   slot the button that opened it was in, so it lands under the cursor. */
 
 .modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 30;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(0, 0, 0, 0.4);
+  overflow-y: auto;
+  background: var(--bg);
 }
 
 .modal-overlay[hidden] {
@@ -199,39 +200,37 @@ header.nav-hidden {
 }
 
 .modal-card {
-  position: relative;
-  width: 100%;
-  max-width: 420px;
-  max-height: 80vh;
-  overflow-y: auto;
-  background: var(--bg);
-  border: 1px solid var(--rule);
-  border-radius: 12px;
-  padding: 32px 24px 24px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.modal-card .top-nav {
+  margin-bottom: 40px;
 }
 
 .modal-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: none;
-  color: var(--muted);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+  background: var(--bg);
+  color: var(--text);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.modal-close:hover {
-  color: var(--text);
+.modal-close:hover,
+.modal-close:focus-visible {
+  border-color: var(--text);
 }
 
 .modal-close .icon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 .bio-avatar {
