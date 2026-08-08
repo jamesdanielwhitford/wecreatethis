@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wecreatethis-v28';
+const CACHE_NAME = 'wecreatethis-v29';
 
 // App shell only, listed as canonical (extensionless) URLs since those are
 // the keys the fetch handler looks up. Content (home.md, post index.md
@@ -12,6 +12,10 @@ const ASSETS = [
   '/style.css',
   '/manifest.json',
   '/sw-toast.js',
+  '/fonts/roboto-400.woff2',
+  '/fonts/roboto-italic-400.woff2',
+  '/fonts/roboto-600.woff2',
+  '/fonts/roboto-700.woff2',
 ];
 
 const MANIFEST_URL = '/content-manifest.json';
