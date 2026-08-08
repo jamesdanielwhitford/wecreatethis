@@ -233,16 +233,15 @@ header.nav-hidden {
   height: 20px;
 }
 
-.bio-avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  border: 1px solid var(--rule-strong);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  font-weight: 600;
+/* The whole photo is always visible: width fills the card, height follows
+   the image's own aspect ratio (no max-height/object-fit box to letterbox
+   into - that combination was leaving dark bars above/below the photo
+   whenever its natural height at 100% width came in under the cap). */
+.bio-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
   margin-bottom: 16px;
 }
 
@@ -262,12 +261,6 @@ header.nav-hidden {
   text-decoration: underline;
 }
 
-.bio-text {
-  color: var(--muted);
-  line-height: 1.6;
-  margin-bottom: 16px;
-}
-
 .bio-links {
   display: flex;
   flex-direction: column;
@@ -283,13 +276,22 @@ header.nav-hidden {
   font-size: 0.95rem;
 }
 
-.bio-link:hover {
+/* Only real links (email, GitHub) underline on hover - a plain <span>
+   .bio-link (e.g. the location row) states a fact, it isn't clickable. */
+a.bio-link:hover {
   text-decoration: underline;
 }
 
 .bio-link .icon {
   width: 16px;
   height: 16px;
+}
+
+/* Emoji icons (e.g. the globe on the location row) sized to visually match
+   the 16px inlined-SVG icons next to them. */
+.bio-link .emoji-icon {
+  font-size: 16px;
+  line-height: 1;
 }
 
 .toc-links {

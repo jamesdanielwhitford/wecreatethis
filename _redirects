@@ -31,5 +31,7 @@ https://wecreatethis.pages.dev/* https://wecreatethis.com/:splat 301
 /sitemap.xml  /sitemap.xml  200
 /icon-192.png  /icon-192.png  200
 /icon-512.png  /icon-512.png  200
+/favicon.svg  /favicon.svg  200
+/profile.jpeg  /profile.jpeg  200
 /archive/*  /archive/:splat  200
 /*  /section  200

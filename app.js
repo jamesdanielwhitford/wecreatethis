@@ -256,6 +256,36 @@ function parseBlogPath(sections) {
 const SITE_OWNER_NAME = 'James Daniel Whitford';
 const SITE_OWNER_EMAIL = 'james@wecreatethis.com';
 const SITE_OWNER_GITHUB = 'jamesdanielwhitford';
+const SITE_OWNER_CITY = 'Pretoria';
+const SITE_OWNER_COUNTRY = 'South Africa';
+// South Africa has one timezone, no DST, so the city label above is purely
+// cosmetic - the IANA zone is what actually drives the time/offset, and
+// Africa/Johannesburg is correct for the whole country regardless of city.
+const SITE_OWNER_TZ = 'Africa/Johannesburg';
+
+// "21:31, Pretoria, South Africa (GMT+2)" - internationally recognisable
+// order (time, city, country, offset). Intl derives the live time and the
+// numeric UTC offset from the IANA zone; only the city/country labels are
+// hand-written, since a timezone has no city name of its own.
+function formatLocationTime() {
+  const time = new Intl.DateTimeFormat('en-GB', {
+    timeZone: SITE_OWNER_TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date());
+
+  // "shortOffset" gives e.g. "GMT+2"; extract it from formatToParts rather
+  // than string-slicing a full formatted date, so it's independent of
+  // locale word order.
+  const offsetPart = new Intl.DateTimeFormat('en-GB', {
+    timeZone: SITE_OWNER_TZ,
+    timeZoneName: 'shortOffset',
+  }).formatToParts(new Date()).find(p => p.type === 'timeZoneName');
+  const offset = offsetPart ? offsetPart.value : '';
+
+  return `${time}, ${SITE_OWNER_CITY}, ${SITE_OWNER_COUNTRY}${offset ? ` (${offset})` : ''}`;
+}
 
 // Bio modal: same on every page (home, section, post). Built once and
 // appended to <body> lazily on first open.
@@ -271,17 +301,17 @@ function ensureBioModal() {
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="bio-modal-title">
       <div class="top-nav">
         <span class="nav-slot nav-left" aria-hidden="true"></span>
-        <span class="nav-slot nav-center"></span>
+        <span class="nav-slot nav-center"><span class="nav-wordmark" id="bio-modal-title">${escHtml(SITE_OWNER_NAME)}</span></span>
         <span class="nav-slot nav-right">
           <button type="button" class="modal-close" aria-label="Close">${Icons.svg('x')}</button>
         </span>
       </div>
-      <div class="bio-avatar">${escHtml(initials(SITE_OWNER_NAME))}</div>
-      <h2 id="bio-modal-title">${escHtml(SITE_OWNER_NAME)}</h2>
-      <p class="bio-text">Writing on development tools, side projects, and whatever else is worth a post.</p>
+      <img class="bio-photo" src="/profile.jpeg" alt="${escHtml(SITE_OWNER_NAME)} photographing a mountain landscape" width="800" height="600" loading="lazy" decoding="async">
       <div class="bio-links">
+        <span class="bio-link">${Globes.emoji('africaEurope')} <span id="bio-location-time">${escHtml(formatLocationTime())}</span></span>
         <a class="bio-link" href="mailto:${SITE_OWNER_EMAIL}">${Icons.svg('mail')} ${SITE_OWNER_EMAIL}</a>
         <a class="bio-link" href="https://github.com/${SITE_OWNER_GITHUB}" target="_blank" rel="noopener">${Icons.svg('github')} github.com/${SITE_OWNER_GITHUB}</a>
+        <a class="bio-link" href="/cv">${Icons.svg('briefcase')} wecreatethis.com/cv</a>
       </div>
     </div>
   `;
@@ -294,15 +324,27 @@ function ensureBioModal() {
     if (e.key === 'Escape' && !modal.hidden) close();
   });
 
+  // Keep the location time live while the modal is open. One shared
+  // interval (not re-created per open) is fine at this scale - it just
+  // re-renders a single text node every 30s, negligible cost even left
+  // running for a whole session.
+  const timeEl = modal.querySelector('#bio-location-time');
+  setInterval(() => {
+    if (!modal.hidden) timeEl.textContent = formatLocationTime();
+  }, 30000);
+
   return modal;
 }
 
 function openBioModal() {
-  ensureBioModal().hidden = false;
+  const modal = ensureBioModal();
+  const timeEl = modal.querySelector('#bio-location-time');
+  if (timeEl) timeEl.textContent = formatLocationTime();
+  modal.hidden = false;
 }
 
 function profileButtonHtml() {
-  return `<button type="button" id="profile-btn" class="circle-btn" aria-label="About ${escHtml(SITE_OWNER_NAME)}">${escHtml(initials(SITE_OWNER_NAME))}</button>`;
+  return `<button type="button" id="profile-btn" class="circle-btn" aria-label="About ${escHtml(SITE_OWNER_NAME)}">${Icons.svg('user')}</button>`;
 }
 
 // Home page header: left spacer (reserved, empty), centered wordmark,
