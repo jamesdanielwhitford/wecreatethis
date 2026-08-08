@@ -410,10 +410,10 @@ function renderPostHeader(sectionPath, post, headings) {
   modal.className = 'modal-overlay';
   modal.hidden = true;
   modal.innerHTML = `
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="toc-modal-title">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="toc-modal-heading">
       <div class="top-nav">
         <span class="nav-slot nav-left" aria-hidden="true"></span>
-        <span class="nav-slot nav-center"></span>
+        <span class="nav-slot nav-center"><span class="nav-wordmark" id="toc-modal-heading">Table of Contents</span></span>
         <span class="nav-slot nav-right">
           <button type="button" class="modal-close" aria-label="Close">${Icons.svg('x')}</button>
         </span>
