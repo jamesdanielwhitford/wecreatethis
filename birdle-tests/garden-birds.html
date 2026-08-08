@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Garden Birds - Calculation Test</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #f5f5f0; color: #222; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.1rem; margin-top: 2rem; }
+  .panel { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  label { display: block; margin: 8px 0 4px; font-size: 0.85rem; color: #555; }
+  input, select { padding: 6px 8px; font-size: 0.95rem; width: 100%; box-sizing: border-box; }
+  button { padding: 8px 14px; font-size: 0.9rem; cursor: pointer; margin-top: 8px; margin-right: 8px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 140px; }
+  .status { font-size: 0.85rem; color: #666; white-space: pre-wrap; }
+  .location-summary { font-size: 0.9rem; background: #eef6ee; border: 1px solid #cde; padding: 8px 12px; border-radius: 6px; margin-top: 10px; }
+  .calc-select { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .cell {
+    aspect-ratio: 1;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    text-align: center;
+    padding: 8px;
+    font-size: 0.85rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .cell .thumb-wrap {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cell .thumb-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .cell .thumb-wrap .no-img {
+    font-size: 1.6rem;
+    color: #ccc;
+  }
+  .cell .info {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    background: rgba(255,255,255,0.88);
+    border-radius: 6px;
+    padding: 4px 6px;
+  }
+  .cell .name { font-weight: 600; margin-bottom: 2px; }
+  .cell .sci { font-style: italic; color: #777; font-size: 0.72rem; margin-bottom: 4px; }
+  .cell .metric { color: #2a6; font-size: 0.72rem; }
+  .cell-num { position: absolute; top: 4px; left: 6px; font-size: 0.7rem; color: #fff; background: rgba(0,0,0,0.5); border-radius: 4px; padding: 1px 5px; z-index: 2; }
+  .empty-cell { background: #fafafa; color: #bbb; justify-content: center; }
+  .loading-msg { text-align: center; color: #888; padding: 30px; grid-column: 1 / -1; }
+  .method-desc { font-size: 0.8rem; color: #666; margin-bottom: 10px; }
+  code { background: #eee; padding: 1px 5px; border-radius: 3px; font-size: 0.85em; }
+</style>
+</head>
+<body>
+
+<h1>Garden Birds - Calculation Test</h1>
+<p class="status">Compare different ways of ranking "birds most likely to see in your garden right now" using eBird data. Set your location, then flip between calculation methods below.</p>
+
+<div class="panel">
+  <h2 style="margin-top:0">1. Location</h2>
+
+  <button id="gps-btn">📍 Use My Exact Location (GPS)</button>
+  <div class="status" id="gps-status"></div>
+
+  <div class="row">
+    <div>
+      <label>Latitude</label>
+      <input type="text" id="lat-input" placeholder="e.g. -33.9249">
+    </div>
+    <div>
+      <label>Longitude</label>
+      <input type="text" id="lng-input" placeholder="e.g. 18.4241">
+    </div>
+  </div>
+  <button id="manual-btn">Set From Lat/Lng</button>
+
+  <div id="location-summary" class="location-summary" style="display:none;"></div>
+</div>
+
+<div class="panel">
+  <h2 style="margin-top:0">2. Radius / Window Settings</h2>
+  <div class="row">
+    <div>
+      <label>Tight radius (km) - for "your garden" calcs</label>
+      <input type="number" id="tight-radius" value="8" min="1" max="50">
+    </div>
+    <div>
+      <label>Wide radius (km) - eBird default-style</label>
+      <input type="number" id="wide-radius" value="50" min="1" max="50">
+    </div>
+    <div>
+      <label>Lookback days</label>
+      <input type="number" id="back-days" value="30" min="1" max="30">
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="calc-select">
+    <label style="margin:0; white-space:nowrap;">Calculation method:</label>
+    <select id="method-select" style="width:auto; flex:1;"></select>
+    <button id="run-btn">Run</button>
+  </div>
+  <div class="method-desc" id="method-desc"></div>
+  <div class="status" id="run-status"></div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<script src="../birdle/ebird.js"></script>
+<script>
+const state = {
+  lat: null,
+  lng: null,
+  countryCode: null,
+  stateCode: null,
+  countryName: null,
+  stateName: null
+};
+
+// ---------- Location: GPS + reverse geocode (mirrors location.js, standalone here for testing) ----------
+
+document.getElementById('gps-btn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('gps-status');
+  statusEl.textContent = 'Requesting GPS position...';
+  try {
+    const pos = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 30000 });
+    });
+    state.lat = pos.coords.latitude;
+    state.lng = pos.coords.longitude;
+    document.getElementById('lat-input').value = state.lat;
+    document.getElementById('lng-input').value = state.lng;
+    statusEl.textContent = `GPS position acquired (accuracy ~${Math.round(pos.coords.accuracy)}m). Resolving region...`;
+    await resolveRegion(state.lat, state.lng);
+    statusEl.textContent = 'Done.';
+  } catch (err) {
+    statusEl.textContent = 'GPS error: ' + err.message;
+  }
+});
+
+document.getElementById('manual-btn').addEventListener('click', async () => {
+  const lat = parseFloat(document.getElementById('lat-input').value);
+  const lng = parseFloat(document.getElementById('lng-input').value);
+  if (isNaN(lat) || isNaN(lng)) {
+    document.getElementById('gps-status').textContent = 'Enter valid numeric lat/lng.';
+    return;
+  }
+  state.lat = lat;
+  state.lng = lng;
+  document.getElementById('gps-status').textContent = 'Resolving region from lat/lng...';
+  await resolveRegion(lat, lng);
+  document.getElementById('gps-status').textContent = 'Done.';
+});
+
+async function resolveRegion(lat, lng) {
+  // Reverse geocode via Nominatim
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=8`;
+    const resp = await fetch(url, {
+      headers: { 'Accept': 'application/json' }
+    });
+    const data = await resp.json();
+    const address = data.address || {};
+    state.countryCode = (address.country_code || '').toUpperCase();
+    state.countryName = address.country || null;
+    state.stateName = address.state || address.province || address.region || null;
+
+    // Map ISO -> eBird country code (mostly identical, small exceptions)
+    const mappings = { 'UK': 'GB' };
+    state.countryCode = mappings[state.countryCode] || state.countryCode;
+
+    // Try to find eBird subnational1 code by matching state name
+    state.stateCode = null;
+    if (state.countryCode && state.stateName) {
+      try {
+        const states = await EBird.getStates(state.countryCode);
+        const normalized = state.stateName.toLowerCase().trim();
+        let match = states.find(s => s.name.toLowerCase() === normalized);
+        if (!match) {
+          match = states.find(s =>
+            s.name.toLowerCase().includes(normalized) || normalized.includes(s.name.toLowerCase())
+          );
+        }
+        state.stateCode = match ? match.code : null;
+      } catch (e) {
+        console.error('State lookup failed', e);
+      }
+    }
+  } catch (e) {
+    console.error('Reverse geocode failed', e);
+  }
+
+  renderLocationSummary();
+}
+
+function renderLocationSummary() {
+  const el = document.getElementById('location-summary');
+  el.style.display = 'block';
+  const region = state.stateCode || state.countryCode || 'unknown';
+  el.innerHTML = `
+    <strong>Exact:</strong> ${state.lat?.toFixed(4)}, ${state.lng?.toFixed(4)}<br>
+    <strong>Region:</strong> ${state.stateName || '?'}, ${state.countryName || '?'}
+    (eBird region code: <code>${region}</code>)
+  `;
+}
+
+// ---------- Calculation methods ----------
+
+const METHODS = [
+  {
+    id: 'region-list-alpha',
+    name: 'Region species list (naive baseline, A-Z)',
+    desc: 'Full list of every species ever recorded in your region (state, or country if no state), just alphabetical. No recency or frequency at all - shows why this alone is useless for "likely right now."',
+    async run() {
+      const region = state.stateCode || state.countryCode;
+      const list = await EBird.getSpeciesList(region);
+      const codes = list.slice(0, 9);
+      const taxonomy = await EBird.getTaxonomy(codes);
+      return codes.map(code => {
+        const t = taxonomy.find(x => x.speciesCode === code);
+        return { speciesCode: code, comName: t?.comName || code, sciName: t?.sciName || '', metric: '' };
+      });
+    }
+  },
+  {
+    id: 'exact-wide-raw',
+    name: 'Exact location, wide radius, raw API order',
+    desc: `Nearby observations at your exact GPS point, wide radius (default eBird "recent" call), deduped by species keeping the API\'s natural order (most recently reported first). This is closest to what the app currently does elsewhere.`,
+    async run() {
+      const wideRadius = getWideRadius();
+      const obs = await EBird.getNearbyObservations(state.lat, state.lng, wideRadius);
+      const deduped = dedupeKeepFirst(obs);
+      return deduped.slice(0, 9).map(o => ({ speciesCode: o.speciesCode, comName: o.comName, sciName: o.sciName, metric: `last seen ${o.obsDt}` }));
+    }
+  },
+  {
+    id: 'exact-wide-frequency',
+    name: 'Exact location, wide radius, ranked by checklist frequency',
+    desc: 'Same wide-radius pull, but ranked by how many separate observations (checklists) mention each species in the window - a frequency/commonness proxy rather than raw recency. Still wide radius, so rarity-chasers can skew this.',
+    async run() {
+      const wideRadius = getWideRadius();
+      const obs = await EBird.getNearbyObservations(state.lat, state.lng, wideRadius);
+      return rankByFrequency(obs).slice(0, 9);
+    }
+  },
+  {
+    id: 'exact-tight-frequency',
+    name: 'Exact location, TIGHT radius, ranked by checklist frequency',
+    desc: 'Tight radius (your "garden" setting above) centered on exact GPS, ranked by observation frequency. Tighter radius should filter out birders traveling to chase rare species further away, biasing toward what is actually around your house.',
+    async run() {
+      const tightRadius = getTightRadius();
+      const obs = await EBird.getNearbyObservations(state.lat, state.lng, tightRadius);
+      return rankByFrequency(obs).slice(0, 9);
+    }
+  },
+  {
+    id: 'exact-tight-howmany',
+    name: 'Exact location, TIGHT radius, ranked by total individuals (howMany)',
+    desc: 'Tight radius, ranked by summed count of individual birds reported (howMany), not just number of checklists. A species seen in large flocks (e.g. starlings, geese) ranks higher than one seen singly but on more checklists.',
+    async run() {
+      const tightRadius = getTightRadius();
+      const obs = await EBird.getNearbyObservations(state.lat, state.lng, tightRadius);
+      return rankByHowMany(obs).slice(0, 9);
+    }
+  },
+  {
+    id: 'region-frequency',
+    name: 'Region-wide (state/country), ranked by frequency',
+    desc: 'Uses the region code (state, or country) instead of exact coordinates - recent observations across the whole region, ranked by checklist frequency. Compare against the exact-location versions to see how much using a broad region vs a radius around your point changes the list.',
+    async run() {
+      const region = state.stateCode || state.countryCode;
+      const obs = await EBird.getRecentObservations(region);
+      return rankByFrequency(obs).slice(0, 9);
+    }
+  },
+  {
+    id: 'exact-tight-distinct-days',
+    name: 'Exact location, TIGHT radius, ranked by distinct days seen',
+    desc: 'Tight radius, ranked by number of distinct calendar days the species was reported in the window (not total checklists - a species reported 5 times in one day by different birders at a hotspot only counts as 1 day here). This should favor birds present continuously over one-off flurries of reports.',
+    async run() {
+      const tightRadius = getTightRadius();
+      const obs = await EBird.getNearbyObservations(state.lat, state.lng, tightRadius);
+      return rankByDistinctDays(obs).slice(0, 9);
+    }
+  },
+  {
+    id: 'exact-tight-recency-weighted',
+    name: 'Exact location, TIGHT radius, recency-weighted frequency',
+    desc: 'Tight radius, each observation contributes a score weighted by how recent it is (today counts more than 29 days ago), summed per species. Aims to balance "seen often" with "seen recently" so a bird that was common but has since left the area ranks lower.',
+    async run() {
+      const tightRadius = getTightRadius();
+      const obs = await EBird.getNearbyObservations(state.lat, state.lng, tightRadius);
+      return rankByRecencyWeighted(obs).slice(0, 9);
+    }
+  },
+  {
+    id: 'exact-tight-haversine-verified',
+    name: 'Exact location, wide API radius, then re-filtered by real Haversine distance (tight)',
+    desc: 'Pulls the wide-radius API result, but then discards any observation whose *exact* great-circle distance from your point (calculated locally, not trusted from the API bounding radius) exceeds the tight radius. Ranked by frequency. Tests whether the eBird API\'s own radius filtering is accurate or needs double-checking.',
+    async run() {
+      const wideRadius = getWideRadius();
+      const tightRadius = getTightRadius();
+      const obs = await EBird.getNearbyObservations(state.lat, state.lng, wideRadius);
+      const filtered = obs.filter(o => {
+        if (typeof o.lat !== 'number' || typeof o.lng !== 'number') return false;
+        return haversineKm(state.lat, state.lng, o.lat, o.lng) <= tightRadius;
+      });
+      return rankByFrequency(filtered).slice(0, 9);
+    }
+  }
+];
+
+function getTightRadius() {
+  return Math.min(parseFloat(document.getElementById('tight-radius').value) || 8, 50);
+}
+function getWideRadius() {
+  return Math.min(parseFloat(document.getElementById('wide-radius').value) || 50, 50);
+}
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function dedupeKeepFirst(obs) {
+  const seen = new Map();
+  obs.forEach(o => {
+    if (!seen.has(o.speciesCode)) seen.set(o.speciesCode, o);
+  });
+  return Array.from(seen.values());
+}
+
+function rankByFrequency(obs) {
+  const counts = new Map(); // speciesCode -> { count, sample }
+  obs.forEach(o => {
+    const entry = counts.get(o.speciesCode) || { count: 0, sample: o };
+    entry.count++;
+    counts.set(o.speciesCode, entry);
+  });
+  const arr = Array.from(counts.entries()).map(([code, { count, sample }]) => ({
+    speciesCode: code,
+    comName: sample.comName,
+    sciName: sample.sciName,
+    metric: `${count} checklist${count === 1 ? '' : 's'}`
+  }));
+  arr.sort((a, b) => parseInt(b.metric) - parseInt(a.metric));
+  return arr;
+}
+
+function rankByHowMany(obs) {
+  const sums = new Map(); // speciesCode -> { total, sample }
+  obs.forEach(o => {
+    const entry = sums.get(o.speciesCode) || { total: 0, sample: o };
+    entry.total += (typeof o.howMany === 'number' ? o.howMany : 1);
+    sums.set(o.speciesCode, entry);
+  });
+  const arr = Array.from(sums.entries()).map(([code, { total, sample }]) => ({
+    speciesCode: code,
+    comName: sample.comName,
+    sciName: sample.sciName,
+    metric: `${total} individuals`
+  }));
+  arr.sort((a, b) => parseInt(b.metric) - parseInt(a.metric));
+  return arr;
+}
+
+function rankByDistinctDays(obs) {
+  const days = new Map(); // speciesCode -> { daySet, sample }
+  obs.forEach(o => {
+    const entry = days.get(o.speciesCode) || { daySet: new Set(), sample: o };
+    const day = (o.obsDt || '').split(' ')[0];
+    if (day) entry.daySet.add(day);
+    days.set(o.speciesCode, entry);
+  });
+  const arr = Array.from(days.entries()).map(([code, { daySet, sample }]) => ({
+    speciesCode: code,
+    comName: sample.comName,
+    sciName: sample.sciName,
+    metric: `${daySet.size} day${daySet.size === 1 ? '' : 's'}`
+  }));
+  arr.sort((a, b) => parseInt(b.metric) - parseInt(a.metric));
+  return arr;
+}
+
+function rankByRecencyWeighted(obs) {
+  const now = obs.reduce((max, o) => {
+    const d = new Date((o.obsDt || '').replace(' ', 'T'));
+    return d > max ? d : max;
+  }, new Date(0));
+
+  const scores = new Map(); // speciesCode -> { score, sample }
+  obs.forEach(o => {
+    const d = new Date((o.obsDt || '').replace(' ', 'T'));
+    const ageDays = Math.max(0, (now - d) / (1000 * 60 * 60 * 24));
+    // Linear decay over 30 days: today = weight 1.0, 30 days ago = weight ~0.03
+    const weight = Math.max(0.03, 1 - (ageDays / 30));
+    const entry = scores.get(o.speciesCode) || { score: 0, sample: o };
+    entry.score += weight;
+    scores.set(o.speciesCode, entry);
+  });
+  const arr = Array.from(scores.entries()).map(([code, { score, sample }]) => ({
+    speciesCode: code,
+    comName: sample.comName,
+    sciName: sample.sciName,
+    metric: `score ${score.toFixed(2)}`
+  }));
+  arr.sort((a, b) => parseFloat(b.metric.replace('score ', '')) - parseFloat(a.metric.replace('score ', '')));
+  return arr;
+}
+
+// ---------- UI wiring ----------
+
+const select = document.getElementById('method-select');
+METHODS.forEach(m => {
+  const opt = document.createElement('option');
+  opt.value = m.id;
+  opt.textContent = m.name;
+  select.appendChild(opt);
+});
+select.addEventListener('change', updateDesc);
+updateDesc();
+
+function updateDesc() {
+  const method = METHODS.find(m => m.id === select.value);
+  document.getElementById('method-desc').textContent = method ? method.desc : '';
+}
+
+document.getElementById('run-btn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('run-status');
+  const gridEl = document.getElementById('grid');
+
+  if (state.lat === null || state.lng === null) {
+    statusEl.textContent = 'Set a location first (GPS or manual lat/lng).';
+    return;
+  }
+
+  const method = METHODS.find(m => m.id === select.value);
+  statusEl.textContent = `Running "${method.name}"...`;
+  gridEl.innerHTML = '<div class="loading-msg">Loading...</div>';
+
+  try {
+    const results = await method.run();
+    renderGrid(results);
+    statusEl.textContent = `Done. ${results.length} bird${results.length === 1 ? '' : 's'} shown.`;
+  } catch (err) {
+    console.error(err);
+    statusEl.textContent = 'Error: ' + err.message;
+    gridEl.innerHTML = '';
+  }
+});
+
+function renderGrid(results) {
+  const gridEl = document.getElementById('grid');
+  gridEl.innerHTML = '';
+  for (let i = 0; i < 9; i++) {
+    const bird = results[i];
+    const cell = document.createElement('div');
+    cell.className = 'cell' + (bird ? '' : ' empty-cell');
+    if (bird) {
+      cell.innerHTML = `
+        <span class="cell-num">${i + 1}</span>
+        <div class="thumb-wrap"><span class="no-img">🐦</span></div>
+        <div class="info">
+          <div class="name">${bird.comName}</div>
+          <div class="sci">${bird.sciName || ''}</div>
+          <div class="metric">${bird.metric || ''}</div>
+        </div>
+      `;
+      gridEl.appendChild(cell);
+      loadCellImage(cell, bird);
+    } else {
+      cell.textContent = '(no data)';
+      gridEl.appendChild(cell);
+    }
+  }
+}
+
+async function loadCellImage(cell, bird) {
+  let imageUrl = await fetchWikipediaImage(bird.comName);
+  if (!imageUrl && bird.sciName) {
+    imageUrl = await fetchWikipediaImage(bird.sciName);
+  }
+  if (!imageUrl) return;
+
+  const thumbWrap = cell.querySelector('.thumb-wrap');
+  const img = new Image();
+  img.alt = bird.comName;
+  img.onload = () => {
+    thumbWrap.innerHTML = '';
+    thumbWrap.appendChild(img);
+  };
+  img.onerror = () => {
+    // Leave placeholder in place
+  };
+  img.src = imageUrl;
+}
+
+// Wikipedia image lookup, mirrors app.js fetchWikipediaImage (cached in localStorage)
+async function fetchWikipediaImage(searchTerm) {
+  const cacheKey = `wiki_img_${searchTerm}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
+    return cached === 'null' ? null : cached;
+  }
+
+  const searchVariants = [searchTerm, searchTerm.replace(/-/g, ' ')];
+
+  for (let i = 0; i < searchVariants.length; i++) {
+    const variant = searchVariants[i];
+    if (i > 0 && variant === searchVariants[0]) continue;
+
+    try {
+      const title = encodeURIComponent(variant.replace(/ /g, '_'));
+      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages&pithumbsize=400&format=json&origin=*&redirects=1`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      const pages = data.query?.pages;
+      if (pages) {
+        const page = Object.values(pages)[0];
+        if (page.thumbnail?.source) {
+          const imageUrl = page.thumbnail.source;
+          localStorage.setItem(cacheKey, imageUrl);
+          return imageUrl;
+        }
+      }
+    } catch (error) {
+      console.error('[WikiAPI] Error fetching image for', variant, ':', error);
+    }
+  }
+
+  localStorage.setItem(cacheKey, 'null');
+  return null;
+}
+</script>
+
+</body>
+</html>

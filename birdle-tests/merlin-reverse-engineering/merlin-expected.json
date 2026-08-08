@@ -1,0 +1,44 @@
+{
+  "_comment": "Ground-truth target for reverse-engineering Merlin's 'Likely Birds' ordering. Captured by hand from the Merlin app for location 'Pretoria, Gauteng' / date 'Today'. Order is significant - this is the ranking we are trying to reproduce from the public eBird API. Not exhaustive; Merlin's list continues past this point, but these are the top entries in the order shown.",
+  "capturedOn": "2026-07-29",
+  "source": "Merlin Bird ID app, 'Likely Birds' view",
+  "merlinLocationLabel": "Pretoria, Gauteng",
+  "merlinDateLabel": "Today",
+  "location": {
+    "address": "330 Sprokie Avenue, Faerie Glen, Pretoria, South Africa, 0081",
+    "lat": -25.7834538,
+    "lng": 28.2928576,
+    "geocoder": "OpenStreetMap Nominatim",
+    "geocoderNote": "Full street address with house number returned no result; geocoded to the street centreline of Sprokie Avenue. Nominatim labels the suburb Garsfontein and postcode 0801, adjacent to Faerie Glen 0081.",
+    "ebirdRegionCandidates": {
+      "country": "ZA",
+      "subnational1": "ZA-GT"
+    }
+  },
+  "expectedOrder": [
+    "Laughing Dove",
+    "Cape Robin-Chat",
+    "Red-eyed Dove",
+    "Southern Masked-Weaver",
+    "Hadada Ibis",
+    "Cape Sparrow",
+    "Common Bulbul",
+    "Karoo Thrush",
+    "Crowned Lapwing",
+    "Pied Crow",
+    "Southern Fiscal",
+    "Ring-necked Dove",
+    "Common Myna",
+    "Speckled Mousebird",
+    "Blacksmith Lapwing",
+    "Cape Starling",
+    "Crested Barbet",
+    "Gray Go-away-bird",
+    "Common Ostrich",
+    "Speckled Pigeon",
+    "African Stonechat",
+    "Helmeted Guineafowl",
+    "Tawny-flanked Prinia",
+    "Southern Gray-headed Sparrow"
+  ]
+}

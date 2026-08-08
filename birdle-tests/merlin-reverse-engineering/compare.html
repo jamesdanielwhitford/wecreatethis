@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Method Comparison - Bird Bingo</title>
+<style>
+  :root {
+    --bg:#101114; --panel:#17181c; --border:#2a2c33;
+    --text:#e8e9ec; --muted:#8b8f99; --accent:#2d7a3a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:20px;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}
+  h1{font-size:1.3rem;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:.85rem;margin-bottom:18px}
+  .controls{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:14px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+  .field{display:flex;flex-direction:column;gap:4px}
+  label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  input{background:var(--bg);color:var(--text);border:1px solid var(--border);
+    border-radius:6px;padding:7px 9px;font-size:.9rem;font-family:inherit}
+  button{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:9px 16px;
+    font-size:.9rem;font-weight:600;cursor:pointer;font-family:inherit}
+  button:disabled{opacity:.5;cursor:default}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+  .col{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .col.winner{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .col-head{padding:12px 14px;border-bottom:1px solid var(--border)}
+  .col-title{font-weight:700;font-size:.95rem;margin-bottom:2px}
+  .col-desc{font-size:.72rem;color:var(--muted);line-height:1.4;min-height:32px}
+  .stats{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .stat{flex:1;min-width:52px}
+  .stat-v{font-size:1.05rem;font-weight:700}
+  .stat-l{font-size:.6rem;color:var(--muted);text-transform:uppercase}
+  ol{margin:0;padding:6px 0;list-style:none;counter-reset:n}
+  li{counter-increment:n;padding:4px 14px 4px 34px;position:relative;font-size:.82rem;
+    border-bottom:1px solid rgba(255,255,255,.03)}
+  li:before{content:counter(n);position:absolute;left:10px;color:var(--muted);font-size:.7rem;top:5px}
+  li.hit{background:rgba(45,122,58,.2)}
+  li.hit-exact{background:rgba(45,122,58,.42);font-weight:600}
+  li.miss{color:var(--muted)}
+  li .pct{float:right;color:var(--muted);font-size:.72rem}
+  .status{padding:14px;color:var(--muted);font-size:.8rem;white-space:pre-wrap;
+    font-family:ui-monospace,Menlo,monospace;font-size:.7rem;max-height:120px;overflow:auto}
+  .legend{display:flex;gap:16px;font-size:.75rem;color:var(--muted);margin:14px 0;flex-wrap:wrap}
+  .sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+  .merlin li{background:rgba(255,255,255,.03)}
+</style>
+</head>
+<body>
+
+<h1>Method Comparison</h1>
+<div class="sub">
+  Same location, same moment, five ranking methods side by side. Green = the bird is on
+  Merlin's list; bright green = it is in the exact position Merlin has it.
+</div>
+
+<div class="controls">
+  <div class="field"><label>Latitude</label>
+    <input id="lat" type="number" step="0.0001" value="-25.7834538" style="width:130px"></div>
+  <div class="field"><label>Longitude</label>
+    <input id="lng" type="number" step="0.0001" value="28.2928576" style="width:130px"></div>
+  <button id="run">Run all methods</button>
+  <div style="font-size:.72rem;color:var(--muted);max-width:320px">
+    Runs sequentially so the timings are comparable. The slow ones take a few minutes.
+  </div>
+</div>
+
+<div class="legend">
+  <span><span class="sw" style="background:rgba(45,122,58,.42)"></span>exact position match</span>
+  <span><span class="sw" style="background:rgba(45,122,58,.2)"></span>on Merlin's list, wrong position</span>
+  <span><span class="sw" style="background:#2a2c33"></span>not on Merlin's list</span>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const API_KEY='rut6699v8fce', BASE='https://api.ebird.org/v2';
+const EXPECTED=["Laughing Dove","Cape Robin-Chat","Red-eyed Dove","Southern Masked-Weaver",
+ "Hadada Ibis","Cape Sparrow","Common Bulbul","Karoo Thrush","Crowned Lapwing","Pied Crow",
+ "Southern Fiscal","Ring-necked Dove","Common Myna","Speckled Mousebird","Blacksmith Lapwing",
+ "Cape Starling","Crested Barbet","Gray Go-away-bird","Common Ostrich","Speckled Pigeon",
+ "African Stonechat","Helmeted Guineafowl","Tawny-flanked Prinia","Southern Gray-headed Sparrow"];
+const ALIASES={'dark capped bulbul':'common bulbul','hadeda ibis':'hadada ibis',
+ 'cape turtle dove':'ring necked dove','cape turtle ring necked dove':'ring necked dove',
+ 'cape glossy starling':'cape starling'};
+function norm(s){let n=s.toLowerCase().replace(/\(.*?\)/g,' ').replace(/[-'.]/g,' ')
+ .replace(/grey/g,'gray').replace(/\s+/g,' ').trim();return ALIASES[n]||n;}
+const EXP_N=EXPECTED.map(norm);
+
+let calls=0;
+async function api(path,params){
+  const u=new URL(BASE+path);
+  Object.entries(params||{}).forEach(([k,v])=>u.searchParams.set(k,v));
+  calls++;
+  const r=await fetch(u,{headers:{'x-ebirdapitoken':API_KEY}});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+async function pool(items,limit,fn){
+  const out=[];let i=0;
+  await Promise.all(Array.from({length:Math.min(limit,items.length)},async()=>{
+    while(i<items.length){const k=i++;try{out[k]=await fn(items[k]);}catch(e){out[k]=null;}}
+  }));
+  return out.filter(Boolean);
+}
+function tau(exp,got){
+  const p=[];exp.forEach((e,i)=>{const j=got.indexOf(e);if(j>=0)p.push([i,j]);});
+  let c=0,d=0;
+  for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++){
+    const a=(p[i][0]-p[j][0])*(p[i][1]-p[j][1]);if(a>0)c++;else if(a<0)d++;}
+  return (c+d)?(c-d)/(c+d):0;
+}
+const km=(a,b,c,d)=>{const R=6371,t=x=>x*Math.PI/180;
+  const dLat=t(c-a),dLng=t(d-b);
+  const h=Math.sin(dLat/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));};
+
+// ---- shared helper: turn a set of checklist subIds into a ranked frequency list ----
+async function rankFromChecklists(subIds,setStatus){
+  setStatus('Fetching species for '+subIds.length+' checklists...');
+  const cls=await pool(subIds,8,id=>api('/product/checklist/view/'+id));
+  const freq=new Map();let used=0;
+  cls.forEach(c=>{if(!c||!c.obs)return;used++;
+    new Set(c.obs.map(o=>o.speciesCode)).forEach(s=>freq.set(s,(freq.get(s)||0)+1));});
+  return {freq,used};
+}
+async function nameThem(codes,setStatus){
+  const names=new Map();
+  const list=[...codes];
+  for(let i=0;i<list.length;i+=200){
+    setStatus('Resolving names '+i+'/'+list.length+'...');
+    const t=await api('/ref/taxonomy/ebird',{fmt:'json',species:list.slice(i,i+200).join(',')});
+    t.forEach(x=>names.set(x.speciesCode,x.comName));
+  }
+  return names;
+}
+
+// ---------------- The methods ----------------
+const METHODS=[
+{
+  id:'current', title:'Current app', desc:'geo/recent 8km, counts occurrences per species. This is what bird-bingo ships today.',
+  async run(lat,lng,setStatus){
+    setStatus('Fetching nearby observations...');
+    const obs=await api('/data/obs/geo/recent',{lat,lng,dist:8,back:30});
+    const c=new Map(),n=new Map();
+    obs.forEach(o=>{c.set(o.speciesCode,(c.get(o.speciesCode)||0)+1);n.set(o.speciesCode,o.comName);});
+    return [...c.entries()].sort((a,b)=>b[1]-a[1])
+      .map(([code,v])=>({name:n.get(code),pct:null}));
+  }
+},
+{
+  id:'wide', title:'Current app, 25km', desc:'Same method, wider radius. Tests whether radius tuning alone helps.',
+  async run(lat,lng,setStatus){
+    setStatus('Fetching nearby observations...');
+    const obs=await api('/data/obs/geo/recent',{lat,lng,dist:25,back:30});
+    const c=new Map(),n=new Map();
+    obs.forEach(o=>{c.set(o.speciesCode,(c.get(o.speciesCode)||0)+1);n.set(o.speciesCode,o.comName);});
+    return [...c.entries()].sort((a,b)=>b[1]-a[1]).map(([code])=>({name:n.get(code),pct:null}));
+  }
+},
+{
+  id:'hs-rich', title:'Hotspot freq (richest)', desc:'Real per-checklist frequency from the 14 species-richest hotspots within 15km, recent checklists.',
+  async run(lat,lng,setStatus){
+    setStatus('Fetching hotspots...');
+    const hs=await api('/ref/hotspot/geo',{lat,lng,dist:15,fmt:'json',back:30});
+    hs.sort((a,b)=>(b.numSpeciesAllTime||0)-(a.numSpeciesAllTime||0));
+    const chosen=hs.slice(0,14);
+    setStatus('Fetching checklists from '+chosen.length+' hotspots...');
+    const lists=await pool(chosen,4,h=>api('/product/lists/'+h.locId,{maxResults:14}));
+    const ids=[...new Set(lists.flat().map(x=>x.subId))];
+    const {freq,used}=await rankFromChecklists(ids,setStatus);
+    const names=await nameThem(freq.keys(),setStatus);
+    return [...freq.entries()].sort((a,b)=>b[1]-a[1])
+      .map(([code,v])=>({name:names.get(code)||code,pct:v/used}));
+  }
+},
+{
+  id:'hs-near', title:'Hotspot freq (nearest)', desc:'Same, but the 14 CLOSEST hotspots instead of the richest. Tests the "big reserve bias" theory.',
+  async run(lat,lng,setStatus){
+    setStatus('Fetching hotspots...');
+    const hs=await api('/ref/hotspot/geo',{lat,lng,dist:15,fmt:'json',back:30});
+    hs.forEach(h=>h._km=km(lat,lng,h.lat,h.lng));
+    hs.sort((a,b)=>a._km-b._km);
+    const chosen=hs.slice(0,14);
+    setStatus('Fetching checklists from '+chosen.length+' hotspots...');
+    const lists=await pool(chosen,4,h=>api('/product/lists/'+h.locId,{maxResults:14}));
+    const ids=[...new Set(lists.flat().map(x=>x.subId))];
+    const {freq,used}=await rankFromChecklists(ids,setStatus);
+    const names=await nameThem(freq.keys(),setStatus);
+    return [...freq.entries()].sort((a,b)=>b[1]-a[1])
+      .map(([code,v])=>({name:names.get(code)||code,pct:v/used}));
+  }
+},
+{
+  id:'hs-near8', title:'Nearest, 8km only', desc:'Nearest hotspots but capped at 8km, so big out-of-town reserves are excluded entirely.',
+  async run(lat,lng,setStatus){
+    setStatus('Fetching hotspots...');
+    const hs=await api('/ref/hotspot/geo',{lat,lng,dist:8,fmt:'json',back:30});
+    hs.forEach(h=>h._km=km(lat,lng,h.lat,h.lng));
+    hs.sort((a,b)=>a._km-b._km);
+    const chosen=hs.slice(0,14);
+    setStatus('Fetching checklists from '+chosen.length+' hotspots...');
+    const lists=await pool(chosen,4,h=>api('/product/lists/'+h.locId,{maxResults:14}));
+    const ids=[...new Set(lists.flat().map(x=>x.subId))];
+    const {freq,used}=await rankFromChecklists(ids,setStatus);
+    const names=await nameThem(freq.keys(),setStatus);
+    return [...freq.entries()].sort((a,b)=>b[1]-a[1])
+      .map(([code,v])=>({name:names.get(code)||code,pct:v/used}));
+  }
+},
+{
+  id:'hs-weighted', title:'Nearest, distance-weighted', desc:'Nearest 14 hotspots, but each checklist counts less the further away it is (1/(1+km)). Closest patch dominates.',
+  async run(lat,lng,setStatus){
+    setStatus('Fetching hotspots...');
+    const hs=await api('/ref/hotspot/geo',{lat,lng,dist:15,fmt:'json',back:30});
+    hs.forEach(h=>h._km=km(lat,lng,h.lat,h.lng));
+    hs.sort((a,b)=>a._km-b._km);
+    const chosen=hs.slice(0,14);
+    setStatus('Fetching checklists from '+chosen.length+' hotspots...');
+    const lists=await pool(chosen,4,async h=>{
+      const l=await api('/product/lists/'+h.locId,{maxResults:14});
+      return (l||[]).map(x=>({subId:x.subId,w:1/(1+h._km)}));
+    });
+    const flat=lists.flat();
+    const wById=new Map(flat.map(x=>[x.subId,x.w]));
+    const ids=[...wById.keys()];
+    setStatus('Fetching species for '+ids.length+' checklists...');
+    const cls=await pool(ids,8,id=>api('/product/checklist/view/'+id));
+    const freq=new Map();let total=0;
+    cls.forEach(c=>{
+      if(!c||!c.obs)return;
+      const w=wById.get(c.subId)||0.1;total+=w;
+      new Set(c.obs.map(o=>o.speciesCode)).forEach(s=>freq.set(s,(freq.get(s)||0)+w));
+    });
+    const names=await nameThem(freq.keys(),setStatus);
+    return [...freq.entries()].sort((a,b)=>b[1]-a[1])
+      .map(([code,v])=>({name:names.get(code)||code,pct:v/total}));
+  }
+},
+{
+  id:'region', title:'Region checklists', desc:'Every recent checklist across City of Tshwane (not just hotspots), aggregated into true frequency.',
+  async run(lat,lng,setStatus){
+    setStatus('Fetching region checklists...');
+    const lists=await api('/product/lists/ZA-GT-08',{maxResults:200});
+    const ids=[...new Set(lists.map(x=>x.subId))];
+    const {freq,used}=await rankFromChecklists(ids,setStatus);
+    const names=await nameThem(freq.keys(),setStatus);
+    return [...freq.entries()].sort((a,b)=>b[1]-a[1])
+      .map(([code,v])=>({name:names.get(code)||code,pct:v/used}));
+  }
+}];
+
+function card(m){
+  return `<div class="col" id="col-${m.id}">
+    <div class="col-head">
+      <div class="col-title">${m.title}</div>
+      <div class="col-desc">${m.desc}</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-v" id="r-${m.id}">-</div><div class="stat-l">recall</div></div>
+      <div class="stat"><div class="stat-v" id="q-${m.id}">-</div><div class="stat-l">top9 hit</div></div>
+      <div class="stat"><div class="stat-v" id="t-${m.id}">-</div><div class="stat-l">tau</div></div>
+      <div class="stat"><div class="stat-v" id="s-${m.id}">-</div><div class="stat-l">seconds</div></div>
+      <div class="stat"><div class="stat-v" id="c-${m.id}">-</div><div class="stat-l">calls</div></div>
+    </div>
+    <div class="status" id="st-${m.id}">waiting...</div>
+    <ol id="l-${m.id}"></ol>
+  </div>`;
+}
+
+function renderMerlin(){
+  return `<div class="col merlin">
+    <div class="col-head">
+      <div class="col-title">Merlin (ground truth)</div>
+      <div class="col-desc">Hand-captured from the Merlin app: "Pretoria, Gauteng" / "Today". What we are trying to reproduce.</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-v">24/24</div><div class="stat-l">recall</div></div>
+      <div class="stat"><div class="stat-v">+1.00</div><div class="stat-l">tau</div></div>
+      <div class="stat"><div class="stat-v">-</div><div class="stat-l">seconds</div></div>
+      <div class="stat"><div class="stat-v">-</div><div class="stat-l">calls</div></div>
+    </div>
+    <div class="status">the target</div>
+    <ol>${EXPECTED.map(e=>`<li>${e}</li>`).join('')}</ol>
+  </div>`;
+}
+
+document.getElementById('grid').innerHTML = renderMerlin() + METHODS.map(card).join('');
+
+document.getElementById('run').addEventListener('click',async()=>{
+  const btn=document.getElementById('run');btn.disabled=true;
+  const lat=+document.getElementById('lat').value, lng=+document.getElementById('lng').value;
+  const results=[];
+  for(const m of METHODS){
+    const st=document.getElementById('st-'+m.id);
+    const setStatus=s=>{st.textContent=s;};
+    calls=0;const t0=performance.now();
+    try{
+      const ranked=await m.run(lat,lng,setStatus);
+      const secs=((performance.now()-t0)/1000).toFixed(1);
+      const got=ranked.slice(0,24).map(x=>norm(x.name));
+      const hits=EXP_N.filter(e=>got.includes(e));
+      const tv=tau(EXP_N,got);
+      // What a 3x3 card would actually draw from: how many of this method's top 9
+      // are anywhere on Merlin's list. This matters more than recall@24 for the app.
+      const top9=got.slice(0,9).filter(e=>EXP_N.includes(e)).length;
+      document.getElementById('q-'+m.id).textContent=top9+'/9';
+      document.getElementById('r-'+m.id).textContent=hits.length+'/24';
+      document.getElementById('t-'+m.id).textContent=(tv>=0?'+':'')+tv.toFixed(2);
+      document.getElementById('s-'+m.id).textContent=secs;
+      document.getElementById('c-'+m.id).textContent=calls;
+      document.getElementById('l-'+m.id).innerHTML=ranked.slice(0,24).map((x,i)=>{
+        const n=norm(x.name);
+        const cls=n===EXP_N[i]?'hit-exact':(EXP_N.includes(n)?'hit':'miss');
+        const pct=x.pct!=null?`<span class="pct">${(x.pct*100).toFixed(0)}%</span>`:'';
+        return `<li class="${cls}">${x.name}${pct}</li>`;
+      }).join('');
+      st.textContent='done in '+secs+'s, '+calls+' API calls';
+      results.push({id:m.id,hits:hits.length,tau:tv});
+    }catch(e){ st.textContent='ERROR: '+e.message; }
+  }
+  // Highlight the best performer.
+  const best=results.sort((a,b)=>b.hits-a.hits||b.tau-a.tau)[0];
+  if(best) document.getElementById('col-'+best.id).classList.add('winner');
+  btn.disabled=false;
+});
+</script>
+</body>
+</html>

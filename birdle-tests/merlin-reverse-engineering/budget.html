@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Budget Sweep - Bird Bingo</title>
+<style>
+  :root{--bg:#101114;--panel:#17181c;--border:#2a2c33;--text:#e8e9ec;--muted:#8b8f99;--accent:#2d7a3a}
+  *{box-sizing:border-box}
+  body{margin:0;padding:20px;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}
+  h1{font-size:1.3rem;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:.85rem;margin-bottom:16px;max-width:900px;line-height:1.5}
+  .controls{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:14px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+  .field{display:flex;flex-direction:column;gap:4px}
+  label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  input,select{background:var(--bg);color:var(--text);border:1px solid var(--border);
+    border-radius:6px;padding:7px 9px;font-size:.9rem;font-family:inherit}
+  button{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:9px 16px;
+    font-size:.9rem;font-weight:600;cursor:pointer;font-family:inherit}
+  button:disabled{opacity:.5;cursor:default}
+  h2{font-size:1rem;margin:22px 0 4px}
+  .mdesc{font-size:.75rem;color:var(--muted);margin-bottom:10px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+  .col{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .col-head{padding:10px 12px;border-bottom:1px solid var(--border)}
+  .col-title{font-weight:700;font-size:.88rem}
+  .col-desc{font-size:.68rem;color:var(--muted);margin-top:2px}
+  .big{display:flex;gap:8px;padding:9px 12px;border-bottom:1px solid var(--border);
+    background:rgba(45,122,58,.07)}
+  .big div{flex:1}
+  .big-v{font-size:1.3rem;font-weight:700;line-height:1.1}
+  .big-l{font-size:.58rem;color:var(--muted);text-transform:uppercase}
+  .stats{display:flex;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border)}
+  .stat{flex:1}
+  .stat-v{font-size:.92rem;font-weight:600}
+  .stat-l{font-size:.56rem;color:var(--muted);text-transform:uppercase}
+  ol{margin:0;padding:5px 0;list-style:none;counter-reset:n}
+  li{counter-increment:n;padding:3px 12px 3px 29px;position:relative;font-size:.78rem;
+    border-bottom:1px solid rgba(255,255,255,.03)}
+  li:before{content:counter(n);position:absolute;left:8px;color:var(--muted);font-size:.65rem;top:4px}
+  li.hit{background:rgba(45,122,58,.2)}
+  li.hit-exact{background:rgba(45,122,58,.42);font-weight:600}
+  li.miss{color:var(--muted)}
+  li .pct{float:right;color:var(--muted);font-size:.69rem}
+  .st{padding:8px 12px;color:var(--muted);font-size:.66rem;font-family:ui-monospace,Menlo,monospace}
+  .merlin li{background:rgba(255,255,255,.04)}
+  .legend{display:flex;gap:16px;font-size:.75rem;color:var(--muted);margin:12px 0;flex-wrap:wrap}
+  .sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+</style>
+</head>
+<body>
+
+<h1>API Budget Sweep</h1>
+<div class="sub">
+  Three methods, each run at five shrinking API budgets. The question: how few calls can we
+  spend before the bird list stops being good? Judge the lists.
+  <strong>eBird returns slightly different data run to run, so small differences between
+  adjacent columns are noise; big drops are real.</strong>
+</div>
+
+<div class="controls">
+  <div class="field"><label>Latitude</label>
+    <input id="lat" type="number" step="0.0001" value="-25.7834538" style="width:130px"></div>
+  <div class="field"><label>Longitude</label>
+    <input id="lng" type="number" step="0.0001" value="28.2928576" style="width:130px"></div>
+  <div class="field"><label>Radius (km)</label>
+    <input id="dist" type="number" value="15" style="width:75px"></div>
+  <div class="field"><label>Region code</label>
+    <input id="region" value="ZA-GT-08" style="width:95px"></div>
+  <button id="run">Run sweep</button>
+</div>
+
+<div class="legend">
+  <span><span class="sw" style="background:rgba(45,122,58,.42)"></span>exact position match</span>
+  <span><span class="sw" style="background:rgba(45,122,58,.2)"></span>on Merlin's list</span>
+  <span><span class="sw" style="background:#2a2c33"></span>not on Merlin's list</span>
+</div>
+
+<div id="merlinSlot"></div>
+<div id="out"></div>
+
+<script>
+const API_KEY='rut6699v8fce',BASE='https://api.ebird.org/v2';
+const EXPECTED=["Laughing Dove","Cape Robin-Chat","Red-eyed Dove","Southern Masked-Weaver",
+ "Hadada Ibis","Cape Sparrow","Common Bulbul","Karoo Thrush","Crowned Lapwing","Pied Crow",
+ "Southern Fiscal","Ring-necked Dove","Common Myna","Speckled Mousebird","Blacksmith Lapwing",
+ "Cape Starling","Crested Barbet","Gray Go-away-bird","Common Ostrich","Speckled Pigeon",
+ "African Stonechat","Helmeted Guineafowl","Tawny-flanked Prinia","Southern Gray-headed Sparrow"];
+const ALIASES={'dark capped bulbul':'common bulbul','hadeda ibis':'hadada ibis',
+ 'cape turtle dove':'ring necked dove','cape turtle ring necked dove':'ring necked dove',
+ 'cape glossy starling':'cape starling'};
+function norm(s){let n=s.toLowerCase().replace(/\(.*?\)/g,' ').replace(/[-'.]/g,' ')
+ .replace(/grey/g,'gray').replace(/\s+/g,' ').trim();return ALIASES[n]||n;}
+const EXP_N=EXPECTED.map(norm);
+
+let calls=0;
+async function api(p,q){
+  const u=new URL(BASE+p);Object.entries(q||{}).forEach(([k,v])=>u.searchParams.set(k,v));
+  calls++;
+  const r=await fetch(u,{headers:{'x-ebirdapitoken':API_KEY}});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+async function pool(items,limit,fn){
+  const out=[];let i=0;
+  await Promise.all(Array.from({length:Math.min(limit,items.length)},async()=>{
+    while(i<items.length){const k=i++;try{out[k]=await fn(items[k]);}catch(e){out[k]=null;}}}));
+  return out.filter(Boolean);
+}
+function tau(exp,got){
+  const p=[];exp.forEach((e,i)=>{const j=got.indexOf(e);if(j>=0)p.push([i,j]);});
+  let c=0,d=0;
+  for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++){
+    const a=(p[i][0]-p[j][0])*(p[i][1]-p[j][1]);if(a>0)c++;else if(a<0)d++;}
+  return (c+d)?(c-d)/(c+d):0;
+}
+const km=(a,b,c,d)=>{const R=6371,t=x=>x*Math.PI/180;
+  const dLat=t(c-a),dLng=t(d-b);
+  const h=Math.sin(dLat/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));};
+
+async function namesFor(codes){
+  const list=[...codes],names=new Map();
+  for(let i=0;i<list.length;i+=200){
+    const t=await api('/ref/taxonomy/ebird',{fmt:'json',species:list.slice(i,i+200).join(',')});
+    t.forEach(x=>names.set(x.speciesCode,x.comName));
+  }
+  return names;
+}
+
+// budget: [hotspots, checklists-per-hotspot] / for region: total checklists
+const BUDGETS=[
+  {id:'full', h:14,c:14, region:200, title:'Full',    desc:'baseline'},
+  {id:'half', h:10,c:10, region:100, title:'Half',    desc:'~50% work'},
+  {id:'qtr',  h:7, c:7,  region:50,  title:'Quarter', desc:'~25% work'},
+  {id:'8th',  h:5, c:5,  region:25,  title:'Eighth',  desc:'~12% work'},
+  {id:'min',  h:4, c:3,  region:12,  title:'Minimal', desc:'bare minimum'}
+];
+
+const METHODS=[
+  {id:'near', title:'Hotspot nearest',
+   desc:'Nearest hotspots, plain per-checklist frequency. (Your pick #1.)',
+   weighted:false, kind:'hotspot'},
+  {id:'wtd', title:'Nearest, distance-weighted',
+   desc:'Same, but each checklist counts 1/(1+km) so the closest patch dominates. (Your pick #2.)',
+   weighted:true, kind:'hotspot'},
+  {id:'region', title:'Region checklists',
+   desc:'Every recent checklist across the region, not just hotspots.',
+   weighted:false, kind:'region'}
+];
+
+function merlinCard(){
+  return `<div class="grid"><div class="col merlin" style="max-width:260px">
+    <div class="col-head"><div class="col-title">Merlin (ground truth)</div>
+      <div class="col-desc">what we are trying to reproduce</div></div>
+    <div class="stats"><div class="stat"><div class="stat-v">24/24</div><div class="stat-l">recall</div></div>
+      <div class="stat"><div class="stat-v">9/9</div><div class="stat-l">top9</div></div>
+      <div class="stat"><div class="stat-v">+1.00</div><div class="stat-l">tau</div></div></div>
+    <ol>${EXPECTED.map(e=>`<li>${e}</li>`).join('')}</ol></div></div>`;
+}
+
+function section(m){
+  return `<h2>${m.title}</h2><div class="mdesc">${m.desc}</div>
+  <div class="grid">${BUDGETS.map(b=>`<div class="col" id="col-${m.id}-${b.id}">
+    <div class="col-head"><div class="col-title">${b.title}</div>
+      <div class="col-desc">${m.kind==='region'?b.region+' checklists':b.h+' spots x '+b.c}</div></div>
+    <div class="big">
+      <div><div class="big-v" id="s-${m.id}-${b.id}">-</div><div class="big-l">seconds</div></div>
+      <div><div class="big-v" id="c-${m.id}-${b.id}">-</div><div class="big-l">api calls</div></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-v" id="r-${m.id}-${b.id}">-</div><div class="stat-l">recall</div></div>
+      <div class="stat"><div class="stat-v" id="q-${m.id}-${b.id}">-</div><div class="stat-l">top9</div></div>
+      <div class="stat"><div class="stat-v" id="t-${m.id}-${b.id}">-</div><div class="stat-l">tau</div></div>
+    </div>
+    <div class="st" id="st-${m.id}-${b.id}">waiting...</div>
+    <ol id="l-${m.id}-${b.id}"></ol>
+  </div>`).join('')}</div>`;
+}
+
+document.getElementById('merlinSlot').innerHTML=merlinCard();
+document.getElementById('out').innerHTML=METHODS.map(section).join('');
+
+async function run(lat,lng,dist,regionCode,m,b){
+  const key=m.id+'-'+b.id;
+  const st=document.getElementById('st-'+key);
+  calls=0;const t0=performance.now();
+  let freq=new Map(),denom=0;
+
+  if(m.kind==='region'){
+    st.textContent='fetching region checklists...';
+    const lists=await api('/product/lists/'+regionCode,{maxResults:b.region});
+    const ids=[...new Set(lists.map(x=>x.subId))];
+    st.textContent='fetching '+ids.length+' checklists...';
+    const cls=await pool(ids,8,id=>api('/product/checklist/view/'+id));
+    cls.forEach(c=>{if(!c||!c.obs)return;denom++;
+      new Set(c.obs.map(o=>o.speciesCode)).forEach(s=>freq.set(s,(freq.get(s)||0)+1));});
+  } else {
+    st.textContent='fetching hotspots...';
+    const hs=await api('/ref/hotspot/geo',{lat,lng,dist,fmt:'json',back:30});
+    hs.forEach(h=>h._km=km(lat,lng,h.lat,h.lng));
+    hs.sort((a,b)=>a._km-b._km);
+    const chosen=hs.slice(0,b.h);
+    st.textContent='fetching checklists...';
+    const lists=await pool(chosen,4,async h=>{
+      const l=await api('/product/lists/'+h.locId,{maxResults:b.c});
+      return (l||[]).map(x=>({subId:x.subId,w:1/(1+h._km)}));
+    });
+    const flat=lists.flat();
+    const wById=new Map(flat.map(x=>[x.subId,x.w]));
+    const ids=[...wById.keys()];
+    st.textContent='fetching '+ids.length+' checklists...';
+    const cls=await pool(ids,8,id=>api('/product/checklist/view/'+id));
+    cls.forEach(c=>{if(!c||!c.obs)return;
+      const w=m.weighted?(wById.get(c.subId)||0.1):1;
+      denom+=w;
+      new Set(c.obs.map(o=>o.speciesCode)).forEach(s=>freq.set(s,(freq.get(s)||0)+w));});
+  }
+
+  const names=await namesFor(freq.keys());
+  const ranked=[...freq.entries()].sort((a,b)=>b[1]-a[1])
+    .map(([code,v])=>({name:names.get(code)||code,pct:denom?v/denom:0}));
+  const secs=((performance.now()-t0)/1000).toFixed(1);
+
+  const got=ranked.slice(0,24).map(x=>norm(x.name));
+  const hits=EXP_N.filter(e=>got.includes(e));
+  const top9=got.slice(0,9).filter(e=>EXP_N.includes(e)).length;
+  const tv=tau(EXP_N,got);
+  document.getElementById('r-'+key).textContent=hits.length+'/24';
+  document.getElementById('q-'+key).textContent=top9+'/9';
+  document.getElementById('t-'+key).textContent=(tv>=0?'+':'')+tv.toFixed(2);
+  document.getElementById('s-'+key).textContent=secs;
+  document.getElementById('c-'+key).textContent=calls;
+  document.getElementById('l-'+key).innerHTML=ranked.slice(0,24).map((x,i)=>{
+    const n=norm(x.name);
+    const cls=n===EXP_N[i]?'hit-exact':(EXP_N.includes(n)?'hit':'miss');
+    return `<li class="${cls}">${x.name}<span class="pct">${(x.pct*100).toFixed(0)}%</span></li>`;
+  }).join('');
+  st.textContent=(m.weighted?'weighted over ':'')+Math.round(denom)+' checklists';
+}
+
+document.getElementById('run').addEventListener('click',async()=>{
+  const btn=document.getElementById('run');btn.disabled=true;
+  const lat=+document.getElementById('lat').value,lng=+document.getElementById('lng').value;
+  const dist=+document.getElementById('dist').value;
+  const regionCode=document.getElementById('region').value.trim();
+  for(const m of METHODS) for(const b of BUDGETS){
+    try{ await run(lat,lng,dist,regionCode,m,b); }
+    catch(e){ document.getElementById('st-'+m.id+'-'+b.id).textContent='ERROR: '+e.message; }
+  }
+  btn.disabled=false;
+});
+</script>
+</body>
+</html>
