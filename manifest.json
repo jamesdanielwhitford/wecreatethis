@@ -1,7 +1,7 @@
 {
   "name": "We Create This",
   "short_name": "WCT",
-  "description": "James Daniel Whitford's blog",
+  "description": "Blog.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -57,7 +57,8 @@ body {
    Post pages leave the center slot empty (the post's own H1 is the title)
    and fade this header on scroll (see .nav-hidden below). */
 header {
-  margin-bottom: 40px;
+  margin: -48px -24px 24px;
+  padding: 24px 24px 0;
   position: sticky;
   top: 0;
   z-index: 20;
