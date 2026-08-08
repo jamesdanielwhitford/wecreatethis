@@ -75,6 +75,30 @@ function renderMarkdown(md, imageSizes) {
   // consecutive `.+\n?` list/quote lines fail to chain into one block.
   let html = md.replace(/\r\n?/g, '\n');
 
+  // Link cards: a whole title + description wrapped in one <a>, for
+  // homepage-style "the folder speaks for itself" listings, where the
+  // reader clicks anywhere in the block rather than just underlined text.
+  // Written as a fenced block (```link:/some/url) so a URL can ride on the
+  // opening line without any new inline syntax: first line inside is the
+  // title, the rest is the description. Extracted first, on raw text, same
+  // as fenced code/blockquotes below - otherwise the generic fenced-code
+  // pass right after this would swallow ```link:... as a plain code block
+  // before this regex ever saw it.
+  html = html.replace(/^ {0,3}```link:(\S+)[ \t]*\n(.+)\n([\s\S]*?)\n {0,3}```[ \t]*$/gm,
+    (m, href, title, desc) => {
+      const inlineRaw = text => escHtml(text)
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>');
+      blocks.push(
+        `<a class="link-card" href="${escHtml(href)}">` +
+        `<span class="link-card-title">${inlineRaw(title)}</span>` +
+        `<span class="link-card-desc">${inlineRaw(desc.replace(/\n/g, ' '))}</span>` +
+        `</a>`
+      );
+      return placeholder('B', blocks.length - 1);
+    }
+  );
+
   // Pull fenced code blocks out of the raw text first so nothing inside
   // them gets treated as markdown. Up to 3 leading spaces are tolerated
   // before the marker, matching how far a heading/list/quote can be
@@ -111,7 +135,16 @@ function renderMarkdown(md, imageSizes) {
         const dims = size ? ` width="${size.width}" height="${size.height}"` : '';
         return `<img src="${src}" alt="${alt}"${dims} loading="lazy" decoding="async">`;
       })
-      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>');
+      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, label, href) => {
+        // Internal links are always relative (/some-path) or an in-page
+        // fragment (#heading); only http(s) links leave the site, so only
+        // those get target="_blank". rel="noopener" is mandatory whenever
+        // target="_blank" is used, so a malicious external page can't
+        // reach back into this tab via window.opener.
+        const external = /^https?:\/\//i.test(href);
+        const attrs = external ? ' target="_blank" rel="noopener"' : '';
+        return `<a href="${href}"${attrs}>${label}</a>`;
+      });
   }
 
   // Tables: a header row, a |---|---| separator, then body rows. Pulled out

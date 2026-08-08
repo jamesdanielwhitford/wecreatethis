@@ -429,6 +429,14 @@ main:has(.post-single) .section-head {
   margin-top: 0;
 }
 
+/* Homepage only: sections act as top-level nav for the link-card folders
+   beneath them, so bold them to read as the stronger heading - decreasing
+   weight with depth (bold section > normal-weight folder title) instead of
+   the site's usual all-normal-weight heading treatment. */
+#home-content h2 {
+  font-weight: bold;
+}
+
 .md-content h3 {
   font-size: 1rem;
   font-weight: bold;
@@ -441,6 +449,35 @@ main:has(.post-single) .section-head {
 
 .md-content a {
   color: var(--text);
+  text-decoration: underline;
+}
+
+/* Link cards: a whole title + description clickable as one block, used on
+   the homepage so a folder can "speak for itself" instead of the reader
+   hunting for a separate underlined link. Source syntax is a fenced
+   ```link:/url block, handled in app.js's renderMarkdown. Plain text, no
+   card chrome - same underline-on-hover as any other link, just spanning
+   the title and description together. */
+.link-card {
+  display: block;
+  margin-bottom: 16px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.link-card:hover {
+  text-decoration: underline;
+}
+
+.link-card-title {
+  display: block;
+  font-weight: normal;
+  margin-bottom: 4px;
+}
+
+.link-card-desc {
+  display: block;
+  color: var(--muted);
 }
 
 .md-content ul,

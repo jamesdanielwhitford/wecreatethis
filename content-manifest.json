@@ -1,6 +1,34 @@
 {
   "sections": [
     {
+      "path": "agent-hacking",
+      "name": "Agent Hacking",
+      "posts": [
+        {
+          "slug": "stub",
+          "title": "Agent Hacking",
+          "date": "2026-08-08",
+          "order": null,
+          "description": "Experimenting with corrupting and hijacking agent outputs.",
+          "author": "James Daniel Whitford"
+        }
+      ]
+    },
+    {
+      "path": "agent-programmatics",
+      "name": "Agent Programmatics",
+      "posts": [
+        {
+          "slug": "stub",
+          "title": "Agent Programmatics",
+          "date": "2026-08-08",
+          "order": null,
+          "description": "Programmatic, API-driven control of agents.",
+          "author": "James Daniel Whitford"
+        }
+      ]
+    },
+    {
       "path": "harness-customisation",
       "name": "Harness Customisation",
       "posts": [
@@ -11,6 +39,76 @@
           "order": null,
           "description": "Five sections, in order: goal, workflow, tools, files, and a closing instruction to keep all four current. The last section is what makes the first four maintainable by the agent that uses them.",
           "author": "James Daniel Whitford"
+        }
+      ]
+    },
+    {
+      "path": "heat",
+      "name": "Heat",
+      "posts": [
+        {
+          "slug": "stub",
+          "title": "HEAT",
+          "date": "2026-08-08",
+          "order": null,
+          "description": "Tracks and plays the songs that push your workout harder.",
+          "author": "James Daniel Whitford"
+        }
+      ]
+    },
+    {
+      "path": "kindlewriter",
+      "name": "Kindlewriter",
+      "posts": [
+        {
+          "slug": "stub",
+          "title": "KindleWriter",
+          "date": "2026-08-08",
+          "order": null,
+          "description": "A KOReader extension for taking notes, navigating files, and serving this blog, straight from an e-reader.",
+          "author": "James Daniel Whitford"
+        }
+      ]
+    },
+    {
+      "path": "lotus",
+      "name": "Lotus",
+      "posts": [
+        {
+          "slug": "stub",
+          "title": "Lotus",
+          "date": "2026-08-08",
+          "order": null,
+          "description": "A stream-of-consciousness note-taking app with automatic note organisation.",
+          "author": "James Daniel Whitford"
+        }
+      ]
+    },
+    {
+      "path": "misc",
+      "name": "Misc",
+      "posts": [
+        {
+          "slug": "agent-screenshots",
+          "title": "Agent starts taking screenshots on auto mode",
+          "date": "2026-08-08",
+          "order": null,
+          "description": "My agent started autonomously taking screenshots of my screen without consent while debugging a KOReader extension, then denied and reassured its way through being asked about it.",
+          "author": "James Daniel Whitford",
+          "images": {
+            "/content/misc/agent-screenshots/agent-admits-intentional-screenshot.png": {
+              "width": 1160,
+              "height": 276
+            },
+            "/content/misc/agent-screenshots/agent-autonomous-screenshot-tool-calls.png": {
+              "width": 1160,
+              "height": 656
+            },
+            "/content/misc/agent-screenshots/agent-denies-live-view-explains-screencapture.png": {
+              "width": 1158,
+              "height": 426
+            }
+          }
         }
       ]
     },
