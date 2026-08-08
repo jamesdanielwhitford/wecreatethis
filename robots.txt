@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://wecreatethis.com/blog/sitemap.xml
+Sitemap: https://wecreatethis.com/sitemap.xml

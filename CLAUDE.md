@@ -14,7 +14,7 @@ This repository contains multiple offline-first web applications, each living in
 - **perfectday/** - Offline-first hiking map with lazy tile caching, GPS, compass, and sensor data. Uses MapLibre GL JS + OpenFreeMap. See [perfectday/CLAUDE.md](perfectday/CLAUDE.md) for details.
 - **starrynight/** - Skywatching conditions app (Starry Night). Cloud cover, moon phase, planet visibility, 7-day sky forecast. Uses Open-Meteo + SunCalc + AstronomyAPI. See [starrynight/CLAUDE.md](starrynight/CLAUDE.md) for details.
 - **voice-notes/** - Offline-first voice recording app with AI transcription via Mistral Voxtral. See [voice-notes/CLAUDE.md](voice-notes/CLAUDE.md) for details.
-- **blog/** - Blog with markdown-based posts and offline support. Folder-driven content with nested sections (`content/{section...}/{post}/index.md`), scroll-through post stack, hand-authored homepage (`content/home.md`), auto-generated manifest (CI regenerates on push). See [blog/CLAUDE.md](blog/CLAUDE.md) for details, including how its service worker deliberately differs from the repo-wide SW rules.
+- **Root (`/`) - the blog.** Moved here from `blog/` on branch `blog-homepage` so the site is primarily a blog; the old app-hub grid (index.html/sw.js/manifest.json/styles.css/icons) is archived, not deleted, at `archive/app-hub/`. Markdown posts with offline support: folder-driven content with nested sections (`content/{section...}/{post}/index.md`), every folder and every post its own route (`/{section...}/{post-slug}`, no shared scroll stack), hand-authored homepage (`content/home.md`), auto-generated manifest (CI regenerates on push). See [CLAUDE-blog.md](CLAUDE-blog.md) for details, including how its service worker deliberately differs from the repo-wide SW rules below (root `sw.js` IS the blog's SW now, there is no separate blog-scoped one).
 - **towersofhanoi/** - Tower of Hanoi agent benchmark. AI agents solve the puzzle via an MCP server (Pages Function + KV); live visualization, manual play, and leaderboard. See [towersofhanoi/CLAUDE.md](towersofhanoi/CLAUDE.md) for details.
 
 ## CV and Portfolio Pages
@@ -141,7 +141,7 @@ Every service worker follows one canonical strategy, **stale-while-revalidate wi
 **Canonical URLs:** Extensionless (e.g., `/tarot/reading` not `/tarot/reading.html`). Internal links must use extensionless absolute paths. Each SW keeps a `normalizeUrl()` helper (strips `.html`, normalizes `/index` → `/`, ignores query params) purely as a safety net for stray `.html` bookmarks, correctness must not depend on it.
 
 **Per-app exceptions (preserve these when editing):**
-- **blog**: content and manifest are network-first with URLs derived from `content-manifest.json`; shell is cache-first; never fetch `.html` URLs from that SW (see [blog/CLAUDE.md](blog/CLAUDE.md))
+- **blog (root `/sw.js`)**: content and manifest are network-first with URLs derived from `content-manifest.json`; shell is stale-while-revalidate; never fetch `.html` URLs from that SW (see [CLAUDE-blog.md](CLAUDE-blog.md))
 - **birdle / chessle**: cross-origin GETs (eBird API, external images) are also cached, network-first with exact-URL keys and no timeout
 - **beautiful-mind**: marked.js CDN is cache-first (pre-cached at install)
 - **starrynight**: jsdelivr CDN cache-first; weather/astronomy APIs pass through uncached
@@ -162,7 +162,7 @@ Every service worker follows one canonical strategy, **stale-while-revalidate wi
 - HTML pages go in as extensionless normalized paths (e.g., `/birdle/trips/new` not `/birdle/trips/new.html`)
 - JS files go in with their extension (e.g., `/birdle/trips/app.js`)
 - This applies to all new pages, scripts, and static assets — no exceptions
-- **Exception: blog content.** The blog SW derives post URLs from `content-manifest.json` at install; new posts need no SW edits (see [blog/CLAUDE.md](blog/CLAUDE.md))
+- **Exception: blog content.** The root SW (now also the blog SW) derives post URLs from `content-manifest.json` at install; new posts need no SW edits (see [CLAUDE-blog.md](CLAUDE-blog.md))
 
 ### Code Style
 - Simple, readable vanilla JS

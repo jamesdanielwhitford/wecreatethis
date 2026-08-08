@@ -14,18 +14,24 @@ https://wecreatethis.pages.dev/* https://wecreatethis.com/:splat 301
 # Birdle app routing (if needed in future)
 /birdle/*  /birdle/index.html  200
 
-# Blog: clean URLs for sections (posts use a #fragment, no server routing needed).
-# Real files must pass through first (first match wins), then any other
-# /blog/... path serves the section shell. Nested sections work with no
-# extra rules: adding a content folder needs NO changes here.
-/blog/  /blog/  200
-/blog/content/*  /blog/content/:splat  200
-/blog/app.js  /blog/app.js  200
-/blog/style.css  /blog/style.css  200
-/blog/sw.js  /blog/sw.js  200
-/blog/manifest.json  /blog/manifest.json  200
-/blog/content-manifest.json  /blog/content-manifest.json  200
-/blog/sitemap.xml  /blog/sitemap.xml  200
-/blog/icon-192.png  /blog/icon-192.png  200
-/blog/icon-512.png  /blog/icon-512.png  200
-/blog/*  /blog/section  200
+# Blog is now the homepage: clean URLs for both sections and posts
+# (/{section...}/{post-slug} is a real path, resolved client-side by app.js -
+# no server routing needed per post). Real files must pass through first
+# (first match wins), then any other path serves the section/post shell.
+# Nested sections and posts at any depth work with no extra rules: adding a
+# content folder needs NO changes here.
+/  /  200
+/content/*  /content/:splat  200
+/app.js  /app.js  200
+/icons.js  /icons.js  200
+/style.css  /style.css  200
+/sw.js  /sw.js  200
+/manifest.json  /manifest.json  200
+/content-manifest.json  /content-manifest.json  200
+/sitemap.xml  /sitemap.xml  200
+/icon-192.png  /icon-192.png  200
+/icon-512.png  /icon-512.png  200
+/favicon.svg  /favicon.svg  200
+/profile.jpeg  /profile.jpeg  200
+/archive/*  /archive/:splat  200
+/*  /section  200

@@ -1,0 +1,650 @@
+/* Theme: follows the system light/dark setting, no toggle.
+   Muted greys are kept at or above 4.5:1 against their own background so
+   body text, meta lines, and the breadcrumb all clear WCAG AA. */
+:root {
+  color-scheme: light;
+
+  --bg: #bcbcbe;
+  --text: #111;
+  --muted: #484848;          /* 4.8:1 on --bg */
+  --rule: #949496;
+  --rule-strong: #606060;    /* 3.3:1 on --bg (UI/border, not text) */
+  --quote-text: #3e3e3e;     /* 5.6:1 on --bg */
+  --code-bg: #d4d4d4;
+  --pre-bg: #d8d8d8;
+  --img-bg: #d8d8d8;
+
+  --tok-comment: #505050;    /* 5.7:1 on --pre-bg */
+  --tok-string: #0d5715;
+  --tok-number: #754000;
+  --tok-keyword: #084f87;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --bg: #000;
+    --text: #cccccc;
+    --muted: #a3a3a3;         /* 8.3:1 on --bg */
+    --rule: #2a2a2a;
+    --rule-strong: #3d3d3d;
+    --quote-text: #bbb;
+    --code-bg: #181818;
+    --pre-bg: #141414;
+    --img-bg: #181818;
+
+    --tok-comment: #8b887f;  /* 5.2:1 on --pre-bg */
+    --tok-string: #a3c07a;
+    --tok-number: #d9a066;
+    --tok-keyword: #7fb3d9;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Georgia, serif;
+  background: var(--bg);
+  color: var(--text);
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+/* Shared 3-slot top nav: left (back arrow or reserved spacer), center
+   (wordmark or folder title), right (profile circle or TOC button).
+   Post pages leave the center slot empty (the post's own H1 is the title)
+   and fade this header on scroll (see .nav-hidden below). */
+header {
+  margin-bottom: 40px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.top-nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.nav-slot {
+  display: flex;
+  align-items: center;
+}
+
+.nav-left { justify-content: flex-start; }
+.nav-center { justify-content: center; }
+.nav-right { justify-content: flex-end; }
+
+.nav-wordmark {
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  white-space: nowrap;
+  max-width: 60vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Post title in the top nav's center slot: a real <button> for a11y, styled
+   to look like plain nav text (see .nav-wordmark), visible only once the
+   article's own H1 has scrolled out of view (see setupPostTitleReveal). */
+.nav-title-btn {
+  font-family: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.nav-title-btn:hover,
+.nav-title-btn:focus-visible {
+  text-decoration: underline;
+}
+
+.nav-title-btn[hidden] {
+  display: none;
+}
+
+.circle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.circle-btn:hover,
+.circle-btn:focus-visible {
+  border-color: var(--text);
+}
+
+.circle-btn .icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Header/bottom-nav fade, post pages only (see setupPostScrollFade in
+   app.js). Transform, not display:none, so the fade is smooth and the
+   sticky positioning never jumps. */
+header.nav-hidden {
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+
+.bottom-nav.nav-hidden {
+  opacity: 0;
+  transform: translateY(100%);
+  pointer-events: none;
+}
+
+/* Bottom nav: prev/next post within a section, same shape as the top nav. */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 12px 24px calc(12px + env(safe-area-inset-bottom));
+  background: var(--bg);
+  border-top: 1px solid var(--rule);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.bottom-nav[hidden] {
+  display: none;
+}
+
+/* Room for the fixed bottom nav so it never covers the last paragraph. */
+.post-single {
+  padding-bottom: 72px;
+}
+
+/* Bio + table-of-contents modals: styled as full pages, not floating
+   cards, so opening one reads as "the content changed" rather than a
+   dialog popping up over it. Same page shell (max-width, padding, top-nav
+   grid) as every real page; the close button sits in the same nav-right
+   slot the button that opened it was in, so it lands under the cursor. */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+.modal-overlay[hidden] {
+  display: none;
+}
+
+.modal-card {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.modal-card .top-nav {
+  margin-bottom: 40px;
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.modal-close:hover,
+.modal-close:focus-visible {
+  border-color: var(--text);
+}
+
+.modal-close .icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* The whole photo is always visible: width fills the card, height follows
+   the image's own aspect ratio (no max-height/object-fit box to letterbox
+   into - that combination was leaving dark bars above/below the photo
+   whenever its natural height at 100% width came in under the cap). */
+.bio-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.modal-card h2 {
+  font-size: 1.2rem;
+  font-weight: normal;
+  margin-bottom: 12px;
+}
+
+.toc-top-link {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.toc-top-link:hover,
+.toc-top-link:focus-visible {
+  text-decoration: underline;
+}
+
+.bio-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bio-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+/* Only real links (email, GitHub) underline on hover - a plain <span>
+   .bio-link (e.g. the location row) states a fact, it isn't clickable. */
+a.bio-link:hover {
+  text-decoration: underline;
+}
+
+.bio-link .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Emoji icons (e.g. the globe on the location row) sized to visually match
+   the 16px inlined-SVG icons next to them. */
+.bio-link .emoji-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.toc-links {
+  list-style: none;
+}
+
+.toc-links li {
+  border-top: 1px solid var(--rule);
+}
+
+.toc-links li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+
+.toc-links a {
+  display: block;
+  padding: 12px 0;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.toc-links a:hover,
+.toc-links a:focus-visible {
+  text-decoration: underline;
+}
+
+#loading {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* Section page. The folder title now lives in the top nav's center slot
+   (see .nav-wordmark), so #section-title is visually hidden there - but
+   the same element is reused as the visible post title on post pages
+   (.post-single #section-title below), where nothing else renders it. */
+#section-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+main:has(.post-single) #section-title {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  font-size: 1.5rem;
+  font-weight: normal;
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+
+.section-head {
+  margin-bottom: 0;
+}
+
+main:has(.post-single) .section-head {
+  margin-bottom: 24px;
+}
+
+#subsections {
+  display: none;
+  list-style: none;
+  margin-bottom: 40px;
+}
+
+#subsections li {
+  margin-bottom: 12px;
+}
+
+#subsections a {
+  font-size: 1.1rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+#subsections a:hover {
+  text-decoration: underline;
+}
+
+.post-entry {
+  margin-bottom: 64px;
+  padding-bottom: 64px;
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 24px;
+}
+
+.post-entry:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.post-meta {
+  margin-bottom: 32px;
+}
+
+.post-meta .meta-line {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Rendered markdown, shared by posts and the home page */
+
+.md-content {
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+/* Headings carry anchor ids, so keep linked headings off the viewport edge. */
+.md-content h1,
+.md-content h2,
+.md-content h3 {
+  scroll-margin-top: 24px;
+}
+
+.md-content h1 {
+  font-size: 1.3rem;
+  font-weight: normal;
+  margin: 0 0 16px;
+}
+
+.md-content h2 {
+  font-size: 1.15rem;
+  font-weight: normal;
+  margin: 36px 0 12px;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 6px;
+}
+
+.md-content h2:first-child {
+  margin-top: 0;
+}
+
+/* Homepage only: sections act as top-level nav for the link-card folders
+   beneath them, so bold them to read as the stronger heading - decreasing
+   weight with depth (bold section > normal-weight folder title) instead of
+   the site's usual all-normal-weight heading treatment. */
+#home-content h2 {
+  font-weight: bold;
+}
+
+.md-content h3 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin: 24px 0 8px;
+}
+
+.md-content p {
+  margin-bottom: 16px;
+}
+
+.md-content a {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+/* Link cards: a whole title + description clickable as one block, used on
+   the homepage so a folder can "speak for itself" instead of the reader
+   hunting for a separate underlined link. Source syntax is a fenced
+   ```link:/url block, handled in app.js's renderMarkdown. Plain text, no
+   card chrome - same underline-on-hover as any other link, just spanning
+   the title and description together. */
+.link-card {
+  display: block;
+  margin-bottom: 16px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.link-card:hover {
+  text-decoration: underline;
+}
+
+.link-card-title {
+  display: block;
+  font-weight: normal;
+  margin-bottom: 4px;
+}
+
+.link-card-desc {
+  display: block;
+  color: var(--muted);
+}
+
+.md-content ul,
+.md-content ol {
+  margin: 0 0 16px 24px;
+}
+
+.md-content li {
+  margin-bottom: 8px;
+}
+
+/* Images: never wider than the column, never upscaled past their natural
+   size, and never so tall they push the rest of the post off screen.
+   `height: auto` alone (no `width: auto`) is deliberate: it lets the
+   width/height attributes the renderer emits establish an aspect-ratio
+   box, so the space is reserved before the file loads. Adding
+   `width: auto` would discard that and reintroduce layout shift. */
+/* Images: never wider than the column, and sized from the width/height
+   attributes the renderer emits so the space is reserved before the file
+   loads (this is what keeps layout shift near zero).
+   No `max-height` here: clamping the height while the width follows the
+   attribute ratio stretches tall images. Portrait images are simply as
+   tall as their aspect ratio makes them. */
+.md-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 0 16px;
+  border-radius: 4px;
+  background: var(--img-bg);
+}
+
+/* An image with no known intrinsic size (remote, or missing at build time)
+   still must not overflow the column. */
+.md-content img:not([width]) {
+  width: auto;
+}
+
+.md-content li img {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0;
+}
+
+.md-content a img {
+  margin-bottom: 0;
+}
+
+/* Tables: scroll horizontally on narrow screens rather than overflowing. */
+
+.md-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+  display: block;
+  overflow-x: auto;
+}
+
+.md-content th,
+.md-content td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+.md-content th {
+  font-weight: bold;
+  border-bottom: 2px solid var(--rule-strong);
+  white-space: nowrap;
+}
+
+.md-content tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.md-content blockquote {
+  margin: 0 0 16px;
+  padding: 4px 0 4px 20px;
+  border-left: 3px solid var(--rule);
+  color: var(--quote-text);
+}
+
+.md-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Code */
+
+.md-content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
+}
+
+.md-content p code,
+.md-content li code,
+.md-content td code,
+.md-content th code {
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.md-content pre {
+  background: var(--pre-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+
+.md-content pre code {
+  font-size: 0.85rem;
+  background: none;
+  padding: 0;
+}
+
+.tok-c { color: var(--tok-comment); font-style: italic; }
+.tok-s { color: var(--tok-string); }
+.tok-n { color: var(--tok-number); }
+.tok-k { color: var(--tok-keyword); }
+
+/* Section table of contents. Shown when a section URL carries no post slug;
+   a slug switches the same page to single-post mode (see app.js). */
+.post-toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.post-toc .toc-item {
+  padding: 1.4rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.post-toc .toc-item:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+
+.post-toc .toc-date {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 0.3rem;
+}
+
+.post-toc .toc-title {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  margin-bottom: 0.4rem;
+}
+
+.post-toc .toc-title a {
+  text-decoration: none;
+}
+
+.post-toc .toc-title a:hover,
+.post-toc .toc-title a:focus-visible {
+  text-decoration: underline;
+}
+
+.post-toc .toc-description {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
