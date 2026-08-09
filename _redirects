@@ -24,11 +24,14 @@ https://wecreatethis.pages.dev/* https://wecreatethis.com/:splat 301
 /content/*  /content/:splat  200
 /app.js  /app.js  200
 /icons.js  /icons.js  200
+/sw-toast.js  /sw-toast.js  200
 /style.css  /style.css  200
 /sw.js  /sw.js  200
 /manifest.json  /manifest.json  200
 /content-manifest.json  /content-manifest.json  200
 /sitemap.xml  /sitemap.xml  200
+/robots.txt  /robots.txt  200
+/llms.txt  /llms.txt  200
 /icon-192.png  /icon-192.png  200
 /icon-512.png  /icon-512.png  200
 /favicon.svg  /favicon.svg  200
