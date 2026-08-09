@@ -76,8 +76,46 @@ This is now the site's only service worker (the old root app-hub `sw.js` is arch
 ## Adding a post (the whole workflow)
 
 1. Create `content/{section}/{post-slug}/index.md` with frontmatter.
-2. Run `node build.js` (or let CI do it on push).
-3. Done. No `_redirects` change, no SW change, no version bump.
+2. **Compress any images before adding them** - see Image sizing below. `build.js` does not
+   do this for you.
+3. Run `node build.js` (or let CI do it on push).
+4. Done. No `_redirects` change, no SW change, no version bump.
+
+## Image sizing (do this manually, every time)
+
+`build.js` reads each image's intrinsic width/height from its file header and the renderer emits
+them as `width`/`height` attributes plus `loading="lazy" decoding="async"` automatically - so
+layout shift and lazy-loading are already handled for any image you add, no extra work needed
+there.
+
+**What is not automatic: file size.** Nothing in the pipeline compresses or resizes images.
+Screenshots dropped straight into a post folder stay at their raw screen-capture resolution and
+size - `content/misc/agent-starts-taking-screenshots-on-auto-mode/` has one at 204KB, uncompressed,
+because this step was skipped when that post was written. Compare `profile.jpeg` (compressed via
+the `/tinypng` skill, session 021) as the pattern that was actually followed correctly.
+
+Before adding an image to a post folder:
+- Run it through the `/tinypng` skill (TinyPNG API, handles PNG and JPG).
+- If it's a full-resolution screenshot (e.g. a 2x/Retina capture), consider whether the post
+  actually needs it at native size, or whether a smaller crop/scale would do - `build.js` has no
+  responsive-image/srcset support, so whatever dimensions you save are what every viewport
+  downloads.
+
+This doesn't move the Lighthouse Performance score (session 026 measured LCP 134-187ms and
+Performance is already excellent site-wide even with uncompressed test images in play), but it's
+real bytes over the wire on every visit to that post, worth doing on principle and before it
+compounds across more posts with more/larger images.
+
+## Routing gotcha for new top-level file types
+
+`_redirects` is a hand-maintained allowlist for anything at the repo root that isn't under
+`/content/*` - `robots.txt`, `llms.txt`, `sitemap.xml`, `sw-toast.js`, etc. **A file that exists in
+the repo root but is missing from `_redirects` silently falls through to the final `/* /section 200`
+catch-all** and gets served as the SPA shell instead of itself (wrong content-type, wrong body).
+This bit `robots.txt`, `llms.txt`, and `sw-toast.js` all at once (session 026 - cost SEO, Agentic
+Browsing, and Best Practices points on every single Lighthouse run until caught). If you add a new
+root-level static file that needs to be fetched directly (not through `/content/`), add a
+pass-through line for it in `_redirects` in the same change.
 
 ## Local preview
 
