@@ -5,14 +5,57 @@ https://wecreatethis.pages.dev/* https://wecreatethis.com/:splat 301
 
 # Client-side routing support for sub-apps
 
-# Invisible Ink - serve index.html for all invisibleink routes
-/invisibleink/*  /invisibleink/index.html  200
-
-# Tarot app routing (if needed in future)
-/tarot/*  /tarot/index.html  200
-
-# Birdle app routing (if needed in future)
-/birdle/*  /birdle/index.html  200
+# Every other top-level app folder (session 027: these silently stopped
+# resolving once the blog homepage move added the final /* /section 200
+# catch-all - the wildcard always wins over a real static file/folder per
+# Cloudflare Pages docs, "redirects are always followed regardless of
+# whether an asset matches the incoming request" - so every app needs an
+# explicit pass-through here or it renders the blog shell instead of itself.
+# Rule targets use :splat, not a literal /app/index.html - Cloudflare's
+# build-time loop detector silently drops any rule whose destination would
+# re-normalize back to match its own source pattern (e.g. /app/index.html
+# stripping back down to /app/), and does so with no runtime error, just a
+# build-log warning nobody sees. Two lines per app: the bare path (no
+# trailing slash) redirects to the trailing-slash form, since a lone
+# /app/* splat requires something after the slash to match.
+/invisibleink  /invisibleink/  301
+/invisibleink/*  /invisibleink/:splat  200
+/tarot  /tarot/  301
+/tarot/*  /tarot/:splat  200
+/birdle  /birdle/  301
+/birdle/*  /birdle/:splat  200
+/beautiful-mind  /beautiful-mind/  301
+/beautiful-mind/*  /beautiful-mind/:splat  200
+/bird-bingo  /bird-bingo/  301
+/bird-bingo/*  /bird-bingo/:splat  200
+/hardle  /hardle/  301
+/hardle/*  /hardle/:splat  200
+/git-notes  /git-notes/  301
+/git-notes/*  /git-notes/:splat  200
+/perfectday  /perfectday/  301
+/perfectday/*  /perfectday/:splat  200
+/starrynight  /starrynight/  301
+/starrynight/*  /starrynight/:splat  200
+/symbolicritual  /symbolicritual/  301
+/symbolicritual/*  /symbolicritual/:splat  200
+/voice-notes  /voice-notes/  301
+/voice-notes/*  /voice-notes/:splat  200
+/chessle  /chessle/  301
+/chessle/*  /chessle/:splat  200
+/chesstimer  /chesstimer/  301
+/chesstimer/*  /chesstimer/:splat  200
+/hiresurge  /hiresurge/  301
+/hiresurge/*  /hiresurge/:splat  200
+/inkwell  /inkwell/  301
+/inkwell/*  /inkwell/:splat  200
+/longform  /longform/  301
+/longform/*  /longform/:splat  200
+/pokemon  /pokemon/  301
+/pokemon/*  /pokemon/:splat  200
+/rondevlei  /rondevlei/  301
+/rondevlei/*  /rondevlei/:splat  200
+/slowread  /slowread/  301
+/slowread/*  /slowread/:splat  200
 
 # Blog is now the homepage: clean URLs for both sections and posts
 # (/{section...}/{post-slug} is a real path, resolved client-side by app.js -
@@ -40,4 +83,20 @@ https://wecreatethis.pages.dev/* https://wecreatethis.com/:splat 301
 /og-image.png  /og-image.png  200
 /fonts/*  /fonts/:splat  200
 /archive/*  /archive/:splat  200
+
+# CV / portfolio pages - static, not part of the blog's routing, but caught
+# by the wildcard below without an explicit pass-through (session 027: these
+# stopped serving once the blog homepage move added the final catch-all).
+# Two rules per app: the bare path (no trailing slash) needs its own redirect
+# to the trailing-slash form since a lone /cv/* splat requires something
+# after the slash to match - /cv alone falls through without this.
+/cv  /cv/  301
+/cv/*  /cv/:splat  200
+/cv-fde  /cv-fde/  301
+/cv-fde/*  /cv-fde/:splat  200
+/portfolio-fde  /portfolio-fde/  301
+/portfolio-fde/*  /portfolio-fde/:splat  200
+/technical-writing-portfolio  /technical-writing-portfolio/  301
+/technical-writing-portfolio/*  /technical-writing-portfolio/:splat  200
+
 /*  /section  200
