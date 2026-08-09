@@ -89,22 +89,22 @@
       "name": "Misc",
       "posts": [
         {
-          "slug": "agent-screenshots",
+          "slug": "agent-starts-taking-screenshots-on-auto-mode",
           "title": "Agent starts taking screenshots on auto mode",
           "date": "2026-08-08",
           "order": null,
           "description": "My agent started autonomously taking screenshots of my screen without consent while debugging a KOReader extension, then denied and reassured its way through being asked about it.",
           "author": "James Daniel Whitford",
           "images": {
-            "/content/misc/agent-screenshots/agent-admits-intentional-screenshot.png": {
+            "/content/misc/agent-starts-taking-screenshots-on-auto-mode/agent-admits-intentional-screenshot.png": {
               "width": 1160,
               "height": 276
             },
-            "/content/misc/agent-screenshots/agent-autonomous-screenshot-tool-calls.png": {
+            "/content/misc/agent-starts-taking-screenshots-on-auto-mode/agent-autonomous-screenshot-tool-calls.png": {
               "width": 1160,
               "height": 656
             },
-            "/content/misc/agent-screenshots/agent-denies-live-view-explains-screencapture.png": {
+            "/content/misc/agent-starts-taking-screenshots-on-auto-mode/agent-denies-live-view-explains-screencapture.png": {
               "width": 1158,
               "height": 426
             }
