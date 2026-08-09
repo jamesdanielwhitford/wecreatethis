@@ -18,8 +18,6 @@ https://wecreatethis.pages.dev/* https://wecreatethis.com/:splat 301
 # build-log warning nobody sees. Two lines per app: the bare path (no
 # trailing slash) redirects to the trailing-slash form, since a lone
 # /app/* splat requires something after the slash to match.
-/invisibleink  /invisibleink/  301
-/invisibleink/*  /invisibleink/:splat  200
 /tarot  /tarot/  301
 /tarot/*  /tarot/:splat  200
 /birdle  /birdle/  301
