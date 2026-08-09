@@ -61,7 +61,7 @@ This is now the site's only service worker (the old root app-hub `sw.js` is arch
 - **Shell is stale-while-revalidate**: the cached copy is served instantly, a background fetch refreshes it, and when a shell asset actually changed (`responsesDiffer`) the SW posts `sw-updated` so `/sw-toast.js` offers a refresh. It used to be strictly cache-first with no revalidation, which pinned visitors to an old `app.js` while they picked up new CSS - new theme with old renderer, which reads as broken rendering rather than a stale cache.
 - `cleanResponse()` strips redirect metadata on every `cache.put` (mandatory repo-wide; section paths are `_redirects` rewrites). Install fetches use `cache: 'reload'` so a `CACHE_NAME` bump can't pre-cache a stale shell.
 - Offline navigation to an unvisited section falls back to the cached `section.html` shell.
-- Current version: `wecreatethis-v26` (bumped from `blog-v12` on the move, since scope/ASSETS changed).
+- Current version: `wecreatethis-v30`. Check `grep CACHE_NAME sw.js` for the live figure - this note lags behind routine bumps and isn't kept in sync every session.
 
 **Testing gotcha:** because the shell is cached, edits to `app.js`/`style.css` may not take effect on reload, and measurements can silently reflect old code. When testing, defeat the SW (`Object.defineProperty(navigator, 'serviceWorker', { get: () => undefined, configurable: true })` as an init script) and confirm the code under test is really running.
 

@@ -520,20 +520,45 @@ function setupPostScrollFade() {
   }, { passive: true });
 }
 
+// #loading starts hidden (see style.css) so a fast/cached navigation never
+// paints it at all. Call this once per page load, right before the fetch it
+// covers; only shows the text if that fetch is still pending after
+// LOADING_DELAY_MS, so a slow/offline load still gets feedback. `done()`
+// cancels the pending reveal (fast path) or hides the now-visible text
+// (slow path) - safe to call exactly once, from either the success or the
+// error branch.
+const LOADING_DELAY_MS = 200;
+function deferredLoading() {
+  const el = document.getElementById('loading');
+  const timer = setTimeout(() => { el.style.display = 'block'; }, LOADING_DELAY_MS);
+  return {
+    done() {
+      clearTimeout(timer);
+      el.style.display = 'none';
+    },
+    fail(message) {
+      clearTimeout(timer);
+      el.textContent = message;
+      el.style.display = 'block';
+    }
+  };
+}
+
 // Home page: renders content/home.md directly, hand-authored.
 if (document.getElementById('home-content')) {
   renderHomeHeader();
   const content = document.getElementById('home-content');
+  const loading = deferredLoading();
   fetch('/content/home.md')
     .then(r => r.text())
     .then(text => {
       const { body } = parseFrontmatter(text);
       content.innerHTML = renderMarkdown(body);
-      document.getElementById('loading').style.display = 'none';
+      loading.done();
       content.style.display = 'block';
     })
     .catch(() => {
-      document.getElementById('loading').textContent = 'Failed to load home page.';
+      loading.fail('Failed to load home page.');
     });
 }
 
@@ -542,6 +567,7 @@ if (document.getElementById('home-content')) {
 // post is its own route (/{section...}/{post-slug}); there is no
 // multi-post stack, so nothing here loads or scrolls to another post.
 if (document.getElementById('post-stack')) {
+  const loading = deferredLoading();
   loadManifest().then(({ sections }) => {
     const { sectionPath, postSlug } = parseBlogPath(sections);
 
@@ -551,14 +577,15 @@ if (document.getElementById('post-stack')) {
       : [];
 
     if (!section && subsections.length === 0) {
-      document.getElementById('loading').textContent = 'Section not found.';
+      loading.fail('Section not found.');
       return;
     }
 
     const stack = document.getElementById('post-stack');
-    document.getElementById('loading').style.display = 'none';
 
-    // Post page: render the single requested post and stop.
+    // Post page: render the single requested post and stop. The loading
+    // indicator stays pending through the post-body fetch below, since
+    // that's the point at which the page actually has content to show.
     if (postSlug) {
       const post = section.posts.find(p => p.slug === postSlug);
       document.title = post.title + ' - wecreatethis.com';
@@ -595,16 +622,20 @@ if (document.getElementById('post-stack')) {
           renderPostBottomNav(section, postSlug);
           setupPostScrollFade();
           setupPostTitleReveal();
+          loading.done();
         })
         .catch(() => {
           stack.querySelector('.md-content').textContent = 'Failed to load post.';
           renderPostHeader(section.path, post, []);
+          loading.done();
         });
       return;
     }
 
     // Section page: table of contents for this section's own posts, plus
-    // links to any nested sections.
+    // links to any nested sections. Nothing here is async past this point,
+    // so the loading indicator can resolve immediately.
+    loading.done();
     const name = section ? section.name : slugToName(sectionPath.split('/').pop());
     document.title = name + ' - wecreatethis.com';
     document.getElementById('section-title').textContent = name;
@@ -642,6 +673,6 @@ if (document.getElementById('post-stack')) {
     `).join('') + `</ul>`;
     stack.style.display = 'block';
   }).catch(() => {
-    document.getElementById('loading').textContent = 'Failed to load section.';
+    loading.fail('Failed to load section.');
   });
 }
