@@ -19,7 +19,7 @@ Screenshots were being fired on whatever my screen was focused on, so the screen
 
 Its output showed it was trying to visually debug the KOReader emulator.
 
-I asked "Are you seeing my screen?" Its output reassured me that it didn't have "a live view", but that it did "take a screenshot on demand with macOS screencapture...".
+I asked "Are you seeing my screen?" Its output reassured me that it didn't have "a live view", but that it did "take a screenshot on demand via macOS screencapture...".
 
 ![The agent's reply denying a live view of the screen, explaining it instead takes an on-demand screenshot via macOS's screencapture command](/content/misc/agent-starts-taking-screenshots-on-auto-mode/agent-denies-live-view-explains-screencapture.png)
 
