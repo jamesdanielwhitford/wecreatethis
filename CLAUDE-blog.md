@@ -117,6 +117,37 @@ Browsing, and Best Practices points on every single Lighthouse run until caught)
 root-level static file that needs to be fetched directly (not through `/content/`), add a
 pass-through line for it in `_redirects` in the same change.
 
+**The same gotcha applies to every app folder, and it's worse there because it can fail silently
+even with a rule present.** Session 027 found every single app/CV/portfolio folder (`/tarot/`,
+`/hardle/`, `/cv`, etc.) had been serving the blog shell instead of itself since the homepage
+move, for two stacked reasons:
+
+1. Same missing-pass-through issue as above, at folder scale - Cloudflare Pages redirects always
+   win over a matching real file/folder ("redirects are always followed, regardless of whether or
+   not an asset matches the incoming request" - Cloudflare's own docs), so every app folder needs
+   its own explicit rule.
+2. **A rule whose destination is a literal `.../index.html` path gets silently dropped at deploy
+   time.** Cloudflare's build-time validator detects that normalizing `index.html` back off the
+   path would re-match the rule's own source pattern, flags it as an infinite loop, and drops the
+   rule entirely - with only a build-log warning, no runtime error, invisible to normal `curl`
+   testing. This is why `/tarot/*  /tarot/index.html  200` looked fine in the file but never
+   actually worked.
+
+**The correct pattern for a new app folder** (two lines, matching what every existing app rule
+now uses):
+```
+/app-name  /app-name/  301
+/app-name/*  /app-name/:splat  200
+```
+Self-rewriting via `:splat` avoids the loop-detector entirely (same pattern `/content/*` already
+used successfully). The bare-path redirect is needed because a lone `/app-name/*` splat requires
+something after the slash to match - `/app-name` alone would still fall through without it.
+
+**Verify locally before pushing, not just live**: `npx wrangler pages dev . --port <N>` from the
+repo root runs Cloudflare's actual redirect engine, including the loop detector, and logs
+`✨ Parsed N valid redirect rules` - compare that count against the number of rules actually
+written in the file. A silent drop shows up as a lower count with no other visible symptom.
+
 ## Local preview
 
 Plain static servers 404 on clean URLs; use Cloudflare's emulator from the repo root:
