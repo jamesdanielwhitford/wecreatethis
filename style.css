@@ -117,6 +117,12 @@ header {
 .nav-slot {
   display: flex;
   align-items: center;
+  /* Matches .circle-btn's height. Every page's #crumbs starts as this
+     empty 3-slot skeleton in the static HTML (see index.html/section.html)
+     before app.js fills it in, so the header must already be full height
+     on first paint - otherwise it grows once a slot's circle button
+     renders, shifting all page content down (the post-page nav flash). */
+  min-height: 40px;
 }
 
 .nav-left { justify-content: flex-start; }

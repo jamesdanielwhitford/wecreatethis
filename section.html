@@ -34,7 +34,16 @@
 </head>
 <body>
   <header>
-    <nav id="crumbs" aria-label="Navigation"></nav>
+    <!-- Static skeleton matches the .top-nav 3-slot shape app.js renders
+         (renderSectionHeader / renderPostHeader) so the header has its
+         final height on first paint - otherwise the empty <nav> starts
+         short and grows once JS fills it in, shifting all page content
+         down (visible as a flash/jitter on refresh). -->
+    <nav id="crumbs" class="top-nav" aria-label="Navigation">
+      <span class="nav-slot nav-left" aria-hidden="true"></span>
+      <span class="nav-slot nav-center"></span>
+      <span class="nav-slot nav-right"></span>
+    </nav>
   </header>
 
   <main>
