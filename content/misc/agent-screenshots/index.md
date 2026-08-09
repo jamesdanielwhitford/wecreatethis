@@ -9,7 +9,7 @@ description: My agent started autonomously taking screenshots of my screen witho
 
 ![The agent's reply admitting it used screencapture -x to save a snapshot of the screen, then ran Read on the image file to "see" it](/content/misc/agent-screenshots/agent-admits-intentional-screenshot.png)
 
-I set my agent to work on my KOReader extension on auto mode. 
+I set my agent (Sonnet 5) to work on my KOReader extension on auto mode. 
 
 It started autonomously taking screenshots of my screen and reading them, without my consent or instruction. I had no idea until I checked the agent output.
 
