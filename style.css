@@ -18,6 +18,18 @@
   --tok-string: #0d5715;
   --tok-number: #754000;
   --tok-keyword: #084f87;
+
+  /* Spacing scale, in rem so it scales with the user's root font-size
+     rather than staying fixed - names the ladder already in use across the
+     homepage/post-list CSS instead of leaving it as unrelated hardcoded px
+     values in each rule. */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.375rem; /* 6px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.5rem;   /* 24px */
+  --space-6: 2.25rem;  /* 36px */
+  --space-7: 3rem;     /* 48px */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -338,7 +350,7 @@ a.bio-link:hover {
 /* Emoji icons (e.g. the globe on the location row) sized to visually match
    the 16px inlined-SVG icons next to them. */
 .bio-link .emoji-icon {
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1;
 }
 
@@ -449,15 +461,26 @@ main:has(.post-single) .section-head {
 .md-content h1 {
   font-size: 1.3rem;
   font-weight: normal;
-  margin: 0 0 16px;
+  margin: 0 0 var(--space-4);
 }
 
-.md-content h2 {
-  font-size: 1.15rem;
+/* h2 and .homepage-section-heading (the "All Posts" row) share one rule
+   set rather than duplicating the same values in two places - they were
+   drifting apart because the standalone flex-row version computed a
+   different line-height than the one inheriting .md-content's 1.8,
+   despite declaring identical font-size/margin/border. This is the
+   dominant heading level on the homepage (section/category names like
+   "Agentic Engineering", plus real article h2s) - project rows and post
+   titles underneath it are sized down instead, in .project-card-title
+   below, so this stays the largest, most prominent text in the list. */
+.md-content h2,
+.homepage-section-heading {
+  font-size: 1.3rem;
   font-weight: normal;
-  margin: 36px 0 12px;
+  line-height: 1.8;
+  margin: var(--space-6) 0 var(--space-3);
   border-bottom: 1px solid var(--rule);
-  padding-bottom: 6px;
+  padding-bottom: var(--space-2);
 }
 
 .md-content h2:first-child {
@@ -466,10 +489,10 @@ main:has(.post-single) .section-head {
 
 /* #featured-tiles is its own .md-content block, separate from the intro
    paragraph above it (#home-content) - so its first h2 needs the standard
-   36px section gap reinstated, rather than the zero-margin treatment meant
-   for a heading that opens its own block with nothing above it. */
+   section gap reinstated, rather than the zero-margin treatment meant for
+   a heading that opens its own block with nothing above it. */
 #featured-tiles.md-content h2:first-child {
-  margin-top: 36px;
+  margin-top: var(--space-6);
 }
 
 .md-content h3 {
@@ -638,8 +661,7 @@ main:has(.post-single) .section-head {
 .tok-n { color: var(--tok-number); }
 .tok-k { color: var(--tok-keyword); }
 
-/* Section table of contents. Shown when a section URL carries no post slug;
-   a slug switches the same page to single-post mode (see app.js). */
+/* The homepage's flat post list (see renderPostList in app.js). */
 .post-toc ul {
   list-style: none;
   margin: 0;
@@ -647,7 +669,7 @@ main:has(.post-single) .section-head {
 }
 
 .post-toc .toc-item {
-  padding: 1.4rem 0;
+  padding: var(--space-5) 0;
   border-top: 1px solid var(--rule);
 }
 
@@ -658,16 +680,17 @@ main:has(.post-single) .section-head {
 .post-toc .toc-date {
   color: var(--muted);
   font-size: 0.85rem;
-  margin-bottom: 0.3rem;
+  margin-bottom: var(--space-1);
 }
 
 .post-toc .toc-title {
   font-size: 1.25rem;
   line-height: 1.3;
-  margin-bottom: 0.4rem;
+  margin-bottom: var(--space-1);
 }
 
 .post-toc .toc-title a {
+  color: var(--text);
   text-decoration: none;
 }
 
@@ -691,7 +714,7 @@ main:has(.post-single) .section-head {
 .project-card {
   display: block;
   width: 100%;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
   padding: 0;
   background: none;
   border: none;
@@ -702,47 +725,59 @@ main:has(.post-single) .section-head {
   -webkit-tap-highlight-color: transparent;
 }
 
-.project-card:hover {
+.project-card:hover,
+.project-card:focus-visible {
   text-decoration: underline;
 }
 
-/* The project whose tag is the current filter - a visible marker of "you
-   are here" so the list stays a legible hub instead of losing its own
-   selection state once a filter is applied. */
-.project-card.project-card-active {
-  text-decoration: underline;
-}
-
+/* Deliberately smaller than the 1.3rem section heading above it
+   (.md-content h2 / .homepage-section-heading) - a project row needs to
+   read as clearly subordinate to its category, not compete with it. */
 .project-card-title {
   display: block;
+  font-size: 1.05rem;
+  line-height: 1.3;
   font-weight: normal;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .project-card-desc {
   display: block;
   color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 /* The single selected project, shown in place of the full list - plain
    text, not a button, since there's nothing left to click it into (see
    renderFeaturedTiles's "collapsed" branch). */
 .project-selected {
-  margin: 0 0 16px;
+  margin: 0 0 var(--space-4);
 }
 
-/* "All Posts" heading row: same look as .md-content h2 (border-bottom,
-   spacing). Kept as its own row/flex wrapper rather than a bare h2 in case
-   something needs to sit alongside the heading again later; nothing does
-   right now (filtering is project-selection only - see setActiveTag). */
+/* Larger than .project-card-title (1.25rem, matched to a post title in the
+   grouped list): once a project is selected it *is* the page, same weight
+   as a real post's own title (#section-title, 1.5rem) rather than reading
+   as just another list-row title. */
+.project-selected-title {
+  display: block;
+  font-size: 1.5rem;
+  line-height: 1.3;
+  font-weight: normal;
+  margin-bottom: var(--space-1);
+}
+
+/* "All Posts" heading row: font-size/margin/border/padding come from the
+   shared rule above (.md-content h2, .homepage-section-heading) - this
+   adds only the flex-layout part, kept as its own row rather than a bare
+   h2 in case something needs to sit alongside the heading again later;
+   nothing does right now (filtering is project-selection only - see
+   setActiveTag). */
 .homepage-section-heading {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
-  margin: 36px 0 12px;
-  border-bottom: 1px solid var(--rule);
-  padding-bottom: 6px;
+  gap: var(--space-3);
 }
 
 .homepage-section-heading[hidden] {
@@ -751,14 +786,33 @@ main:has(.post-single) .section-head {
 
 /* Avoid a doubled line where the heading's own border-bottom sits flush
    against the post list's first item border-top. */
-.homepage-section-heading + .post-toc .toc-item:first-child {
+.homepage-section-heading + .post-toc .toc-item:first-child,
+.posts-divider + .post-toc .toc-item:first-child {
   border-top: none;
 }
 
+/* Plain separator shown instead of the "All Posts" heading once a project
+   is selected - "All Posts" would be misleading once the list is filtered
+   to one project, but the project description above still needs a visual
+   break from the post list below it. Same margin/border-bottom as the
+   heading row so the post list lands in the same place either way. */
+.posts-divider {
+  margin: var(--space-6) 0 var(--space-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+.posts-divider[hidden] {
+  display: none;
+}
+
+/* The heading text itself: font-size/weight/line-height already come from
+   the wrapper via the shared rule above - this just zeroes the h2's own
+   box model so it doesn't add a second margin/border inside the row. */
 .homepage-section-heading h2 {
-  font-size: 1.15rem;
-  font-weight: normal;
+  font: inherit;
   margin: 0;
+  border: none;
+  padding: 0;
 }
 
 .empty-state {

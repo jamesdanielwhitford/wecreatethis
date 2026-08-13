@@ -538,13 +538,20 @@ function deferredLoading() {
 // Renders the post list (optionally filtered to one tag) into the
 // homepage's #post-list, reusing the same .post-toc/.toc-item markup the
 // old section page used - already styled, and reused here so a flat list
-// of every post looks exactly like the old per-section list did.
+// of every post looks exactly like the old per-section list did. The "All
+// Posts" heading only makes sense unfiltered - once a project is selected
+// the list is no longer "all" posts, and the project's own title/
+// description above it already establishes what's being shown, so the
+// heading text is swapped for a plain divider rather than saying something
+// misleading or redundant, while still keeping a visual break above the list.
 function renderPostList(posts, activeTag) {
   const list = document.getElementById('post-list');
   const headingRow = document.getElementById('posts-heading-row');
+  const divider = document.getElementById('posts-divider');
   const visible = activeTag ? posts.filter(p => p.tags.includes(activeTag)) : posts;
   list.hidden = false;
-  headingRow.hidden = false;
+  headingRow.hidden = !!activeTag;
+  divider.hidden = !activeTag;
 
   if (visible.length === 0) {
     list.innerHTML = `
@@ -588,9 +595,13 @@ function renderFeaturedTiles(featured, activeTag) {
   // itself.
   const selected = featured.find(f => f.tag === activeTag);
   if (selected) {
+    // Larger than .project-card-title (which is sized to match a post
+    // title in the grouped list) - here the project *is* the page, so its
+    // title should read as the page's actual subject rather than just
+    // another list-row title.
     wrap.innerHTML = `
       <p class="project-selected">
-        <span class="project-card-title">${escHtml(selected.label)}</span>
+        <span class="project-selected-title">${escHtml(selected.label)}</span>
         ${selected.description ? `<span class="project-card-desc">${escHtml(selected.description)}</span>` : ''}
       </p>
     `;
