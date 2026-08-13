@@ -354,14 +354,24 @@ function scrollToTop() {
   history.replaceState(null, '', location.pathname + location.search);
 }
 
-// Post page top nav: back to the homepage on the left, table-of-contents
-// modal on the right. The center slot holds the post title, hidden while
-// the article's own H1 is on screen and shown once it scrolls past (see
+// Post page top nav: back to the homepage (or, if this post belongs to a
+// project, back to that project's filtered view - so following a project
+// post from its collapsed ?tag= list and hitting Back lands you where you
+// were, not the unfiltered homepage) on the left, table-of-contents modal
+// on the right. The center slot holds the post title, hidden while the
+// article's own H1 is on screen and shown once it scrolls past (see
 // setupPostTitleReveal) - clicking it scrolls back to top.
+//
+// Deliberately a plain href (not history.back()): a post can be reached by
+// direct link, refresh, or a new tab with no usable history, and the tag
+// filter is fully described by the URL already - reconstructing it here is
+// correct in every case, where history.back() would only be correct for
+// the one path of clicking through from the homepage in the same tab.
 function renderPostHeader(post, headings) {
   const nav = document.getElementById('crumbs');
   nav.className = 'top-nav';
-  const backHref = '/';
+  const projectTag = post.tags && post.tags[0];
+  const backHref = projectTag ? `/?tag=${encodeURIComponent(projectTag)}` : '/';
 
   nav.innerHTML = `
     <span class="nav-slot nav-left">
@@ -431,16 +441,24 @@ function setupPostTitleReveal() {
   observer.observe(titleEl);
 }
 
-// Bottom nav on post pages: previous/next post globally, ordered exactly as
-// the manifest (already sorted by build.js). Sections are gone, so there's
-// no narrower scope left to page within - global reverse-chronological is
-// unambiguous and the same regardless of how the reader arrived at this post.
-function renderPostBottomNav(posts, currentSlug) {
+// Bottom nav on post pages: previous/next post within the same project
+// (the post's own tag - the only tags left in the system are the 5 project
+// tags from homepage.json, so a post's tag *is* its project), ordered
+// exactly as the manifest (already sorted by build.js). A post with no tag
+// doesn't belong to a project, so there's no group to page within - the
+// bar stays hidden rather than falling back to a global/unscoped order.
+function renderPostBottomNav(posts, currentSlug, currentTags) {
   const bar = document.getElementById('bottom-nav');
   if (!bar) return;
-  const idx = posts.findIndex(p => p.slug === currentSlug);
-  const prev = idx > 0 ? posts[idx - 1] : null;
-  const next = idx < posts.length - 1 ? posts[idx + 1] : null;
+  const projectTag = currentTags && currentTags[0];
+  if (!projectTag) { bar.hidden = true; return; }
+
+  const projectPosts = posts.filter(p => p.tags.includes(projectTag));
+  const idx = projectPosts.findIndex(p => p.slug === currentSlug);
+  const prev = idx > 0 ? projectPosts[idx - 1] : null;
+  const next = idx < projectPosts.length - 1 ? projectPosts[idx + 1] : null;
+
+  if (!prev && !next) { bar.hidden = true; return; }
 
   bar.innerHTML = `
     <span class="nav-slot nav-left">
@@ -523,8 +541,10 @@ function deferredLoading() {
 // of every post looks exactly like the old per-section list did.
 function renderPostList(posts, activeTag) {
   const list = document.getElementById('post-list');
+  const headingRow = document.getElementById('posts-heading-row');
   const visible = activeTag ? posts.filter(p => p.tags.includes(activeTag)) : posts;
   list.hidden = false;
+  headingRow.hidden = false;
 
   if (visible.length === 0) {
     list.innerHTML = `
@@ -545,61 +565,75 @@ function renderPostList(posts, activeTag) {
   `).join('') + `</ul>`;
 }
 
-// Featured project tiles (from homepage.json via the manifest) - a curated
-// set, always visible even while a filter is active (with the active one
-// highlighted), so the homepage stays a stable hub to jump between projects
-// rather than collapsing into a plain results view.
+// Featured project list (from homepage.json via the manifest) - a curated
+// set. Styled exactly like the old markdown-rendered homepage's .link-card
+// blocks (a real <h2> plus title/description buttons inside .md-content) so
+// this reads as ordinary page prose rather than a separate UI widget.
+// Normally grouped into per-section sub-headings (Agentic Engineering, App
+// Development, Modding, ...) in homepage.json's own array order - each
+// project carries a `section` field, and section order follows first
+// appearance rather than being sorted, so homepage.json is the single place
+// that controls both grouping and order.
+//
+// When the active tag matches one of these projects, the list collapses to
+// just that project (no section headings, no siblings) plus a back control
+// to restore the full grouped list - selecting a project "zooms in" rather
+// than merely highlighting itself in place among everything else.
 function renderFeaturedTiles(featured, activeTag) {
   const wrap = document.getElementById('featured-tiles');
   if (!featured.length) { wrap.hidden = true; return; }
 
-  wrap.innerHTML = featured.map(f => `
-    <button type="button" class="tile${f.tag === activeTag ? ' tile-active' : ''}" data-tag="${escHtml(f.tag)}">
-      <span class="tile-icon">${Icons.svg(f.icon) || ''}</span>
-      <span class="tile-label">${escHtml(f.label)}</span>
-      <span class="tile-desc">${escHtml(f.description || '')}</span>
-    </button>
+  // Back to "all projects" lives in the nav-left slot (see renderHomeNav),
+  // not inline here - keeps this collapsed view down to just the project
+  // itself.
+  const selected = featured.find(f => f.tag === activeTag);
+  if (selected) {
+    wrap.innerHTML = `
+      <p class="project-selected">
+        <span class="project-card-title">${escHtml(selected.label)}</span>
+        ${selected.description ? `<span class="project-card-desc">${escHtml(selected.description)}</span>` : ''}
+      </p>
+    `;
+    wrap.hidden = false;
+    return;
+  }
+
+  const sections = [];
+  featured.forEach(f => {
+    const name = f.section || 'Projects';
+    let section = sections.find(s => s.name === name);
+    if (!section) { section = { name, items: [] }; sections.push(section); }
+    section.items.push(f);
+  });
+
+  wrap.innerHTML = sections.map(section => `
+    <h2>${escHtml(section.name)}</h2>
+    ${section.items.map(f => `
+      <button type="button" class="project-card" data-tag="${escHtml(f.tag)}">
+        <span class="project-card-title">${escHtml(f.label)}</span>
+        ${f.description ? `<span class="project-card-desc">${escHtml(f.description)}</span>` : ''}
+      </button>
+    `).join('')}
   `).join('');
   wrap.hidden = false;
 
-  wrap.querySelectorAll('.tile').forEach(btn => {
+  wrap.querySelectorAll('.project-card').forEach(btn => {
     btn.addEventListener('click', () => {
       const tag = btn.dataset.tag;
       setActiveTag(tag === activeTag ? null : tag);
     });
   });
-}
-
-// Chip row: every tag in the manifest (not just featured), single-select.
-// Always visible above the post list per the filter-UX convention of never
-// hiding the filter control behind a panel.
-function renderTagChips(tags, activeTag) {
-  const wrap = document.getElementById('tag-chips');
-  if (!tags.length) { wrap.hidden = true; return; }
-
-  wrap.innerHTML = tags.map(t => `
-    <button type="button" class="chip${t.tag === activeTag ? ' chip-active' : ''}" data-tag="${escHtml(t.tag)}">
-      ${escHtml(t.tag)}
-    </button>
-  `).join('') + (activeTag ? `<button type="button" class="chip chip-clear">Clear</button>` : '');
-  wrap.hidden = false;
-
-  wrap.querySelectorAll('.chip[data-tag]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tag = btn.dataset.tag;
-      setActiveTag(tag === activeTag ? null : tag);
-    });
-  });
-  const clearBtn = wrap.querySelector('.chip-clear');
-  if (clearBtn) clearBtn.addEventListener('click', () => setActiveTag(null));
 }
 
 let homepageManifest = null;
 
-// Applies a tag filter without a full navigation: updates the URL
+// Applies a project selection without a full navigation: updates the URL
 // (?tag=x, or strips it entirely when cleared) via pushState so the
-// filtered view is bookmarkable/shareable and back/forward step through
-// filter states, then re-renders tiles/chips/list in place.
+// selected view is bookmarkable/shareable and back/forward step through
+// selection states, then re-renders the nav/project list/post list in
+// place. The only tags left in the system are the 5 project tags (see
+// homepage.json), so "active tag" and "selected project" are the same
+// thing now - no independent tag filtering exists any more.
 function setActiveTag(tag) {
   const url = tag ? `/?tag=${encodeURIComponent(tag)}` : '/';
   history.pushState({ tag }, '', url);
@@ -610,10 +644,34 @@ function renderHomepageState() {
   if (!homepageManifest) return;
   const params = new URLSearchParams(location.search);
   const activeTag = params.get('tag');
+  const selectedProject = homepageManifest.featured.find(f => f.tag === activeTag) || null;
 
+  // The intro line (content/home.md) is homepage-only chrome, not relevant
+  // once a project has "zoomed in" the page to just itself.
+  document.getElementById('home-content').style.display = selectedProject ? 'none' : 'block';
+
+  renderHomeNav(selectedProject);
   renderFeaturedTiles(homepageManifest.featured, activeTag);
-  renderTagChips(homepageManifest.tags, activeTag);
   renderPostList(homepageManifest.posts, activeTag);
+}
+
+// Swaps the home page's nav-left slot between empty (default) and a back
+// button (project selected) - same .circle-btn/arrowLeft pattern as the
+// post page's real "back" button, but here it clears the selection in
+// place rather than navigating anywhere.
+function renderHomeNav(selectedProject) {
+  const nav = document.getElementById('crumbs');
+  const left = nav.querySelector('.nav-left');
+  if (!left) return;
+
+  if (selectedProject) {
+    left.innerHTML = `<button type="button" class="circle-btn" aria-label="All projects">${Icons.svg('arrowLeft')}</button>`;
+    left.removeAttribute('aria-hidden');
+    left.querySelector('button').addEventListener('click', () => setActiveTag(null));
+  } else {
+    left.innerHTML = '';
+    left.setAttribute('aria-hidden', 'true');
+  }
 }
 
 // Home page: a wordmark header, a short hand-authored intro (content/home.md),
@@ -642,10 +700,11 @@ if (document.getElementById('home-content')) {
     window.addEventListener('popstate', renderHomepageState);
 
     loading.done();
-    document.getElementById('home-content').style.display = 'block';
-    // Tiles/chips/post-list each reveal themselves via `hidden` inside
-    // renderFeaturedTiles/renderTagChips/renderPostList (called from
-    // renderHomepageState above), based on whether there's anything to show.
+    // Not forced to 'block' here - renderHomepageState (just called above)
+    // already set #home-content's display correctly (hidden when a project
+    // is selected on load, e.g. a direct link to /?tag=heat). Featured
+    // tiles/post-list each reveal themselves via `hidden` inside
+    // renderFeaturedTiles/renderPostList, called from the same function.
   }).catch(() => {
     loading.fail('Failed to load home page.');
   });
@@ -674,16 +733,11 @@ if (document.getElementById('post-stack')) {
     const canonical = document.querySelector('link[rel="canonical"]');
     if (canonical) canonical.setAttribute('href', `https://wecreatethis.com/${post.slug}`);
 
-    const tagsHtml = post.tags.length
-      ? `<div class="post-tags">${post.tags.map(t => `<a class="chip" href="/?tag=${encodeURIComponent(t)}">${escHtml(t)}</a>`).join('')}</div>`
-      : '';
-
     stack.className = 'post-single';
     stack.innerHTML = `
       <article class="post-entry is-revealed">
         <div class="post-meta">
           <div class="meta-line">${formatDate(post.date)}${post.author ? ' by ' + escHtml(post.author) : ''}</div>
-          ${tagsHtml}
         </div>
         <div class="md-content"></div>
       </article>
@@ -704,7 +758,7 @@ if (document.getElementById('post-stack')) {
           .filter(h => h.id)
           .map(h => ({ id: h.id, text: h.textContent }));
         renderPostHeader(post, headings);
-        renderPostBottomNav(manifest.posts, post.slug);
+        renderPostBottomNav(manifest.posts, post.slug, post.tags);
         setupPostScrollFade();
         setupPostTitleReveal();
         loading.done();

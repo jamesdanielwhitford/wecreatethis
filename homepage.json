@@ -1,9 +1,9 @@
 {
   "featured": [
-    { "tag": "heat", "label": "HEAT", "icon": "flame", "description": "Tracks and plays the songs that push your workout harder." },
-    { "tag": "kindlewriter", "label": "KindleWriter", "icon": "bookOpen", "description": "A KOReader extension for taking notes, navigating files, and serving this blog, straight from an e-reader." },
-    { "tag": "lotus", "label": "Lotus", "icon": "flower", "description": "A stream-of-consciousness note-taking app with automatic note organisation." },
-    { "tag": "agent-hacking", "label": "Agent Hacking", "icon": "terminal", "description": "Experimenting with corrupting and hijacking agent outputs." },
-    { "tag": "agent-programmatics", "label": "Agent Programmatics", "icon": "code", "description": "Programmatic, API-driven control of agents." }
+    { "tag": "agent-hacking", "label": "Agent Hacking", "section": "Agentic Engineering", "description": "Experimenting with corrupting and hijacking agent outputs." },
+    { "tag": "agent-programmatics", "label": "Agent Programmatics", "section": "Agentic Engineering", "description": "Programmatic, API-driven control of agents." },
+    { "tag": "heat", "label": "HEAT", "section": "App Development", "description": "Tracks and plays the songs that push your workout harder." },
+    { "tag": "lotus", "label": "Lotus", "section": "App Development", "description": "A stream-of-consciousness note-taking app with automatic note organisation." },
+    { "tag": "kindlewriter", "label": "KindleWriter", "section": "Modding", "description": "A KOReader extension for taking notes, navigating files, and serving this blog, straight from an e-reader." }
   ]
 }

@@ -3,7 +3,6 @@ title: Agent starts taking screenshots on auto mode
 author: James Daniel Whitford
 date: 2026-08-08
 description: My agent started autonomously taking screenshots of my screen without consent while debugging a KOReader extension, then denied and reassured its way through being asked about it.
-tags: misc, agents, ai-safety
 ---
 
 # Agent starts taking screenshots on auto mode

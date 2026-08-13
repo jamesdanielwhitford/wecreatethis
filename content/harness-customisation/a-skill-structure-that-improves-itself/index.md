@@ -3,7 +3,6 @@ title: A skill structure that improves itself
 author: James Daniel Whitford
 date: 2026-08-01
 description: Five sections, in order: goal, workflow, tools, files, and a closing instruction to keep all four current. The last section is what makes the first four maintainable by the agent that uses them.
-tags: harness-customisation, agents, skills
 ---
 
 # A skill structure that improves itself

@@ -464,6 +464,14 @@ main:has(.post-single) .section-head {
   margin-top: 0;
 }
 
+/* #featured-tiles is its own .md-content block, separate from the intro
+   paragraph above it (#home-content) - so its first h2 needs the standard
+   36px section gap reinstated, rather than the zero-margin treatment meant
+   for a heading that opens its own block with nothing above it. */
+#featured-tiles.md-content h2:first-child {
+  margin-top: 36px;
+}
+
 .md-content h3 {
   font-size: 1rem;
   font-weight: bold;
@@ -674,136 +682,83 @@ main:has(.post-single) .section-head {
   line-height: 1.5;
 }
 
-/* Homepage featured-project tiles (see homepage.json / renderFeaturedTiles).
-   A curated set, not auto-generated - each is a button (not a link) since
-   clicking one applies a tag filter in place rather than navigating.
-   Two-column on narrow screens (most content here is short: icon, label,
-   one line), single column once a tile's own min-width can't fit two per
-   row. Border/radius matches .circle-btn's language rather than inventing
-   new chrome. */
-.tile-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-  margin-bottom: 32px;
-}
-
-.tile-grid[hidden] {
-  display: none;
-}
-
-.tile {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 16px;
-  border: 1px solid var(--rule-strong);
-  border-radius: 8px;
-  background: var(--bg);
+/* Homepage featured-project list (see homepage.json / renderFeaturedTiles).
+   A curated set, not auto-generated - styled exactly like .link-card (the
+   old markdown-rendered homepage's ```link:/url title+description blocks),
+   so projects read as ordinary prose content under a real .md-content h2,
+   not a separate UI widget. Each row is a button (not a link) since
+   clicking one applies a tag filter in place rather than navigating. */
+.project-card {
+  display: block;
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 0;
+  background: none;
+  border: none;
   color: var(--text);
-  font-family: inherit;
+  font: inherit;
   text-align: left;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 
-.tile:hover,
-.tile:focus-visible {
-  border-color: var(--text);
+.project-card:hover {
+  text-decoration: underline;
 }
 
-/* The tile whose tag is the current filter - a visible marker of "you are
-   here" so the tile grid stays a legible hub instead of losing its own
-   selection state once a filter is applied (see the "tiles stay visible"
-   decision in the plan). */
-.tile-active {
-  border-color: var(--text);
-  border-width: 2px;
-  padding: 15px;
+/* The project whose tag is the current filter - a visible marker of "you
+   are here" so the list stays a legible hub instead of losing its own
+   selection state once a filter is applied. */
+.project-card.project-card-active {
+  text-decoration: underline;
 }
 
-.tile-icon {
-  display: flex;
+.project-card-title {
+  display: block;
+  font-weight: normal;
+  margin-bottom: 4px;
+}
+
+.project-card-desc {
+  display: block;
   color: var(--muted);
 }
 
-.tile-icon .icon {
-  width: 22px;
-  height: 22px;
+/* The single selected project, shown in place of the full list - plain
+   text, not a button, since there's nothing left to click it into (see
+   renderFeaturedTiles's "collapsed" branch). */
+.project-selected {
+  margin: 0 0 16px;
 }
 
-.tile-label {
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.tile-desc {
-  color: var(--muted);
-  font-size: 0.85rem;
-  line-height: 1.4;
-}
-
-/* Tag chip row: every tag in the manifest, always visible above the post
-   list (never hidden behind a filter panel/menu), horizontally wrapping
-   rather than scrolling since the tag count here is small. Reused
-   unmodified for the per-post tag links (see .post-tags below) so the
-   filter control looks identical wherever it appears. */
-.chip-row {
+/* "All Posts" heading row: same look as .md-content h2 (border-bottom,
+   spacing). Kept as its own row/flex wrapper rather than a bare h2 in case
+   something needs to sit alongside the heading again later; nothing does
+   right now (filtering is project-selection only - see setActiveTag). */
+.homepage-section-heading {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 32px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 36px 0 12px;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 6px;
 }
 
-.chip-row[hidden] {
+.homepage-section-heading[hidden] {
   display: none;
 }
 
-.chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 14px;
-  border: 1px solid var(--rule-strong);
-  border-radius: 999px;
-  background: var(--bg);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 0.85rem;
-  text-decoration: none;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+/* Avoid a doubled line where the heading's own border-bottom sits flush
+   against the post list's first item border-top. */
+.homepage-section-heading + .post-toc .toc-item:first-child {
+  border-top: none;
 }
 
-.chip:hover,
-.chip:focus-visible {
-  border-color: var(--text);
-}
-
-.chip-active {
-  background: var(--text);
-  color: var(--bg);
-  border-color: var(--text);
-}
-
-.chip-clear {
-  color: var(--muted);
-  border-style: dashed;
-}
-
-/* Per-post tag chips, in the post-meta line beneath the date/author - reads
-   the filter mechanism backwards from a post to the homepage view that
-   would surface others like it. */
-.post-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.post-tags .chip {
-  padding: 4px 12px;
-  font-size: 0.8rem;
+.homepage-section-heading h2 {
+  font-size: 1.15rem;
+  font-weight: normal;
+  margin: 0;
 }
 
 .empty-state {
