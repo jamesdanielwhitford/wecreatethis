@@ -376,10 +376,10 @@ a.bio-link:hover {
   font-size: 0.95rem;
 }
 
-/* Section page. The folder title now lives in the top nav's center slot
-   (see .nav-wordmark), so #section-title is visually hidden there - but
-   the same element is reused as the visible post title on post pages
-   (.post-single #section-title below), where nothing else renders it. */
+/* Post page title. Off-screen by default (post.html's #section-title is
+   empty until app.js fills it), only ever shown on the single-post layout
+   below - nothing else on post.html renders this text, it exists purely so
+   setupPostTitleReveal has something to observe scrolling past. */
 #section-title {
   position: absolute;
   width: 1px;
@@ -408,26 +408,6 @@ main:has(.post-single) #section-title {
 
 main:has(.post-single) .section-head {
   margin-bottom: 24px;
-}
-
-#subsections {
-  display: none;
-  list-style: none;
-  margin-bottom: 40px;
-}
-
-#subsections li {
-  margin-bottom: 12px;
-}
-
-#subsections a {
-  font-size: 1.1rem;
-  color: var(--text);
-  text-decoration: none;
-}
-
-#subsections a:hover {
-  text-decoration: underline;
 }
 
 .post-entry {
@@ -484,14 +464,6 @@ main:has(.post-single) .section-head {
   margin-top: 0;
 }
 
-/* Homepage only: sections act as top-level nav for the link-card folders
-   beneath them, so bold them to read as the stronger heading - decreasing
-   weight with depth (bold section > normal-weight folder title) instead of
-   the site's usual all-normal-weight heading treatment. */
-#home-content h2 {
-  font-weight: bold;
-}
-
 .md-content h3 {
   font-size: 1rem;
   font-weight: bold;
@@ -507,9 +479,9 @@ main:has(.post-single) .section-head {
   text-decoration: underline;
 }
 
-/* Link cards: a whole title + description clickable as one block, used on
-   the homepage so a folder can "speak for itself" instead of the reader
-   hunting for a separate underlined link. Source syntax is a fenced
+/* Link cards: a whole title + description clickable as one block, so a
+   linked page can "speak for itself" in the middle of a post instead of the
+   reader hunting for a separate underlined link. Source syntax is a fenced
    ```link:/url block, handled in app.js's renderMarkdown. Plain text, no
    card chrome - same underline-on-hover as any other link, just spanning
    the title and description together. */
@@ -700,4 +672,152 @@ main:has(.post-single) .section-head {
   color: var(--muted);
   font-size: 0.95rem;
   line-height: 1.5;
+}
+
+/* Homepage featured-project tiles (see homepage.json / renderFeaturedTiles).
+   A curated set, not auto-generated - each is a button (not a link) since
+   clicking one applies a tag filter in place rather than navigating.
+   Two-column on narrow screens (most content here is short: icon, label,
+   one line), single column once a tile's own min-width can't fit two per
+   row. Border/radius matches .circle-btn's language rather than inventing
+   new chrome. */
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.tile-grid[hidden] {
+  display: none;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tile:hover,
+.tile:focus-visible {
+  border-color: var(--text);
+}
+
+/* The tile whose tag is the current filter - a visible marker of "you are
+   here" so the tile grid stays a legible hub instead of losing its own
+   selection state once a filter is applied (see the "tiles stay visible"
+   decision in the plan). */
+.tile-active {
+  border-color: var(--text);
+  border-width: 2px;
+  padding: 15px;
+}
+
+.tile-icon {
+  display: flex;
+  color: var(--muted);
+}
+
+.tile-icon .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.tile-label {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.tile-desc {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Tag chip row: every tag in the manifest, always visible above the post
+   list (never hidden behind a filter panel/menu), horizontally wrapping
+   rather than scrolling since the tag count here is small. Reused
+   unmodified for the per-post tag links (see .post-tags below) so the
+   filter control looks identical wherever it appears. */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.chip-row[hidden] {
+  display: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chip:hover,
+.chip:focus-visible {
+  border-color: var(--text);
+}
+
+.chip-active {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+
+.chip-clear {
+  color: var(--muted);
+  border-style: dashed;
+}
+
+/* Per-post tag chips, in the post-meta line beneath the date/author - reads
+   the filter mechanism backwards from a post to the homepage view that
+   would surface others like it. */
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.post-tags .chip {
+  padding: 4px 12px;
+  font-size: 0.8rem;
+}
+
+.empty-state {
+  color: var(--muted);
+  font-size: 0.95rem;
+  padding: 24px 0;
+}
+
+.clear-filter-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text);
+  text-decoration: underline;
+  font: inherit;
+  cursor: pointer;
 }

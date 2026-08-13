@@ -11,6 +11,7 @@ on:
     paths:
       - 'content/**'
       - 'build.js'
+      - 'homepage.json'
 
 permissions:
   contents: write

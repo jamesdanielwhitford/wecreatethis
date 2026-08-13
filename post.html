@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#14140f" media="(prefers-color-scheme: dark)">
-  <!-- Replaced per-section from the manifest once it loads (see app.js). Social
+  <!-- Replaced per-post from the manifest once it loads (see app.js). Social
        preview scrapers don't run JS, so they only ever see this static
-       fallback - real per-post/section OG previews need build.js to emit
-       static HTML (tracked as a known gap alongside the SEO note in
+       fallback - real per-post OG previews need build.js to emit static
+       HTML (tracked as a known gap alongside the SEO note in
        CLAUDE-blog.md), not done here. -->
   <meta name="description" content="Blog.">
   <title>wecreatethis.com</title>
   <meta property="og:title" content="wecreatethis.com">
-  <meta property="og:type" content="website">
+  <meta property="og:type" content="article">
   <meta property="og:url" content="https://wecreatethis.com/">
   <meta property="og:description" content="Blog.">
   <meta property="og:image" content="https://wecreatethis.com/og-image.png">
@@ -24,6 +24,7 @@
   <meta name="twitter:title" content="wecreatethis.com">
   <meta name="twitter:description" content="Blog.">
   <meta name="twitter:image" content="https://wecreatethis.com/og-image.png">
+  <link rel="canonical" href="https://wecreatethis.com/">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.json">
@@ -35,10 +36,10 @@
 <body>
   <header>
     <!-- Static skeleton matches the .top-nav 3-slot shape app.js renders
-         (renderSectionHeader / renderPostHeader) so the header has its
-         final height on first paint - otherwise the empty <nav> starts
-         short and grows once JS fills it in, shifting all page content
-         down (visible as a flash/jitter on refresh). -->
+         (renderPostHeader) so the header has its final height on first
+         paint - otherwise the empty <nav> starts short and grows once JS
+         fills it in, shifting all page content down (visible as a
+         flash/jitter on refresh). -->
     <nav id="crumbs" class="top-nav" aria-label="Navigation">
       <span class="nav-slot nav-left" aria-hidden="true"></span>
       <span class="nav-slot nav-center"></span>
@@ -50,8 +51,6 @@
     <div class="section-head">
       <h1 id="section-title"></h1>
     </div>
-
-    <ul id="subsections"></ul>
 
     <div id="loading">Loading...</div>
     <div id="post-stack" style="display:none"></div>

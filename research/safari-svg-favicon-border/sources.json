@@ -1,0 +1,28 @@
+{
+  "sources": [
+    {
+      "url": "https://stackoverflow.com/questions/75433533/favicon-has-unwanted-white-border-around-it-in-safari-on-macos",
+      "file": "sources/html-favicon-has-unwanted-white-border-around-it-in-safari.md",
+      "title": "html - favicon has unwanted white border around it in Safari on macOS - Stack Overflow",
+      "method": "playwright",
+      "text_len": 6653,
+      "fetched_at": "2026-08-09T08:41:55"
+    },
+    {
+      "url": "https://stackoverflow.com/questions/59233531/safari-favicon-incorrectly-rendering-with-white-background",
+      "file": "sources/html-safari-favicon-incorrectly-rendering-with-white-background-stack-overflow.md",
+      "title": "html - Safari favicon incorrectly rendering with white background - Stack Overflow",
+      "method": "playwright",
+      "text_len": 11130,
+      "fetched_at": "2026-08-09T08:42:12"
+    },
+    {
+      "url": "https://css-tricks.com/dark-mode-favicons/",
+      "file": "sources/dark-mode-favicons-css-tricks.md",
+      "title": "Dark Mode Favicons | CSS-Tricks",
+      "method": "requests",
+      "text_len": 2869,
+      "fetched_at": "2026-08-09T08:42:24"
+    }
+  ]
+}

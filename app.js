@@ -8,10 +8,6 @@ function escHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function slugToName(slug) {
-  return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-}
-
 // Tiny language-agnostic syntax highlighter, applied to already-escaped code.
 // Comments, strings, numbers, and a shared keyword set. No dependencies.
 const CODE_KEYWORDS = new Set((
@@ -42,7 +38,7 @@ function placeholder(kind, i) {
 }
 
 // Heading anchors are prefixed so they can never collide with a post slug,
-// which shares the same URL fragment (see parseBlogPath).
+// which shares the same URL fragment (see parseRoute).
 const HEADING_ID_PREFIX = 'h-';
 
 function headingId(text) {
@@ -232,25 +228,16 @@ function loadManifest() {
   return fetch('/content-manifest.json').then(r => r.json());
 }
 
-// Splits /{section...}/{post-slug} into its section and post parts. Every
-// folder and every post is its own route, so this has to check the manifest
-// to know whether the last path segment is a post slug or another section
-// level: /a/b could be section "a" + post "b", or section "a/b" with no
-// post selected.
-function parseBlogPath(sections) {
+// Every post is served flat as /{slug} - no section segment, so there's no
+// ambiguity left to resolve against the manifest. Zero path segments is the
+// home page; one segment is a post slug; anything else is a stale/unknown
+// URL (a real multi-segment path should have been caught by a 301 in
+// _redirects before app.js ever runs).
+function parseRoute() {
   const parts = location.pathname.replace(/^\//, '').split('/').filter(Boolean);
-  const fullPath = parts.join('/') || null;
-
-  if (parts.length > 1) {
-    const parentPath = parts.slice(0, -1).join('/');
-    const slug = parts[parts.length - 1];
-    const parent = sections.find(s => s.path === parentPath);
-    if (parent && parent.posts.some(p => p.slug === slug)) {
-      return { sectionPath: parentPath, postSlug: slug };
-    }
-  }
-
-  return { sectionPath: fullPath, postSlug: null };
+  if (parts.length === 0) return { postSlug: null };
+  if (parts.length === 1) return { postSlug: parts[0] };
+  return { postSlug: null, notFound: true };
 }
 
 const SITE_OWNER_NAME = 'James Daniel Whitford';
@@ -360,37 +347,21 @@ function renderHomeHeader() {
   nav.querySelector('#profile-btn').addEventListener('click', openBioModal);
 }
 
-// Section/folder page header: back arrow to the parent directory (or home
-// at the top level), centered folder title, right profile circle.
-function renderSectionHeader(sectionPath, title) {
-  const nav = document.getElementById('crumbs');
-  nav.className = 'top-nav';
-  const segments = sectionPath.split('/');
-  const parentHref = segments.length > 1 ? '/' + segments.slice(0, -1).join('/') : '/';
-
-  nav.innerHTML = `
-    <span class="nav-slot nav-left">
-      <a href="${parentHref}" class="circle-btn" aria-label="Back">${Icons.svg('arrowLeft')}</a>
-    </span>
-    <span class="nav-slot nav-center"><span class="nav-wordmark">${escHtml(title)}</span></span>
-    <span class="nav-slot nav-right">${profileButtonHtml()}</span>
-  `;
-  nav.querySelector('#profile-btn').addEventListener('click', openBioModal);
-}
-
+// Preserves the query string (e.g. an active homepage ?tag= filter) -
+// history.replaceState(null, '', location.pathname) would silently drop it.
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  history.replaceState(null, '', location.pathname);
+  history.replaceState(null, '', location.pathname + location.search);
 }
 
-// Post page top nav: back to the section on the left, table-of-contents
+// Post page top nav: back to the homepage on the left, table-of-contents
 // modal on the right. The center slot holds the post title, hidden while
 // the article's own H1 is on screen and shown once it scrolls past (see
 // setupPostTitleReveal) - clicking it scrolls back to top.
-function renderPostHeader(sectionPath, post, headings) {
+function renderPostHeader(post, headings) {
   const nav = document.getElementById('crumbs');
   nav.className = 'top-nav';
-  const backHref = '/' + sectionPath;
+  const backHref = '/';
 
   nav.innerHTML = `
     <span class="nav-slot nav-left">
@@ -460,22 +431,24 @@ function setupPostTitleReveal() {
   observer.observe(titleEl);
 }
 
-// Bottom nav on post pages: previous/next post within the same section,
-// ordered exactly as the manifest (already sorted by build.js).
-function renderPostBottomNav(section, currentSlug) {
+// Bottom nav on post pages: previous/next post globally, ordered exactly as
+// the manifest (already sorted by build.js). Sections are gone, so there's
+// no narrower scope left to page within - global reverse-chronological is
+// unambiguous and the same regardless of how the reader arrived at this post.
+function renderPostBottomNav(posts, currentSlug) {
   const bar = document.getElementById('bottom-nav');
   if (!bar) return;
-  const idx = section.posts.findIndex(p => p.slug === currentSlug);
-  const prev = idx > 0 ? section.posts[idx - 1] : null;
-  const next = idx < section.posts.length - 1 ? section.posts[idx + 1] : null;
+  const idx = posts.findIndex(p => p.slug === currentSlug);
+  const prev = idx > 0 ? posts[idx - 1] : null;
+  const next = idx < posts.length - 1 ? posts[idx + 1] : null;
 
   bar.innerHTML = `
     <span class="nav-slot nav-left">
-      ${prev ? `<a href="/${section.path}/${prev.slug}" class="circle-btn" aria-label="Previous: ${escHtml(prev.title)}">${Icons.svg('chevronLeft')}</a>` : ''}
+      ${prev ? `<a href="/${prev.slug}" class="circle-btn" aria-label="Previous: ${escHtml(prev.title)}">${Icons.svg('chevronLeft')}</a>` : ''}
     </span>
     <span class="nav-slot nav-center"></span>
     <span class="nav-slot nav-right">
-      ${next ? `<a href="/${section.path}/${next.slug}" class="circle-btn" aria-label="Next: ${escHtml(next.title)}">${Icons.svg('chevronRight')}</a>` : ''}
+      ${next ? `<a href="/${next.slug}" class="circle-btn" aria-label="Next: ${escHtml(next.title)}">${Icons.svg('chevronRight')}</a>` : ''}
     </span>
   `;
   bar.hidden = false;
@@ -544,135 +517,204 @@ function deferredLoading() {
   };
 }
 
-// Home page: renders content/home.md directly, hand-authored.
-if (document.getElementById('home-content')) {
-  renderHomeHeader();
-  const content = document.getElementById('home-content');
-  const loading = deferredLoading();
-  fetch('/content/home.md')
-    .then(r => r.text())
-    .then(text => {
-      const { body } = parseFrontmatter(text);
-      content.innerHTML = renderMarkdown(body);
-      loading.done();
-      content.style.display = 'block';
-    })
-    .catch(() => {
-      loading.fail('Failed to load home page.');
-    });
+// Renders the post list (optionally filtered to one tag) into the
+// homepage's #post-list, reusing the same .post-toc/.toc-item markup the
+// old section page used - already styled, and reused here so a flat list
+// of every post looks exactly like the old per-section list did.
+function renderPostList(posts, activeTag) {
+  const list = document.getElementById('post-list');
+  const visible = activeTag ? posts.filter(p => p.tags.includes(activeTag)) : posts;
+  list.hidden = false;
+
+  if (visible.length === 0) {
+    list.innerHTML = `
+      <p class="empty-state">No posts tagged "${escHtml(activeTag)}".
+        <button type="button" class="clear-filter-link">Clear filter</button>
+      </p>
+    `;
+    list.querySelector('.clear-filter-link').addEventListener('click', () => setActiveTag(null));
+    return;
+  }
+
+  list.innerHTML = `<ul>` + visible.map(p => `
+    <li class="toc-item">
+      <div class="toc-date">${formatDate(p.date)}</div>
+      <div class="toc-title"><a href="/${p.slug}">${escHtml(p.title)}</a></div>
+      ${p.description ? `<div class="toc-description">${escHtml(p.description)}</div>` : ''}
+    </li>
+  `).join('') + `</ul>`;
 }
 
-// Section page: lists the posts (and any nested sections) at this path.
-// Post page: renders exactly one post, standalone. Every folder and every
-// post is its own route (/{section...}/{post-slug}); there is no
-// multi-post stack, so nothing here loads or scrolls to another post.
+// Featured project tiles (from homepage.json via the manifest) - a curated
+// set, always visible even while a filter is active (with the active one
+// highlighted), so the homepage stays a stable hub to jump between projects
+// rather than collapsing into a plain results view.
+function renderFeaturedTiles(featured, activeTag) {
+  const wrap = document.getElementById('featured-tiles');
+  if (!featured.length) { wrap.hidden = true; return; }
+
+  wrap.innerHTML = featured.map(f => `
+    <button type="button" class="tile${f.tag === activeTag ? ' tile-active' : ''}" data-tag="${escHtml(f.tag)}">
+      <span class="tile-icon">${Icons.svg(f.icon) || ''}</span>
+      <span class="tile-label">${escHtml(f.label)}</span>
+      <span class="tile-desc">${escHtml(f.description || '')}</span>
+    </button>
+  `).join('');
+  wrap.hidden = false;
+
+  wrap.querySelectorAll('.tile').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tag = btn.dataset.tag;
+      setActiveTag(tag === activeTag ? null : tag);
+    });
+  });
+}
+
+// Chip row: every tag in the manifest (not just featured), single-select.
+// Always visible above the post list per the filter-UX convention of never
+// hiding the filter control behind a panel.
+function renderTagChips(tags, activeTag) {
+  const wrap = document.getElementById('tag-chips');
+  if (!tags.length) { wrap.hidden = true; return; }
+
+  wrap.innerHTML = tags.map(t => `
+    <button type="button" class="chip${t.tag === activeTag ? ' chip-active' : ''}" data-tag="${escHtml(t.tag)}">
+      ${escHtml(t.tag)}
+    </button>
+  `).join('') + (activeTag ? `<button type="button" class="chip chip-clear">Clear</button>` : '');
+  wrap.hidden = false;
+
+  wrap.querySelectorAll('.chip[data-tag]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tag = btn.dataset.tag;
+      setActiveTag(tag === activeTag ? null : tag);
+    });
+  });
+  const clearBtn = wrap.querySelector('.chip-clear');
+  if (clearBtn) clearBtn.addEventListener('click', () => setActiveTag(null));
+}
+
+let homepageManifest = null;
+
+// Applies a tag filter without a full navigation: updates the URL
+// (?tag=x, or strips it entirely when cleared) via pushState so the
+// filtered view is bookmarkable/shareable and back/forward step through
+// filter states, then re-renders tiles/chips/list in place.
+function setActiveTag(tag) {
+  const url = tag ? `/?tag=${encodeURIComponent(tag)}` : '/';
+  history.pushState({ tag }, '', url);
+  renderHomepageState();
+}
+
+function renderHomepageState() {
+  if (!homepageManifest) return;
+  const params = new URLSearchParams(location.search);
+  const activeTag = params.get('tag');
+
+  renderFeaturedTiles(homepageManifest.featured, activeTag);
+  renderTagChips(homepageManifest.tags, activeTag);
+  renderPostList(homepageManifest.posts, activeTag);
+}
+
+// Home page: a wordmark header, a short hand-authored intro (content/home.md),
+// featured project tiles and a tag chip row (both from the manifest), and
+// the full post list beneath - filterable to one tag via ?tag=, reflected
+// in the URL so filtered views are shareable and survive back/forward.
+if (document.getElementById('home-content')) {
+  renderHomeHeader();
+  const loading = deferredLoading();
+
+  // Canonical stays "/" regardless of filter state, so ?tag= views don't
+  // fragment indexing into separate pages.
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.setAttribute('href', 'https://wecreatethis.com/');
+
+  Promise.all([
+    fetch('/content/home.md').then(r => r.text()),
+    loadManifest(),
+  ]).then(([homeText, manifest]) => {
+    const { body } = parseFrontmatter(homeText);
+    document.getElementById('home-content').innerHTML = renderMarkdown(body);
+
+    homepageManifest = manifest;
+    renderHomepageState();
+
+    window.addEventListener('popstate', renderHomepageState);
+
+    loading.done();
+    document.getElementById('home-content').style.display = 'block';
+    // Tiles/chips/post-list each reveal themselves via `hidden` inside
+    // renderFeaturedTiles/renderTagChips/renderPostList (called from
+    // renderHomepageState above), based on whether there's anything to show.
+  }).catch(() => {
+    loading.fail('Failed to load home page.');
+  });
+}
+
+// Post page: renders exactly one post, standalone, at its flat /{slug}
+// route. There is no multi-post stack and no section to scope anything to.
 if (document.getElementById('post-stack')) {
   const loading = deferredLoading();
-  loadManifest().then(({ sections }) => {
-    const { sectionPath, postSlug } = parseBlogPath(sections);
+  loadManifest().then(manifest => {
+    const { postSlug, notFound } = parseRoute();
+    const post = !notFound && postSlug ? manifest.posts.find(p => p.slug === postSlug) : null;
 
-    const section = sections.find(s => s.path === sectionPath);
-    const subsections = sectionPath
-      ? sections.filter(s => s.path.startsWith(sectionPath + '/'))
-      : [];
-
-    if (!section && subsections.length === 0) {
-      loading.fail('Section not found.');
+    if (!post) {
+      loading.fail('Post not found.');
       return;
     }
 
     const stack = document.getElementById('post-stack');
+    document.title = post.title + ' - wecreatethis.com';
+    document.getElementById('section-title').textContent = post.title;
 
-    // Post page: render the single requested post and stop. The loading
-    // indicator stays pending through the post-body fetch below, since
-    // that's the point at which the page actually has content to show.
-    if (postSlug) {
-      const post = section.posts.find(p => p.slug === postSlug);
-      document.title = post.title + ' - wecreatethis.com';
-      document.getElementById('section-title').textContent = post.title;
-
-      const metaDesc = document.querySelector('meta[name="description"]');
-      if (metaDesc && post.description) metaDesc.setAttribute('content', post.description);
-
-      stack.className = 'post-single';
-      stack.innerHTML = `
-        <article class="post-entry is-revealed">
-          <div class="post-meta">
-            <div class="meta-line">${formatDate(post.date)}${post.author ? ' by ' + escHtml(post.author) : ''}</div>
-          </div>
-          <div class="md-content"></div>
-        </article>
-      `;
-      stack.style.display = 'block';
-
-      fetch(`/content/${section.path}/${postSlug}/index.md`)
-        .then(r => r.text())
-        .then(text => {
-          const { body } = parseFrontmatter(text);
-          const content = stack.querySelector('.md-content');
-          content.innerHTML = renderMarkdown(
-            stripLeadingTitle(body, post.title),
-            post.images
-          );
-
-          const headings = Array.from(content.querySelectorAll('h2'))
-            .filter(h => h.id)
-            .map(h => ({ id: h.id, text: h.textContent }));
-          renderPostHeader(section.path, post, headings);
-          renderPostBottomNav(section, postSlug);
-          setupPostScrollFade();
-          setupPostTitleReveal();
-          loading.done();
-        })
-        .catch(() => {
-          stack.querySelector('.md-content').textContent = 'Failed to load post.';
-          renderPostHeader(section.path, post, []);
-          loading.done();
-        });
-      return;
-    }
-
-    // Section page: table of contents for this section's own posts, plus
-    // links to any nested sections. Nothing here is async past this point,
-    // so the loading indicator can resolve immediately.
-    loading.done();
-    const name = section ? section.name : slugToName(sectionPath.split('/').pop());
-    document.title = name + ' - wecreatethis.com';
-    document.getElementById('section-title').textContent = name;
-    renderSectionHeader(sectionPath, name);
-
-    // Fill the meta description from the section's own posts. Client-side,
-    // so crawlers that don't run JS still only see the static fallback,
-    // but it keeps the tag accurate for those that do.
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc && section && section.posts.length) {
-      const first = section.posts.find(p => p.description);
-      metaDesc.setAttribute('content', first
-        ? first.description
-        : `${section.posts.length} post${section.posts.length === 1 ? '' : 's'} in ${name}.`);
-    }
+    if (metaDesc && post.description) metaDesc.setAttribute('content', post.description);
 
-    // Sections nested below this path get listed as links above the posts.
-    if (subsections.length > 0) {
-      const list = document.getElementById('subsections');
-      list.innerHTML = subsections.map(s =>
-        `<li><a href="/${s.path}">${escHtml(s.path.slice(sectionPath.length + 1))}</a></li>`
-      ).join('');
-      list.style.display = 'block';
-    }
+    const canonical = document.querySelector('link[rel="canonical"]');
+    if (canonical) canonical.setAttribute('href', `https://wecreatethis.com/${post.slug}`);
 
-    if (!section) return;
+    const tagsHtml = post.tags.length
+      ? `<div class="post-tags">${post.tags.map(t => `<a class="chip" href="/?tag=${encodeURIComponent(t)}">${escHtml(t)}</a>`).join('')}</div>`
+      : '';
 
-    stack.className = 'post-toc';
-    stack.innerHTML = `<ul>` + section.posts.map(p => `
-      <li class="toc-item">
-        <div class="toc-date">${formatDate(p.date)}</div>
-        <div class="toc-title"><a href="/${section.path}/${p.slug}">${escHtml(p.title)}</a></div>
-        ${p.description ? `<div class="toc-description">${escHtml(p.description)}</div>` : ''}
-      </li>
-    `).join('') + `</ul>`;
+    stack.className = 'post-single';
+    stack.innerHTML = `
+      <article class="post-entry is-revealed">
+        <div class="post-meta">
+          <div class="meta-line">${formatDate(post.date)}${post.author ? ' by ' + escHtml(post.author) : ''}</div>
+          ${tagsHtml}
+        </div>
+        <div class="md-content"></div>
+      </article>
+    `;
     stack.style.display = 'block';
+
+    fetch(`/content/${post.source}/index.md`)
+      .then(r => r.text())
+      .then(text => {
+        const { body } = parseFrontmatter(text);
+        const content = stack.querySelector('.md-content');
+        content.innerHTML = renderMarkdown(
+          stripLeadingTitle(body, post.title),
+          post.images
+        );
+
+        const headings = Array.from(content.querySelectorAll('h2'))
+          .filter(h => h.id)
+          .map(h => ({ id: h.id, text: h.textContent }));
+        renderPostHeader(post, headings);
+        renderPostBottomNav(manifest.posts, post.slug);
+        setupPostScrollFade();
+        setupPostTitleReveal();
+        loading.done();
+      })
+      .catch(() => {
+        stack.querySelector('.md-content').textContent = 'Failed to load post.';
+        renderPostHeader(post, []);
+        loading.done();
+      });
   }).catch(() => {
-    loading.fail('Failed to load section.');
+    loading.fail('Failed to load post.');
   });
 }

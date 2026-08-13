@@ -55,12 +55,12 @@ https://wecreatethis.pages.dev/* https://wecreatethis.com/:splat 301
 /slowread  /slowread/  301
 /slowread/*  /slowread/:splat  200
 
-# Blog is now the homepage: clean URLs for both sections and posts
-# (/{section...}/{post-slug} is a real path, resolved client-side by app.js -
-# no server routing needed per post). Real files must pass through first
-# (first match wins), then any other path serves the section/post shell.
-# Nested sections and posts at any depth work with no extra rules: adding a
-# content folder needs NO changes here.
+# Blog is now the homepage: every post is a flat route (/{post-slug}),
+# resolved client-side by app.js - no server routing needed per post. Real
+# files must pass through first (first match wins), then any other path
+# serves the post shell. Adding a content folder needs NO changes here -
+# build.js is what rejects a new post whose slug would collide with one of
+# these names (see the reserved-name check in checkCollisions).
 /  /  200
 /content/*  /content/:splat  200
 /app.js  /app.js  200
@@ -82,6 +82,36 @@ https://wecreatethis.pages.dev/* https://wecreatethis.com/:splat 301
 /fonts/*  /fonts/:splat  200
 /archive/*  /archive/:splat  200
 
+# Legacy post URLs from before the flat-URL migration (session: flat URLs +
+# tag homepage). Each was /{old-section}/{old-slug}; the new flat URL is
+# /{slug} (the post's own slug: front matter if it needed one to avoid a
+# collision, else unchanged). One line per post that was ever live under
+# the old scheme - not generated/hand-maintained automatically, so re-derive
+# this block (diff content-manifest.json's `source` vs `slug` per post)
+# whenever a post's folder or slug changes after publishing.
+/harness-customisation/a-skill-structure-that-improves-itself  /a-skill-structure-that-improves-itself  301
+/heat/stub  /heat-stub  301
+/kindlewriter/stub  /kindlewriter-stub  301
+/lotus/stub  /lotus-stub  301
+/agent-hacking/stub  /agent-hacking-stub  301
+/agent-programmatics/stub  /agent-programmatics-stub  301
+/misc/agent-starts-taking-screenshots-on-auto-mode  /agent-starts-taking-screenshots-on-auto-mode  301
+/recipes/gochujang-chicken-ramen  /gochujang-chicken-ramen  301
+
+# Legacy section-index URLs. A section page listed only that folder's posts;
+# the nearest equivalent now is the homepage filtered to that folder's name
+# as a tag (every post above kept its old group name as one of its tags -
+# see the tag retrofit in the same migration), so these land somewhere
+# genuinely related rather than just bouncing to a blank home page.
+/harness-customisation  /?tag=harness-customisation  301
+/heat  /?tag=heat  301
+/kindlewriter  /?tag=kindlewriter  301
+/lotus  /?tag=lotus  301
+/agent-hacking  /?tag=agent-hacking  301
+/agent-programmatics  /?tag=agent-programmatics  301
+/misc  /?tag=misc  301
+/recipes  /?tag=recipes  301
+
 # CV / portfolio pages - static, not part of the blog's routing, but caught
 # by the wildcard below without an explicit pass-through (session 027: these
 # stopped serving once the blog homepage move added the final catch-all).
@@ -97,4 +127,4 @@ https://wecreatethis.pages.dev/* https://wecreatethis.com/:splat 301
 /technical-writing-portfolio  /technical-writing-portfolio/  301
 /technical-writing-portfolio/*  /technical-writing-portfolio/:splat  200
 
-/*  /section  200
+/*  /post  200

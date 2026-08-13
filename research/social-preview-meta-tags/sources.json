@@ -1,0 +1,36 @@
+{
+  "sources": [
+    {
+      "url": "https://ogp.me/",
+      "file": "sources/the-open-graph-protocol.md",
+      "title": "The Open Graph protocol",
+      "method": "requests",
+      "text_len": 11420,
+      "fetched_at": "2026-08-08T21:33:28"
+    },
+    {
+      "url": "https://ahrefs.com/blog/open-graph-meta-tags/",
+      "file": "sources/open-graph-meta-tags-everything-you-need-to-know.md",
+      "title": "Open Graph Meta Tags: Everything You Need to Know",
+      "method": "requests",
+      "text_len": 9429,
+      "fetched_at": "2026-08-08T21:33:29"
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/link",
+      "file": "sources/link-html-external-resource-link-element-html-mdn.md",
+      "title": "<link> HTML external resource link element - HTML | MDN",
+      "method": "requests",
+      "text_len": 16003,
+      "fetched_at": "2026-08-08T21:33:56"
+    },
+    {
+      "url": "https://web.dev/learn/html/document-structure",
+      "file": "sources/document-structure-webdev.md",
+      "title": "Document structure | web.dev",
+      "method": "requests",
+      "text_len": 18997,
+      "fetched_at": "2026-08-08T21:33:57"
+    }
+  ]
+}

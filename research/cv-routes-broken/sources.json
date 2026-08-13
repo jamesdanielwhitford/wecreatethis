@@ -1,0 +1,28 @@
+{
+  "sources": [
+    {
+      "url": "https://developers.cloudflare.com/pages/configuration/redirects/",
+      "file": "sources/redirects-cloudflare-pages-docs.md",
+      "title": "Redirects \u00b7 Cloudflare Pages docs",
+      "method": "requests",
+      "text_len": 4543,
+      "fetched_at": "2026-08-09T08:53:42"
+    },
+    {
+      "url": "https://github.com/cloudflare/workers-sdk/issues/11824",
+      "file": "sources/false-positive-infinite-loop-on-rule-indexhtml-200-in-redirects.md",
+      "title": "False positive \"Infinite loop\" on rule `/ /index.html 200` in `_redirects` \u00b7 Issue #11824 \u00b7 cloudflare/workers-sdk \u00b7 GitHub",
+      "method": "requests",
+      "text_len": 2290,
+      "fetched_at": "2026-08-09T08:54:56"
+    },
+    {
+      "url": "https://www.ellyloel.com/how-to-get-cloudflare-redirects-to-ignore-index-html/",
+      "file": "sources/how-to-get-cloudflare-redirects-to-ignore-indexhtml-elly-loel.md",
+      "title": "How to get Cloudflare redirects to ignore index.html - Elly Loel",
+      "method": "requests",
+      "text_len": 1311,
+      "fetched_at": "2026-08-09T08:55:13"
+    }
+  ]
+}

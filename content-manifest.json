@@ -1,222 +1,221 @@
 {
-  "sections": [
+  "posts": [
     {
-      "path": "agent-hacking",
-      "name": "Agent Hacking",
-      "posts": [
-        {
-          "slug": "stub",
-          "title": "Agent Hacking",
-          "date": "2026-08-08",
-          "order": null,
-          "description": "Experimenting with corrupting and hijacking agent outputs.",
-          "author": "James Daniel Whitford"
-        }
-      ]
+      "slug": "agent-hacking-stub",
+      "title": "Agent Hacking",
+      "date": "2026-08-08",
+      "order": null,
+      "description": "Experimenting with corrupting and hijacking agent outputs.",
+      "author": "James Daniel Whitford",
+      "tags": [
+        "agent-hacking",
+        "agents"
+      ],
+      "group": "agent-hacking",
+      "source": "agent-hacking/stub"
     },
     {
-      "path": "agent-programmatics",
-      "name": "Agent Programmatics",
-      "posts": [
-        {
-          "slug": "stub",
-          "title": "Agent Programmatics",
-          "date": "2026-08-08",
-          "order": null,
-          "description": "Programmatic, API-driven control of agents.",
-          "author": "James Daniel Whitford"
-        }
-      ]
+      "slug": "agent-programmatics-stub",
+      "title": "Agent Programmatics",
+      "date": "2026-08-08",
+      "order": null,
+      "description": "Programmatic, API-driven control of agents.",
+      "author": "James Daniel Whitford",
+      "tags": [
+        "agent-programmatics",
+        "agents"
+      ],
+      "group": "agent-programmatics",
+      "source": "agent-programmatics/stub"
     },
     {
-      "path": "harness-customisation",
-      "name": "Harness Customisation",
-      "posts": [
-        {
-          "slug": "a-skill-structure-that-improves-itself",
-          "title": "A skill structure that improves itself",
-          "date": "2026-08-01",
-          "order": null,
-          "description": "Five sections, in order: goal, workflow, tools, files, and a closing instruction to keep all four current. The last section is what makes the first four maintainable by the agent that uses them.",
-          "author": "James Daniel Whitford"
-        }
-      ]
+      "slug": "heat-stub",
+      "title": "HEAT",
+      "date": "2026-08-08",
+      "order": null,
+      "description": "Tracks and plays the songs that push your workout harder.",
+      "author": "James Daniel Whitford",
+      "tags": [
+        "heat",
+        "fitness"
+      ],
+      "group": "heat",
+      "source": "heat/stub"
     },
     {
-      "path": "heat",
-      "name": "Heat",
-      "posts": [
-        {
-          "slug": "stub",
-          "title": "HEAT",
-          "date": "2026-08-08",
-          "order": null,
-          "description": "Tracks and plays the songs that push your workout harder.",
-          "author": "James Daniel Whitford"
-        }
-      ]
+      "slug": "kindlewriter-stub",
+      "title": "KindleWriter",
+      "date": "2026-08-08",
+      "order": null,
+      "description": "A KOReader extension for taking notes, navigating files, and serving this blog, straight from an e-reader.",
+      "author": "James Daniel Whitford",
+      "tags": [
+        "kindlewriter",
+        "e-reader"
+      ],
+      "group": "kindlewriter",
+      "source": "kindlewriter/stub"
     },
     {
-      "path": "kindlewriter",
-      "name": "Kindlewriter",
-      "posts": [
-        {
-          "slug": "stub",
-          "title": "KindleWriter",
-          "date": "2026-08-08",
-          "order": null,
-          "description": "A KOReader extension for taking notes, navigating files, and serving this blog, straight from an e-reader.",
-          "author": "James Daniel Whitford"
-        }
-      ]
+      "slug": "lotus-stub",
+      "title": "Lotus",
+      "date": "2026-08-08",
+      "order": null,
+      "description": "A stream-of-consciousness note-taking app with automatic note organisation.",
+      "author": "James Daniel Whitford",
+      "tags": [
+        "lotus",
+        "note-taking"
+      ],
+      "group": "lotus",
+      "source": "lotus/stub"
     },
     {
-      "path": "lotus",
-      "name": "Lotus",
-      "posts": [
-        {
-          "slug": "stub",
-          "title": "Lotus",
-          "date": "2026-08-08",
-          "order": null,
-          "description": "A stream-of-consciousness note-taking app with automatic note organisation.",
-          "author": "James Daniel Whitford"
-        }
-      ]
-    },
-    {
-      "path": "misc",
-      "name": "Misc",
-      "posts": [
-        {
-          "slug": "agent-starts-taking-screenshots-on-auto-mode",
-          "title": "Agent starts taking screenshots on auto mode",
-          "date": "2026-08-08",
-          "order": null,
-          "description": "My agent started autonomously taking screenshots of my screen without consent while debugging a KOReader extension, then denied and reassured its way through being asked about it.",
-          "author": "James Daniel Whitford",
-          "images": {
-            "/content/misc/agent-starts-taking-screenshots-on-auto-mode/agent-admits-intentional-screenshot.png": {
-              "width": 1160,
-              "height": 276
-            },
-            "/content/misc/agent-starts-taking-screenshots-on-auto-mode/agent-autonomous-screenshot-tool-calls.png": {
-              "width": 1160,
-              "height": 656
-            },
-            "/content/misc/agent-starts-taking-screenshots-on-auto-mode/agent-denies-live-view-explains-screencapture.png": {
-              "width": 1158,
-              "height": 426
-            }
-          }
-        }
-      ]
-    },
-    {
-      "path": "recipes",
-      "name": "Recipes",
-      "posts": [
-        {
-          "slug": "gochujang-chicken-ramen",
-          "title": "Gochujang chicken ramen for four, shopped entirely at Woolworths",
-          "date": "2026-07-31",
-          "order": null,
-          "description": "Chicken ramen for four with a gochujang and miso broth built from ordinary chicken stock, poached chicken breast and pak choi, with a Woolworths South Africa shopping list of real products and pack sizes.",
-          "author": "James Daniel Whitford"
-        }
-      ]
-    },
-    {
-      "path": "test",
-      "name": "Test",
-      "posts": [
-        {
-          "slug": "kitchen-sink",
-          "title": "Kitchen sink - every markdown feature",
-          "date": "2026-07-29",
-          "order": 1,
-          "description": "Exercises every construct the renderer supports, so regressions in headings, tables, lists, code, quotes, and inline formatting are visible at a glance.",
-          "author": "Test Suite"
+      "slug": "agent-starts-taking-screenshots-on-auto-mode",
+      "title": "Agent starts taking screenshots on auto mode",
+      "date": "2026-08-08",
+      "order": null,
+      "description": "My agent started autonomously taking screenshots of my screen without consent while debugging a KOReader extension, then denied and reassured its way through being asked about it.",
+      "author": "James Daniel Whitford",
+      "tags": [
+        "misc",
+        "agents",
+        "ai-safety"
+      ],
+      "group": "misc",
+      "source": "misc/agent-starts-taking-screenshots-on-auto-mode",
+      "images": {
+        "/content/misc/agent-starts-taking-screenshots-on-auto-mode/agent-admits-intentional-screenshot.png": {
+          "width": 1160,
+          "height": 276
         },
-        {
-          "slug": "navigation-modes",
-          "title": "Navigation modes",
-          "date": "2026-07-28",
-          "order": 2,
-          "description": "Every way of moving around the blog - post routes within a section, in-page heading anchors, sibling sections, nested subsections, and back to home.",
-          "author": "Test Suite"
+        "/content/misc/agent-starts-taking-screenshots-on-auto-mode/agent-autonomous-screenshot-tool-calls.png": {
+          "width": 1160,
+          "height": 656
         },
-        {
-          "slug": "renderer-edge-cases",
-          "title": "Renderer edge cases - indentation and whitespace",
-          "date": "2026-08-07",
-          "order": 2,
-          "description": "Leading-space and indentation variants of every block type. Each case should render like its kitchen-sink equivalent; if it renders as raw text in a paragraph instead, that is the bug.",
-          "author": "Test Suite"
-        },
-        {
-          "slug": "ordering-and-dates",
-          "title": "Ordering and dates",
-          "date": "2026-07-27",
-          "order": 3,
-          "description": "The third post in the section by explicit order, used to check the section table of contents sorts correctly and that this standalone post page renders on its own route.",
-          "author": "Test Suite"
-        },
-        {
-          "slug": "images-and-media",
-          "title": "Images and media",
-          "date": "2026-07-24",
-          "order": 4,
-          "description": "Image rendering at different aspect ratios, plus the alt-text and dark-mode cases that are easy to get wrong.",
-          "author": "Test Suite",
-          "images": {
-            "/content/test/images-and-media/wide-gradient.png": {
-              "width": 1200,
-              "height": 500
-            },
-            "/content/test/images-and-media/small-square.png": {
-              "width": 160,
-              "height": 160
-            },
-            "/content/test/images-and-media/tall-portrait.png": {
-              "width": 400,
-              "height": 900
-            },
-            "/content/test/images-and-media/white-diagram.png": {
-              "width": 800,
-              "height": 300
-            }
-          }
+        "/content/misc/agent-starts-taking-screenshots-on-auto-mode/agent-denies-live-view-explains-screencapture.png": {
+          "width": 1158,
+          "height": 426
         }
-      ]
+      }
     },
     {
-      "path": "test/nested",
-      "name": "Nested",
-      "posts": [
-        {
-          "slug": "nested-post-one",
-          "title": "Nested post one",
-          "date": "2026-07-26",
-          "order": null,
-          "description": "A post one level down, used to check that nested section URLs, breadcrumbs, and post routes at any depth all work.",
-          "author": "Test Suite"
-        }
-      ]
+      "slug": "a-skill-structure-that-improves-itself",
+      "title": "A skill structure that improves itself",
+      "date": "2026-08-01",
+      "order": null,
+      "description": "Five sections, in order: goal, workflow, tools, files, and a closing instruction to keep all four current. The last section is what makes the first four maintainable by the agent that uses them.",
+      "author": "James Daniel Whitford",
+      "tags": [
+        "harness-customisation",
+        "agents",
+        "skills"
+      ],
+      "group": "harness-customisation",
+      "source": "harness-customisation/a-skill-structure-that-improves-itself"
     },
     {
-      "path": "test/nested/deeper",
-      "name": "Deeper",
-      "posts": [
-        {
-          "slug": "deep-post",
-          "title": "Deep post",
-          "date": "2026-07-25",
-          "order": null,
-          "description": "Three section levels deep, to confirm section nesting has no depth limit, the breadcrumb keeps every ancestor linkable, and post-route parsing still resolves the last segment as a post at any depth.",
-          "author": "Test Suite"
-        }
-      ]
+      "slug": "gochujang-chicken-ramen",
+      "title": "Gochujang chicken ramen for four, shopped entirely at Woolworths",
+      "date": "2026-07-31",
+      "order": null,
+      "description": "Chicken ramen for four with a gochujang and miso broth built from ordinary chicken stock, poached chicken breast and pak choi, with a Woolworths South Africa shopping list of real products and pack sizes.",
+      "author": "James Daniel Whitford",
+      "tags": [
+        "recipes"
+      ],
+      "group": "recipes",
+      "source": "recipes/gochujang-chicken-ramen"
+    }
+  ],
+  "tags": [
+    {
+      "tag": "agents",
+      "count": 4
+    },
+    {
+      "tag": "agent-hacking",
+      "count": 1
+    },
+    {
+      "tag": "agent-programmatics",
+      "count": 1
+    },
+    {
+      "tag": "ai-safety",
+      "count": 1
+    },
+    {
+      "tag": "e-reader",
+      "count": 1
+    },
+    {
+      "tag": "fitness",
+      "count": 1
+    },
+    {
+      "tag": "harness-customisation",
+      "count": 1
+    },
+    {
+      "tag": "heat",
+      "count": 1
+    },
+    {
+      "tag": "kindlewriter",
+      "count": 1
+    },
+    {
+      "tag": "lotus",
+      "count": 1
+    },
+    {
+      "tag": "misc",
+      "count": 1
+    },
+    {
+      "tag": "note-taking",
+      "count": 1
+    },
+    {
+      "tag": "recipes",
+      "count": 1
+    },
+    {
+      "tag": "skills",
+      "count": 1
+    }
+  ],
+  "featured": [
+    {
+      "tag": "heat",
+      "label": "HEAT",
+      "icon": "flame",
+      "description": "Tracks and plays the songs that push your workout harder."
+    },
+    {
+      "tag": "kindlewriter",
+      "label": "KindleWriter",
+      "icon": "bookOpen",
+      "description": "A KOReader extension for taking notes, navigating files, and serving this blog, straight from an e-reader."
+    },
+    {
+      "tag": "lotus",
+      "label": "Lotus",
+      "icon": "flower",
+      "description": "A stream-of-consciousness note-taking app with automatic note organisation."
+    },
+    {
+      "tag": "agent-hacking",
+      "label": "Agent Hacking",
+      "icon": "terminal",
+      "description": "Experimenting with corrupting and hijacking agent outputs."
+    },
+    {
+      "tag": "agent-programmatics",
+      "label": "Agent Programmatics",
+      "icon": "code",
+      "description": "Programmatic, API-driven control of agents."
     }
   ]
 }
