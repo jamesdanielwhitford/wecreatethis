@@ -1,6 +1,6 @@
 # Blog
 
-Folder-organized, flat-URL markdown blog with a tag-filterable homepage. Adding a post is adding a folder; everything else follows automatically.
+Folder-organized, flat-URL markdown blog with a project-filterable homepage. Adding a post is adding a folder; everything else follows automatically.
 
 **This is the site's homepage** (moved from `blog/` to the repo root, see `sessions/overview.md`). The old app-hub grid is archived at `archive/app-hub/`, not deleted.
 
@@ -8,21 +8,22 @@ Folder-organized, flat-URL markdown blog with a tag-filterable homepage. Adding 
 
 - `content/{group...}/{post-folder}/index.md`. Any folder containing an `index.md` is a **post**. The folder path above it (`group` in the manifest) is purely an authoring/organizing convenience now - it groups related posts together on disk, but has **no effect on routing or URLs**. Nest folders however makes sense for keeping a project's posts together.
 - **Every post is served flat at `/{slug}`** - no group/section segment in the URL. The slug is the post's `slug:` frontmatter if set, otherwise its folder name. Give a post an explicit `slug:` only when its folder name collides with another post's folder name elsewhere in the tree (e.g. two different projects each having a `stub` placeholder post).
-- The homepage (`/`) is a generated tag-filter hub, not a hand-authored index page: a short intro (from `content/home.md`, still hand-written), a curated grid of "featured" project tiles (`homepage.json`), a full tag chip row, and the flat list of every published post below. Clicking a tile or chip filters the list via `?tag=x` in the URL (`pushState`, no real navigation), so filtered views are shareable/bookmarkable and step correctly through browser back/forward.
-- There is no section/index page anymore - a folder is not itself a route. The nearest equivalent to "browse everything in this group" is filtering the homepage to that group's tag (every post's `tags:` seed included its old group name during the flat-URL migration, so this still works for existing content).
-- Frontmatter: `title`, `date` (YYYY-MM-DD), `author`, `description`, `tags` (comma-separated, lowercased/hyphenated, used for homepage filtering), optional `slug` (URL override, only needed to resolve a folder-name collision), optional `order` (overrides date sort), optional `draft: true` (excluded from the manifest, stays in the repo).
+- The homepage (`/`) is a generated hub, not a hand-authored index page: a short intro (from `content/home.md`, still hand-written), a curated list of "featured" projects grouped into category sections (`homepage.json`), and the flat list of every published post below. **Tags are project-only now** (session 029): the only tags that exist in the system are the ones curated in `homepage.json`, one per featured project. There is no independent tag-cloud/chip-filter concept, no Filter button, no tag-picker modal - clicking a project is the only way to filter, and it filters via `?tag=x` in the URL (`pushState`, no real navigation), so filtered views are shareable/bookmarkable and step correctly through browser back/forward.
+- **Selecting a project collapses the whole homepage down to just that project**, not a highlighted row among visible siblings: the intro line, other projects, and other section headings all hide; the selected project's title/description render large (matching a real post's own title size) in their place; the post list filters to just that project's posts; a back arrow appears in the nav-left slot (matching the post page's own back-button pattern) to restore the full view. See `setActiveTag`/`renderHomepageState`/`renderFeaturedTiles`/`renderHomeNav` in `app.js`.
+- There is no section/index page. A post with no project tag (e.g. a recipe, a standalone note) simply isn't filterable from anywhere - it only appears in the full "All Posts" list.
+- Frontmatter: `title`, `date` (YYYY-MM-DD), `author`, `description`, `tags` (comma-separated - in practice now either empty or exactly one project tag matching a `homepage.json` entry), optional `slug` (URL override, only needed to resolve a folder-name collision), optional `order` (overrides date sort), optional `draft: true` (excluded from the manifest, stays in the repo).
 - Default post order (homepage list, and post-to-post prev/next): `order` ascending where set, then date descending (newest first) - one single global order now, not per-section.
 - `content/test/` and `content/demo/` are **excluded from the manifest entirely** at build time (not `draft: true` - a folder-name skip in `build.js`). They're renderer regression fixtures, kept in the repo, never routable/published/in the sitemap.
 
-## Featured homepage tiles (`homepage.json`)
+## Featured projects (`homepage.json`)
 
 Root-level JSON, read and validated by `build.js`, copied into the manifest:
 
 ```json
-{ "featured": [ { "tag": "heat", "label": "HEAT", "icon": "flame", "description": "…" } ] }
+{ "featured": [ { "tag": "heat", "label": "HEAT", "section": "App Development", "description": "…" } ] }
 ```
 
-This is the only mechanism for "which tags get a tile on the homepage" - a tag isn't a post, so it can't be a per-post frontmatter flag, and the set is curated by hand rather than inferred from popularity. `icon` must be a key defined in `icons.js` (Lucide-style inline SVGs); `build.js` warns (doesn't fail) if a featured tag matches zero posts or an icon key doesn't exist. Edit this file directly to add/remove/reorder featured tiles - no other change needed, `node build.js` picks it up.
+This is the only mechanism for "which tags exist at all" - a tag isn't a post, so it can't be a per-post frontmatter flag on its own, and the set is curated by hand rather than inferred from popularity. `section` groups projects under a shared category heading on the homepage (e.g. "Agentic Engineering", "App Development", "Modding") - section order follows first appearance in this array, not alphabetical or any other sort, so this file is the single place controlling both grouping and order. `build.js` warns (doesn't fail) if a featured tag matches zero posts. Edit this file directly to add/remove/reorder/regroup featured projects - no other change needed, `node build.js` picks it up (and CI does this automatically on push, see Build below).
 
 ## Build
 
@@ -45,21 +46,23 @@ It also:
 ## Pages and rendering
 
 - `index.html` (home) + `post.html` (every post) share `style.css`. Home renders a wordmark header; post pages render a back-to-home arrow + TOC button, with the post's own title revealed in the header once scrolled past.
-- The homepage additionally renders, all client-side from the manifest: an intro blurb (`content/home.md` through the normal markdown renderer), a `.tile-grid` of featured project tiles, a `.chip-row` of every tag, and the post list (`.post-toc`, same markup section pages used to use). Filtering is single-select, `?tag=x`, applied via `pushState`/`popstate` - no full navigation on click.
-- `app.js` holds a minimal hand-rolled markdown renderer: headings, bold, italic, links, images, unordered **and ordered** lists, **tables**, blockquotes (recursive, so quoted fences work), fenced + inline code, paragraphs, plus a custom ` ```link:/url ` fenced-block syntax for a whole title+description clickable "link card" (used inside post bodies now, not the homepage - the homepage generates its own tiles/chips instead).
+- The homepage additionally renders, all client-side from the manifest: an intro blurb (`content/home.md` through the normal markdown renderer), the featured-project list grouped into section headings (`#featured-tiles`, styled as ordinary `.md-content` prose - a real `<h2>` per section, `.project-card` buttons for each project), and the post list (`.post-toc`). There is no separate tag-chip row and no Filter button - see `renderFeaturedTiles`/`renderPostList`/`renderHomeNav` in `app.js`. Selecting a project (`setActiveTag`) collapses `#featured-tiles` to just that one project (`.project-selected`/`.project-selected-title`, larger than a grouped-list `.project-card-title` since it's now the page's own subject) and swaps the "All Posts" heading for a plain `.posts-divider` rule (the heading text would be misleading once the list isn't "all" posts).
+- `app.js` holds a minimal hand-rolled markdown renderer: headings, bold, italic, links, images, unordered **and ordered** lists, **tables**, blockquotes (recursive, so quoted fences work), fenced + inline code, paragraphs, plus a custom ` ```link:/url ` fenced-block syntax for a whole title+description clickable "link card" (used inside post bodies - the homepage's own project rows are separate markup, `.project-card`, generated straight from `homepage.json` rather than through this renderer, but styled to look identical).
 - Code blocks get a tiny language-agnostic highlighter (comments, strings, numbers, shared keyword set), no libraries. `//` preceded by `:` is not treated as a comment, so URLs survive.
 - Renderer trick: fenced code, blockquotes, tables, and link cards are extracted behind NUL-delimited placeholders before other transforms, then restored at the end.
 - **Paragraph wrapping skips only block-level tags.** Inline tags (`<strong>`, `<em>`, `<a>`, `<code>`) must still be wrapped, or a line starting with bold text silently loses its `<p>` and runs together with the next line.
 - **Heading ids are prefixed `h-`** (`headingId()`) so they can never collide with a post slug sharing the same URL fragment.
 - A post's leading `# H1` is dropped when it matches the frontmatter title, since the post page already renders the title in the header (`#section-title`) from the manifest.
-- Post pages show the post's own tags as clickable chips (linking to `/?tag=x`) beneath the date/author line - this is how a reader discovers the filter mechanism from inside a post, not just from the homepage.
+- **Post pages show no tags at all** (session 029 removed the tag-pill row that used to sit beneath the date/author line) - a post's tag is now purely a routing/grouping concern, not reader-facing content on the post itself.
 - **Known bug (not yet fixed): loose ordered lists.** A numbered list written with blank lines between items renders as N separate one-item `<ol>`s instead of one list, because the paragraph/blank-line split runs before list detection. Unordered lists likely have the same bug, invisibly (bullets don't number). Workaround: no blank lines between list items. See `sessions/session-014-2026-07-31.md` for the full repro; fix belongs in the list-handling regexes in `app.js`.
 
-### Routing: flat URLs, no section concept (session: flat URLs + tag homepage)
+### Routing: flat URLs, project-scoped everything (sessions: flat URLs + tag homepage, then the homepage UI update)
 
 Originally routing was folder-driven: `/{section...}/{post-slug}`, with `parseBlogPath()` checking the manifest to disambiguate whether the last path segment was a post or another section level, and a section page rendering a table of contents for that folder. **That's gone.** Routing is now trivial - `parseRoute()` reads `location.pathname`: zero segments is home, one segment is a post slug, anything else is treated as unknown (a real multi-segment path should already have been caught by a legacy 301 in `_redirects`). There's no more manifest-lookup disambiguation needed, because there's no more ambiguity - folders never appear in a URL at all.
 
-Post-to-post prev/next (`renderPostBottomNav`) is now global reverse-chronological across every published post, not scoped to a section - sections no longer exist to scope it to, and this way the answer for a given post doesn't depend on how the reader arrived there.
+Post-to-post prev/next (`renderPostBottomNav`) is scoped to the current post's own project tag (only steps through sibling posts sharing that same tag) - a post with no project tag shows no bottom nav at all, since there's no group to page within. This changed from an earlier "global reverse-chronological across every post" design once tags became project-only; see session 029's note for the reasoning (the user wanted prev/next to stay within a project, not wander into unrelated posts).
+
+The post-page back arrow (`renderPostHeader`'s `backHref`) returns to `/?tag={the post's own project tag}` when it has one, or `/` otherwise - not always `/`. This is a plain reconstructed URL, not `history.back()`, since a post can be reached by direct link/refresh/new tab with no usable history, and the tag is already fully known from the post's own frontmatter.
 
 `content/test/` still exercises the renderer (still fetchable directly, just excluded from routing/manifest/sitemap): `navigation-modes` covers cross-post links, `ordering-and-dates` covers list sort order, `kitchen-sink` and `renderer-edge-cases` cover markdown syntax edge cases.
 
@@ -91,17 +94,21 @@ This is now the site's only service worker (the old root app-hub `sw.js` is arch
 
 ## Adding a post (the whole workflow)
 
-1. Create `content/{any-folder-path-that-organizes-it}/{post-folder}/index.md` with frontmatter,
-   including `tags:` (comma-separated) if it should be filterable/discoverable from the homepage.
-   The folder path is yours to choose for organization - it never becomes part of the URL.
+1. Create `content/{any-folder-path-that-organizes-it}/{post-folder}/index.md` with frontmatter.
+   **Only set `tags:` if this post belongs to a project already curated in `homepage.json`'s
+   `featured` list** - give it exactly that one tag (e.g. `tags: heat`). Tags are not a general
+   labeling/discovery mechanism any more (session 029 removed that); a post with no project just
+   omits `tags:` entirely and appears only in the full "All Posts" list, with no prev/next bottom
+   nav. The folder path is yours to choose for organization - it never becomes part of the URL.
 2. If the post's folder name would collide with another post's folder name anywhere else in
    `content/`, add an explicit `slug:` to one of them. `build.js` hard-fails the build if it
    doesn't catch this itself.
 3. **Compress any images before adding them** - see Image sizing below. `build.js` does not
    do this for you.
 4. Run `node build.js` (or let CI do it on push).
-5. Optionally add the post's tag to `homepage.json`'s `featured` list if it should get its own
-   tile on the homepage.
+5. If this is a brand new project (not an existing tag already in `homepage.json`), add it to
+   `homepage.json`'s `featured` list with a `section` (existing: "Agentic Engineering", "App
+   Development", "Modding") so it gets its own row on the homepage.
 6. Done. No `_redirects` change needed unless the post was previously published under a different
    URL (then add a legacy 301, see Routing above). No SW change, no version bump.
 
