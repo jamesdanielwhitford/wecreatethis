@@ -3,6 +3,7 @@ title: Gochujang chicken ramen for four, shopped entirely at Woolworths
 author: James Daniel Whitford
 date: 2026-07-31
 description: Chicken ramen for four with a gochujang and miso broth built from ordinary chicken stock, poached chicken breast and pak choi, with a Woolworths South Africa shopping list of real products and pack sizes.
+draft: true
 ---
 
 # Gochujang chicken ramen for four, shopped entirely at Woolworths

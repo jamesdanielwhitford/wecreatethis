@@ -5,6 +5,7 @@ date: 2026-08-08
 description: Programmatic, API-driven control of agents.
 slug: agent-programmatics-stub
 tags: agent-programmatics
+draft: true
 ---
 
 # Agent Programmatics

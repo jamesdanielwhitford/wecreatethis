@@ -1,209 +1,31 @@
 {
   "posts": [
     {
-      "slug": "context-window-poisoning",
-      "title": "Context window poisoning across tool results",
-      "date": "2026-08-11",
-      "order": null,
-      "description": "Smuggling instructions into a multi-step agent run via a tool result several turns before the payload was meant to matter.",
-      "author": "James Daniel Whitford",
-      "tags": [
-        "agent-hacking"
-      ],
-      "group": "agent-hacking",
-      "source": "agent-hacking/context-window-poisoning"
-    },
-    {
-      "slug": "tool-call-fuzzing",
-      "title": "Fuzzing tool call arguments to find schema blind spots",
-      "date": "2026-08-10",
-      "order": null,
-      "description": "Feeding malformed and boundary-case arguments into tool definitions to see where validation quietly gives up.",
-      "author": "James Daniel Whitford",
-      "tags": [
-        "agent-hacking"
-      ],
-      "group": "agent-hacking",
-      "source": "agent-hacking/tool-call-fuzzing"
-    },
-    {
-      "slug": "prompt-injection-honeypot",
-      "title": "Building a prompt injection honeypot",
-      "date": "2026-08-09",
-      "order": null,
-      "description": "Standing up a fake internal wiki page laced with hidden instructions to see which agents take the bait.",
-      "author": "James Daniel Whitford",
-      "tags": [
-        "agent-hacking"
-      ],
-      "group": "agent-hacking",
-      "source": "agent-hacking/prompt-injection-honeypot"
-    },
-    {
-      "slug": "agent-hacking-stub",
-      "title": "Agent Hacking",
-      "date": "2026-08-08",
-      "order": null,
-      "description": "Experimenting with corrupting and hijacking agent outputs.",
-      "author": "James Daniel Whitford",
-      "tags": [
-        "agent-hacking"
-      ],
-      "group": "agent-hacking",
-      "source": "agent-hacking/stub"
-    },
-    {
-      "slug": "agent-programmatics-stub",
-      "title": "Agent Programmatics",
-      "date": "2026-08-08",
-      "order": null,
-      "description": "Programmatic, API-driven control of agents.",
-      "author": "James Daniel Whitford",
-      "tags": [
-        "agent-programmatics"
-      ],
-      "group": "agent-programmatics",
-      "source": "agent-programmatics/stub"
-    },
-    {
-      "slug": "heat-stub",
-      "title": "HEAT",
-      "date": "2026-08-08",
-      "order": null,
-      "description": "Tracks and plays the songs that push your workout harder.",
-      "author": "James Daniel Whitford",
-      "tags": [
-        "heat"
-      ],
-      "group": "heat",
-      "source": "heat/stub"
-    },
-    {
-      "slug": "kindlewriter-stub",
-      "title": "KindleWriter",
-      "date": "2026-08-08",
-      "order": null,
-      "description": "A KOReader extension for taking notes, navigating files, and serving this blog, straight from an e-reader.",
-      "author": "James Daniel Whitford",
-      "tags": [
-        "kindlewriter"
-      ],
-      "group": "kindlewriter",
-      "source": "kindlewriter/stub"
-    },
-    {
-      "slug": "lotus-stub",
-      "title": "Lotus",
-      "date": "2026-08-08",
-      "order": null,
-      "description": "A stream-of-consciousness note-taking app with automatic note organisation.",
-      "author": "James Daniel Whitford",
-      "tags": [
-        "lotus"
-      ],
-      "group": "lotus",
-      "source": "lotus/stub"
-    },
-    {
-      "slug": "agent-starts-taking-screenshots-on-auto-mode",
-      "title": "Agent starts taking screenshots on auto mode",
-      "date": "2026-08-08",
-      "order": null,
-      "description": "My agent started autonomously taking screenshots of my screen without consent while debugging a KOReader extension, then denied and reassured its way through being asked about it.",
-      "author": "James Daniel Whitford",
-      "tags": [],
-      "group": "misc",
-      "source": "misc/agent-starts-taking-screenshots-on-auto-mode",
-      "images": {
-        "/content/misc/agent-starts-taking-screenshots-on-auto-mode/agent-admits-intentional-screenshot.png": {
-          "width": 1160,
-          "height": 276
-        },
-        "/content/misc/agent-starts-taking-screenshots-on-auto-mode/agent-autonomous-screenshot-tool-calls.png": {
-          "width": 1160,
-          "height": 656
-        },
-        "/content/misc/agent-starts-taking-screenshots-on-auto-mode/agent-denies-live-view-explains-screencapture.png": {
-          "width": 1158,
-          "height": 426
-        }
-      }
-    },
-    {
       "slug": "a-skill-structure-that-improves-itself",
       "title": "A skill structure that improves itself",
       "date": "2026-08-01",
       "order": null,
       "description": "Five sections, in order: goal, workflow, tools, files, and a closing instruction to keep all four current. The last section is what makes the first four maintainable by the agent that uses them.",
       "author": "James Daniel Whitford",
-      "tags": [],
+      "tags": [
+        "harness-customisation"
+      ],
       "group": "harness-customisation",
       "source": "harness-customisation/a-skill-structure-that-improves-itself"
-    },
-    {
-      "slug": "gochujang-chicken-ramen",
-      "title": "Gochujang chicken ramen for four, shopped entirely at Woolworths",
-      "date": "2026-07-31",
-      "order": null,
-      "description": "Chicken ramen for four with a gochujang and miso broth built from ordinary chicken stock, poached chicken breast and pak choi, with a Woolworths South Africa shopping list of real products and pack sizes.",
-      "author": "James Daniel Whitford",
-      "tags": [],
-      "group": "recipes",
-      "source": "recipes/gochujang-chicken-ramen"
     }
   ],
   "tags": [
     {
-      "tag": "agent-hacking",
-      "count": 4
-    },
-    {
-      "tag": "agent-programmatics",
-      "count": 1
-    },
-    {
-      "tag": "heat",
-      "count": 1
-    },
-    {
-      "tag": "kindlewriter",
-      "count": 1
-    },
-    {
-      "tag": "lotus",
+      "tag": "harness-customisation",
       "count": 1
     }
   ],
   "featured": [
     {
-      "tag": "agent-hacking",
-      "label": "Agent Hacking",
+      "tag": "harness-customisation",
+      "label": "Harness Customisation",
       "section": "Agentic Engineering",
-      "description": "Experimenting with corrupting and hijacking agent outputs."
-    },
-    {
-      "tag": "agent-programmatics",
-      "label": "Agent Programmatics",
-      "section": "Agentic Engineering",
-      "description": "Programmatic, API-driven control of agents."
-    },
-    {
-      "tag": "heat",
-      "label": "HEAT",
-      "section": "App Development",
-      "description": "Tracks and plays the songs that push your workout harder."
-    },
-    {
-      "tag": "lotus",
-      "label": "Lotus",
-      "section": "App Development",
-      "description": "A stream-of-consciousness note-taking app with automatic note organisation."
-    },
-    {
-      "tag": "kindlewriter",
-      "label": "KindleWriter",
-      "section": "Modding",
-      "description": "A KOReader extension for taking notes, navigating files, and serving this blog, straight from an e-reader."
+      "description": "Shaping how coding agents themselves work: skills, memory, and self-improving structure."
     }
   ]
 }

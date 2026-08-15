@@ -1,1 +1,1 @@
-Notes on agents, tools, and whatever else I'm building.
+Using critical thinking and joy to design and build software.
